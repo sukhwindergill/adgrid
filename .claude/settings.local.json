@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C C:/Users/corpo/adgrid status)",
+      "Bash(where gh *)",
+      "Bash(where vercel *)",
+      "PowerShell(Get-Command gh -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command vercel -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command git -ErrorAction SilentlyContinue)",
+      "PowerShell(refreshenv 2>$null; $env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"User\"\\); Get-Command gh -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source)"
+    ]
+  }
+}
