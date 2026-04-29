@@ -2,16 +2,11 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "Dev Server",
+      "name": "Adgrid Worktree Dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
-      "port": 5174
-    },
-    {
-      "name": "Preview Server",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "preview"],
-      "port": 4173
+      "port": 5176,
+      "autoPort": true
     }
   ]
 }

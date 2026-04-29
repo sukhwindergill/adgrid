@@ -17,7 +17,8 @@
       "mcp__e1184fa8-44e6-4f6a-aa13-cfe76921cf87__apply_migration",
       "mcp__e1184fa8-44e6-4f6a-aa13-cfe76921cf87__execute_sql",
       "Bash(npm install *)",
-      "mcp__f1dafd1b-c0df-41bb-99a9-68406bf5b64b__deploy_to_vercel"
+      "mcp__f1dafd1b-c0df-41bb-99a9-68406bf5b64b__deploy_to_vercel",
+      "Bash(git add *)"
     ]
   }
 }

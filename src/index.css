@@ -1,2 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import './design/animations.css';
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { overflow: hidden; }
+body {
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #fafafa;
+  color: #0a0a0a;
+}
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 3px; }
+input, select, button { font-family: inherit; }
