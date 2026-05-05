@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "./context/AuthContext.jsx";
 import { supabase } from "./lib/supabase.js";
+import { C, F, SUPABASE_FUNCTIONS_URL } from "./lib/constants.js";
+import Placeholder from "./components/Placeholder.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ADGRID PLATFORM — Clean marketing-platform UI
@@ -10,18 +12,6 @@ import { supabase } from "./lib/supabase.js";
 
 const FONT = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap";
 
-const C = {
-  bg:"#f9fafb", surface:"#ffffff", surfaceAlt:"#f3f4f6", surfaceHover:"#f9fafb",
-  border:"#e5e7eb", borderDark:"#d1d5db",
-  text:"#111827", textMid:"#374151", textSub:"#6b7280", textMuted:"#9ca3af",
-  blue:"#2563eb", blueSoft:"#eff6ff", blueBorder:"#bfdbfe", blueDark:"#1d4ed8",
-  green:"#16a34a", greenSoft:"#f0fdf4", greenBorder:"#bbf7d0",
-  amber:"#d97706", amberSoft:"#fffbeb", amberBorder:"#fde68a",
-  red:"#dc2626",   redSoft:"#fef2f2",   redBorder:"#fecaca",
-  purple:"#7c3aed",purpleSoft:"#f5f3ff",purpleBorder:"#ddd6fe",
-  sidebar:"#111827", sidebarBorder:"rgba(255,255,255,0.08)",
-};
-const F = { sans:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono','Fira Code',monospace" };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SEED DATA
