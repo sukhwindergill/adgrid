@@ -3,6 +3,7 @@ import { useAuth } from "./context/AuthContext.jsx";
 import { supabase } from "./lib/supabase.js";
 import { C, F, SUPABASE_FUNCTIONS_URL } from "./lib/constants.js";
 import Placeholder from "./components/Placeholder.jsx";
+import ScansView from "./views/advertiser/ScansView.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ADGRID PLATFORM — Clean marketing-platform UI
@@ -1894,7 +1895,7 @@ export default function App() {
       if (active==="adv-create")       return <AdvCreate onSave={c=>{setCampaigns(p=>[c,...p]);setActive("adv-campaigns");}} onCancel={()=>setActive("adv-overview")}/>;
       if (active==="adv-campaigns")    return <OperatorCampaigns campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c=>{setDetail(c);setActive("adv-campaigns");}}/>;
       if (active==="adv-analytics")    return <OperatorAnalytics campaigns={campaigns}/>;
-      if (active==="adv-audience")     return <Placeholder title="Scans & Data" subtitle="QR leads and remarketing export" icon="◎"/>;
+      if (active==="adv-audience")     return <ScansView impersonatingId={null} />;
       if (active==="adv-billing")      return <Placeholder title="Billing" subtitle="Invoices and payments" icon="$"/>;
       if (active==="adv-integrations") return <Placeholder title="Integrations" subtitle="Meta, Google, Shopify and more" icon="⇌"/>;
       if (active==="adv-settings")     return <Placeholder title="Settings" subtitle="Account and preferences" icon="⚙"/>;
