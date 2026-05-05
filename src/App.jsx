@@ -4,6 +4,7 @@ import { supabase } from "./lib/supabase.js";
 import { C, F, SUPABASE_FUNCTIONS_URL } from "./lib/constants.js";
 import Placeholder from "./components/Placeholder.jsx";
 import ScansView from "./views/advertiser/ScansView.jsx";
+import AdvertiserBillingView from "./views/advertiser/BillingView.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ADGRID PLATFORM — Clean marketing-platform UI
@@ -1896,7 +1897,7 @@ export default function App() {
       if (active==="adv-campaigns")    return <OperatorCampaigns campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c=>{setDetail(c);setActive("adv-campaigns");}}/>;
       if (active==="adv-analytics")    return <OperatorAnalytics campaigns={campaigns}/>;
       if (active==="adv-audience")     return <ScansView impersonatingId={null} />;
-      if (active==="adv-billing")      return <Placeholder title="Billing" subtitle="Invoices and payments" icon="$"/>;
+      if (active==="adv-billing")      return <AdvertiserBillingView />;
       if (active==="adv-integrations") return <Placeholder title="Integrations" subtitle="Meta, Google, Shopify and more" icon="⇌"/>;
       if (active==="adv-settings")     return <Placeholder title="Settings" subtitle="Account and preferences" icon="⚙"/>;
       return <AdvOverview user={displayUser} campaigns={campaigns} setAdvNav={setActive}/>;
