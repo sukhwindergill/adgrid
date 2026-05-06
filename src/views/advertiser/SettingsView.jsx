@@ -118,24 +118,29 @@ function SecurityTab() {
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
   const [msg, setMsg] = useState(null);
-  const [saving, setSaving] = useState(false);
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [pwSaving, setPwSaving] = useState(false);
 
   async function changeEmail() {
     if (!newEmail) return;
-    setSaving(true);
+    setEmailSaving(true);
     const { error } = await supabase.auth.updateUser({ email: newEmail });
-    setSaving(false);
-    setMsg(error ? error.message : "Confirmation email sent. Check your inbox.");
-    setNewEmail("");
+    setEmailSaving(false);
+    if (error) {
+      setMsg(error.message);
+    } else {
+      setMsg("Confirmation email sent. Check your inbox.");
+      setNewEmail("");
+    }
     setTimeout(() => setMsg(null), 5000);
   }
 
   async function changePassword() {
     if (newPw !== confirmPw) { setMsg("Passwords do not match."); return; }
     if (newPw.length < 8) { setMsg("Password must be at least 8 characters."); return; }
-    setSaving(true);
+    setPwSaving(true);
     const { error } = await supabase.auth.updateUser({ password: newPw });
-    setSaving(false);
+    setPwSaving(false);
     setMsg(error ? error.message : "Password updated.");
     setNewPw(""); setConfirmPw("");
     setTimeout(() => setMsg(null), 4000);
@@ -148,7 +153,7 @@ function SecurityTab() {
         <SettingsInput type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="new@email.com" />
       </Field>
       <div style={{ marginBottom: 32 }}>
-        <SaveBtn onClick={changeEmail} saving={saving} label="Update Email" />
+        <SaveBtn onClick={changeEmail} saving={emailSaving} label="Update Email" />
       </div>
 
       <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 24 }}>
@@ -160,7 +165,7 @@ function SecurityTab() {
           <SettingsInput type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
         </Field>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <SaveBtn onClick={changePassword} saving={saving} label="Update Password" />
+          <SaveBtn onClick={changePassword} saving={pwSaving} label="Update Password" />
           {msg && <span style={{ fontSize: 13, color: msg.includes("updated") || msg.includes("sent") ? C.green : C.red }}>{msg}</span>}
         </div>
       </div>

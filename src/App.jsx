@@ -1418,7 +1418,7 @@ const PAYOUTS = [
   {owner:"Ossington Hospitality",   screen:"SCR-009",amount:98,  status:"scheduled",  date:"2026-04-01"},
 ];
 
-function BillingView({campaigns}) {
+function OperatorBillingView({campaigns}) {
   const [tab,setTab] = useState("overview");
   const [processingId,setProcessing] = useState(null);
   const [payouts,setPayouts] = useState(PAYOUTS);
@@ -1922,7 +1922,7 @@ export default function App() {
     if (active==="analytics")    return <OperatorAnalytics campaigns={campaigns}/>;
     if (active==="audience")     return <AudienceView campaigns={campaigns}/>;
     if (active==="revenue")      return <OperatorRevenue campaigns={campaigns}/>;
-    if (active==="billing")      return <BillingView campaigns={campaigns}/>;
+    if (active==="billing")      return <OperatorBillingView campaigns={campaigns}/>;
     if (active==="advertisers")  return <AdvertisersView onImpersonate={startImpersonation} />;
     if (active==="signals")      return <SignalsView campaigns={campaigns}/>;
     if (active==="integrations") return <IntegrationsView/>;

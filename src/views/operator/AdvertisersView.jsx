@@ -39,8 +39,9 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
 
   async function updateStatus(status) {
     setSaving(true);
-    await supabase.from("profiles").update({ status }).eq("id", adv.id);
+    const { error: statusError } = await supabase.from("profiles").update({ status }).eq("id", adv.id);
     setSaving(false);
+    if (statusError) { alert("Failed to update status."); return; }
     onUpdated({ ...adv, status });
     setModal(null);
   }
@@ -50,8 +51,9 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
     if (isNaN(amount)) return;
     setSaving(true);
     const newCredits = (adv.credits ?? 0) + amount;
-    await supabase.from("profiles").update({ credits: newCredits }).eq("id", adv.id);
+    const { error } = await supabase.from("profiles").update({ credits: newCredits }).eq("id", adv.id);
     setSaving(false);
+    if (error) { alert("Failed to add credits."); return; }
     onUpdated({ ...adv, credits: newCredits });
     setCreditsAmount("");
     setModal(null);
