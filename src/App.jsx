@@ -4,6 +4,7 @@ import { supabase } from "./lib/supabase.js";
 import { C, F, SUPABASE_FUNCTIONS_URL } from "./lib/constants.js";
 import Placeholder from "./components/Placeholder.jsx";
 import ScansView from "./views/advertiser/ScansView.jsx";
+import AdvertisersView from "./views/operator/AdvertisersView.jsx";
 import AdvertiserBillingView from "./views/advertiser/BillingView.jsx";
 import SettingsView from "./views/advertiser/SettingsView.jsx";
 
@@ -1826,6 +1827,17 @@ function AdvCreate({onSave,onCancel}) {
 export default function App() {
   const { user, profile, role, loading, signOut } = useAuth();
   const [active,    setActive]    = useState("overview");
+  const [impersonating, setImpersonating] = useState(null); // { id, name }
+
+  function startImpersonation(adv) {
+    setImpersonating({ id: adv.id, name: adv.name });
+    setActive("adv-overview");
+  }
+
+  function stopImpersonation() {
+    setImpersonating(null);
+    setActive("advertisers");
+  }
   const [campaigns, setCampaigns] = useState([]);
   const [dbScreens, setDbScreens] = useState([]);
   const [detail,    setDetail]    = useState(null);
@@ -1876,7 +1888,8 @@ export default function App() {
 
   if (!user) return <LoginPage />;
 
-  const isAdv = role === 'advertiser';
+  const effectiveRole = impersonating ? "advertiser" : role;
+  const isAdv = effectiveRole === "advertiser";
   const nav   = isAdv ? ADV_NAV : OP_NAV;
   const displayUser = { name: profile?.name || user.email?.split('@')[0] || 'User', email: user.email, role };
 
@@ -1897,7 +1910,7 @@ export default function App() {
       if (active==="adv-create")       return <AdvCreate onSave={c=>{setCampaigns(p=>[c,...p]);setActive("adv-campaigns");}} onCancel={()=>setActive("adv-overview")}/>;
       if (active==="adv-campaigns")    return <OperatorCampaigns campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c=>{setDetail(c);setActive("adv-campaigns");}}/>;
       if (active==="adv-analytics")    return <OperatorAnalytics campaigns={campaigns}/>;
-      if (active==="adv-audience")     return <ScansView impersonatingId={null} />;
+      if (active==="adv-audience")     return <ScansView impersonatingId={impersonating?.id ?? null} />;
       if (active==="adv-billing")      return <AdvertiserBillingView />;
       if (active==="adv-integrations") return <Placeholder title="Integrations" subtitle="Meta, Google, Shopify and more" icon="⇌"/>;
       if (active==="adv-settings")     return <SettingsView />;
@@ -1910,7 +1923,7 @@ export default function App() {
     if (active==="audience")     return <AudienceView campaigns={campaigns}/>;
     if (active==="revenue")      return <OperatorRevenue campaigns={campaigns}/>;
     if (active==="billing")      return <BillingView campaigns={campaigns}/>;
-    if (active==="advertisers")  return <Placeholder title="Advertisers" subtitle="Manage advertiser accounts" icon="◉"/>;
+    if (active==="advertisers")  return <AdvertisersView onImpersonate={startImpersonation} />;
     if (active==="signals")      return <SignalsView campaigns={campaigns}/>;
     if (active==="integrations") return <IntegrationsView/>;
     if (active==="display")      return <DisplayView campaigns={campaigns}/>;
@@ -1919,6 +1932,21 @@ export default function App() {
 
   return (
     <div style={{display:"flex",height:"100vh",background:C.bg,fontFamily:F.sans,overflow:"hidden"}}>
+      {impersonating && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
+          background: C.purple, color: "#fff", padding: "10px 20px",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 16,
+          fontFamily: F.sans, fontSize: 13, fontWeight: 500,
+        }}>
+          <span>👁 Viewing as {impersonating.name}</span>
+          <button onClick={stopImpersonation} style={{
+            padding: "4px 14px", borderRadius: 20, border: "2px solid rgba(255,255,255,0.5)",
+            background: "transparent", color: "#fff", cursor: "pointer",
+            fontFamily: F.sans, fontSize: 12, fontWeight: 600,
+          }}>Exit</button>
+        </div>
+      )}
       <style>{`
         @import url('${FONT}');
         *{box-sizing:border-box;margin:0;padding:0;}
