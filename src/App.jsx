@@ -1014,11 +1014,34 @@ function AdvOverview({user,campaigns,setAdvNav}) {
 // SCREENS VIEW
 // ─────────────────────────────────────────────────────────────────────────────
 
-function ScreensView() {
+function ScreensView({ dbScreens, setDbScreens }) {
+  const { user } = useAuth();
   const [filter, setFilter] = useState("All");
   const [selected, setSelected] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
   const [newScreen, setNewScreen] = useState({name:"",owner:"",type:"Business",city:"Toronto",location:"",status:"pending"});
+
+  async function registerScreen() {
+    const { data, error } = await supabase
+      .from("screens")
+      .insert({
+        name: newScreen.name,
+        owner: newScreen.owner,
+        type: newScreen.type,
+        city: newScreen.city,
+        location: newScreen.location,
+        status: "pending",
+        operator_id: user.id,
+      })
+      .select()
+      .single();
+
+    if (error) { alert("Failed to register screen: " + error.message); return; }
+
+    setDbScreens((prev) => [...(prev ?? []), data]);
+    setNewScreen({ name: "", owner: "", type: "Business", city: "Toronto", location: "", status: "pending" });
+    setShowAdd(false);
+  }
 
   const cities = ["All",...new Set(SCREENS.map(s=>s.city))];
   const shown  = filter==="All" ? SCREENS : SCREENS.filter(s=>s.city===filter);
@@ -1108,7 +1131,7 @@ function ScreensView() {
             </div>
             <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
               <Btn variant="secondary" onClick={()=>setShowAdd(false)}>Cancel</Btn>
-              <Btn onClick={()=>setShowAdd(false)} disabled={!newScreen.name||!newScreen.owner}>Register Screen</Btn>
+              <Btn onClick={registerScreen} disabled={!newScreen.name||!newScreen.owner}>Register Screen</Btn>
             </div>
           </div>
         </div>
@@ -1419,6 +1442,7 @@ const PAYOUTS = [
 ];
 
 function OperatorBillingView({campaigns}) {
+  const { profile } = useAuth();
   const [tab,setTab] = useState("overview");
   const [processingId,setProcessing] = useState(null);
   const [payouts,setPayouts] = useState(PAYOUTS);
@@ -1427,10 +1451,61 @@ function OperatorBillingView({campaigns}) {
   const pending = payouts.filter(p=>p.status==="scheduled").reduce((a,p)=>a+p.amount,0);
   const paid    = payouts.filter(p=>p.status==="transferred").reduce((a,p)=>a+p.amount,0);
 
+  const [realPayouts, setRealPayouts] = useState([]);
+  const [payoutLoading, setPayoutLoading] = useState(false);
+  const [payoutMsg, setPayoutMsg] = useState(null);
+
+  useEffect(() => {
+    supabase
+      .from("payouts")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setRealPayouts(data ?? []));
+  }, []);
+
   const doPayout = (owner) => {
     setProcessing(owner);
     setTimeout(()=>{ setPayouts(prev=>prev.map(p=>p.owner===owner?{...p,status:"transferred"}:p)); setProcessing(null); },1500);
   };
+
+  async function connectAccount() {
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-connect-account`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ returnUrl: window.location.origin }),
+    });
+    if (!res.ok) { alert("Failed to start onboarding."); return; }
+    const { url } = await res.json();
+    window.location.href = url;
+  }
+
+  async function doRealPayout(periodStart, periodEnd) {
+    setPayoutLoading(true);
+    setPayoutMsg(null);
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/trigger-payout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ periodStart, periodEnd }),
+    });
+    setPayoutLoading(false);
+    if (!res.ok) {
+      const err = await res.json();
+      setPayoutMsg({ type: "error", text: err.error ?? "Payout failed." });
+      return;
+    }
+    const result = await res.json();
+    setPayoutMsg({ type: "success", text: `Transferred $${result.amount.toFixed(2)}` });
+    const { data } = await supabase.from("payouts").select("*").order("created_at", { ascending: false });
+    setRealPayouts(data ?? []);
+  }
 
   return (
     <div>
@@ -1490,42 +1565,71 @@ function OperatorBillingView({campaigns}) {
           rows={TRANSACTIONS}/>
       )}
 
-      {tab==="payouts"&&(
+      {tab==="payouts" && (
         <div>
-          <div style={{display:"flex",justifyContent:"flex-end",marginBottom:14}}>
-            <Btn variant="success" size="sm" onClick={()=>payouts.filter(p=>p.status==="scheduled").forEach(p=>doPayout(p.owner))}>Run All Pending Payouts</Btn>
+          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14}}>
+            <div style={{fontSize:13, fontFamily:F.sans, color:C.textSub}}>
+              {realPayouts.length === 0 ? "No payouts yet." : `${realPayouts.length} payout${realPayouts.length === 1 ? "" : "s"}`}
+            </div>
+            <Btn
+              variant="success" size="sm"
+              onClick={() => {
+                const now = new Date();
+                const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+                const end = now.toISOString().slice(0, 10);
+                doRealPayout(start, end);
+              }}
+              disabled={payoutLoading}
+            >
+              {payoutLoading ? "Processing…" : "Run Payout for This Month"}
+            </Btn>
           </div>
+          {payoutMsg && (
+            <div style={{
+              padding:"10px 14px", borderRadius:8, marginBottom:12, fontSize:13, fontFamily:F.sans,
+              background: payoutMsg.type === "success" ? C.greenSoft : C.redSoft,
+              color: payoutMsg.type === "success" ? C.green : C.red,
+              border: `1px solid ${payoutMsg.type === "success" ? C.greenBorder : C.redBorder}`,
+            }}>
+              {payoutMsg.text}
+            </div>
+          )}
           <Table
             columns={[
-              {key:"owner",   label:"Screen Owner"},
-              {key:"screen",  label:"Screen ID",   render:v=><span style={{fontFamily:F.mono,fontSize:11,color:C.textSub}}>{v}</span>},
-              {key:"date",    label:"Date"},
-              {key:"amount",  label:"Amount",      render:v=><span style={{fontWeight:600,color:C.green}}>£{v.toLocaleString()}</span>},
-              {key:"status",  label:"Status",      render:v=><Badge status={v}/>},
-              {key:"owner",   label:"",            render:(v,r)=>r.status==="scheduled"?(
-                <Btn variant="success" size="sm" onClick={()=>doPayout(v)}>
-                  {processingId===v?"Sending…":"Pay Now"}
-                </Btn>
-              ):null},
+              {key:"period_start", label:"Period",      render:(v, r) => `${v} → ${r.period_end}`},
+              {key:"amount",       label:"Amount",      render:v=><span style={{fontWeight:600, color:C.green}}>${(v??0).toFixed(2)}</span>},
+              {key:"status",       label:"Status",      render:v=><Badge status={v}/>},
+              {key:"stripe_transfer_id", label:"Transfer", render:v=>v ? <a href={`https://dashboard.stripe.com/transfers/${v}`} target="_blank" rel="noreferrer" style={{fontSize:11, fontFamily:F.mono, color:C.blue}}>{v.slice(0,12)}…</a> : "—"},
+              {key:"created_at",   label:"Date",        render:v=>new Date(v).toLocaleDateString()},
             ]}
-            rows={payouts}/>
+            rows={realPayouts}
+          />
         </div>
       )}
 
-      {tab==="connect"&&(
+      {tab==="connect" && (
         <div>
-          <div style={{padding:"12px 16px",background:C.blueSoft,border:`1px solid ${C.blueBorder}`,borderRadius:8,marginBottom:16,fontSize:12,color:C.textSub,fontFamily:F.sans}}>
+          <div style={{padding:"12px 16px", background:C.blueSoft, border:`1px solid ${C.blueBorder}`, borderRadius:8, marginBottom:16, fontSize:12, color:C.textSub, fontFamily:F.sans}}>
             Screen owners connect their bank via Stripe Connect. ADGRID never handles their banking details — Stripe transfers funds directly to their account on payout day.
           </div>
-          <Table
-            columns={[
-              {key:"owner",  label:"Screen Owner"},
-              {key:"screen", label:"Screen",     render:v=><span style={{fontFamily:F.mono,fontSize:11}}>{v}</span>},
-              {key:"amount", label:"Pending",    render:v=><span style={{fontWeight:600,color:C.amber}}>£{v.toLocaleString()}</span>},
-              {key:"status", label:"Stripe Status",render:v=><Badge status={v}/>},
-              {key:"owner",  label:"",           render:(_,r)=>r.status==="scheduled"?<Btn variant="ghost" size="sm">Send Onboarding Link</Btn>:<span style={{fontSize:11,color:C.green,fontFamily:F.sans}}>✓ Connected</span>},
-            ]}
-            rows={payouts}/>
+          <div style={{padding:"20px 0"}}>
+            {profile?.connect_status === "active" ? (
+              <div style={{display:"flex", alignItems:"center", gap:12}}>
+                <span style={{fontSize:13, color:C.green, fontFamily:F.sans, fontWeight:600}}>✓ Bank account connected</span>
+                <a
+                  href={`https://dashboard.stripe.com/connect/accounts/${profile?.stripe_connect_account_id}`}
+                  target="_blank" rel="noreferrer"
+                  style={{fontSize:12, color:C.blue}}>View in Stripe ↗</a>
+              </div>
+            ) : profile?.connect_status === "pending" ? (
+              <div style={{display:"flex", alignItems:"center", gap:12}}>
+                <span style={{fontSize:13, color:C.amber, fontFamily:F.sans}}>⏳ Onboarding incomplete</span>
+                <Btn variant="ghost" size="sm" onClick={connectAccount}>Complete Setup →</Btn>
+              </div>
+            ) : (
+              <Btn variant="stripe" onClick={connectAccount}>Connect Bank Account</Btn>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -1880,6 +1984,22 @@ export default function App() {
     }
   }, [user, role, loadData]);
 
+  useEffect(() => {
+    if (!user) return;
+    // Handle Stripe Connect redirect
+    const params = new URLSearchParams(window.location.search);
+    const connectResult = params.get("connect");
+    if (connectResult === "success") {
+      supabase
+        .from("profiles")
+        .update({ connect_status: "active" })
+        .eq("id", user.id)
+        .then(() => {
+          window.history.replaceState({}, "", window.location.pathname);
+        });
+    }
+  }, [user]);
+
   if (loading) return (
     <div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
       <div style={{fontSize:13,color:C.textSub,fontFamily:"system-ui,sans-serif"}}>Loading…</div>
@@ -1917,7 +2037,7 @@ export default function App() {
       return <AdvOverview user={displayUser} campaigns={campaigns} setAdvNav={setActive}/>;
     }
     if (active==="overview")     return <OperatorOverview campaigns={campaigns} setNav={setActive}/>;
-    if (active==="screens")      return <ScreensView/>;
+    if (active==="screens")      return <ScreensView dbScreens={dbScreens} setDbScreens={setDbScreens}/>;
     if (active==="campaigns")    return <OperatorCampaigns campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c=>{setDetail(c);}}/>;
     if (active==="analytics")    return <OperatorAnalytics campaigns={campaigns}/>;
     if (active==="audience")     return <AudienceView campaigns={campaigns}/>;
