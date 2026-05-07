@@ -7,6 +7,7 @@ import ScansView from "./views/advertiser/ScansView.jsx";
 import AdvertisersView from "./views/operator/AdvertisersView.jsx";
 import AdvertiserBillingView from "./views/advertiser/BillingView.jsx";
 import SettingsView from "./views/advertiser/SettingsView.jsx";
+import AdvIntegrationsView from "./views/advertiser/AdvIntegrationsView.jsx";
 import NotificationBell from "./components/NotificationBell.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2059,7 +2060,7 @@ export default function App() {
       if (active==="adv-analytics")    return <OperatorAnalytics campaigns={campaigns}/>;
       if (active==="adv-audience")     return <ScansView impersonatingId={impersonating?.id ?? null} />;
       if (active==="adv-billing")      return <AdvertiserBillingView />;
-      if (active==="adv-integrations") return <Placeholder title="Integrations" subtitle="Meta, Google, Shopify and more" icon="⇌"/>;
+      if (active==="adv-integrations") return <AdvIntegrationsView />;
       if (active==="adv-settings")     return <SettingsView />;
       return <AdvOverview user={displayUser} campaigns={campaigns} setAdvNav={setActive}/>;
     }

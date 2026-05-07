@@ -18,13 +18,12 @@
       "mcp__e1184fa8-44e6-4f6a-aa13-cfe76921cf87__execute_sql",
       "Bash(npm install *)",
       "mcp__f1dafd1b-c0df-41bb-99a9-68406bf5b64b__deploy_to_vercel",
-      "Bash(npm run *)",
-      "Bash(git add *)",
-      "Bash(git commit -m ' *)",
-      "Bash(npx supabase *)",
-      "Bash(git commit *)",
-      "Bash(gh pr create --title 'Phase 3: QR scan tracking, advertiser self-serve, operator advertiser management' --body ' *)",
-      "Bash(git push *)"
+      "Bash(git merge *)",
+      "Bash(git stash *)",
+      "mcp__e1184fa8-44e6-4f6a-aa13-cfe76921cf87__deploy_edge_function",
+      "Bash(npx kill-port *)",
+      "Read(//c/Users/corpo/adgrid/**)",
+      "Bash(git add *)"
     ]
   }
 }

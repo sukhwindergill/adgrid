@@ -36,7 +36,7 @@ Deno.serve(async (req: Request) => {
   const city = req.headers.get("cf-ipcountry") ?? null;
 
   // Insert scan record (awaited to ensure data is not lost)
-  await supabase.from("scans").insert({
+  const { data: scanRow } = await supabase.from("scans").insert({
     campaign_id: campaignId,
     screen_id,
     advertiser_id,
@@ -45,7 +45,25 @@ Deno.serve(async (req: Request) => {
     utm_source: "adgrid",
     utm_medium: "ooh",
     utm_campaign: campaignId,
-  });
+  }).select("id").single();
+
+  // Fire integrations non-blocking — must not delay redirect
+  if (scanRow?.id) {
+    fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/fire-integration`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${Deno.env.get("INTERNAL_NOTIFICATION_SECRET")}`,
+      },
+      body: JSON.stringify({
+        scan_id: scanRow.id,
+        advertiser_id,
+        campaign_id: campaignId,
+        email: null,
+        consent: false,
+      }),
+    }).catch(() => {});
+  }
 
   // Build destination URL with UTM params
   const dest = new URL(destination_url);
