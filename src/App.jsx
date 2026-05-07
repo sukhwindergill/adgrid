@@ -1043,8 +1043,8 @@ function ScreensView({ dbScreens, setDbScreens }) {
     setShowAdd(false);
   }
 
-  const cities = ["All",...new Set(SCREENS.map(s=>s.city))];
-  const shown  = filter==="All" ? SCREENS : SCREENS.filter(s=>s.city===filter);
+  const cities = ["All",...new Set((dbScreens ?? []).map(s=>s.city))];
+  const shown  = filter==="All" ? (dbScreens ?? []) : (dbScreens ?? []).filter(s=>s.city===filter);
 
   const BLOCKED_OPTS = ["Alcohol","Gambling","Political","Adult Content","Competitors"];
 
