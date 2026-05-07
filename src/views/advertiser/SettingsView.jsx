@@ -175,7 +175,13 @@ function SecurityTab() {
 
 function NotificationsTab({ profile }) {
   const [prefs, setPrefs] = useState(
-    profile?.notification_prefs ?? { campaign_approved: true, low_budget: true, weekly_report: true }
+    profile?.notification_prefs ?? {
+      campaign_approved: true, campaign_live: true, campaign_paused: true,
+      low_budget: true, campaign_ended: true, scan_milestone: true,
+      weekly_report: true, payment_failed: true, new_advertiser: true,
+      campaign_submitted: true, payout_completed: true, weekly_revenue: true,
+      team_member_joined: true, account_suspended: true,
+    }
   );
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -196,9 +202,20 @@ function NotificationsTab({ profile }) {
   }
 
   const items = [
-    { key: "campaign_approved", label: "Campaign approved", desc: "When a new campaign is approved by the operator" },
-    { key: "low_budget", label: "Low budget alert", desc: "When a campaign has less than 20% of budget remaining" },
-    { key: "weekly_report", label: "Weekly performance report", desc: "Summary of scans, spend, and top campaigns" },
+    { key: "campaign_approved",  label: "Campaign approved",         desc: "When your campaign is approved by the operator" },
+    { key: "campaign_live",      label: "Campaign live",             desc: "When your campaign goes live on a screen" },
+    { key: "campaign_paused",    label: "Campaign paused",           desc: "When your campaign is paused due to low budget" },
+    { key: "low_budget",         label: "Low budget alert",          desc: "When a campaign has less than 20% of its run remaining" },
+    { key: "campaign_ended",     label: "Campaign ended",            desc: "When a campaign completes its scheduled run" },
+    { key: "scan_milestone",     label: "Scan milestones",           desc: "When a campaign hits 100, 500, 1k, or 5k QR scans" },
+    { key: "weekly_report",      label: "Weekly performance report", desc: "Summary of scans, spend, and active campaigns every Monday" },
+    { key: "payment_failed",     label: "Payment failed",            desc: "When a payment for your account fails" },
+    { key: "new_advertiser",     label: "New advertiser joined",     desc: "When a new advertiser signs up (operators only)" },
+    { key: "campaign_submitted", label: "Campaign submitted",        desc: "When an advertiser submits a campaign for approval (operators only)" },
+    { key: "payout_completed",   label: "Payout completed",         desc: "When a payout is transferred to your bank (operators only)" },
+    { key: "weekly_revenue",     label: "Weekly revenue summary",    desc: "Weekly revenue across your screen network (operators only)" },
+    { key: "team_member_joined", label: "Team member joined",        desc: "When someone accepts your team invite" },
+    { key: "account_suspended",  label: "Account suspended",         desc: "If your account is suspended by an operator" },
   ];
 
   return (
