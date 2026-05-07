@@ -6,7 +6,7 @@ const supabase = createClient(
 );
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
-const FROM_EMAIL = "notifications@adgrid.io";
+const FROM_EMAIL = "onboarding@resend.dev";
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_NOTIFICATION_SECRET") ?? "";
 
 const TEMPLATES: Record<string, (data: Record<string, string>) => { title: string; body: string; html: string }> = {
