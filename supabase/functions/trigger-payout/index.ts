@@ -1,0 +1,119 @@
+import Stripe from "https://esm.sh/stripe@14?target=deno";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
+  apiVersion: "2023-10-16",
+  httpClient: Stripe.createFetchHttpClient(),
+});
+
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+);
+
+Deno.serve(async (req: Request) => {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) return new Response("Unauthorized", { status: 401 });
+
+  const token = authHeader.replace("Bearer ", "");
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) return new Response("Unauthorized", { status: 401 });
+
+  const { periodStart, periodEnd } = await req.json();
+  if (!periodStart || !periodEnd) {
+    return new Response("Missing periodStart or periodEnd", { status: 400 });
+  }
+
+  // Get operator profile
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("stripe_connect_account_id, connect_status, owner_revenue_share")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.stripe_connect_account_id || profile.connect_status !== "active") {
+    return new Response(
+      JSON.stringify({ error: "Stripe Connect account not active" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  // Check for existing payout in this period (prevent double-pay)
+  const { data: existingPayout } = await supabase
+    .from("payouts")
+    .select("id")
+    .eq("operator_id", user.id)
+    .eq("period_start", periodStart)
+    .eq("period_end", periodEnd)
+    .eq("status", "transferred")
+    .maybeSingle();
+
+  if (existingPayout) {
+    return new Response(
+      JSON.stringify({ error: "Payout already exists for this period" }),
+      { status: 409, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  // Get operator's screens
+  const { data: operatorScreens } = await supabase
+    .from("screens")
+    .select("id")
+    .eq("operator_id", user.id);
+
+  const screenIds = (operatorScreens ?? []).map((s: { id: string }) => s.id);
+
+  if (screenIds.length === 0) {
+    return new Response(
+      JSON.stringify({ error: "No screens found for this operator" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  // Sum campaign budgets on operator's screens within period
+  const { data: campaigns } = await supabase
+    .from("bookings")
+    .select("budget")
+    .in("screen_id", screenIds)
+    .gte("start_date", periodStart)
+    .lte("end_date", periodEnd);
+
+  const totalBudget = (campaigns ?? []).reduce(
+    (sum: number, c: { budget: number }) => sum + (c.budget ?? 0),
+    0
+  );
+
+  const revenueShare = profile.owner_revenue_share ?? 0.40;
+  const payoutAmount = Math.round(totalBudget * revenueShare * 100); // cents
+
+  if (payoutAmount <= 0) {
+    return new Response(
+      JSON.stringify({ error: "Nothing to pay out for this period" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  // Create Stripe Transfer
+  const transfer = await stripe.transfers.create({
+    amount: payoutAmount,
+    currency: "usd",
+    destination: profile.stripe_connect_account_id,
+    metadata: { operator_id: user.id, period_start: periodStart, period_end: periodEnd },
+  });
+
+  // Log payout
+  await supabase.from("payouts").insert({
+    operator_id: user.id,
+    amount: payoutAmount / 100,
+    currency: "usd",
+    stripe_transfer_id: transfer.id,
+    status: "transferred",
+    period_start: periodStart,
+    period_end: periodEnd,
+  });
+
+  return new Response(
+    JSON.stringify({ ok: true, transferId: transfer.id, amount: payoutAmount / 100 }),
+    { headers: { "Content-Type": "application/json" } }
+  );
+});
