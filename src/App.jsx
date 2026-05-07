@@ -7,6 +7,7 @@ import ScansView from "./views/advertiser/ScansView.jsx";
 import AdvertisersView from "./views/operator/AdvertisersView.jsx";
 import AdvertiserBillingView from "./views/advertiser/BillingView.jsx";
 import SettingsView from "./views/advertiser/SettingsView.jsx";
+import NotificationBell from "./components/NotificationBell.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ADGRID PLATFORM — Clean marketing-platform UI
@@ -1442,7 +1443,7 @@ const PAYOUTS = [
 ];
 
 function OperatorBillingView({campaigns}) {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const [tab,setTab] = useState("overview");
   const [processingId,setProcessing] = useState(null);
   const [payouts,setPayouts] = useState(PAYOUTS);
@@ -1500,6 +1501,12 @@ function OperatorBillingView({campaigns}) {
     }
     const result = await res.json();
     setPayoutMsg({ type: "success", text: `Transferred $${result.amount != null ? result.amount.toFixed(2) : "—"}` });
+    if (user) {
+      callNotification(user.id, "payout_completed", {
+        amount: result.amount != null ? result.amount.toFixed(2) : "—",
+        appUrl: "",
+      });
+    }
     const { data } = await supabase.from("payouts").select("*").order("created_at", { ascending: false });
     setRealPayouts(data ?? []);
   }
@@ -1926,6 +1933,19 @@ function AdvCreate({onSave,onCancel}) {
   );
 }
 
+async function callNotification(userId, type, data = {}) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+  fetch(`${SUPABASE_FUNCTIONS_URL}/send-notification`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ userId, type, data }),
+  }).catch((e) => console.error("Notification error:", e));
+}
+
 export default function App() {
   const { user, profile, role, loading, signOut } = useAuth();
   const [active,    setActive]    = useState("overview");
@@ -2015,6 +2035,12 @@ export default function App() {
   const updateCampaign = updated => {
     setCampaigns(prev => prev.map(c => c.id === updated.id ? updated : c));
     setDetail(updated);
+    if (updated.status === "active" && updated.advertiser_id) {
+      callNotification(updated.advertiser_id, "campaign_approved", {
+        campaignName: updated.advertiser_name ?? updated.advertiser ?? "",
+        appUrl: "",
+      });
+    }
   };
 
   const liveCount = dbScreens.filter(s => s.status === 'live').length || SCREENS.filter(s => s.status === 'live').length;
@@ -2026,7 +2052,7 @@ export default function App() {
     }
     if (isAdv) {
       if (active==="adv-overview")     return <AdvOverview user={displayUser} campaigns={campaigns} setAdvNav={setActive}/>;
-      if (active==="adv-create")       return <AdvCreate onSave={c=>{setCampaigns(p=>[c,...p]);setActive("adv-campaigns");}} onCancel={()=>setActive("adv-overview")}/>;
+      if (active==="adv-create")       return <AdvCreate onSave={c=>{setCampaigns(p=>[c,...p]);setActive("adv-campaigns");supabase.from("profiles").select("id").eq("role","operator").then(({data:ops})=>{(ops??[]).forEach(op=>{callNotification(op.id,"campaign_submitted",{advertiserName:profile?.name??user?.user_metadata?.name??"An advertiser",appUrl:""});});});}} onCancel={()=>setActive("adv-overview")}/>;
       if (active==="adv-campaigns")    return <OperatorCampaigns campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c=>{setDetail(c);setActive("adv-campaigns");}}/>;
       if (active==="adv-analytics")    return <OperatorAnalytics campaigns={campaigns}/>;
       if (active==="adv-audience")     return <ScansView impersonatingId={impersonating?.id ?? null} />;
@@ -2089,6 +2115,7 @@ export default function App() {
               <Dot status="live"/>
               <span style={{fontSize:11,fontWeight:500,color:C.green,fontFamily:F.sans}}>{liveCount} screens live</span>
             </div>
+            <NotificationBell />
             <div style={{width:30,height:30,borderRadius:"50%",background:C.blueSoft,border:`1px solid ${C.blueBorder}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:600,color:C.blue,cursor:"pointer"}}>
               {(displayUser.name||"U")[0].toUpperCase()}
             </div>
