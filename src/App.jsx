@@ -1463,13 +1463,9 @@ function OperatorBillingView({campaigns}) {
       .then(({ data }) => setRealPayouts(data ?? []));
   }, []);
 
-  const doPayout = (owner) => {
-    setProcessing(owner);
-    setTimeout(()=>{ setPayouts(prev=>prev.map(p=>p.owner===owner?{...p,status:"transferred"}:p)); setProcessing(null); },1500);
-  };
-
   async function connectAccount() {
     const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { alert("Not authenticated."); return; }
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-connect-account`, {
       method: "POST",
       headers: {
@@ -1487,6 +1483,7 @@ function OperatorBillingView({campaigns}) {
     setPayoutLoading(true);
     setPayoutMsg(null);
     const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setPayoutMsg({ type: "error", text: "Not authenticated." }); setPayoutLoading(false); return; }
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/trigger-payout`, {
       method: "POST",
       headers: {
@@ -1616,10 +1613,11 @@ function OperatorBillingView({campaigns}) {
             {profile?.connect_status === "active" ? (
               <div style={{display:"flex", alignItems:"center", gap:12}}>
                 <span style={{fontSize:13, color:C.green, fontFamily:F.sans, fontWeight:600}}>✓ Bank account connected</span>
-                <a
-                  href={`https://dashboard.stripe.com/connect/accounts/${profile?.stripe_connect_account_id}`}
-                  target="_blank" rel="noreferrer"
-                  style={{fontSize:12, color:C.blue}}>View in Stripe ↗</a>
+                {profile?.stripe_connect_account_id && (
+                  <a href={`https://dashboard.stripe.com/connect/accounts/${profile.stripe_connect_account_id}`}
+                     target="_blank" rel="noreferrer"
+                     style={{fontSize:12, color:C.blue}}>View in Stripe ↗</a>
+                )}
               </div>
             ) : profile?.connect_status === "pending" ? (
               <div style={{display:"flex", alignItems:"center", gap:12}}>
@@ -1995,7 +1993,7 @@ export default function App() {
         .update({ connect_status: "active" })
         .eq("id", user.id)
         .then(() => {
-          window.history.replaceState({}, "", window.location.pathname);
+          window.location.replace(window.location.pathname);
         });
     }
   }, [user]);
