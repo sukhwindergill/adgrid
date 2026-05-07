@@ -1499,7 +1499,7 @@ function OperatorBillingView({campaigns}) {
       return;
     }
     const result = await res.json();
-    setPayoutMsg({ type: "success", text: `Transferred $${result.amount.toFixed(2)}` });
+    setPayoutMsg({ type: "success", text: `Transferred $${result.amount != null ? result.amount.toFixed(2) : "—"}` });
     const { data } = await supabase.from("payouts").select("*").order("created_at", { ascending: false });
     setRealPayouts(data ?? []);
   }
@@ -1992,7 +1992,8 @@ export default function App() {
         .from("profiles")
         .update({ connect_status: "active" })
         .eq("id", user.id)
-        .then(() => {
+        .then(({ error }) => {
+          if (error) console.error("Failed to update connect status:", error.message);
           window.location.replace(window.location.pathname);
         });
     }
