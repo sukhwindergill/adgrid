@@ -2035,7 +2035,9 @@ export default function App() {
   const updateCampaign = updated => {
     setCampaigns(prev => prev.map(c => c.id === updated.id ? updated : c));
     setDetail(updated);
-    if (updated.status === "active" && updated.advertiser_id) {
+    // Before firing the notification, check previous status
+    const prevCampaign = campaigns.find((c) => c.id === updated.id);
+    if (updated.status === "active" && prevCampaign?.status !== "active" && updated.advertiser_id) {
       callNotification(updated.advertiser_id, "campaign_approved", {
         campaignName: updated.advertiser_name ?? updated.advertiser ?? "",
         appUrl: "",
