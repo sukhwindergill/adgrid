@@ -10,6 +10,8 @@ import { Tabs } from '../../components/primitives/Tabs.jsx';
 
 export function CampaignDetail({ campaign, onBack, onUpdate }) {
   const [tab, setTab] = useState('overview');
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
   const c = campaign;
   const pct      = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
   const daysLeft = Math.max(0, Math.round((new Date(c.end) - new Date()) / (1000 * 60 * 60 * 24)));
@@ -25,6 +27,39 @@ export function CampaignDetail({ campaign, onBack, onUpdate }) {
   const statusAction = (s) => {
     if (s === 'active') return <Btn variant="danger" size="sm" onClick={() => onUpdate({ ...c, status: 'paused' })}>⏸ Pause</Btn>;
     if (s === 'paused') return <Btn variant="success" size="sm" onClick={() => onUpdate({ ...c, status: 'active' })}>▶ Resume</Btn>;
+    if (s === 'pending_review') return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {rejecting ? (
+          <>
+            <input
+              autoFocus
+              value={rejectReason}
+              onChange={e => setRejectReason(e.target.value)}
+              placeholder="Reason for rejection…"
+              style={{
+                padding: '5px 10px', borderRadius: 6, border: `1px solid ${C.border}`,
+                fontFamily: F.sans, fontSize: 12, width: 220, outline: 'none',
+              }}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && rejectReason.trim()) {
+                  onUpdate({ ...c, status: 'rejected', rejectReason: rejectReason.trim() });
+                }
+                if (e.key === 'Escape') { setRejecting(false); setRejectReason(''); }
+              }}
+            />
+            <Btn variant="danger" size="sm" onClick={() => {
+              if (rejectReason.trim()) onUpdate({ ...c, status: 'rejected', rejectReason: rejectReason.trim() });
+            }}>Confirm Reject</Btn>
+            <Btn variant="secondary" size="sm" onClick={() => { setRejecting(false); setRejectReason(''); }}>Cancel</Btn>
+          </>
+        ) : (
+          <>
+            <Btn variant="success" size="sm" onClick={() => onUpdate({ ...c, status: 'scheduled' })}>✓ Approve</Btn>
+            <Btn variant="danger" size="sm" onClick={() => setRejecting(true)}>✗ Reject</Btn>
+          </>
+        )}
+      </div>
+    );
     return null;
   };
 
@@ -37,6 +72,21 @@ export function CampaignDetail({ campaign, onBack, onUpdate }) {
         actions={<>{statusAction(c.status)}<Btn variant="secondary" size="sm">✏ Edit</Btn></>}
       />
 
+      {c.status === 'pending_review' && (
+        <div style={{ background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, fontFamily: F.sans }}>
+          <span style={{ fontSize: 16 }}>⏳</span>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.amber }}>Awaiting Review</div>
+            <div style={{ fontSize: 12, color: C.textSub, marginTop: 1 }}>Review the creative and schedule below, then approve or reject.</div>
+          </div>
+        </div>
+      )}
+      {c.status === 'rejected' && c.rejectReason && (
+        <div style={{ background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontFamily: F.sans }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: C.red, marginBottom: 2 }}>Rejected</div>
+          <div style={{ fontSize: 12, color: C.textSub }}>{c.rejectReason}</div>
+        </div>
+      )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12, marginBottom: 24 }}>
         <KPI label="Budget Spent"   value={`£${c.spent.toLocaleString()}`}        sub={`of £${c.budget.toLocaleString()} (${pct}%)`} color={pct > 90 ? C.red : pct > 70 ? C.amber : C.text} />
         <KPI label="Impressions"    value={`${(c.impressions / 1000).toFixed(1)}K`} sub="verified plays" />

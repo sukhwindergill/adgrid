@@ -184,7 +184,7 @@ export function Campaigns({ campaigns, setCampaigns, setDetail }) {
       {showNew && <NewCampaignModal onClose={() => setShowNew(false)} onSave={c => { setCampaigns(prev => [...prev, c]); setShowNew(false); }} />}
 
       <PageHeader title="Campaigns"
-        subtitle={`${campaigns.filter(c => c.status === 'active').length} active · ${campaigns.filter(c => c.status === 'scheduled').length} scheduled · ${campaigns.filter(c => c.status === 'paused').length} paused`}
+        subtitle={`${campaigns.filter(c => c.status === 'active').length} active · ${campaigns.filter(c => c.status === 'scheduled').length} scheduled · ${campaigns.filter(c => c.status === 'pending_review').length} pending review · ${campaigns.filter(c => c.status === 'paused').length} paused`}
         actions={<><Btn variant="secondary" size="sm">↓ Export CSV</Btn><Btn onClick={() => setShowNew(true)}>+ New Campaign</Btn></>} />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
@@ -196,7 +196,7 @@ export function Campaigns({ campaigns, setCampaigns, setDetail }) {
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ display: 'flex', gap: 4 }}>
-          {[['all', 'All'], ['active', 'Active'], ['scheduled', 'Scheduled'], ['paused', 'Paused'], ['completed', 'Completed']].map(([v, l]) => (
+          {[['all', 'All'], ['active', 'Active'], ['scheduled', 'Scheduled'], ['pending_review', 'Pending Review'], ['paused', 'Paused'], ['completed', 'Completed']].map(([v, l]) => (
             <button key={v} onClick={() => setFilter(v)} style={{
               padding: '6px 14px', borderRadius: 20,
               border: `1px solid ${filter === v ? C.purple : C.border}`,
@@ -223,15 +223,24 @@ export function Campaigns({ campaigns, setCampaigns, setDetail }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {shown.map(c => {
             const pct = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
+            const isPending = c.status === 'pending_review';
             return (
-              <div key={c.id} onClick={() => setDetail(c)}
-                style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: '16px 20px', cursor: 'pointer', transition: 'all 0.15s' }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = C.purpleBorder; e.currentTarget.style.boxShadow = '0 4px 12px rgba(124,58,237,0.08)'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.boxShadow = 'none'; }}
+              <div key={c.id}
+                onClick={e => { if (!e.defaultPrevented) setDetail(c); }}
+                style={{
+                  background: isPending ? C.amberSoft : C.surface,
+                  border: `1px solid ${isPending ? C.amberBorder : C.border}`,
+                  borderRadius: 12, padding: '16px 20px', cursor: 'pointer', transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = isPending ? C.amber : C.purpleBorder; e.currentTarget.style.boxShadow = '0 4px 12px rgba(124,58,237,0.08)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = isPending ? C.amberBorder : C.border; e.currentTarget.style.boxShadow = 'none'; }}
               >
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 180px 120px 80px 80px auto', gap: 16, alignItems: 'center' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 180px 120px 80px 110px 110px', gap: 16, alignItems: 'start' }}>
                   <div>
-                    <div style={{ fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{c.advertiser}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                      <div style={{ fontWeight: 600, color: C.text, fontFamily: F.sans }}>{c.advertiser}</div>
+                      {isPending && <span style={{ fontSize: 10, background: C.amber, color: '#fff', padding: '1px 6px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>REVIEW</span>}
+                    </div>
                     <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.category} · {c.screen} · {c.city}</div>
                   </div>
                   <div>
@@ -251,7 +260,14 @@ export function Campaigns({ campaigns, setCampaigns, setDetail }) {
                     <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>scans</div>
                   </div>
                   <div style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub, whiteSpace: 'nowrap' }}>{c.start} →<br />{c.end}</div>
-                  <Badge status={c.status} />
+                  {isPending ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }} onClick={e => e.preventDefault()}>
+                      <Btn variant="success" size="sm" onClick={e => { e.preventDefault(); e.stopPropagation(); setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: 'scheduled' } : x)); }}>✓ Approve</Btn>
+                      <Btn variant="danger"  size="sm" onClick={e => { e.preventDefault(); e.stopPropagation(); setDetail(c); }}>✗ Reject…</Btn>
+                    </div>
+                  ) : (
+                    <Badge status={c.status} />
+                  )}
                 </div>
               </div>
             );
