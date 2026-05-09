@@ -72,7 +72,14 @@ export function CreateCampaign({ onSave, onCancel }) {
     if (!form.advertiser.trim()) e.advertiser = 'Required';
     if (!form.start) e.start = 'Required';
     if (!form.end)   e.end   = 'Required';
-    if (!form.destination.includes('.')) e.destination = 'Enter a valid URL';
+    try {
+      const url = new URL(
+        form.destination.startsWith('http') ? form.destination : `https://${form.destination}`
+      );
+      if (!url.hostname.includes('.')) throw new Error('invalid');
+    } catch {
+      e.destination = 'Enter a valid URL (e.g. https://example.com)';
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -86,7 +93,7 @@ export function CreateCampaign({ onSave, onCancel }) {
       ...form, screenId,
       screen: screen?.name || '',
       city: screen?.city || '',
-      spent: 0, impressions: 0, scans: 0, status: 'scheduled',
+      spent: 0, impressions: 0, scans: 0, status: 'pending_review',
     });
   };
 
