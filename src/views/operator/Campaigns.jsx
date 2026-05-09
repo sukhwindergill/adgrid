@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { supabase } from '../../lib/supabase.js';
 import { C, F } from '../../design/tokens.js';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
@@ -34,14 +35,40 @@ function NewCampaignModal({ onClose, onSave }) {
     return Object.keys(e).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) return;
-    onSave({
+    const { data: row, error } = await supabase.from('bookings').insert({
+      advertiser_name: form.advertiser,
+      screen_name:     screen?.name || '',
+      start_date:      form.start,
+      end_date:        form.end,
+      schedule_days:   form.days,
+      time_start:      form.timeStart,
+      time_end:        form.timeEnd,
+      budget:          form.budget,
+      impressions:     estImpr,
+      accent_color:    form.color,
+      destination_url: form.destination,
+      status:          'scheduled',
+      category:        form.category,
+      headline:        form.headline,
+      cta:             form.cta,
+      slots:           form.slots,
+      duration:        form.duration,
+    }).select().single();
+    const saved = row ?? {
       id: `BK-${String(Date.now()).slice(-4)}`,
       ...form,
       screen: screen?.name || '',
       city: screen?.city || '',
-      spent: 0, impressions: 0, scans: 0, status: 'scheduled',
+      spent: 0, impressions: estImpr, scans: 0, status: 'scheduled',
+    };
+    onSave({ ...form, ...saved, screen: screen?.name || '', city: screen?.city || '', spent: 0, scans: 0,
+      advertiser: saved.advertiser_name ?? form.advertiser,
+      start: saved.start_date ?? form.start, end: saved.end_date ?? form.end,
+      days: saved.schedule_days ?? form.days, timeStart: saved.time_start ?? form.timeStart,
+      timeEnd: saved.time_end ?? form.timeEnd, color: saved.accent_color ?? form.color,
+      destination: saved.destination_url ?? form.destination,
     });
   };
 
@@ -174,6 +201,22 @@ export function Campaigns({ campaigns, setCampaigns, setDetail }) {
   const [showNew, setShowNew] = useState(false);
   const { isMobile } = useBreakpoint();
 
+  function exportCSV(rows) {
+    const headers = ['ID', 'Advertiser', 'Screen', 'City', 'Status', 'Budget', 'Start', 'End', 'Impressions', 'Scans'];
+    const escape = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const lines = rows.map(c => [
+      c.id, c.advertiser, c.screen, c.city, c.status,
+      c.budget, c.start, c.end, c.impressions ?? 0, c.scans ?? 0,
+    ].map(escape).join(','));
+    const csv = [headers.join(','), ...lines].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `adgrid-campaigns-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
   const cities = ['All', ...new Set(campaigns.map(c => c.city))];
   const shown  = campaigns
     .filter(c => filter === 'all' || c.status === filter)
@@ -185,7 +228,7 @@ export function Campaigns({ campaigns, setCampaigns, setDetail }) {
 
       <PageHeader title="Campaigns"
         subtitle={`${campaigns.filter(c => c.status === 'active').length} active · ${campaigns.filter(c => c.status === 'scheduled').length} scheduled · ${campaigns.filter(c => c.status === 'pending_review').length} pending review · ${campaigns.filter(c => c.status === 'paused').length} paused`}
-        actions={<><Btn variant="secondary" size="sm">↓ Export CSV</Btn><Btn onClick={() => setShowNew(true)}>+ New Campaign</Btn></>} />
+        actions={<><Btn variant="secondary" size="sm" onClick={() => exportCSV(shown)}>↓ Export CSV</Btn><Btn onClick={() => setShowNew(true)}>+ New Campaign</Btn></>} />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
         <KPI label="Total Campaigns" value={campaigns.length} />
@@ -262,7 +305,16 @@ export function Campaigns({ campaigns, setCampaigns, setDetail }) {
                   <div style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub, whiteSpace: 'nowrap' }}>{c.start} →<br />{c.end}</div>
                   {isPending ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }} onClick={e => e.preventDefault()}>
-                      <Btn variant="success" size="sm" onClick={e => { e.preventDefault(); e.stopPropagation(); setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: 'scheduled' } : x)); }}>✓ Approve</Btn>
+                      <Btn variant="success" size="sm" onClick={async e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const { error } = await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', c.id);
+                        if (error) {
+                          alert(`Failed to approve campaign: ${error.message}`);
+                          return;
+                        }
+                        setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: 'scheduled' } : x));
+                      }}>✓ Approve</Btn>
                       <Btn variant="danger"  size="sm" onClick={e => { e.preventDefault(); e.stopPropagation(); setDetail(c); }}>✗ Reject…</Btn>
                     </div>
                   ) : (
