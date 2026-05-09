@@ -20,28 +20,31 @@ function Badge({ status }) {
 }
 
 export default function BillingView() {
-  const [data, setData] = useState({ invoices: [], paymentMethods: [] });
+  const [data, setData] = useState({ invoices: [], paymentMethods: [], portalUrl: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    async function load() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+  async function load() {
+    setLoading(true);
+    setError(null);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
 
-      const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/stripe-billing`, {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/stripe-billing`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
 
-      if (!res.ok) {
-        setError("Failed to load billing data.");
-        setLoading(false);
-        return;
-      }
-
-      setData(await res.json());
+    if (!res.ok) {
+      setError("Failed to load billing data.");
       setLoading(false);
+      return;
     }
+
+    setData(await res.json());
+    setLoading(false);
+  }
+
+  useEffect(() => {
     load();
   }, []);
 
@@ -50,7 +53,18 @@ export default function BillingView() {
   );
 
   if (error) return (
-    <div style={{ padding: 40, fontFamily: F.sans, color: C.red }}>{error}</div>
+    <div style={{ padding: 40, fontFamily: F.sans }}>
+      <div style={{ color: C.red, marginBottom: 12 }}>{error}</div>
+      <button
+        onClick={() => load()}
+        style={{
+          padding: '7px 16px', borderRadius: 8, border: 'none',
+          background: C.purple, color: '#fff', fontSize: 13, cursor: 'pointer',
+        }}
+      >
+        Retry
+      </button>
+    </div>
   );
 
   return (
@@ -86,18 +100,24 @@ export default function BillingView() {
           </div>
         )}
         <div style={{ marginTop: 16 }}>
-          <a
-            href="https://billing.stripe.com/p/login/test_placeholder"
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              display: "inline-block", padding: "8px 18px", borderRadius: 8,
-              background: C.blue, color: "#fff", fontSize: 13, fontWeight: 500,
-              textDecoration: "none",
-            }}
-          >
-            Manage Payment Methods →
-          </a>
+          {data.portalUrl ? (
+            <a
+              href={data.portalUrl}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: "inline-block", padding: "8px 18px", borderRadius: 8,
+                background: C.blue, color: "#fff", fontSize: 13, fontWeight: 500,
+                textDecoration: "none",
+              }}
+            >
+              Manage Payment Methods →
+            </a>
+          ) : (
+            <div style={{ fontSize: 13, color: C.textMuted, marginTop: 4 }}>
+              Payment portal not configured.
+            </div>
+          )}
         </div>
       </div>
 
