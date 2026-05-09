@@ -7,11 +7,14 @@ import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
+import { supabase } from '../../lib/supabase.js';
 
 export function CampaignDetail({ campaign, onBack, onUpdate }) {
   const [tab, setTab] = useState('overview');
   const [rejecting, setRejecting] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ budget: campaign.budget, start: campaign.start, end: campaign.end });
   const c = campaign;
   const pct      = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
   const daysLeft = Math.max(0, Math.round((new Date(c.end) - new Date()) / (1000 * 60 * 60 * 24)));
@@ -69,7 +72,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate }) {
         title={c.advertiser}
         subtitle={`${c.screen} · ${c.city} · ${c.category}`}
         back="All Campaigns" onBack={onBack}
-        actions={<>{statusAction(c.status)}<Btn variant="secondary" size="sm">✏ Edit</Btn></>}
+        actions={<>{statusAction(c.status)}<Btn variant="secondary" size="sm" onClick={() => { setEditForm({ budget: c.budget, start: c.start, end: c.end }); setEditing(true); }}>✏ Edit</Btn></>}
       />
 
       {c.status === 'pending_review' && (
@@ -193,6 +196,52 @@ export function CampaignDetail({ campaign, onBack, onUpdate }) {
               Cancelling stops the campaign immediately. Unused budget will be reviewed for refund per your agreement.
             </div>
           </Card>
+        </div>
+      )}
+
+      {editing && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: 14, padding: 28, width: 400,
+            fontFamily: F.sans, boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+          }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 20 }}>Edit Campaign</div>
+            {[
+              { label: 'Budget (£)', key: 'budget', type: 'number' },
+              { label: 'Start Date', key: 'start', type: 'date' },
+              { label: 'End Date', key: 'end', type: 'date' },
+            ].map(({ label, key, type }) => (
+              <div key={key} style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 12, color: C.textSub, marginBottom: 4 }}>{label}</div>
+                <input
+                  type={type}
+                  value={editForm[key]}
+                  onChange={e => setEditForm(f => ({ ...f, [key]: type === 'number' ? Number(e.target.value) : e.target.value }))}
+                  style={{
+                    width: '100%', padding: '8px 12px', borderRadius: 8,
+                    border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 13,
+                    outline: 'none', boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
+              <Btn variant="secondary" size="sm" onClick={() => setEditing(false)}>Cancel</Btn>
+              <Btn size="sm" onClick={async () => {
+                const { error } = await supabase.from('bookings').update({
+                  budget: editForm.budget,
+                  start_date: editForm.start,
+                  end_date: editForm.end,
+                }).eq('id', c.id);
+                if (error) { alert(`Save failed: ${error.message}`); return; }
+                onUpdate({ ...c, budget: editForm.budget, start: editForm.start, end: editForm.end });
+                setEditing(false);
+              }}>Save Changes</Btn>
+            </div>
+          </div>
         </div>
       )}
     </div>
