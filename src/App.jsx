@@ -76,10 +76,22 @@ export default function App() {
   // ── Data loading ───────────────────────────────────────────────────────────
   const loadData = useCallback(async () => {
     setDataLoading(true);
-    const [{ data: bookings }, { data: screens }] = await Promise.all([
+    const [bookingsRes, screensRes] = await Promise.all([
       supabase.from('bookings').select('*').order('created_at', { ascending: false }),
       supabase.from('screens').select('*').order('name'),
     ]);
+    if (bookingsRes.error) {
+      console.error('Failed to load campaigns:', bookingsRes.error.message);
+      setDataLoading(false);
+      return;
+    }
+    if (screensRes.error) {
+      console.error('Failed to load screens:', screensRes.error.message);
+      setDataLoading(false);
+      return;
+    }
+    const bookings = bookingsRes.data;
+    const screens = screensRes.data;
     if (bookings && bookings.length > 0) {
       setCampaigns(bookings.map(b => ({
         ...b,
@@ -153,7 +165,15 @@ export default function App() {
 
   const updateCampaign = async updated => {
     const prevCampaign = campaigns.find(c => c.id === updated.id);
-    await supabase.from('bookings').update({ status: updated.status }).eq('id', updated.id);
+    const { error } = await supabase
+      .from('bookings')
+      .update({ status: updated.status })
+      .eq('id', updated.id);
+    if (error) {
+      console.error('Failed to update campaign:', error.message);
+      alert(`Failed to update campaign: ${error.message}`);
+      return;
+    }
     setCampaigns(prev => prev.map(c => c.id === updated.id ? updated : c));
     setDetail(updated);
     if (updated.status === 'active' && prevCampaign?.status !== 'active' && updated.advertiser_id) {
@@ -195,11 +215,22 @@ export default function App() {
               slots:           c.slots,
               duration:        c.duration,
             }).select().single();
-            if (!error && row) {
-              setCampaigns(p => [{ ...c, ...row, advertiser: row.advertiser_name, screen: row.screen_name, start: row.start_date, end: row.end_date, days: row.schedule_days, timeStart: row.time_start, timeEnd: row.time_end, color: row.accent_color, destination: row.destination_url }, ...p]);
-            } else {
-              setCampaigns(p => [c, ...p]);
+            if (error || !row) {
+              alert(`Failed to submit campaign: ${error?.message ?? 'Unknown error'}`);
+              return;
             }
+            setCampaigns(p => [{
+              ...c, ...row,
+              advertiser: row.advertiser_name,
+              screen: row.screen_name,
+              start: row.start_date,
+              end: row.end_date,
+              days: row.schedule_days,
+              timeStart: row.time_start,
+              timeEnd: row.time_end,
+              color: row.accent_color,
+              destination: row.destination_url,
+            }, ...p]);
             navigate('adv-campaigns');
             supabase.from('profiles').select('id').eq('role', 'operator').then(({ data: ops }) => {
               (ops ?? []).forEach(op => {
