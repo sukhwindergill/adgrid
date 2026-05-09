@@ -15,6 +15,8 @@ export function CampaignDetail({ campaign, onBack, onUpdate }) {
   const [rejectReason, setRejectReason] = useState('');
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ budget: campaign.budget, start: campaign.start, end: campaign.end });
+  const [editingCreative, setEditingCreative] = useState(false);
+  const [creativeForm, setCreativeForm] = useState({ headline: campaign.headline ?? '', cta: campaign.cta ?? '', accent_color: campaign.color ?? '#7c3aed' });
   const c = campaign;
   const pct      = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
   const daysLeft = Math.max(0, Math.round((new Date(c.end) - new Date()) / (1000 * 60 * 60 * 24)));
@@ -167,9 +169,54 @@ export function CampaignDetail({ campaign, onBack, onUpdate }) {
                   </div>
                 </div>
               ))}
-              <Btn variant="secondary" size="sm" style={{ alignSelf: 'flex-start' }}>✏ Edit Creative</Btn>
+              <Btn variant="secondary" size="sm" style={{ alignSelf: 'flex-start' }} onClick={() => { setTab('creative'); setCreativeForm({ headline: c.headline ?? '', cta: c.cta ?? '', accent_color: c.color ?? '#7c3aed' }); setEditingCreative(true); }}>✏ Edit Creative</Btn>
             </div>
           </div>
+          {editingCreative && (
+            <div style={{ marginTop: 20, padding: 20, background: C.surface, borderRadius: 12, border: `1px solid ${C.border}` }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 16 }}>Edit Creative</div>
+              {[
+                { label: 'Headline', key: 'headline', type: 'text' },
+                { label: 'Call to Action', key: 'cta', type: 'text' },
+              ].map(({ label, key, type }) => (
+                <div key={key} style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 12, color: C.textSub, marginBottom: 4 }}>{label}</div>
+                  <input
+                    type={type}
+                    value={creativeForm[key]}
+                    onChange={e => setCreativeForm(f => ({ ...f, [key]: e.target.value }))}
+                    style={{
+                      width: '100%', padding: '8px 12px', borderRadius: 8,
+                      border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 13,
+                      outline: 'none', boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+              ))}
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 12, color: C.textSub, marginBottom: 4 }}>Accent Colour</div>
+                <input
+                  type="color"
+                  value={creativeForm.accent_color}
+                  onChange={e => setCreativeForm(f => ({ ...f, accent_color: e.target.value }))}
+                  style={{ width: 48, height: 36, borderRadius: 6, border: `1px solid ${C.border}`, cursor: 'pointer' }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                <Btn variant="secondary" size="sm" onClick={() => setEditingCreative(false)}>Cancel</Btn>
+                <Btn size="sm" onClick={async () => {
+                  const { error } = await supabase.from('bookings').update({
+                    headline: creativeForm.headline,
+                    cta: creativeForm.cta,
+                    accent_color: creativeForm.accent_color,
+                  }).eq('id', c.id);
+                  if (error) { alert(`Save failed: ${error.message}`); return; }
+                  onUpdate({ ...c, headline: creativeForm.headline, cta: creativeForm.cta, color: creativeForm.accent_color });
+                  setEditingCreative(false);
+                }}>Save Creative</Btn>
+              </div>
+            </div>
+          )}
         </Card>
       )}
 
