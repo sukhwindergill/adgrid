@@ -7,6 +7,7 @@ import { INIT_CAMPAIGNS } from './lib/data.js';
 import { LoginPage } from './components/login/LoginPage.jsx';
 import { GlobalHeader } from './components/layout/GlobalHeader.jsx';
 import { AppShell } from './components/layout/AppShell.jsx';
+import { ErrorBoundary } from './components/primitives/ErrorBoundary.jsx';
 
 // Operator views
 import { Dashboard }      from './views/operator/Dashboard.jsx';
@@ -150,10 +151,11 @@ export default function App() {
   // ── Mutation helpers ───────────────────────────────────────────────────────
   const navigate = v => { setActive(v); setDetail(null); };
 
-  const updateCampaign = updated => {
+  const updateCampaign = async updated => {
+    const prevCampaign = campaigns.find(c => c.id === updated.id);
+    await supabase.from('bookings').update({ status: updated.status }).eq('id', updated.id);
     setCampaigns(prev => prev.map(c => c.id === updated.id ? updated : c));
     setDetail(updated);
-    const prevCampaign = campaigns.find(c => c.id === updated.id);
     if (updated.status === 'active' && prevCampaign?.status !== 'active' && updated.advertiser_id) {
       callNotification(updated.advertiser_id, 'campaign_approved', {
         campaignName: updated.advertiser_name ?? updated.advertiser ?? '',
@@ -172,8 +174,32 @@ export default function App() {
       if (active === 'adv-overview')     return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navigate} />;
       if (active === 'adv-create')       return (
         <CreateCampaign
-          onSave={c => {
-            setCampaigns(p => [c, ...p]);
+          onSave={async c => {
+            const { data: row, error } = await supabase.from('bookings').insert({
+              advertiser_name: c.advertiser,
+              screen_name:     c.screen,
+              start_date:      c.start,
+              end_date:        c.end,
+              schedule_days:   c.days,
+              time_start:      c.timeStart,
+              time_end:        c.timeEnd,
+              budget:          c.budget,
+              impressions:     0,
+              accent_color:    c.color,
+              destination_url: c.destination,
+              status:          'pending_review',
+              advertiser_id:   user.id,
+              category:        c.category,
+              headline:        c.headline,
+              cta:             c.cta,
+              slots:           c.slots,
+              duration:        c.duration,
+            }).select().single();
+            if (!error && row) {
+              setCampaigns(p => [{ ...c, ...row, advertiser: row.advertiser_name, screen: row.screen_name, start: row.start_date, end: row.end_date, days: row.schedule_days, timeStart: row.time_start, timeEnd: row.time_end, color: row.accent_color, destination: row.destination_url }, ...p]);
+            } else {
+              setCampaigns(p => [c, ...p]);
+            }
             navigate('adv-campaigns');
             supabase.from('profiles').select('id').eq('role', 'operator').then(({ data: ops }) => {
               (ops ?? []).forEach(op => {
@@ -224,9 +250,11 @@ export default function App() {
         />
       }
     >
-      <div key={active} className="fade-in">
-        {view()}
-      </div>
+      <ErrorBoundary key={active}>
+        <div className="fade-in">
+          {view()}
+        </div>
+      </ErrorBoundary>
     </AppShell>
   );
 }
