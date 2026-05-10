@@ -1,6 +1,66 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
+import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
+
+function ApproveBtn({ campaign, setCampaigns }) {
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState(null);
+
+  const approve = async e => {
+    e.preventDefault();
+    e.stopPropagation();
+    setLoading(true);
+    setErr(null);
+
+    const { data: { session } } = await supabase.auth.getSession();
+
+    // Try Stripe charge first; fall back to direct DB update if advertiser has no Stripe
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/charge-campaign`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ campaign_id: campaign.id }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      const msg = body.error ?? 'Charge failed';
+
+      // If advertiser has no payment method yet, still allow manual approval
+      const isNoPayment = msg.toLowerCase().includes('no payment') || msg.toLowerCase().includes('no card');
+      if (isNoPayment) {
+        const confirmed = window.confirm(
+          `${msg}\n\nApprove without charging? You can collect payment manually.`
+        );
+        if (!confirmed) { setLoading(false); return; }
+        const { error: dbErr } = await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
+        if (dbErr) { setErr(dbErr.message); setLoading(false); return; }
+        setCampaigns(prev => prev.map(x => x.id === campaign.id ? { ...x, status: 'scheduled' } : x));
+        setLoading(false);
+        return;
+      }
+
+      setErr(msg);
+      setLoading(false);
+      return;
+    }
+
+    setCampaigns(prev => prev.map(x => x.id === campaign.id ? { ...x, status: 'scheduled', payment_status: 'paid' } : x));
+    setLoading(false);
+  };
+
+  return (
+    <div>
+      <Btn variant="success" size="sm" onClick={approve} disabled={loading}>
+        {loading ? '…' : '✓ Approve'}
+      </Btn>
+      {err && <div style={{ fontSize: 10, color: C.red, fontFamily: F.sans, marginTop: 3, maxWidth: 110 }}>{err}</div>}
+    </div>
+  );
+}
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
@@ -195,7 +255,7 @@ function NewCampaignModal({ onClose, onSave }) {
   );
 }
 
-export function Campaigns({ campaigns, setCampaigns, setDetail }) {
+export function Campaigns({ campaigns, setCampaigns, setDetail, loadError }) {
   const [filter, setFilter] = useState('all');
   const [city, setCity]     = useState('All');
   const [showNew, setShowNew] = useState(false);
@@ -225,6 +285,12 @@ export function Campaigns({ campaigns, setCampaigns, setDetail }) {
   return (
     <div>
       {showNew && <NewCampaignModal onClose={() => setShowNew(false)} onSave={c => { setCampaigns(prev => [...prev, c]); setShowNew(false); }} />}
+
+      {loadError && (
+        <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: '#991b1b', fontSize: 14 }}>
+          ⚠ {loadError}
+        </div>
+      )}
 
       <PageHeader title="Campaigns"
         subtitle={`${campaigns.filter(c => c.status === 'active').length} active · ${campaigns.filter(c => c.status === 'scheduled').length} scheduled · ${campaigns.filter(c => c.status === 'pending_review').length} pending review · ${campaigns.filter(c => c.status === 'paused').length} paused`}
@@ -305,16 +371,7 @@ export function Campaigns({ campaigns, setCampaigns, setDetail }) {
                   <div style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub, whiteSpace: 'nowrap' }}>{c.start} →<br />{c.end}</div>
                   {isPending ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }} onClick={e => e.preventDefault()}>
-                      <Btn variant="success" size="sm" onClick={async e => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const { error } = await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', c.id);
-                        if (error) {
-                          alert(`Failed to approve campaign: ${error.message}`);
-                          return;
-                        }
-                        setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: 'scheduled' } : x));
-                      }}>✓ Approve</Btn>
+                      <ApproveBtn campaign={c} setCampaigns={setCampaigns} />
                       <Btn variant="danger"  size="sm" onClick={e => { e.preventDefault(); e.stopPropagation(); setDetail(c); }}>✗ Reject…</Btn>
                     </div>
                   ) : (

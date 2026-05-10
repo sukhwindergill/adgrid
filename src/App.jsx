@@ -34,6 +34,10 @@ import { IntegrationsView } from './views/shared/IntegrationsView.jsx';
 import { DisplayView }      from './views/shared/DisplayView.jsx';
 import { Placeholder }      from './views/shared/Placeholder.jsx';
 
+// Public views (no auth required)
+import { DisplayPlayer } from './views/display/DisplayPlayer.jsx';
+import { MarketingHome } from './views/marketing/Home.jsx';
+
 import { C, F } from './design/tokens.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -62,6 +66,7 @@ export default function App() {
   const [dbScreens,     setDbScreens]     = useState([]);
   const [detail,        setDetail]        = useState(null);
   const [dataLoading,   setDataLoading]   = useState(false);
+  const [loadError,     setLoadError]     = useState(null);
 
   // ── Impersonation ──────────────────────────────────────────────────────────
   function startImpersonation(adv) {
@@ -76,17 +81,20 @@ export default function App() {
   // ── Data loading ───────────────────────────────────────────────────────────
   const loadData = useCallback(async () => {
     setDataLoading(true);
+    setLoadError(null);
     const [bookingsRes, screensRes] = await Promise.all([
       supabase.from('bookings').select('*').order('created_at', { ascending: false }),
       supabase.from('screens').select('*').order('name'),
     ]);
     if (bookingsRes.error) {
       console.error('Failed to load campaigns:', bookingsRes.error.message);
+      setLoadError('Failed to load data. Please refresh.');
       setDataLoading(false);
       return;
     }
     if (screensRes.error) {
       console.error('Failed to load screens:', screensRes.error.message);
+      setLoadError('Failed to load data. Please refresh.');
       setDataLoading(false);
       return;
     }
@@ -134,6 +142,14 @@ export default function App() {
     if (!user) return;
     const params = new URLSearchParams(window.location.search);
     if (params.get('connect') === 'success') {
+      const storedState = sessionStorage.getItem('stripe_connect_state');
+      const returnedState = params.get('state');
+      sessionStorage.removeItem('stripe_connect_state');
+      if (!storedState || !returnedState || storedState !== returnedState) {
+        console.error('Stripe Connect: invalid or missing state token — ignoring redirect');
+        window.location.replace(window.location.pathname);
+        return;
+      }
       supabase
         .from('profiles')
         .update({ connect_status: 'active' })
@@ -154,7 +170,12 @@ export default function App() {
     );
   }
 
-  if (!user) return <LoginPage />;
+  if (!user) {
+    const path = window.location.pathname;
+    // Show login page directly on /login, otherwise show marketing home
+    if (path === '/login') return <LoginPage />;
+    return <MarketingHome onSignup={() => window.location.href = '/login'} onLogin={() => window.location.href = '/login'} />;
+  }
 
   const effectiveRole = impersonating ? 'advertiser' : role;
   const isAdv = effectiveRole === 'advertiser';
@@ -244,7 +265,7 @@ export default function App() {
           onCancel={() => navigate('adv-overview')}
         />
       );
-      if (active === 'adv-campaigns')    return <Campaigns campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} />;
+      if (active === 'adv-campaigns')    return <Campaigns campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} />;
       if (active === 'adv-analytics')    return <Analytics campaigns={campaigns} />;
       if (active === 'adv-audience')     return <ScansView impersonatingId={impersonating?.id ?? null} />;
       if (active === 'adv-billing')      return <AdvertiserBillingView />;
@@ -255,7 +276,7 @@ export default function App() {
 
     if (active === 'overview')     return <Dashboard campaigns={campaigns} setNav={navigate} loading={dataLoading} />;
     if (active === 'screens')      return <ScreensView dbScreens={dbScreens} setDbScreens={setDbScreens} />;
-    if (active === 'campaigns')    return <Campaigns campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} />;
+    if (active === 'campaigns')    return <Campaigns campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} />;
     if (active === 'analytics')    return <Analytics campaigns={campaigns} />;
     if (active === 'audience')     return <Audience campaigns={campaigns} />;
     if (active === 'revenue')      return <Revenue campaigns={campaigns} />;

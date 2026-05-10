@@ -94,9 +94,6 @@ export function LoginPage() {
               {mode === 'signin' ? 'Sign up' : 'Sign in'}
             </span>
           </div>
-          <div style={{ marginTop: 8, textAlign: 'center', fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>
-            Demo: operator@adgrid.io / demo1234
-          </div>
         </Card>
       </div>
     </div>

@@ -1,0 +1,51 @@
+version: "3.9"
+
+# AdGrid Screen Agent
+# Runs on any mini PC / Raspberry Pi 5 with a USB camera.
+# Handles: ad display feed polling, computer vision impression tracking,
+# and demographic estimation — all processing stays local.
+# Only aggregated anonymous stats leave the device.
+
+services:
+  # ── Camera capture service ─────────────────────────────────────────────────
+  camera:
+    build: ./camera
+    volumes:
+      - frame_data:/frames
+    devices:
+      - /dev/video0:/dev/video0   # USB camera — change index if needed
+    environment:
+      CAPTURE_FPS: "1"            # 1 frame per second is sufficient
+      FRAME_DIR: /frames
+    restart: unless-stopped
+
+  # ── CV inference service ───────────────────────────────────────────────────
+  inference:
+    build: ./inference
+    volumes:
+      - frame_data:/frames
+    environment:
+      FRAME_DIR: /frames
+      WINDOW_SECONDS: "30"        # Aggregate stats over 30s windows
+      RESULTS_DIR: /frames/results
+    restart: unless-stopped
+    depends_on:
+      - camera
+
+  # ── Event pusher ───────────────────────────────────────────────────────────
+  pusher:
+    build: ./pusher
+    volumes:
+      - frame_data:/frames
+    environment:
+      SCREEN_TOKEN: "${SCREEN_TOKEN}"
+      SUPABASE_URL: "${SUPABASE_URL}"
+      SUPABASE_ANON_KEY: "${SUPABASE_ANON_KEY}"
+      RESULTS_DIR: /frames/results
+      PUSH_INTERVAL_SECONDS: "30"
+    restart: unless-stopped
+    depends_on:
+      - inference
+
+volumes:
+  frame_data:

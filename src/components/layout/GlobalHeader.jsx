@@ -21,9 +21,10 @@ export function GlobalHeader({ active, setActive, user, onSignOut, isAdv }) {
 
   const secondaryLinks = isAdv
     ? [
-        { id: 'adv-audience', label: 'Scans & Data' },
-        { id: 'adv-billing',  label: 'Billing' },
-        { id: 'adv-settings', label: 'Settings' },
+        { id: 'adv-audience',      label: 'Scans & Data' },
+        { id: 'adv-billing',       label: 'Billing' },
+        { id: 'adv-settings',      label: 'Settings' },
+        { id: 'adv-integrations',  label: 'Integrations' },
       ]
     : [
         { id: 'revenue',      label: 'Revenue' },
@@ -32,6 +33,7 @@ export function GlobalHeader({ active, setActive, user, onSignOut, isAdv }) {
         { id: 'advertisers',  label: 'Advertisers' },
         { id: 'signals',      label: 'Live Signals' },
         { id: 'integrations', label: 'Integrations' },
+        { id: 'display',      label: 'Display Manager' },
       ];
 
   const initials = (user?.name || user?.email || 'U').slice(0, 2).toUpperCase();
