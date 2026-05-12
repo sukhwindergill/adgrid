@@ -6,8 +6,8 @@ import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 
-export function AdvDashboard({ user, campaigns, setAdvNav }) {
-  const myCampaigns = campaigns.slice(0, 3);
+export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
+  const myCampaigns = campaigns.filter(c => c.advertiser_id === advertiserId);
   const totalSpend  = myCampaigns.reduce((a, c) => a + c.budget, 0);
   const totalSpent  = myCampaigns.reduce((a, c) => a + c.spent, 0);
   const totalImpr   = myCampaigns.reduce((a, c) => a + c.impressions, 0);
@@ -40,7 +40,7 @@ export function AdvDashboard({ user, campaigns, setAdvNav }) {
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.1)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
               >
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px 120px 100px auto', gap: 16, alignItems: 'center' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px 120px 100px 130px', gap: 16, alignItems: 'center' }}>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{c.screen}</div>
                     <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.city} · {c.category} · {c.start} → {c.end}</div>
@@ -60,7 +60,9 @@ export function AdvDashboard({ user, campaigns, setAdvNav }) {
                     <div style={{ fontSize: 18, fontWeight: 700, color: C.purple, fontFamily: F.mono }}>{c.scans}</div>
                     <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>scans</div>
                   </div>
-                  <Badge status={c.status} />
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Badge status={c.status} />
+                  </div>
                 </div>
               </Card>
             ))}

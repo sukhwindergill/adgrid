@@ -53,7 +53,7 @@ Deno.serve(async (req: Request) => {
   const { data: activeCampaign } = await supabase
     .from("bookings")
     .select("id")
-    .eq("screen_name", screen.id) // approximate — will use screen_id FK once migrated
+    .eq("screen_id", screen.id)
     .in("status", ["scheduled", "active"])
     .lte("start_date", windowMid)
     .gte("end_date", windowMid)

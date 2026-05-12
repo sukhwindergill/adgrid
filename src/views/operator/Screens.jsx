@@ -10,7 +10,6 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
-import { SCREENS } from '../../lib/data.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
 function uptime(s) {
@@ -152,6 +151,7 @@ function AddScreenModal({ onClose, onAdded }) {
   const [form, setForm] = useState({
     name: '', owner: '', type: 'Business', city: 'Toronto', location: '',
     display_size: '', monthly_traffic_estimate: '', cpm_floor: '3.00',
+    lat: '', lng: '',
   });
   const [saving, setSaving] = useState(false);
   const [registered, setRegistered] = useState(null); // { token, id, name }
@@ -176,6 +176,8 @@ function AddScreenModal({ onClose, onAdded }) {
       max_ad_duration: 30,
       monthly_revenue: 0,
       campaigns: 0,
+      lat: form.lat ? parseFloat(form.lat) : null,
+      lng: form.lng ? parseFloat(form.lng) : null,
     }).select('id, name, screen_token').single();
 
     if (error) { setErr(error.message); setSaving(false); return; }
@@ -263,6 +265,10 @@ services:
           <Inp label="Location / Address" placeholder="e.g. King St W & Bay St, Toronto" value={form.location} onChange={e => setForm(s => ({ ...s, location: e.target.value }))} />
           <Inp label="Display Size (optional)" placeholder="e.g. 55 inch 4K, 72 inch LED" value={form.display_size} onChange={e => setForm(s => ({ ...s, display_size: e.target.value }))} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Inp label="Latitude (optional)" type="number" step="any" placeholder="e.g. 51.5074" value={form.lat} onChange={e => setForm(s => ({ ...s, lat: e.target.value }))} hint="For map placement" />
+            <Inp label="Longitude (optional)" type="number" step="any" placeholder="e.g. -0.1278" value={form.lng} onChange={e => setForm(s => ({ ...s, lng: e.target.value }))} hint="For map placement" />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Inp label="Monthly Footfall (thousands)" type="number" placeholder="e.g. 50" value={form.monthly_traffic_estimate} onChange={e => setForm(s => ({ ...s, monthly_traffic_estimate: e.target.value }))} hint="Estimated people/month ÷ 1000" />
             <Inp label="CPM Floor (£)" type="number" step="0.50" placeholder="3.00" value={form.cpm_floor} onChange={e => setForm(s => ({ ...s, cpm_floor: e.target.value }))} hint="Minimum cost per 1,000 impressions" />
           </div>
@@ -296,7 +302,7 @@ export function ScreensView({ dbScreens, setDbScreens, profile, loading = false 
 
   if (selected) return <ScreenDetail screen={selected} onBack={() => setSelected(null)} profile={profile} />;
 
-  const allScreens = dbScreens && dbScreens.length > 0 ? dbScreens : SCREENS;
+  const allScreens = dbScreens || [];
   const cities = ['All', ...new Set(allScreens.map(s => s.city))];
   const shown = filter === 'All' ? allScreens : allScreens.filter(s => s.city === filter);
   const totalImpr = allScreens.reduce((a, s) => a + (s.impressions || 0), 0);
@@ -345,9 +351,18 @@ export function ScreensView({ dbScreens, setDbScreens, profile, loading = false 
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>
-        {shown.map(s => <ScreenCard key={s.id} screen={s} onClick={() => setSelected(s)} />)}
-      </div>
+      {shown.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>📺</div>
+          <div style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No screens registered yet</div>
+          <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>Register your first screen to start running campaigns on the network.</div>
+          <Btn onClick={() => setShowAdd(true)}>+ Register Screen</Btn>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>
+          {shown.map(s => <ScreenCard key={s.id} screen={s} onClick={() => setSelected(s)} />)}
+        </div>
+      )}
     </div>
   );
 }

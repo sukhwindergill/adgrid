@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './context/AuthContext.jsx';
 import { supabase } from './lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from './lib/constants.js';
-import { INIT_CAMPAIGNS } from './lib/data.js';
 
 import { LoginPage } from './components/login/LoginPage.jsx';
 import { GlobalHeader } from './components/layout/GlobalHeader.jsx';
@@ -133,18 +132,23 @@ export default function App() {
         scans: b.scans ?? 0,
         color: b.accent_color,
         destination: b.destination_url,
+        cta: b.cta_text,
       })));
     } else {
-      setCampaigns(INIT_CAMPAIGNS);
+      setCampaigns([]);
     }
     if (screens && screens.length > 0) {
       setDbScreens(screens.map(s => ({
         ...s,
         neighbourhood: s.location,
-        cpm: 4.20,
+        owner: s.owner_name,
+        cpm: s.cpm_floor || 4.20,
         maxDuration: s.max_ad_duration,
-        revenue: s.monthly_revenue,
+        revenue: s.monthly_revenue ?? 0,
+        campaigns: 0,
       })));
+    } else {
+      setDbScreens([]);
     }
     setDataLoading(false);
   }, []);
@@ -205,6 +209,28 @@ export default function App() {
 
   const updateCampaign = async updated => {
     const prevCampaign = campaigns.find(c => c.id === updated.id);
+    const becomingActive = updated.status === 'active' && prevCampaign?.status !== 'active';
+
+    // Charge advertiser before activating campaign
+    if (becomingActive) {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/charge-campaign`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ campaign_id: updated.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        alert(`Payment failed: ${json.error ?? 'Unknown error'}`);
+        return;
+      }
+      // charge-campaign sets status to 'scheduled' on success — sync local state
+      updated = { ...updated, status: 'scheduled', payment_status: 'paid' };
+    }
+
     const { error } = await supabase
       .from('bookings')
       .update({ status: updated.status })
@@ -216,7 +242,7 @@ export default function App() {
     }
     setCampaigns(prev => prev.map(c => c.id === updated.id ? updated : c));
     setDetail(updated);
-    if (updated.status === 'active' && prevCampaign?.status !== 'active' && updated.advertiser_id) {
+    if (becomingActive && updated.advertiser_id) {
       callNotification(updated.advertiser_id, 'campaign_approved', {
         campaignName: updated.advertiser_name ?? updated.advertiser ?? '',
         appUrl: '',
@@ -231,13 +257,15 @@ export default function App() {
     }
 
     if (isAdv) {
-      if (active === 'adv-overview')     return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navigate} />;
+      if (active === 'adv-overview')     return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navigate} advertiserId={impersonating?.id ?? user.id} />;
       if (active === 'adv-create')       return (
         <CreateCampaign
+          dbScreens={dbScreens}
           onSave={async c => {
             const { data: row, error } = await supabase.from('bookings').insert({
               advertiser_name: c.advertiser,
               screen_name:     c.screen,
+              city:            c.city || '',
               start_date:      c.start,
               end_date:        c.end,
               schedule_days:   c.days,
@@ -251,7 +279,7 @@ export default function App() {
               advertiser_id:   user.id,
               category:        c.category,
               headline:        c.headline,
-              cta:             c.cta,
+              cta_text:        c.cta,
               slots:           c.slots,
               duration:        c.duration,
             }).select().single();
@@ -290,7 +318,7 @@ export default function App() {
       if (active === 'adv-billing')      return <AdvertiserBillingView />;
       if (active === 'adv-integrations') return <AdvIntegrationsView />;
       if (active === 'adv-settings')     return <SettingsView />;
-      return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navigate} />;
+      return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navigate} advertiserId={impersonating?.id ?? user.id} />;
     }
 
     if (active === 'overview')     return <Dashboard campaigns={campaigns} dbScreens={dbScreens} setNav={navigate} loading={dataLoading} />;

@@ -19,8 +19,9 @@ Deno.serve(async (req: Request) => {
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) return new Response("Unauthorized", { status: 401 });
 
-  const { returnUrl } = await req.json();
+  const { returnUrl, state } = await req.json();
   if (!returnUrl) return new Response("Missing returnUrl", { status: 400 });
+  if (!state) return new Response("Missing state", { status: 400 });
 
   // Get or create Connect account
   const { data: profile } = await supabase
@@ -45,7 +46,7 @@ Deno.serve(async (req: Request) => {
   const accountLink = await stripe.accountLinks.create({
     account: accountId,
     refresh_url: returnUrl + "?connect=refresh",
-    return_url: returnUrl + "?connect=success",
+    return_url: returnUrl + "?connect=success&state=" + encodeURIComponent(state),
     type: "account_onboarding",
   });
 

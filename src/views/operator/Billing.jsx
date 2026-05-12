@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase.js';
+import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
@@ -7,36 +9,75 @@ import { Table } from '../../components/primitives/Table.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
+import { SkeletonRow, SkeletonTable } from '../../components/ui/Skeleton.jsx';
 
-const TRANSACTIONS = [
-  { id: 'pi_001', advertiser: 'Pret A Manger', amount: 480,  fee: 44,  status: 'paid',       date: '2026-03-21', method: 'Visa ••••4242' },
-  { id: 'pi_002', advertiser: 'Nike',           amount: 2200, fee: 194, status: 'paid',       date: '2026-03-15', method: 'Mastercard ••••5555' },
-  { id: 'pi_003', advertiser: 'Lloyds Bank',   amount: 1440, fee: 131, status: 'processing', date: '2026-04-01', method: 'Visa ••••1234' },
-  { id: 'pi_004', advertiser: 'Tim Hortons',   amount: 720,  fee: 67,  status: 'paid',       date: '2026-03-21', method: 'Mastercard ••••7777' },
-  { id: 'pi_005', advertiser: 'MLSE',           amount: 1200, fee: 110, status: 'paid',       date: '2026-03-21', method: 'Amex ••••8888' },
-];
+function useBilling() {
+  const [data, setData]     = useState(null);
+  const [loading, setLoad]  = useState(true);
+  const [error, setError]   = useState(null);
 
-const INIT_PAYOUTS = [
-  { owner: 'Corner Brew Coffee',     screen: 'SCR-001', amount: 248, status: 'transferred', date: '2026-03-31' },
-  { owner: 'Greenfield Properties',  screen: 'SCR-002', amount: 776, status: 'transferred', date: '2026-03-31' },
-  { owner: 'Slate Asset Management', screen: 'SCR-008', amount: 346, status: 'scheduled',   date: '2026-04-01' },
-  { owner: 'Ossington Hospitality',  screen: 'SCR-009', amount: 98,  status: 'scheduled',   date: '2026-04-01' },
-];
+  const fetch_ = async () => {
+    setLoad(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setLoad(false); return; }
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/operator-billing?action=summary`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) { setError('Failed to load billing data'); setLoad(false); return; }
+    setData(await res.json());
+    setLoad(false);
+  };
+
+  useEffect(() => { fetch_(); }, []);
+  return { data, loading, error, refresh: fetch_ };
+}
 
 export function Billing() {
-  const [tab, setTab]             = useState('overview');
-  const [processingId, setProc]   = useState(null);
-  const [payouts, setPayouts]     = useState(INIT_PAYOUTS);
+  const [tab, setTab]         = useState('overview');
+  const [payingOut, setPaying] = useState(false);
+  const { data, loading, error, refresh } = useBilling();
 
-  const total   = TRANSACTIONS.filter(t => t.status === 'paid').reduce((a, t) => a + t.amount, 0);
-  const fees    = TRANSACTIONS.filter(t => t.status === 'paid').reduce((a, t) => a + t.fee, 0);
-  const pending = payouts.filter(p => p.status === 'scheduled').reduce((a, p) => a + p.amount, 0);
-  const paid    = payouts.filter(p => p.status === 'transferred').reduce((a, p) => a + p.amount, 0);
+  const charges       = data?.charges ?? [];
+  const payouts       = data?.payouts ?? [];
+  const balance       = data?.balance;
+  const connectStatus = data?.connectStatus;
 
-  const doPayout = (owner) => {
-    setProc(owner);
-    setTimeout(() => { setPayouts(prev => prev.map(p => p.owner === owner ? { ...p, status: 'transferred' } : p)); setProc(null); }, 1500);
+  const totalCharged  = charges.reduce((a, c) => a + c.amount, 0);
+  const platformNet   = Math.round(totalCharged * 0.12);
+  const ownerShare    = Math.round(totalCharged * 0.88 * 0.40);
+  const availableOut  = balance?.available ?? 0;
+  const pendingIn     = balance?.pending ?? 0;
+
+  const doPayoutAll = async () => {
+    if (availableOut <= 0) return;
+    setPaying(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/operator-billing?action=payout`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: availableOut }),
+    });
+    const json = await res.json();
+    setPaying(false);
+    if (!res.ok) { alert(`Payout failed: ${json.error}`); return; }
+    alert(`Payout initiated — arrives ${json.arrival_date}`);
+    refresh();
   };
+
+  if (loading) {
+    return (
+      <div>
+        <div style={{ marginBottom: 24 }}><SkeletonRow cols={4} /></div>
+        <SkeletonTable rows={5} cols={5} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: 24, textAlign: 'center', color: C.red, fontFamily: F.sans }}>{error}</div>
+    );
+  }
 
   return (
     <div>
@@ -44,95 +85,105 @@ export function Billing() {
         actions={<a href="https://dashboard.stripe.com" target="_blank" rel="noreferrer"><Btn variant="secondary" size="sm">Stripe Dashboard ↗</Btn></a>} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
-        <KPI label="Total Revenue"   value={`£${total.toLocaleString()}`}   sub="from advertisers" trend={14} icon="💰" />
-        <KPI label="Platform Net"    value={`£${(total - fees).toLocaleString()}`} sub="after Stripe fees" color={C.blue} icon="$" />
-        <KPI label="Pending Payouts" value={`£${pending.toLocaleString()}`} sub="to screen owners" color={C.amber} icon="⏳" />
-        <KPI label="Paid Out"        value={`£${paid.toLocaleString()}`}    sub="to screen owners" color={C.green} icon="✓" />
+        <KPI label="Total Ad Spend"   value={`£${totalCharged.toLocaleString()}`}  sub="charged campaigns" trend={14} icon="💰" />
+        <KPI label="Platform Net"     value={`£${platformNet.toLocaleString()}`}   sub="12% platform fee"  color={C.blue} icon="$" />
+        <KPI label="Available Balance" value={balance ? `£${availableOut.toLocaleString()}` : '—'} sub={connectStatus === 'active' ? 'ready to pay out' : 'connect Stripe'} color={C.green} icon="✓" />
+        <KPI label="Pending Balance"  value={balance ? `£${pendingIn.toLocaleString()}` : '—'} sub="in transit" color={C.amber} icon="⏳" />
       </div>
 
-      <Tabs tabs={[{ id: 'overview', label: 'Overview' }, { id: 'charges', label: 'Charges' }, { id: 'payouts', label: 'Payouts' }, { id: 'connect', label: 'Screen Accounts' }]} active={tab} onChange={setTab} />
+      <Tabs tabs={[{ id: 'overview', label: 'Overview' }, { id: 'charges', label: 'Charges' }, { id: 'payouts', label: 'Payouts' }]} active={tab} onChange={setTab} />
 
       {tab === 'overview' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <Card>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Revenue Split</div>
             <div style={{ height: 8, borderRadius: 4, overflow: 'hidden', display: 'flex', marginBottom: 14 }}>
-              <div style={{ width: '12%', background: C.blue }} /><div style={{ width: '35%', background: C.green }} /><div style={{ flex: 1, background: C.surfaceAlt }} />
+              <div style={{ width: '12%', background: C.blue }} />
+              <div style={{ width: '35%', background: C.green }} />
+              <div style={{ flex: 1, background: C.surfaceAlt }} />
             </div>
-            {[['Stripe Fees', `£${fees.toLocaleString()}`, C.textSub], ['Platform (12%)', `£${Math.round(total * 0.12).toLocaleString()}`, C.blue], ['Screen Owners (40%)', `£${Math.round(total * 0.88 * 0.40).toLocaleString()}`, C.green], ['Network Pool', `£${Math.round(total * 0.88 * 0.60).toLocaleString()}`, C.textSub]].map(([l, v, c]) => (
+            {[
+              ['Platform (12%)', `£${platformNet.toLocaleString()}`, C.blue],
+              ['Screen Owners (40%)', `£${ownerShare.toLocaleString()}`, C.green],
+              ['Network Pool (48%)', `£${(totalCharged - platformNet - ownerShare).toLocaleString()}`, C.textSub],
+            ].map(([l, v, c]) => (
               <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
-                <span style={{ fontSize: 13, color: C.textMid }}>{l}</span><span style={{ fontSize: 14, fontWeight: 700, color: c }}>{v}</span>
+                <span style={{ fontSize: 13, color: C.textMid }}>{l}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: c }}>{v}</span>
               </div>
             ))}
           </Card>
           <Card>
-            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Recent Activity</div>
-            {[...TRANSACTIONS.slice(0, 4), ...payouts.slice(0, 2)].slice(0, 6).map((t, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: `1px solid ${C.border}` }}>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{t.advertiser || t.owner}</div>
-                  <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{t.advertiser ? 'Charge' : 'Payout'} · {t.date}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: t.advertiser ? C.green : C.amber, fontFamily: F.mono }}>{t.advertiser ? '+' : '−'}£{t.amount.toLocaleString()}</div>
-                  <Badge status={t.status}>{t.status}</Badge>
-                </div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Stripe Connect Balance</div>
+            {connectStatus !== 'active' ? (
+              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.7 }}>
+                Connect your bank account via Stripe to receive payouts.
+                Go to <strong>Screens</strong> → <strong>Connect Stripe</strong> to get started.
               </div>
-            ))}
+            ) : (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                  {[['Available', `£${availableOut.toLocaleString()}`, C.green], ['Pending', `£${pendingIn.toLocaleString()}`, C.amber]].map(([l, v, c]) => (
+                    <div key={l} style={{ padding: 14, background: C.surfaceAlt, borderRadius: 8 }}>
+                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 4 }}>{l}</div>
+                      <div style={{ fontSize: 22, fontWeight: 700, color: c, fontFamily: F.mono }}>{v}</div>
+                    </div>
+                  ))}
+                </div>
+                <Btn variant="success" size="sm" onClick={doPayoutAll} disabled={payingOut || availableOut <= 0}>
+                  {payingOut ? 'Initiating…' : `Pay Out £${availableOut.toLocaleString()} to Bank`}
+                </Btn>
+              </>
+            )}
           </Card>
         </div>
       )}
 
       {tab === 'charges' && (
-        <Table
-          columns={[
-            { key: 'id',         label: 'ID',         render: v => <span style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub }}>{v}</span> },
-            { key: 'advertiser', label: 'Advertiser' },
-            { key: 'date',       label: 'Date',       render: v => <span style={{ fontFamily: F.mono, fontSize: 11 }}>{v}</span> },
-            { key: 'method',     label: 'Method',     render: v => <span style={{ fontFamily: F.mono, fontSize: 11 }}>{v}</span> },
-            { key: 'amount',     label: 'Gross',      render: v => <span style={{ fontWeight: 600, fontFamily: F.mono }}>£{v.toLocaleString()}</span> },
-            { key: 'fee',        label: 'Stripe Fee', render: v => <span style={{ color: C.textSub, fontFamily: F.mono }}>£{v}</span> },
-            { key: 'amount',     label: 'Net',        render: (v, r) => <span style={{ color: C.green, fontWeight: 600, fontFamily: F.mono }}>£{(v - r.fee).toLocaleString()}</span> },
-            { key: 'status',     label: 'Status',     render: v => <Badge status={v} /> },
-          ]}
-          rows={TRANSACTIONS} />
+        charges.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>💳</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>No charges yet</div>
+            <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Charges appear here when campaigns are approved and paid</div>
+          </div>
+        ) : (
+          <Table
+            columns={[
+              { key: 'id',         label: 'Payment ID',  render: v => <span style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub }}>{String(v).slice(0, 20)}…</span> },
+              { key: 'advertiser', label: 'Advertiser' },
+              { key: 'screen',     label: 'Screen' },
+              { key: 'date',       label: 'Date',        render: v => <span style={{ fontFamily: F.mono, fontSize: 11 }}>{v}</span> },
+              { key: 'amount',     label: 'Gross',       render: v => <span style={{ fontWeight: 600, fontFamily: F.mono }}>£{Number(v).toLocaleString()}</span> },
+              { key: 'amount',     label: 'Platform (12%)', render: v => <span style={{ color: C.blue, fontFamily: F.mono }}>£{Math.round(v * 0.12).toLocaleString()}</span> },
+              { key: 'status',     label: 'Status',      render: v => <Badge status={v} /> },
+            ]}
+            rows={charges} />
+        )
       )}
 
       {tab === 'payouts' && (
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
-            <Btn variant="success" size="sm" onClick={() => payouts.filter(p => p.status === 'scheduled').forEach(p => doPayout(p.owner))}>
-              Run All Pending Payouts
-            </Btn>
+        connectStatus !== 'active' ? (
+          <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>🏦</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Bank account not connected</div>
+            <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Connect your Stripe account to enable payouts</div>
           </div>
+        ) : payouts.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>⏳</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>No payouts yet</div>
+            <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Your first payout will appear here once initiated</div>
+          </div>
+        ) : (
           <Table
             columns={[
-              { key: 'owner',  label: 'Screen Owner' },
-              { key: 'screen', label: 'Screen ID',   render: v => <span style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub }}>{v}</span> },
-              { key: 'date',   label: 'Date' },
-              { key: 'amount', label: 'Amount',      render: v => <span style={{ fontWeight: 600, color: C.green, fontFamily: F.mono }}>£{v.toLocaleString()}</span> },
-              { key: 'status', label: 'Status',      render: v => <Badge status={v} /> },
-              { key: 'owner',  label: '',            render: (v, r) => r.status === 'scheduled' ? <Btn variant="success" size="sm" onClick={() => doPayout(v)}>{processingId === v ? 'Sending…' : 'Pay Now'}</Btn> : null },
+              { key: 'id',           label: 'Payout ID',    render: v => <span style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub }}>{v}</span> },
+              { key: 'amount',       label: 'Amount',       render: v => <span style={{ fontWeight: 600, color: C.green, fontFamily: F.mono }}>£{Number(v).toLocaleString()}</span> },
+              { key: 'status',       label: 'Status',       render: v => <Badge status={v} /> },
+              { key: 'arrival_date', label: 'Arrival Date', render: v => <span style={{ fontFamily: F.mono, fontSize: 11 }}>{v}</span> },
             ]}
             rows={payouts} />
-        </div>
-      )}
-
-      {tab === 'connect' && (
-        <div>
-          <div style={{ padding: '12px 16px', background: C.purpleSoft, border: `1px solid ${C.purpleBorder}`, borderRadius: 8, marginBottom: 16, fontSize: 12, color: C.textSub, fontFamily: F.sans }}>
-            Screen owners connect their bank via Stripe Connect. ADGRID never handles their banking details — Stripe transfers funds directly.
-          </div>
-          <Table
-            columns={[
-              { key: 'owner',  label: 'Screen Owner' },
-              { key: 'screen', label: 'Screen',      render: v => <span style={{ fontFamily: F.mono, fontSize: 11 }}>{v}</span> },
-              { key: 'amount', label: 'Pending',     render: v => <span style={{ fontWeight: 600, color: C.amber, fontFamily: F.mono }}>£{v.toLocaleString()}</span> },
-              { key: 'status', label: 'Stripe Status', render: v => <Badge status={v} /> },
-              { key: 'owner',  label: '',            render: (_, r) => r.status === 'scheduled' ? <Btn variant="ghost" size="sm">Send Onboarding Link</Btn> : <span style={{ fontSize: 11, color: C.green, fontFamily: F.sans }}>✓ Connected</span> },
-            ]}
-            rows={payouts} />
-        </div>
+        )
       )}
     </div>
   );

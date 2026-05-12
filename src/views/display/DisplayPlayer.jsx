@@ -60,7 +60,7 @@ function CreativeSlide({ campaign, screenId }) {
         background: '#fff', borderRadius: 12, padding: 'clamp(8px, 1.2vw, 16px)',
         boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
       }}>
-        <QRCode value={qrUrl} size={Math.min(window.innerWidth * 0.12, 180)} level="M" />
+        <QRCode value={qrUrl} size={Math.max(64, Math.floor(window.innerWidth * 0.12))} level="M" />
         <div style={{
           fontSize: 'clamp(8px, 0.8vw, 12px)', color: '#555', textAlign: 'center',
           marginTop: 6, fontFamily: "'Inter', sans-serif", fontWeight: 500,
@@ -163,6 +163,24 @@ export function DisplayPlayer({ screenToken }) {
     const poll = setInterval(fetchFeed, POLL_INTERVAL_MS);
     return () => clearInterval(poll);
   }, [screenToken]);
+
+  // Impression tracking — fire every rotation interval when a campaign is live
+  useEffect(() => {
+    if (!screenId || campaigns.length === 0) return;
+    const iv = setInterval(() => {
+      fetch(`${SUPABASE_FUNCTIONS_URL}/ingest-impressions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          screen_token: screenToken,
+          people_count: 1,
+          dwell_seconds: ROTATE_INTERVAL_MS / 1000,
+          attention_score: 1.0,
+        }),
+      }).catch(e => console.error('Impression ingest error:', e));
+    }, ROTATE_INTERVAL_MS);
+    return () => clearInterval(iv);
+  }, [screenId, campaigns.length, screenToken]);
 
   // Rotate campaigns
   useEffect(() => {

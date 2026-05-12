@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase.js';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
@@ -7,28 +8,13 @@ import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { SkeletonKPI } from '../../components/primitives/Skeleton.jsx';
-import { SCREENS } from '../../lib/data.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
-const HOURLY_SEED = [12,8,6,4,3,5,18,42,68,72,65,58,62,55,48,52,70,86,90,78,55,38,24,16];
 
 function LiveCounter({ base }) {
-  const [count, setCount] = useState(base);
-  const [pulsing, setPulsing] = useState(false);
-  useEffect(() => {
-    const iv = setInterval(() => {
-      setCount(c => c + Math.floor(Math.random() * 120 + 40));
-      setPulsing(true);
-      setTimeout(() => setPulsing(false), 600);
-    }, 3000);
-    return () => clearInterval(iv);
-  }, []);
   return (
-    <div style={{
-      fontFamily: F.mono, fontSize: 52, fontWeight: 600, color: C.text,
-      animation: pulsing ? 'counterPulse 0.6s ease' : 'none', lineHeight: 1,
-    }}>
-      {count.toLocaleString()}
+    <div style={{ fontFamily: F.mono, fontSize: 52, fontWeight: 600, color: C.text, lineHeight: 1 }}>
+      {base.toLocaleString()}
     </div>
   );
 }
@@ -52,15 +38,37 @@ function HourlyChart({ data }) {
   );
 }
 
-export function Dashboard({ campaigns, setNav, loading }) {
+export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
   const { isMobile } = useBreakpoint();
-  const totalRev    = SCREENS.reduce((a, s) => a + s.revenue, 0);
-  const totalImpr   = SCREENS.reduce((a, s) => a + s.impressions, 0);
+  const [hourlyData, setHourlyData] = useState(Array(24).fill(0));
+
+  useEffect(() => {
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+    const tomorrowStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
+    supabase.from('impression_events')
+      .select('window_start, people_count')
+      .gte('window_start', todayStart)
+      .lt('window_start', tomorrowStart)
+      .then(({ data }) => {
+        if (!data || data.length === 0) return;
+        const hours = Array(24).fill(0);
+        data.forEach(row => {
+          const h = new Date(row.window_start).getHours();
+          hours[h] += (row.people_count || 1);
+        });
+        setHourlyData(hours);
+      });
+  }, []);
+  const totalRev    = dbScreens.reduce((a, s) => a + (s.revenue ?? s.monthly_revenue ?? 0), 0);
+  const totalImpr   = dbScreens.reduce((a, s) => a + (s.impressions ?? 0), 0);
   const active      = campaigns.filter(c => c.status === 'active');
   const totalScans  = campaigns.reduce((a, c) => a + c.scans, 0);
   const totalSpend  = campaigns.reduce((a, c) => a + c.budget, 0);
   const totalSpent  = campaigns.reduce((a, c) => a + c.spent, 0);
-  const liveScreens = SCREENS.filter(s => s.status === 'live');
+  const liveScreens = dbScreens.filter(s => s.status === 'live');
+  const allImpr     = campaigns.reduce((a, c) => a + (c.impressions || 0), 0);
+  const avgCPM      = allImpr > 0 ? `£${((totalSpend / allImpr) * 1000).toFixed(2)}` : '—';
 
   const kpiCols = isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)';
 
@@ -93,7 +101,7 @@ export function Dashboard({ campaigns, setNav, loading }) {
           {[
             ['Active Campaigns', active.length],
             ['Screens Online', liveScreens.length],
-            ['Avg CPM', `£4.42`],
+            ['Avg CPM', avgCPM],
             ['Total Scans', totalScans.toLocaleString()],
           ].map(([l, v]) => (
             <div key={l}>
@@ -104,8 +112,8 @@ export function Dashboard({ campaigns, setNav, loading }) {
         </div>
 
         <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 6 }}>Impressions by hour (24h pattern)</div>
-          <HourlyChart data={HOURLY_SEED} />
+          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 6 }}>Impressions by hour (today)</div>
+          <HourlyChart data={hourlyData} />
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.textMuted, fontFamily: F.mono, marginTop: 4 }}>
             {['00:00', '06:00', '12:00', '18:00', '23:00'].map(t => <span key={t}>{t}</span>)}
           </div>

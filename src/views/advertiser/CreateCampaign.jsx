@@ -1,21 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
-import { SCREENS, CATEGORIES, DAYS, HOURS } from '../../lib/data.js';
+import { CATEGORIES, DAYS, HOURS } from '../../lib/data.js';
 
 const STEP_LABELS = ['Location & Screens', 'Schedule & Creative', 'Budget & Launch'];
 
-// Deterministic mock distances per screen
-const mockDist = (s) => Math.abs(parseInt(s.id.replace('SCR-', '')) * 7 % 20) / 2 + 1;
-
-const SCREEN_POSITIONS = {
-  'SCR-001': [30, 55], 'SCR-002': [60, 30], 'SCR-003': [75, 65],
-  'SCR-004': [45, 40], 'SCR-006': [55, 70], 'SCR-008': [25, 35], 'SCR-009': [40, 75],
+const CITY_CENTERS = {
+  'Toronto':     [43.6532, -79.3832],
+  'London':      [51.5074, -0.1278],
+  'Manchester':  [53.4808, -2.2426],
+  'Birmingham':  [52.4862, -1.8904],
+  'Vancouver':   [49.2827, -123.1207],
+  'Edinburgh':   [55.9533, -3.1883],
 };
+
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function screenDist(screen, center) {
+  if (screen.lat == null || screen.lng == null) return null;
+  return haversine(center[0], center[1], screen.lat, screen.lng);
+}
+
 
 const DEVICE_PRESETS = {
   portrait:  { w: 160, h: 284, label: 'Portrait 9:16' },
@@ -46,7 +61,113 @@ function Stepper({ step }) {
   );
 }
 
-export function CreateCampaign({ onSave, onCancel }) {
+function ScreenMap({ center, radius, screens, selected, onToggle }) {
+  const mapRef = useRef(null);
+  const leafletRef = useRef(null);
+  const markersRef = useRef([]);
+  const circleRef = useRef(null);
+
+  useEffect(() => {
+    let L;
+    let map;
+
+    async function init() {
+      if (leafletRef.current) return;
+
+      // Load leaflet CSS once
+      if (!document.getElementById('leaflet-css')) {
+        const link = document.createElement('link');
+        link.id = 'leaflet-css';
+        link.rel = 'stylesheet';
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        document.head.appendChild(link);
+      }
+
+      L = (await import('leaflet')).default;
+
+      // Fix default icon paths broken by bundlers
+      delete L.Icon.Default.prototype._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      });
+
+      map = L.map(mapRef.current, { zoomControl: true, scrollWheelZoom: false }).setView(center, 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 18,
+      }).addTo(map);
+
+      leafletRef.current = { L, map };
+    }
+
+    init().then(() => {
+      if (!leafletRef.current) return;
+      const { L: Leaflet, map: m } = leafletRef.current;
+
+      // Update radius circle
+      if (circleRef.current) circleRef.current.remove();
+      circleRef.current = Leaflet.circle(center, {
+        radius: radius * 1000,
+        color: '#7c3aed', fillColor: '#7c3aed', fillOpacity: 0.06, weight: 2, dashArray: '6 4',
+      }).addTo(m);
+
+      // Update screen markers
+      markersRef.current.forEach(m2 => m2.remove());
+      markersRef.current = screens
+        .filter(s => s.lat != null && s.lng != null)
+        .map(s => {
+          const isSel = selected.includes(s.id);
+          const d = haversine(center[0], center[1], s.lat, s.lng);
+          const inRadius = d <= radius;
+          const icon = Leaflet.divIcon({
+            className: '',
+            html: `<div style="
+              width:14px;height:14px;border-radius:50%;
+              background:${isSel ? '#7c3aed' : inRadius ? '#16a34a' : '#9ca3af'};
+              border:2px solid #fff;
+              box-shadow:${isSel ? '0 0 0 3px #f5f3ff' : '0 1px 3px rgba(0,0,0,0.3)'};
+              cursor:${inRadius ? 'pointer' : 'default'};
+            "></div>`,
+            iconSize: [14, 14],
+            iconAnchor: [7, 7],
+          });
+          const marker = Leaflet.marker([s.lat, s.lng], { icon });
+          marker.bindTooltip(s.name, { permanent: false, direction: 'top', offset: [0, -8] });
+          if (inRadius) marker.on('click', () => onToggle(s.id));
+          return marker.addTo(m);
+        });
+    });
+  }, [center, radius, screens, selected]);
+
+  useEffect(() => () => {
+    if (leafletRef.current?.map) {
+      leafletRef.current.map.remove();
+      leafletRef.current = null;
+    }
+  }, []);
+
+  const screensWithCoords = screens.filter(s => s.lat != null && s.lng != null);
+
+  return (
+    <div style={{ position: 'relative', marginBottom: 16 }}>
+      <div ref={mapRef} style={{ height: 280, borderRadius: 12, overflow: 'hidden', border: `1px solid ${C.border}`, zIndex: 0 }} />
+      {screensWithCoords.length === 0 && screens.length > 0 && (
+        <div style={{
+          position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)',
+          fontSize: 11, color: C.textSub, fontFamily: F.sans,
+          background: 'rgba(255,255,255,0.9)', padding: '4px 10px', borderRadius: 6,
+          border: `1px solid ${C.border}`,
+        }}>
+          Screens registered without coordinates — add lat/lng to see pins
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function CreateCampaign({ onSave, onCancel, dbScreens = [] }) {
   const [step, setStep]     = useState(0);
   const [radius, setRadius] = useState(8);
   const [selected, setSelected] = useState([]);
@@ -59,8 +180,13 @@ export function CreateCampaign({ onSave, onCancel }) {
   });
   const [errors, setErrors] = useState({});
 
-  const liveScreens  = SCREENS.filter(s => s.status === 'live');
-  const visibleScreens = liveScreens.filter(s => mockDist(s) <= radius);
+  const liveScreens    = dbScreens.filter(s => s.status === 'live');
+  const primaryCity    = liveScreens[0]?.city || 'Toronto';
+  const center         = CITY_CENTERS[primaryCity] || CITY_CENTERS['Toronto'];
+  const visibleScreens = liveScreens.filter(s => {
+    const d = screenDist(s, center);
+    return d === null || d <= radius; // show if no coords or within radius
+  });
   const selScreenObjs  = liveScreens.filter(s => selected.includes(s.id));
   const primaryScreen  = selScreenObjs[0] || liveScreens[0];
 
@@ -87,7 +213,7 @@ export function CreateCampaign({ onSave, onCancel }) {
   const handleLaunch = () => {
     if (!validate()) return;
     const screenId = selected[0] || liveScreens[0]?.id;
-    const screen   = SCREENS.find(s => s.id === screenId);
+    const screen   = dbScreens.find(s => s.id === screenId);
     onSave({
       id: `BK-${String(Date.now()).slice(-4)}`,
       ...form, screenId,
@@ -112,50 +238,16 @@ export function CreateCampaign({ onSave, onCancel }) {
           <Card>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Select Screens by Area</div>
 
-            {/* Mock map */}
-            <div style={{
-              position: 'relative', height: 280, borderRadius: 12, overflow: 'hidden',
-              background: 'linear-gradient(135deg, #e8eaf0, #dde1ee)',
-              border: `1px solid ${C.border}`, marginBottom: 16,
-            }}>
-              {/* Grid lines */}
-              {[20, 40, 60, 80].map(p => (
-                <div key={`h${p}`} style={{ position: 'absolute', top: `${p}%`, left: 0, right: 0, height: 1, background: 'rgba(255,255,255,0.5)' }} />
-              ))}
-              {[20, 40, 60, 80].map(p => (
-                <div key={`v${p}`} style={{ position: 'absolute', left: `${p}%`, top: 0, bottom: 0, width: 1, background: 'rgba(255,255,255,0.5)' }} />
-              ))}
-              {/* Radius circle */}
-              <div style={{
-                position: 'absolute', left: '50%', top: '50%',
-                width: radius * 12, height: radius * 12,
-                transform: 'translate(-50%, -50%)',
-                borderRadius: '50%', background: 'rgba(124,58,237,0.08)',
-                border: `2px dashed ${C.purple}`,
-              }} />
-              {/* Center pin */}
-              <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: 10, height: 10, borderRadius: '50%', background: C.purple, boxShadow: `0 0 0 4px ${C.purpleSoft}` }} />
-              {/* Screen pins */}
-              {liveScreens.map(s => {
-                const [x, y] = SCREEN_POSITIONS[s.id] || [50, 50];
-                const inRadius = mockDist(s) <= radius;
-                const isSel = selected.includes(s.id);
-                return (
-                  <div key={s.id} onClick={() => inRadius && toggleScreen(s.id)} title={s.name} style={{
-                    position: 'absolute', left: `${x}%`, top: `${y}%`,
-                    transform: 'translate(-50%, -50%)',
-                    width: 14, height: 14, borderRadius: '50%',
-                    background: isSel ? C.purple : inRadius ? C.green : C.textMuted,
-                    border: `2px solid #fff`,
-                    cursor: inRadius ? 'pointer' : 'default',
-                    boxShadow: isSel ? `0 0 0 3px ${C.purpleSoft}` : 'none',
-                    transition: 'all 0.15s',
-                  }} />
-                );
-              })}
-              <div style={{ position: 'absolute', bottom: 10, right: 10, fontSize: 10, fontFamily: F.sans, color: C.textSub, background: 'rgba(255,255,255,0.8)', padding: '3px 7px', borderRadius: 4 }}>
-                {visibleScreens.length} screens in radius
-              </div>
+            {/* Leaflet map */}
+            <ScreenMap
+              center={center}
+              radius={radius}
+              screens={liveScreens}
+              selected={selected}
+              onToggle={toggleScreen}
+            />
+            <div style={{ fontSize: 10, color: C.textSub, fontFamily: F.sans, marginBottom: 16, marginTop: -10, textAlign: 'right' }}>
+              {visibleScreens.length} screens in radius
             </div>
 
             {/* Radius slider */}
@@ -171,6 +263,11 @@ export function CreateCampaign({ onSave, onCancel }) {
             <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 10 }}>
               Available Screens ({visibleScreens.length})
             </div>
+            {liveScreens.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '24px', background: C.surfaceAlt, borderRadius: 10, color: C.textSub, fontFamily: F.sans, fontSize: 13 }}>
+                No live screens available yet. Contact your network operator.
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {visibleScreens.map(s => (
                 <div key={s.id} onClick={() => toggleScreen(s.id)} style={{
@@ -190,7 +287,7 @@ export function CreateCampaign({ onSave, onCancel }) {
                     <div style={{ fontSize: 13, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{s.name}</div>
                     <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{s.city} · {(s.impressions / 1000).toFixed(0)}K impr/mo · £{s.cpm} CPM</div>
                   </div>
-                  <span style={{ fontSize: 11, color: C.textMuted, fontFamily: F.mono }}>{mockDist(s).toFixed(1)} km</span>
+                  <span style={{ fontSize: 11, color: C.textMuted, fontFamily: F.mono }}>{screenDist(s, center) != null ? `${screenDist(s, center).toFixed(1)} km` : '—'}</span>
                 </div>
               ))}
             </div>

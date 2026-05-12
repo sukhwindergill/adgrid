@@ -39,7 +39,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: campaigns } = await supabase
     .from("bookings")
-    .select("id, advertiser_name, headline, cta, accent_color, destination_url, category, slots, duration, schedule_days, time_start, time_end")
+    .select("id, advertiser_name, headline, cta:cta_text, accent_color, destination_url, category, slots, duration, schedule_days, time_start, time_end")
     .eq("screen_name", screen.name)
     .in("status", ["scheduled", "active"])
     .lte("start_date", today)

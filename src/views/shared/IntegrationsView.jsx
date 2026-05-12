@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
@@ -17,17 +18,13 @@ const INTEGRATIONS_LIST = [
   { id: 'hubspot',   name: 'HubSpot',               logo: '🟠', color: '#ff7a59', category: 'CRM',         status: 'disconnected', detail: 'Not connected', events: ['Consent → Create Contact', 'Scan → Custom Event'] },
   { id: 'klaviyo',   name: 'Klaviyo',               logo: '📧', color: '#00b2a9', category: 'Email',       status: 'disconnected', detail: 'Not connected', events: ['Consent → Add to List', 'Scan → Track Event'] },
   { id: 'tiktok',    name: 'TikTok Events API',     logo: '🎵', color: '#ff0050', category: 'Advertising', status: 'disconnected', detail: 'Not connected', events: ['Scan → ViewContent', 'Consent → SubmitForm'] },
-  { id: 'webhook',   name: 'Custom Webhook',        logo: '🔗', color: '#7c3aed', category: 'Custom',      status: 'error',        detail: 'Last failed 14 min ago', events: ['All scan events', 'All impression events'] },
+  { id: 'webhook',   name: 'Custom Webhook',        logo: '🔗', color: '#7c3aed', category: 'Custom',      status: 'inactive',     detail: 'Not configured', events: ['All scan events', 'All impression events'] },
 ];
 
-const PIXEL_SNIPPET = `<!-- ADGRID Tracking Pixel -->
-<script src="https://cdn.adgrid.io/pixel.js"></script>
-<script>
-  adgrid('init', 'AG-XXXXXXXX');
-  adgrid('track', 'PageView');
-</script>`;
 
 export function IntegrationsView() {
+  const { user } = useAuth();
+  const pixelId = user ? `AG-${user.id.replace(/-/g, '').slice(0, 8).toUpperCase()}` : 'AG-XXXXXXXX';
   const [selected, setSelected] = useState(null);
   const [saved, setSaved]       = useState('');
   const [tab, setTab]           = useState('integrations');
@@ -111,11 +108,18 @@ export function IntegrationsView() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <Card>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Your Pixel ID</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: C.purple, fontFamily: F.mono, marginBottom: 12 }}>AG-XXXXXXXX</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: C.purple, fontFamily: F.mono, marginBottom: 12 }}>{pixelId}</div>
             <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.7, marginBottom: 14 }}>Paste this into the &lt;head&gt; of your website. It tracks QR scan arrivals and attributes conversions back to campaigns.</div>
             <div style={{ position: 'relative' }}>
-              <pre style={{ background: C.surfaceAlt, borderRadius: 8, padding: '12px 14px', fontSize: 11, color: C.textMid, lineHeight: 1.8, overflow: 'auto', border: `1px solid ${C.border}`, whiteSpace: 'pre-wrap', fontFamily: F.mono }}>{PIXEL_SNIPPET}</pre>
-              <button onClick={() => navigator.clipboard?.writeText(PIXEL_SNIPPET)} style={{ position: 'absolute', top: 8, right: 8, padding: '4px 10px', fontSize: 11, background: C.surface, color: C.textSub, border: `1px solid ${C.border}`, borderRadius: 6, cursor: 'pointer', fontFamily: F.sans }}>Copy</button>
+              {(() => {
+                const snippet = `<!-- ADGRID Tracking Pixel -->\n<script src="https://cdn.adgrid.io/pixel.js"></script>\n<script>\n  adgrid('init', '${pixelId}');\n  adgrid('track', 'PageView');\n</script>`;
+                return (
+                  <>
+                    <pre style={{ background: C.surfaceAlt, borderRadius: 8, padding: '12px 14px', fontSize: 11, color: C.textMid, lineHeight: 1.8, overflow: 'auto', border: `1px solid ${C.border}`, whiteSpace: 'pre-wrap', fontFamily: F.mono }}>{snippet}</pre>
+                    <button onClick={() => navigator.clipboard?.writeText(snippet)} style={{ position: 'absolute', top: 8, right: 8, padding: '4px 10px', fontSize: 11, background: C.surface, color: C.textSub, border: `1px solid ${C.border}`, borderRadius: 6, cursor: 'pointer', fontFamily: F.sans }}>Copy</button>
+                  </>
+                );
+              })()}
             </div>
           </Card>
           <Card>

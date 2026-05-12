@@ -22,16 +22,3 @@ export const INIT_CAMPAIGNS = [
 export const CATEGORIES = ["Food & Beverage","Fashion & Retail","Finance & Banking","Health & Fitness","Entertainment","Technology","Travel & Tourism","Automotive","Real Estate"];
 export const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 export const HOURS = Array.from({length:24},(_,i)=>`${String(i).padStart(2,"0")}:00`);
-
-export const SCAN_DATA = [
-  {id:"SCN-001",ts:"2026-03-29T08:14:22Z",advertiser:"Pret A Manger",screen:"Corner Brew — Oxford St",city:"London",device:"iPhone 15",age:"25-34",gender:"Female",consent:true,email:"alice@example.com"},
-  {id:"SCN-002",ts:"2026-03-29T08:22:11Z",advertiser:"Pret A Manger",screen:"Corner Brew — Oxford St",city:"London",device:"Samsung Galaxy S24",age:"35-44",gender:"Male",consent:false,email:null},
-  {id:"SCN-003",ts:"2026-03-29T09:05:44Z",advertiser:"Nike",screen:"Canary Wharf Plaza",city:"London",device:"iPhone 14 Pro",age:"18-24",gender:"Male",consent:true,email:"ben.k@email.com"},
-  {id:"SCN-004",ts:"2026-03-29T09:18:33Z",advertiser:"Nike",screen:"Canary Wharf Plaza",city:"London",device:"Pixel 8",age:"25-34",gender:"Female",consent:true,email:"priya@email.com"},
-  {id:"SCN-005",ts:"2026-03-29T10:02:17Z",advertiser:"Caffè Nero",screen:"Piccadilly Gardens",city:"Manchester",device:"iPhone 13",age:"45-54",gender:"Female",consent:false,email:null},
-  {id:"SCN-006",ts:"2026-03-29T10:44:08Z",advertiser:"John Lewis",screen:"New Street Station",city:"Birmingham",device:"iPad Pro",age:"35-44",gender:"Male",consent:true,email:"mark.t@email.com"},
-  {id:"SCN-007",ts:"2026-03-29T11:29:55Z",advertiser:"Tim Hortons",screen:"King & Bay — TTC Shelter",city:"Toronto",device:"iPhone 15 Pro",age:"25-34",gender:"Male",consent:true,email:"jay.m@email.com"},
-  {id:"SCN-008",ts:"2026-03-29T12:10:22Z",advertiser:"MLSE",screen:"King & Bay — TTC Shelter",city:"Toronto",device:"Samsung Galaxy A54",age:"18-24",gender:"Male",consent:false,email:null},
-  {id:"SCN-009",ts:"2026-03-29T13:05:40Z",advertiser:"Nike",screen:"Canary Wharf Plaza",city:"London",device:"iPhone 15",age:"25-34",gender:"Female",consent:true,email:"sara.l@email.com"},
-  {id:"SCN-010",ts:"2026-03-29T14:22:19Z",advertiser:"Pret A Manger",screen:"Corner Brew — Oxford St",city:"London",device:"Pixel 7",age:"55+",gender:"Female",consent:true,email:"ruth.h@email.com"},
-];
