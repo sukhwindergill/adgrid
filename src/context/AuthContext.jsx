@@ -19,11 +19,22 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const params = new URLSearchParams(window.location.search)
+    const code   = params.get('code')
+
+    const init = async () => {
+      if (code) {
+        // OAuth PKCE callback — exchange code for session explicitly
+        await supabase.auth.exchangeCodeForSession(code)
+        // Clean the URL so code isn't reused on refresh
+        window.history.replaceState({}, '', window.location.pathname)
+      }
+      const { data: { session } } = await supabase.auth.getSession()
       setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id).finally(() => setLoading(false))
-      else setLoading(false)
-    })
+      if (session?.user) await fetchProfile(session.user.id)
+      setLoading(false)
+    }
+    init()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
@@ -55,7 +66,7 @@ export function AuthProvider({ children }) {
   }
 
   async function signInWithOAuth(provider) {
-    const redirectTo = `${window.location.origin}/login`
+    const redirectTo = window.location.origin
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo },
