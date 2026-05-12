@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { C, F } from '../../design/tokens.js';
+import { C, F, SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
+import { SkeletonCard, SkeletonRow } from '../../components/ui/Skeleton.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
@@ -65,7 +66,32 @@ function ScreenCard({ screen, onClick }) {
   );
 }
 
-function ScreenDetail({ screen, onBack }) {
+async function startStripeConnect(setConnecting) {
+  setConnecting(true);
+  const state = crypto.randomUUID();
+  sessionStorage.setItem('stripe_connect_state', state);
+  const { data: { session } } = await supabase.auth.getSession();
+  try {
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-connect-account`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ returnUrl: window.location.origin, state }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const { url } = await res.json();
+    window.location.href = url;
+  } catch (e) {
+    sessionStorage.removeItem('stripe_connect_state');
+    setConnecting(false);
+    console.error('Stripe Connect error:', e.message);
+  }
+}
+
+function ScreenDetail({ screen, onBack, profile }) {
+  const [connecting, setConnecting] = useState(false);
   return (
     <div>
       <PageHeader title={screen.name} subtitle={`${screen.neighbourhood} · ${screen.city} · ${screen.owner}`}
@@ -101,10 +127,20 @@ function ScreenDetail({ screen, onBack }) {
           </Card>
           <Card>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Payout Setup</div>
-            <div style={{ padding: '10px 12px', background: C.greenSoft, border: `1px solid ${C.greenBorder}`, borderRadius: 8, fontSize: 12, color: C.green, fontFamily: F.sans, marginBottom: 10 }}>
-              ✓ Stripe Connect active — payouts enabled
-            </div>
-            <Btn variant="success" size="sm">Trigger Payout £{Math.round(screen.revenue * 0.88 * 0.40).toLocaleString()}</Btn>
+            {profile?.connect_status === 'active' ? (
+              <div style={{ padding: '10px 12px', background: C.greenSoft, border: `1px solid ${C.greenBorder}`, borderRadius: 8, fontSize: 12, color: C.green, fontFamily: F.sans }}>
+                ✓ Stripe Connect active — payouts enabled
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 10 }}>
+                  Connect a Stripe account to receive payouts for ad revenue on your screens.
+                </div>
+                <Btn size="sm" disabled={connecting} onClick={() => startStripeConnect(setConnecting)}>
+                  {connecting ? 'Redirecting…' : 'Connect Stripe Account'}
+                </Btn>
+              </>
+            )}
           </Card>
         </div>
       </div>
@@ -241,13 +277,24 @@ services:
   );
 }
 
-export function ScreensView({ dbScreens, setDbScreens }) {
+export function ScreensView({ dbScreens, setDbScreens, profile, loading = false }) {
   const [selected, setSelected] = useState(null);
   const [filter, setFilter] = useState('All');
+
+  if (loading) {
+    return (
+      <div>
+        <div style={{ marginBottom: 24 }}><SkeletonRow cols={4} /></div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 16 }}>
+          {[1,2,3].map(i => <SkeletonCard key={i} lines={4} />)}
+        </div>
+      </div>
+    );
+  }
   const [showAdd, setShowAdd] = useState(false);
   const { isMobile, isTablet } = useBreakpoint();
 
-  if (selected) return <ScreenDetail screen={selected} onBack={() => setSelected(null)} />;
+  if (selected) return <ScreenDetail screen={selected} onBack={() => setSelected(null)} profile={profile} />;
 
   const allScreens = dbScreens && dbScreens.length > 0 ? dbScreens : SCREENS;
   const cities = ['All', ...new Set(allScreens.map(s => s.city))];

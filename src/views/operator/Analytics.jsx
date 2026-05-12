@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
+import { SkeletonRow, Skeleton } from '../../components/ui/Skeleton.jsx';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
@@ -9,10 +10,9 @@ import { Table } from '../../components/primitives/Table.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
-// Fallback mock data shown before real impressions flow in
-const MOCK_HOURLY = [0,0,0,0,0,0,2,8,24,18,12,10,9,8,7,6,10,16,22,14,8,4,2,1];
-const MOCK_DAY    = { Mon: 18, Tue: 22, Wed: 25, Thu: 20, Fri: 28, Sat: 15, Sun: 8 };
-const DAY_NAMES   = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const EMPTY_HOURLY = Array(24).fill(0);
+const EMPTY_DAY    = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
+const DAY_NAMES    = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function HeatmapGrid({ data }) {
   const max = Math.max(...data, 1);
@@ -138,14 +138,27 @@ export function Analytics({ campaigns }) {
   });
   const maxImpr = Math.max(...byCity.map(c => c.impr), 1);
 
-  const hourlyData  = stats?.hourly   ?? MOCK_HOURLY;
-  const dailyData   = stats?.daily    ?? MOCK_DAY;
-  const femalePct   = stats?.femalePct ?? 58;
-  const malePct     = stats?.malePct   ?? 42;
-  const ageData     = stats?.ageData   ?? [['18–24', 18], ['25–34', 38], ['35–44', 24], ['45–54', 14], ['55+', 6]];
+  const hourlyData  = stats?.hourly   ?? EMPTY_HOURLY;
+  const dailyData   = stats?.daily    ?? EMPTY_DAY;
+  const femalePct   = stats?.femalePct ?? 0;
+  const malePct     = stats?.malePct   ?? 0;
+  const ageData     = stats?.ageData   ?? [['18–24', 0], ['25–34', 0], ['35–44', 0], ['45–54', 0], ['55+', 0]];
   const totalPeople = stats?.totalPeople ?? 0;
   const avgDwell    = stats?.avgDwell ?? '—';
   const avgAttn     = stats?.avgAttn ?? '—';
+
+  if (loading) {
+    return (
+      <div>
+        <div style={{ marginBottom: 24 }}><SkeletonRow cols={4} /></div>
+        <Skeleton height={220} radius={12} style={{ marginBottom: 20 }} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          <Skeleton height={160} radius={12} />
+          <Skeleton height={160} radius={12} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

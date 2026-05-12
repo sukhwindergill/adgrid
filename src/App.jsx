@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './context/AuthContext.jsx';
 import { supabase } from './lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from './lib/constants.js';
@@ -62,11 +62,30 @@ export default function App() {
 
   const [active,        setActive]        = useState('overview');
   const [impersonating, setImpersonating] = useState(null); // { id, name }
+  const impersonationLogId = useRef(null);
   const [campaigns,     setCampaigns]     = useState([]);
   const [dbScreens,     setDbScreens]     = useState([]);
   const [detail,        setDetail]        = useState(null);
   const [dataLoading,   setDataLoading]   = useState(false);
   const [loadError,     setLoadError]     = useState(null);
+
+  // ── Impersonation audit trail ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!user) return;
+    if (impersonating) {
+      supabase.from('impersonation_logs').insert({
+        operator_id: user.id,
+        advertiser_id: impersonating.id,
+      }).select('id').single().then(({ data }) => {
+        if (data) impersonationLogId.current = data.id;
+      });
+    } else if (impersonationLogId.current) {
+      supabase.from('impersonation_logs')
+        .update({ ended_at: new Date().toISOString() })
+        .eq('id', impersonationLogId.current)
+        .then(() => { impersonationLogId.current = null; });
+    }
+  }, [impersonating, user]);
 
   // ── Impersonation ──────────────────────────────────────────────────────────
   function startImpersonation(adv) {
@@ -110,8 +129,8 @@ export default function App() {
         days: b.schedule_days,
         timeStart: b.time_start,
         timeEnd: b.time_end,
-        spent: Math.round(b.budget * 0.65),
-        scans: Math.round(b.impressions * 0.003),
+        spent: b.spent ?? 0,
+        scans: b.scans ?? 0,
         color: b.accent_color,
         destination: b.destination_url,
       })));
@@ -265,8 +284,8 @@ export default function App() {
           onCancel={() => navigate('adv-overview')}
         />
       );
-      if (active === 'adv-campaigns')    return <Campaigns campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} />;
-      if (active === 'adv-analytics')    return <Analytics campaigns={campaigns} />;
+      if (active === 'adv-campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} />;
+      if (active === 'adv-analytics')    return <Analytics campaigns={campaigns} loading={dataLoading} />;
       if (active === 'adv-audience')     return <ScansView impersonatingId={impersonating?.id ?? null} />;
       if (active === 'adv-billing')      return <AdvertiserBillingView />;
       if (active === 'adv-integrations') return <AdvIntegrationsView />;
@@ -274,12 +293,12 @@ export default function App() {
       return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navigate} />;
     }
 
-    if (active === 'overview')     return <Dashboard campaigns={campaigns} setNav={navigate} loading={dataLoading} />;
-    if (active === 'screens')      return <ScreensView dbScreens={dbScreens} setDbScreens={setDbScreens} />;
-    if (active === 'campaigns')    return <Campaigns campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} />;
-    if (active === 'analytics')    return <Analytics campaigns={campaigns} />;
+    if (active === 'overview')     return <Dashboard campaigns={campaigns} dbScreens={dbScreens} setNav={navigate} loading={dataLoading} />;
+    if (active === 'screens')      return <ScreensView dbScreens={dbScreens} setDbScreens={setDbScreens} profile={profile} loading={dataLoading} />;
+    if (active === 'campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} />;
+    if (active === 'analytics')    return <Analytics campaigns={campaigns} loading={dataLoading} />;
     if (active === 'audience')     return <Audience campaigns={campaigns} />;
-    if (active === 'revenue')      return <Revenue campaigns={campaigns} />;
+    if (active === 'revenue')      return <Revenue campaigns={campaigns} loading={dataLoading} />;
     if (active === 'billing')      return <Billing campaigns={campaigns} />;
     if (active === 'advertisers')  return <AdvertisersView onImpersonate={startImpersonation} />;
     if (active === 'signals')      return <SignalsView campaigns={campaigns} />;
@@ -302,6 +321,22 @@ export default function App() {
         />
       }
     >
+      {loadError && (
+        <div style={{
+          background: '#ff000022', border: '1px solid #ff4444', borderRadius: 8,
+          padding: '10px 16px', marginBottom: 16, display: 'flex',
+          alignItems: 'center', gap: 12, fontFamily: F.sans, fontSize: 13, color: '#ff6666',
+        }}>
+          <span style={{ flex: 1 }}>{loadError}</span>
+          <button
+            onClick={loadData}
+            style={{
+              background: '#ff444433', border: '1px solid #ff4444', borderRadius: 6,
+              color: '#ff8888', fontFamily: F.sans, fontSize: 12, padding: '4px 12px', cursor: 'pointer',
+            }}
+          >Retry</button>
+        </div>
+      )}
       <ErrorBoundary key={active}>
         <div className="fade-in">
           {view()}

@@ -6,8 +6,17 @@ import { Table } from '../../components/primitives/Table.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
+import { SkeletonRow, SkeletonTable } from '../../components/ui/Skeleton.jsx';
 
-export function Revenue({ campaigns }) {
+export function Revenue({ campaigns, loading = false }) {
+  if (loading) {
+    return (
+      <div>
+        <div style={{ marginBottom: 24 }}><SkeletonRow cols={4} /></div>
+        <SkeletonTable rows={5} cols={5} />
+      </div>
+    );
+  }
   const total    = campaigns.reduce((a, c) => a + c.budget, 0);
   const platform = Math.round(total * 0.12);
   const owners   = Math.round(total * 0.88 * 0.40);

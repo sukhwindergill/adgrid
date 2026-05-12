@@ -54,10 +54,29 @@ export function AuthProvider({ children }) {
     setProfile(null)
   }
 
+  async function signInWithOAuth(provider) {
+    const redirectTo = `${window.location.origin}/login`
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo },
+    })
+    return { data, error }
+  }
+
+  async function setRole(role) {
+    if (!user) return
+    const { error } = await supabase.auth.updateUser({ data: { role } })
+    if (!error) {
+      await supabase.from('profiles').upsert({ id: user.id, role }, { onConflict: 'id' })
+      await fetchProfile(user.id)
+    }
+    return { error }
+  }
+
   const role = profile?.role ?? user?.user_metadata?.role ?? null
 
   return (
-    <AuthContext.Provider value={{ user, profile, role, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, profile, role, loading, signUp, signIn, signOut, signInWithOAuth, setRole }}>
       {children}
     </AuthContext.Provider>
   )

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
+import { SkeletonRow, SkeletonCard } from '../../components/ui/Skeleton.jsx';
 
 function ApproveBtn({ campaign, setCampaigns }) {
   const [loading, setLoading] = useState(false);
@@ -66,22 +67,22 @@ import { Badge } from '../../components/primitives/Badge.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
-import { SCREENS, CATEGORIES, DAYS, HOURS } from '../../lib/data.js';
+import { CATEGORIES, DAYS, HOURS } from '../../lib/data.js';
 import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
-function NewCampaignModal({ onClose, onSave }) {
+function NewCampaignModal({ onClose, onSave, dbScreens = [] }) {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
-    advertiser: '', category: 'Food & Beverage', screenId: 'SCR-008',
+    advertiser: '', category: 'Food & Beverage', screenId: dbScreens[0]?.id ?? '',
     start: '', end: '', days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
     timeStart: '07:00', timeEnd: '20:00', slots: 10, duration: 10,
     budget: 500, headline: '', cta: 'Learn More →', color: '#7c3aed', destination: '',
   });
   const [errors, setErrors] = useState({});
 
-  const screen = SCREENS.find(s => s.id === form.screenId);
+  const screen = dbScreens.find(s => s.id === form.screenId);
   const days = form.start && form.end ? Math.max(1, Math.round((new Date(form.end) - new Date(form.start)) / (1000 * 60 * 60 * 24))) : 30;
   const estImpr = screen ? Math.round((screen.impressions * (form.slots / 100) / 30) * days) : 0;
 
@@ -172,7 +173,14 @@ function NewCampaignModal({ onClose, onSave }) {
                 {CATEGORIES.map(c => <option key={c}>{c}</option>)}
               </SelInput>
               <SelInput label="Screen" value={form.screenId} onChange={e => setForm(f => ({ ...f, screenId: e.target.value }))}>
-                {SCREENS.filter(s => s.status === 'live').map(s => <option key={s.id} value={s.id}>{s.name} — {s.city} (£{s.cpm} CPM · {(s.impressions / 1000).toFixed(0)}K impr/mo)</option>)}
+                {dbScreens.filter(s => s.status === 'live').length === 0
+                  ? <option value="">No screens registered yet</option>
+                  : dbScreens.filter(s => s.status === 'live').map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} — {s.city} (£{(s.cpm ?? 4.20).toFixed(2)} CPM · {((s.impressions ?? 0) / 1000).toFixed(0)}K impr/mo)
+                      </option>
+                    ))
+                }
               </SelInput>
               {screen && (
                 <div style={{ padding: '12px 14px', background: C.purpleSoft, borderRadius: 8, border: `1px solid ${C.purpleBorder}`, fontFamily: F.sans }}>
@@ -255,11 +263,22 @@ function NewCampaignModal({ onClose, onSave }) {
   );
 }
 
-export function Campaigns({ campaigns, setCampaigns, setDetail, loadError }) {
+export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, loadError, loading = false }) {
   const [filter, setFilter] = useState('all');
   const [city, setCity]     = useState('All');
   const [showNew, setShowNew] = useState(false);
   const { isMobile } = useBreakpoint();
+
+  if (loading) {
+    return (
+      <div>
+        <div style={{ marginBottom: 24 }}><SkeletonRow cols={4} /></div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {[1,2,3,4].map(i => <SkeletonCard key={i} lines={3} style={{ padding: '16px 20px' }} />)}
+        </div>
+      </div>
+    );
+  }
 
   function exportCSV(rows) {
     const headers = ['ID', 'Advertiser', 'Screen', 'City', 'Status', 'Budget', 'Start', 'End', 'Impressions', 'Scans'];
@@ -284,7 +303,7 @@ export function Campaigns({ campaigns, setCampaigns, setDetail, loadError }) {
 
   return (
     <div>
-      {showNew && <NewCampaignModal onClose={() => setShowNew(false)} onSave={c => { setCampaigns(prev => [...prev, c]); setShowNew(false); }} />}
+      {showNew && <NewCampaignModal onClose={() => setShowNew(false)} onSave={c => { setCampaigns(prev => [...prev, c]); setShowNew(false); }} dbScreens={dbScreens} />}
 
       {loadError && (
         <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: '#991b1b', fontSize: 14 }}>

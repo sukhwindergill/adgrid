@@ -225,7 +225,7 @@ export function DisplayPlayer({ screenToken }) {
       {/* Campaign indicator dots */}
       {campaigns.length > 1 && (
         <div style={{
-          position: 'absolute', bottom: 'clamp(20px, 3vw, 40px)', left: '50%',
+          position: 'absolute', bottom: 'clamp(36px, 4vw, 52px)', left: '50%',
           transform: 'translateX(-50%)', display: 'flex', gap: 8,
         }}>
           {campaigns.map((_, i) => (
@@ -237,6 +237,22 @@ export function DisplayPlayer({ screenToken }) {
           ))}
         </div>
       )}
+
+      {/* GDPR privacy notice */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        padding: '6px 20px',
+        background: 'rgba(0,0,0,0.55)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        backdropFilter: 'blur(4px)',
+      }}>
+        <span style={{ fontSize: 'clamp(9px, 0.9vw, 12px)', color: 'rgba(255,255,255,0.35)', fontFamily: "'Inter', sans-serif" }}>
+          This screen uses computer vision to count viewers. No personal data is stored.
+        </span>
+        <a href="/privacy" style={{ fontSize: 'clamp(9px, 0.9vw, 12px)', color: 'rgba(255,255,255,0.25)', fontFamily: "'Inter', sans-serif", textDecoration: 'underline' }}>
+          Privacy Policy ↗
+        </a>
+      </div>
     </div>
   );
 }
