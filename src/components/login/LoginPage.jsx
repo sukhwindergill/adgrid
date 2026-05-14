@@ -149,7 +149,7 @@ export function LoginPage() {
             <div style={{ flex: 1, height: 1, background: C.border }} />
           </div>
 
-          {import.meta.env.VITE_DEMO_EMAIL && (
+          {import.meta.env.VITE_DEMO_EMAIL && import.meta.env.VITE_DEMO_PASSWORD && (
             <button
               type="button"
               onClick={async () => {
@@ -173,7 +173,7 @@ export function LoginPage() {
               onMouseEnter={e => e.currentTarget.style.background = 'rgba(124,58,237,0.06)'}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
-              ▶ Try Demo
+              {loading ? 'Signing in…' : '▶ Try Demo'}
             </button>
           )}
 
