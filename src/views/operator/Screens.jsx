@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { C, F, SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { SkeletonCard, SkeletonRow } from '../../components/ui/Skeleton.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
@@ -148,6 +149,7 @@ function ScreenDetail({ screen, onBack, profile }) {
 }
 
 function AddScreenModal({ onClose, onAdded }) {
+  const { profile, setRole } = useAuth();
   const [form, setForm] = useState({
     name: '', owner: '', type: 'Business', city: 'Toronto', location: '',
     display_size: '', monthly_traffic_estimate: '', cpm_floor: '3.00',
@@ -181,6 +183,9 @@ function AddScreenModal({ onClose, onAdded }) {
     }).select('id, name, screen_token').single();
 
     if (error) { setErr(error.message); setSaving(false); return; }
+    if (profile?.role !== 'operator') {
+      await setRole('operator');
+    }
     setRegistered({ token: data.screen_token, id: data.id, name: data.name });
     onAdded(data);
     setSaving(false);
