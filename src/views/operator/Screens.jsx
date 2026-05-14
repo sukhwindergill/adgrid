@@ -184,7 +184,8 @@ function AddScreenModal({ onClose, onAdded }) {
 
     if (error) { setErr(error.message); setSaving(false); return; }
     if (profile?.role !== 'operator') {
-      await setRole('operator');
+      const { error: roleErr } = await setRole('operator');
+      if (roleErr) { setErr('Screen registered but role promotion failed — please try signing out and back in.'); setSaving(false); return; }
     }
     setRegistered({ token: data.screen_token, id: data.id, name: data.name });
     onAdded(data);
