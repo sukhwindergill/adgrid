@@ -183,8 +183,8 @@ function AddScreenModal({ onClose, onAdded }) {
       max_ad_duration: 30,
       monthly_revenue: 0,
       campaigns: 0,
-      lat: form.lat ? parseFloat(form.lat) : null,
-      lng: form.lng ? parseFloat(form.lng) : null,
+      lat: form.lat,
+      lng: form.lng,
     }).select('id, name, screen_token').single();
 
     if (error) { setErr(error.message); setSaving(false); return; }
