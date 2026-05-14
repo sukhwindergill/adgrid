@@ -57,7 +57,7 @@ async function callNotification(userId, type, data = {}) {
 // ─── App ─────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const { user, profile, role, loading, signOut } = useAuth();
+  const { user, profile, role, loading, signOut, activeRole, canToggleToOperator, toggleRole } = useAuth();
 
   const [active,        setActive]        = useState('overview');
   const [impersonating, setImpersonating] = useState(null); // { id, name }
@@ -155,10 +155,11 @@ export default function App() {
 
   useEffect(() => {
     if (user) {
-      setActive(role === 'advertiser' ? 'adv-overview' : 'overview');
+      const startRole = activeRole ?? role;
+      setActive(startRole === 'advertiser' ? 'adv-overview' : 'overview');
       loadData();
     }
-  }, [user, role, loadData]);
+  }, [user, role, activeRole, loadData]);
 
   // ── Stripe Connect redirect ────────────────────────────────────────────────
   useEffect(() => {
@@ -200,7 +201,8 @@ export default function App() {
     return <MarketingHome onSignup={() => window.location.href = '/login'} onLogin={() => window.location.href = '/login'} />;
   }
 
-  const effectiveRole = impersonating ? 'advertiser' : role;
+  // impersonation takes priority; otherwise use session-only activeRole
+  const effectiveRole = impersonating ? 'advertiser' : (activeRole ?? role);
   const isAdv = effectiveRole === 'advertiser';
   const displayUser = { name: profile?.name || user.email?.split('@')[0] || 'User', email: user.email, role };
 
@@ -346,6 +348,11 @@ export default function App() {
           user={displayUser}
           onSignOut={signOut}
           isAdv={isAdv}
+          canToggleToOperator={canToggleToOperator}
+          onToggleRole={(targetRole) => {
+            toggleRole(targetRole);
+            navigate(targetRole === 'advertiser' ? 'adv-overview' : 'overview');
+          }}
         />
       }
     >
