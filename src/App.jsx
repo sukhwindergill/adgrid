@@ -153,13 +153,19 @@ export default function App() {
     setDataLoading(false);
   }, []);
 
+  // Set default tab on login — runs once per login, not on every role toggle
   useEffect(() => {
     if (user) {
       const startRole = activeRole ?? role;
       setActive(startRole === 'advertiser' ? 'adv-overview' : 'overview');
-      loadData();
     }
-  }, [user, role, activeRole, loadData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]); // intentionally omit activeRole — only want login-time default
+
+  // Load data when user or DB role changes — not on session-only toggles
+  useEffect(() => {
+    if (user) loadData();
+  }, [user, role, loadData]);
 
   // ── Stripe Connect redirect ────────────────────────────────────────────────
   useEffect(() => {
