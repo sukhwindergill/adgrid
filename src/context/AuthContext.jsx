@@ -7,6 +7,7 @@ export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [activeRole, setActiveRole] = useState(null)
 
   async function fetchProfile(userId) {
     const { data } = await supabase
@@ -15,6 +16,7 @@ export function AuthProvider({ children }) {
       .eq('id', userId)
       .single()
     setProfile(data)
+    if (data?.role) setActiveRole(data.role)
     return data
   }
 
@@ -86,8 +88,19 @@ export function AuthProvider({ children }) {
 
   const role = profile?.role ?? user?.user_metadata?.role ?? null
 
+  const canToggleToOperator = profile?.role === 'operator'
+
+  function toggleRole(targetRole) {
+    if (targetRole === 'operator' && !canToggleToOperator) return
+    setActiveRole(targetRole)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, profile, role, loading, signUp, signIn, signOut, signInWithOAuth, setRole }}>
+    <AuthContext.Provider value={{
+      user, profile, role, loading,
+      activeRole, canToggleToOperator, toggleRole,
+      signUp, signIn, signOut, signInWithOAuth, setRole,
+    }}>
       {children}
     </AuthContext.Provider>
   )
