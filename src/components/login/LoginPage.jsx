@@ -149,6 +149,34 @@ export function LoginPage() {
             <div style={{ flex: 1, height: 1, background: C.border }} />
           </div>
 
+          {import.meta.env.VITE_DEMO_EMAIL && import.meta.env.VITE_DEMO_PASSWORD && (
+            <button
+              type="button"
+              onClick={async () => {
+                setErr('');
+                setLoading(true);
+                const { error } = await signIn(
+                  import.meta.env.VITE_DEMO_EMAIL,
+                  import.meta.env.VITE_DEMO_PASSWORD,
+                );
+                if (error) setErr(error.message);
+                setLoading(false);
+              }}
+              disabled={loading}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                width: '100%', padding: '10px 16px', borderRadius: 8, marginBottom: 16,
+                border: `1px dashed ${C.purple}`, background: 'transparent',
+                cursor: 'pointer', fontSize: 13, fontWeight: 500,
+                color: C.purple, fontFamily: F.sans, transition: 'background 0.15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(124,58,237,0.06)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              {loading ? 'Signing in…' : '▶ Try Demo'}
+            </button>
+          )}
+
           {mode === 'signup' && (
             <div style={{ display: 'flex', background: C.surfaceAlt, borderRadius: 8, padding: 3, marginBottom: 14, border: `1px solid ${C.border}` }}>
               {[['operator', 'Operator'], ['advertiser', 'Advertiser']].map(([v, l]) => (

@@ -57,7 +57,7 @@ async function callNotification(userId, type, data = {}) {
 // ─── App ─────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const { user, profile, role, loading, signOut } = useAuth();
+  const { user, profile, role, loading, signOut, activeRole, canToggleToOperator, toggleRole } = useAuth();
 
   const [active,        setActive]        = useState('overview');
   const [impersonating, setImpersonating] = useState(null); // { id, name }
@@ -153,11 +153,18 @@ export default function App() {
     setDataLoading(false);
   }, []);
 
+  // Set default tab on login — runs once per login, not on every role toggle
   useEffect(() => {
     if (user) {
-      setActive(role === 'advertiser' ? 'adv-overview' : 'overview');
-      loadData();
+      const startRole = activeRole ?? role;
+      setActive(startRole === 'advertiser' ? 'adv-overview' : 'overview');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]); // intentionally omit activeRole — only want login-time default
+
+  // Load data when user or DB role changes — not on session-only toggles
+  useEffect(() => {
+    if (user) loadData();
   }, [user, role, loadData]);
 
   // ── Stripe Connect redirect ────────────────────────────────────────────────
@@ -200,7 +207,8 @@ export default function App() {
     return <MarketingHome onSignup={() => window.location.href = '/login'} onLogin={() => window.location.href = '/login'} />;
   }
 
-  const effectiveRole = impersonating ? 'advertiser' : role;
+  // impersonation takes priority; otherwise use session-only activeRole
+  const effectiveRole = impersonating ? 'advertiser' : (activeRole ?? role);
   const isAdv = effectiveRole === 'advertiser';
   const displayUser = { name: profile?.name || user.email?.split('@')[0] || 'User', email: user.email, role };
 
@@ -346,6 +354,11 @@ export default function App() {
           user={displayUser}
           onSignOut={signOut}
           isAdv={isAdv}
+          canToggleToOperator={canToggleToOperator}
+          onToggleRole={(targetRole) => {
+            toggleRole(targetRole);
+            navigate(targetRole === 'advertiser' ? 'adv-overview' : 'overview');
+          }}
         />
       }
     >

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { C, F, SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { SkeletonCard, SkeletonRow } from '../../components/ui/Skeleton.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
@@ -11,6 +12,7 @@ import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { ScreenLocationPicker } from '../../components/ScreenLocationPicker.jsx';
 
 function uptime(s) {
   return s.status === 'live' ? '99.2%' : s.status === 'pending' ? '—' : '98.1%';
@@ -148,10 +150,11 @@ function ScreenDetail({ screen, onBack, profile }) {
 }
 
 function AddScreenModal({ onClose, onAdded }) {
+  const { profile, setRole } = useAuth();
   const [form, setForm] = useState({
     name: '', owner: '', type: 'Business', city: 'Toronto', location: '',
     display_size: '', monthly_traffic_estimate: '', cpm_floor: '3.00',
-    lat: '', lng: '',
+    lat: null, lng: null,
   });
   const [saving, setSaving] = useState(false);
   const [registered, setRegistered] = useState(null); // { token, id, name }
@@ -159,6 +162,10 @@ function AddScreenModal({ onClose, onAdded }) {
 
   const save = async () => {
     if (!form.name.trim() || !form.owner.trim()) return;
+    if (form.lat == null || form.lng == null) {
+      setErr('Pin your screen location on the map to continue.');
+      return;
+    }
     setSaving(true);
     setErr(null);
     const { data: { user } } = await supabase.auth.getUser();
@@ -176,11 +183,15 @@ function AddScreenModal({ onClose, onAdded }) {
       max_ad_duration: 30,
       monthly_revenue: 0,
       campaigns: 0,
-      lat: form.lat ? parseFloat(form.lat) : null,
-      lng: form.lng ? parseFloat(form.lng) : null,
+      lat: form.lat,
+      lng: form.lng,
     }).select('id, name, screen_token').single();
 
     if (error) { setErr(error.message); setSaving(false); return; }
+    if (profile?.role !== 'operator') {
+      const { error: roleErr } = await setRole('operator');
+      if (roleErr) { setErr('Screen registered but role promotion failed — please try signing out and back in.'); setSaving(false); return; }
+    }
     setRegistered({ token: data.screen_token, id: data.id, name: data.name });
     onAdded(data);
     setSaving(false);
@@ -264,9 +275,14 @@ services:
           </div>
           <Inp label="Location / Address" placeholder="e.g. King St W & Bay St, Toronto" value={form.location} onChange={e => setForm(s => ({ ...s, location: e.target.value }))} />
           <Inp label="Display Size (optional)" placeholder="e.g. 55 inch 4K, 72 inch LED" value={form.display_size} onChange={e => setForm(s => ({ ...s, display_size: e.target.value }))} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Inp label="Latitude (optional)" type="number" step="any" placeholder="e.g. 51.5074" value={form.lat} onChange={e => setForm(s => ({ ...s, lat: e.target.value }))} hint="For map placement" />
-            <Inp label="Longitude (optional)" type="number" step="any" placeholder="e.g. -0.1278" value={form.lng} onChange={e => setForm(s => ({ ...s, lng: e.target.value }))} hint="For map placement" />
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>
+              Screen Location <span style={{ color: C.red }}>*</span>
+            </div>
+            <ScreenLocationPicker
+              value={{ lat: form.lat, lng: form.lng }}
+              onChange={({ lat, lng }) => setForm(s => ({ ...s, lat, lng }))}
+            />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Inp label="Monthly Footfall (thousands)" type="number" placeholder="e.g. 50" value={form.monthly_traffic_estimate} onChange={e => setForm(s => ({ ...s, monthly_traffic_estimate: e.target.value }))} hint="Estimated people/month ÷ 1000" />
