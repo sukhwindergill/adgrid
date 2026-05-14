@@ -41,7 +41,7 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
       if (session?.user) fetchProfile(session.user.id)
-      else setProfile(null)
+      else { setProfile(null); setActiveRole(null) }
     })
 
     return () => subscription.unsubscribe()
@@ -65,6 +65,7 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut()
     setUser(null)
     setProfile(null)
+    setActiveRole(null)
   }
 
   async function signInWithOAuth(provider) {
