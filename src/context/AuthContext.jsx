@@ -16,7 +16,8 @@ export function AuthProvider({ children }) {
       .eq('id', userId)
       .single()
     setProfile(data)
-    if (data?.role) setActiveRole(data.role)
+    // Only set activeRole on initial load (null) — don't clobber a user-toggled role on JWT refresh
+    setActiveRole(prev => prev === null && data?.role ? data.role : prev)
     return data
   }
 
@@ -83,6 +84,8 @@ export function AuthProvider({ children }) {
     if (!error) {
       await supabase.from('profiles').upsert({ id: user.id, role }, { onConflict: 'id' })
       await fetchProfile(user.id)
+      // Intentional DB role change — sync activeRole to new role
+      setActiveRole(role)
     }
     return { error }
   }
