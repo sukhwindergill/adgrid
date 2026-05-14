@@ -15,7 +15,7 @@ const ADV_TABS = [
   { id: 'adv-analytics', label: 'Analytics' },
 ];
 
-export function GlobalHeader({ active, setActive, user, onSignOut, isAdv }) {
+export function GlobalHeader({ active, setActive, user, onSignOut, isAdv, canToggleToOperator, onToggleRole }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const tabs = isAdv ? ADV_TABS : OP_TABS;
 
@@ -120,6 +120,24 @@ export function GlobalHeader({ active, setActive, user, onSignOut, isAdv }) {
                     onMouseLeave={e => e.currentTarget.style.background = 'none'}
                   >{l.label}</button>
                 ))}
+                {canToggleToOperator && (
+                  <button
+                    onClick={() => {
+                      onToggleRole(isAdv ? 'operator' : 'advertiser');
+                      setMenuOpen(false);
+                    }}
+                    style={{
+                      display: 'block', width: '100%', textAlign: 'left',
+                      padding: '8px 16px', background: 'none', border: 'none',
+                      fontFamily: F.sans, fontSize: 13, color: C.purple, cursor: 'pointer',
+                      fontWeight: 500,
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = C.surfaceAlt}
+                    onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                  >
+                    {isAdv ? '⇄ Switch to Operator' : '⇄ Switch to Advertiser'}
+                  </button>
+                )}
                 <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 4 }} />
                 <button onClick={() => { onSignOut(); setMenuOpen(false); }} style={{
                   display: 'block', width: '100%', textAlign: 'left',
