@@ -11,6 +11,10 @@ export function ScreenLocationPicker({ value, onChange }) {
   const [geoErr,  setGeoErr]  = useState('');
   const [searching, setSearching] = useState(false);
 
+  // ── Fix 3: Stable onChange ref to prevent stale closure ──────────────────────
+  const onChangeRef = useRef(onChange);
+  useEffect(() => { onChangeRef.current = onChange; });
+
   // ── Init Leaflet ────────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
@@ -45,6 +49,7 @@ export function ScreenLocationPicker({ value, onChange }) {
       }).addTo(map);
 
       leafletRef.current = { L, map, marker: null };
+      if (cancelled) { map.remove(); leafletRef.current = null; return; }
 
       // If value already set (edit mode), place pin
       if (value?.lat != null && value?.lng != null) {
@@ -53,7 +58,13 @@ export function ScreenLocationPicker({ value, onChange }) {
     }
 
     init();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (leafletRef.current) {
+        leafletRef.current.map.remove();
+        leafletRef.current = null;
+      }
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -64,11 +75,11 @@ export function ScreenLocationPicker({ value, onChange }) {
     const m = L.marker([lat, lng], { draggable: true }).addTo(map);
     m.on('dragend', () => {
       const p = m.getLatLng();
-      onChange({ lat: +p.lat.toFixed(6), lng: +p.lng.toFixed(6) });
+      onChangeRef.current({ lat: +p.lat.toFixed(6), lng: +p.lng.toFixed(6) });
     });
     leafletRef.current.marker = m;
     if (pan) map.setView([lat, lng], 16);
-    onChange({ lat: +lat.toFixed(6), lng: +lng.toFixed(6) });
+    onChangeRef.current({ lat: +lat.toFixed(6), lng: +lng.toFixed(6) });
   }
 
   // ── Nominatim search ────────────────────────────────────────────────────────
@@ -84,6 +95,7 @@ export function ScreenLocationPicker({ value, onChange }) {
       );
       const data = await res.json();
       if (!data.length) { setGeoErr('Address not found. Try a different search.'); return; }
+      if (!leafletRef.current) return;
       placePin(parseFloat(data[0].lat), parseFloat(data[0].lon));
     } catch {
       setGeoErr('Search failed. Check your connection.');
