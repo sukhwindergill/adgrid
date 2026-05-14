@@ -122,6 +122,7 @@ export function GlobalHeader({ active, setActive, user, onSignOut, isAdv, canTog
                 ))}
                 {canToggleToOperator && (
                   <button
+                    type="button"
                     onClick={() => {
                       onToggleRole(isAdv ? 'operator' : 'advertiser');
                       setMenuOpen(false);
