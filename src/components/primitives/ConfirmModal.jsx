@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { C, F } from '../../design/tokens.js';
 import { Btn } from './Btn.jsx';
 
@@ -22,17 +23,36 @@ export function ConfirmModal({
   onConfirm,
   onCancel,
 }) {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onCancel();
+      } else if (e.key === 'Enter') {
+        onConfirm();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onConfirm, onCancel]);
+
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 500,
-      background: 'rgba(0,0,0,0.45)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>
-      <div style={{
-        background: C.surface, borderRadius: 16,
-        padding: '28px 32px', width: 400, maxWidth: 'calc(100vw - 48px)',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-      }}>
+    <div
+      onClick={onCancel}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 500,
+        background: 'rgba(0,0,0,0.45)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: C.surface, borderRadius: 16,
+          padding: '28px 32px', width: 400, maxWidth: 'calc(100vw - 48px)',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+        }}
+      >
         <div style={{ fontFamily: F.sans, fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 10 }}>
           {title}
         </div>
