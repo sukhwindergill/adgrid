@@ -1,7 +1,7 @@
 export const C = {
   bg:"#f9fafb", surface:"#ffffff", surfaceAlt:"#f3f4f6", surfaceHover:"#f9fafb",
   border:"#e5e7eb", borderDark:"#d1d5db",
-  text:"#111827", textMid:"#374151", textSub:"#6b7280", textMuted:"#9ca3af",
+  text:"#111827", textMid:"#374151", textSub:"#6b7280", textMuted:"#737373",
   blue:"#2563eb", blueSoft:"#eff6ff", blueBorder:"#bfdbfe", blueDark:"#1d4ed8",
   green:"#16a34a", greenSoft:"#f0fdf4", greenBorder:"#bbf7d0",
   amber:"#d97706", amberSoft:"#fffbeb", amberBorder:"#fde68a",
