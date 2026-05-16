@@ -3,10 +3,12 @@ import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
 import { SkeletonRow, SkeletonCard } from '../../components/ui/Skeleton.jsx';
+import { ConfirmModal } from '../../components/primitives/ConfirmModal.jsx';
 
 function ApproveBtn({ campaign, setCampaigns }) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
+  const [pendingManual, setPendingManual] = useState(null); // holds { msg } when we need confirmation
 
   const approve = async e => {
     e.preventDefault();
@@ -16,7 +18,6 @@ function ApproveBtn({ campaign, setCampaigns }) {
 
     const { data: { session } } = await supabase.auth.getSession();
 
-    // Try Stripe charge first; fall back to direct DB update if advertiser has no Stripe
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/charge-campaign`, {
       method: 'POST',
       headers: {
@@ -29,21 +30,12 @@ function ApproveBtn({ campaign, setCampaigns }) {
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       const msg = body.error ?? 'Charge failed';
-
-      // If advertiser has no payment method yet, still allow manual approval
       const isNoPayment = msg.toLowerCase().includes('no payment') || msg.toLowerCase().includes('no card');
       if (isNoPayment) {
-        const confirmed = window.confirm(
-          `${msg}\n\nApprove without charging? You can collect payment manually.`
-        );
-        if (!confirmed) { setLoading(false); return; }
-        const { error: dbErr } = await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
-        if (dbErr) { setErr(dbErr.message); setLoading(false); return; }
-        setCampaigns(prev => prev.map(x => x.id === campaign.id ? { ...x, status: 'scheduled' } : x));
         setLoading(false);
+        setPendingManual({ msg }); // show ConfirmModal instead of window.confirm
         return;
       }
-
       setErr(msg);
       setLoading(false);
       return;
@@ -53,8 +45,27 @@ function ApproveBtn({ campaign, setCampaigns }) {
     setLoading(false);
   };
 
+  const confirmManual = async () => {
+    setPendingManual(null);
+    setLoading(true);
+    const { error: dbErr } = await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
+    if (dbErr) { setErr(dbErr.message); setLoading(false); return; }
+    setCampaigns(prev => prev.map(x => x.id === campaign.id ? { ...x, status: 'scheduled' } : x));
+    setLoading(false);
+  };
+
   return (
     <div>
+      {pendingManual && (
+        <ConfirmModal
+          title="No payment method on file"
+          message={`${pendingManual.msg}\n\nApprove anyway? You can collect payment manually.`}
+          confirmLabel="Approve without charging"
+          cancelLabel="Cancel"
+          onConfirm={confirmManual}
+          onCancel={() => { setPendingManual(null); setLoading(false); }}
+        />
+      )}
       <Btn variant="success" size="sm" onClick={approve} disabled={loading}>
         {loading ? '…' : '✓ Approve'}
       </Btn>
