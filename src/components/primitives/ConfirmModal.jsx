@@ -60,7 +60,7 @@ export function ConfirmModal({
         <div id="confirm-modal-title" style={{ fontFamily: F.sans, fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 10 }}>
           {title}
         </div>
-        <div style={{ fontFamily: F.sans, fontSize: 14, color: C.textSub, lineHeight: 1.6, marginBottom: 24 }}>
+        <div style={{ fontFamily: F.sans, fontSize: 14, color: C.textSub, lineHeight: 1.6, marginBottom: 24, whiteSpace: 'pre-line' }}>
           {message}
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
