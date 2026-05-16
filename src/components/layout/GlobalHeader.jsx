@@ -34,6 +34,7 @@ const ADV_SECONDARY = [
 
 export function GlobalHeader({ active, setActive, user, onSignOut, isAdv }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [hoveredLink, setHoveredLink] = useState(null);
   const { isMobile } = useBreakpoint();
 
   const tabs = isAdv ? ADV_TABS : OP_TABS;
@@ -98,8 +99,10 @@ export function GlobalHeader({ active, setActive, user, onSignOut, isAdv }) {
           <div style={{ position: 'relative' }}>
             <div
               onClick={() => setMenuOpen(o => !o)}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMenuOpen(o => !o); } }}
               aria-label="Account menu"
               role="button"
+              tabIndex={0}
               style={{
                 width: 34, height: 34, borderRadius: '50%',
                 background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
@@ -152,15 +155,17 @@ export function GlobalHeader({ active, setActive, user, onSignOut, isAdv }) {
               padding: '0 14px',
               background: 'none', border: 'none',
               borderBottom: active === l.id ? `2px solid ${C.purple}` : '2px solid transparent',
-              color: active === l.id ? C.text : C.textMuted,
+              color: active === l.id ? C.text : hoveredLink === l.id ? C.textSub : C.textMuted,
               fontFamily: F.sans, fontSize: 12,
               fontWeight: active === l.id ? 600 : 400,
               cursor: 'pointer', transition: 'color 0.15s',
               whiteSpace: 'nowrap',
               flexShrink: 0,
             }}
-            onMouseEnter={e => { if (active !== l.id) e.currentTarget.style.color = C.textSub; }}
-            onMouseLeave={e => { if (active !== l.id) e.currentTarget.style.color = C.textMuted; }}
+            onMouseEnter={() => setHoveredLink(l.id)}
+            onMouseLeave={() => setHoveredLink(null)}
+            onFocus={() => setHoveredLink(l.id)}
+            onBlur={() => setHoveredLink(null)}
           >
             {l.label}
           </button>
