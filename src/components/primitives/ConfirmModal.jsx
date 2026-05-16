@@ -28,6 +28,7 @@ export function ConfirmModal({
       if (e.key === 'Escape') {
         onCancel();
       } else if (e.key === 'Enter') {
+        e.preventDefault();
         onConfirm();
       }
     };
@@ -47,13 +48,16 @@ export function ConfirmModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-modal-title"
         style={{
           background: C.surface, borderRadius: 16,
           padding: '28px 32px', width: 400, maxWidth: 'calc(100vw - 48px)',
           boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
         }}
       >
-        <div style={{ fontFamily: F.sans, fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 10 }}>
+        <div id="confirm-modal-title" style={{ fontFamily: F.sans, fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 10 }}>
           {title}
         </div>
         <div style={{ fontFamily: F.sans, fontSize: 14, color: C.textSub, lineHeight: 1.6, marginBottom: 24 }}>
