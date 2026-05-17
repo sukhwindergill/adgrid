@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
+import { useToast } from '../../components/primitives/Toast.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
@@ -33,6 +34,7 @@ function useBilling() {
 }
 
 export function Billing() {
+  const toast = useToast();
   const [tab, setTab]         = useState('overview');
   const [payingOut, setPaying] = useState(false);
   const { data, loading, error, refresh } = useBilling();
@@ -59,8 +61,8 @@ export function Billing() {
     });
     const json = await res.json();
     setPaying(false);
-    if (!res.ok) { alert(`Payout failed: ${json.error}`); return; }
-    alert(`Payout initiated — arrives ${json.arrival_date}`);
+    if (!res.ok) { toast.error(`Payout failed: ${json.error}`); return; }
+    toast.success(`Payout initiated — arrives ${json.arrival_date}`);
     refresh();
   };
 

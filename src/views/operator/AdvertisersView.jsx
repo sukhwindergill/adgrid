@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { C, F } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
+import { useToast } from "../../components/primitives/Toast.jsx";
 
 function StatusBadge({ status }) {
   const styles = {
@@ -28,6 +29,7 @@ function Modal({ title, onClose, children }) {
 }
 
 function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate }) {
+  const toast = useToast();
   const [tab, setTab] = useState("overview");
   const [creditsAmount, setCreditsAmount] = useState("");
   const [rateAmount, setRateAmount] = useState(adv.rate_override ?? "");
@@ -41,7 +43,7 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
     setSaving(true);
     const { error: statusError } = await supabase.from("profiles").update({ status }).eq("id", adv.id);
     setSaving(false);
-    if (statusError) { alert("Failed to update status."); return; }
+    if (statusError) { toast.error("Failed to update status."); return; }
     onUpdated({ ...adv, status });
     setModal(null);
   }
@@ -53,7 +55,7 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
     const newCredits = (adv.credits ?? 0) + amount;
     const { error } = await supabase.from("profiles").update({ credits: newCredits }).eq("id", adv.id);
     setSaving(false);
-    if (error) { alert("Failed to add credits."); return; }
+    if (error) { toast.error("Failed to add credits."); return; }
     onUpdated({ ...adv, credits: newCredits });
     setCreditsAmount("");
     setModal(null);

@@ -3,10 +3,12 @@ import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
 import { SkeletonRow, SkeletonCard } from '../../components/ui/Skeleton.jsx';
+import { useConfirm } from '../../components/primitives/ConfirmModal.jsx';
 
 function ApproveBtn({ campaign, setCampaigns }) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
+  const confirm = useConfirm();
 
   const approve = async e => {
     e.preventDefault();
@@ -33,9 +35,12 @@ function ApproveBtn({ campaign, setCampaigns }) {
       // If advertiser has no payment method yet, still allow manual approval
       const isNoPayment = msg.toLowerCase().includes('no payment') || msg.toLowerCase().includes('no card');
       if (isNoPayment) {
-        const confirmed = window.confirm(
-          `${msg}\n\nApprove without charging? You can collect payment manually.`
-        );
+        const confirmed = await confirm({
+          title: 'Approve without charging?',
+          message: `${msg}\n\nYou can collect payment manually.`,
+          confirmLabel: 'Approve',
+          danger: false,
+        });
         if (!confirmed) { setLoading(false); return; }
         const { error: dbErr } = await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
         if (dbErr) { setErr(dbErr.message); setLoading(false); return; }
