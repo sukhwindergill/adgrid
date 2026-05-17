@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './context/AuthContext.jsx';
 import { supabase } from './lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from './lib/constants.js';
+import { useToast } from './components/primitives/Toast.jsx';
 
 import { LoginPage } from './components/login/LoginPage.jsx';
 import { GlobalHeader } from './components/layout/GlobalHeader.jsx';
@@ -58,6 +59,7 @@ async function callNotification(userId, type, data = {}) {
 
 export default function App() {
   const { user, profile, role, loading, signOut } = useAuth();
+  const toast = useToast();
 
   const [active,        setActive]        = useState('overview');
   const [impersonating, setImpersonating] = useState(null); // { id, name }
@@ -224,7 +226,7 @@ export default function App() {
       });
       const json = await res.json();
       if (!res.ok) {
-        alert(`Payment failed: ${json.error ?? 'Unknown error'}`);
+        toast.error(`Payment failed: ${json.error ?? 'Unknown error'}`);
         return;
       }
       // charge-campaign sets status to 'scheduled' on success — sync local state
@@ -237,7 +239,7 @@ export default function App() {
       .eq('id', updated.id);
     if (error) {
       console.error('Failed to update campaign:', error.message);
-      alert(`Failed to update campaign: ${error.message}`);
+      toast.error(`Failed to update campaign: ${error.message}`);
       return;
     }
     setCampaigns(prev => prev.map(c => c.id === updated.id ? updated : c));
@@ -284,7 +286,7 @@ export default function App() {
               duration:        c.duration,
             }).select().single();
             if (error || !row) {
-              alert(`Failed to submit campaign: ${error?.message ?? 'Unknown error'}`);
+              toast.error(`Failed to submit campaign: ${error?.message ?? 'Unknown error'}`);
               return;
             }
             setCampaigns(p => [{
