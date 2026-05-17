@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { C, F } from '../../design/tokens.js';
+import { useToast } from '../../components/primitives/Toast.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
@@ -10,6 +11,7 @@ import { Tabs } from '../../components/primitives/Tabs.jsx';
 import { supabase } from '../../lib/supabase.js';
 
 export function CampaignDetail({ campaign, onBack, onUpdate }) {
+  const toast = useToast();
   const [tab, setTab] = useState('overview');
   const [rejecting, setRejecting] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
@@ -210,7 +212,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate }) {
                     cta: creativeForm.cta,
                     accent_color: creativeForm.accent_color,
                   }).eq('id', c.id);
-                  if (error) { alert(`Save failed: ${error.message}`); return; }
+                  if (error) { toast.error(`Save failed: ${error.message}`); return; }
                   onUpdate({ ...c, headline: creativeForm.headline, cta: creativeForm.cta, color: creativeForm.accent_color });
                   setEditingCreative(false);
                 }}>Save Creative</Btn>
@@ -283,7 +285,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate }) {
                   start_date: editForm.start,
                   end_date: editForm.end,
                 }).eq('id', c.id);
-                if (error) { alert(`Save failed: ${error.message}`); return; }
+                if (error) { toast.error(`Save failed: ${error.message}`); return; }
                 onUpdate({ ...c, budget: editForm.budget, start: editForm.start, end: editForm.end });
                 setEditing(false);
               }}>Save Changes</Btn>
