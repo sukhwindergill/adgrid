@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { C, F, SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
+import { useToast } from "../../components/primitives/Toast.jsx";
 
 const STATUS_COLORS = {
   paid: { bg: "#f0fdf4", color: "#16a34a" },
@@ -23,6 +24,8 @@ export default function BillingView() {
   const [data, setData] = useState({ invoices: [], paymentMethods: [], portalUrl: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [setupLoading, setSetupLoading] = useState(false);
+  const toast = useToast();
 
   async function load() {
     setLoading(true);
@@ -44,7 +47,33 @@ export default function BillingView() {
     setLoading(false);
   }
 
+  async function startSetup() {
+    setSetupLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/setup-billing`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const body = await res.json();
+      if (!res.ok || !body.url) throw new Error(body.error ?? "Failed to start setup");
+      window.location.href = body.url;
+    } catch (e) {
+      toast.error(e.message);
+      setSetupLoading(false);
+    }
+  }
+
   useEffect(() => {
+    // Show toast if returning from Stripe Checkout
+    const params = new URLSearchParams(window.location.search);
+    const setup = params.get("setup");
+    if (setup === "success") {
+      toast.success("Payment method added successfully.");
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (setup === "cancelled") {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
     load();
   }, []);
 
@@ -114,9 +143,18 @@ export default function BillingView() {
               Manage Payment Methods →
             </a>
           ) : (
-            <div style={{ fontSize: 13, color: C.textMuted, marginTop: 4 }}>
-              Payment portal not configured.
-            </div>
+            <button
+              onClick={startSetup}
+              disabled={setupLoading}
+              style={{
+                padding: "8px 18px", borderRadius: 8, border: "none",
+                background: setupLoading ? C.textMuted : C.purple,
+                color: "#fff", fontSize: 13, fontWeight: 500,
+                cursor: setupLoading ? "not-allowed" : "pointer",
+              }}
+            >
+              {setupLoading ? "Redirecting…" : "＋ Add Payment Method"}
+            </button>
           )}
         </div>
       </div>

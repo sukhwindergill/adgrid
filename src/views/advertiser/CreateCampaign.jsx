@@ -167,6 +167,8 @@ function ScreenMap({ center, radius, screens, selected, onToggle }) {
   );
 }
 
+const DRAFT_KEY = 'adgrid_campaign_draft';
+
 export function CreateCampaign({ onSave, onCancel, dbScreens = [] }) {
   const [step, setStep]     = useState(0);
   const [radius, setRadius] = useState(8);
@@ -179,6 +181,22 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [] }) {
     budget: 500, headline: '', cta: 'Learn More →', color: '#7c3aed', destination: '',
   });
   const [errors, setErrors] = useState({});
+  const [draftBanner, setDraftBanner] = useState(false);
+
+  // On mount: check for a saved draft
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) setDraftBanner(true);
+    } catch (_) {}
+  }, []);
+
+  // Auto-save form to localStorage on every change
+  useEffect(() => {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+    } catch (_) {}
+  }, [form]);
 
   const liveScreens    = dbScreens.filter(s => s.status === 'live');
   const primaryCity    = liveScreens[0]?.city || 'Toronto';
@@ -214,6 +232,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [] }) {
     if (!validate()) return;
     const screenId = selected[0] || liveScreens[0]?.id;
     const screen   = dbScreens.find(s => s.id === screenId);
+    try { localStorage.removeItem(DRAFT_KEY); } catch (_) {}
     onSave({
       id: `BK-${String(Date.now()).slice(-4)}`,
       ...form, screenId,
@@ -223,6 +242,19 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [] }) {
     });
   };
 
+  const handleRestoreDraft = () => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) setForm(JSON.parse(raw));
+    } catch (_) {}
+    setDraftBanner(false);
+  };
+
+  const handleDiscardDraft = () => {
+    try { localStorage.removeItem(DRAFT_KEY); } catch (_) {}
+    setDraftBanner(false);
+  };
+
   const toggleScreen = (id) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
   const dev = DEVICE_PRESETS[device];
@@ -230,6 +262,39 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [] }) {
   return (
     <div>
       <PageHeader title="New Campaign" back="Overview" onBack={onCancel} />
+
+      {draftBanner && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          background: C.amberSoft, border: `1px solid ${C.amberBorder}`,
+          borderRadius: 8, padding: '12px 16px', marginBottom: 20,
+        }}>
+          <span style={{ flex: 1, color: C.amber, fontFamily: F.sans, fontSize: 13 }}>
+            You have a saved draft — restore it?
+          </span>
+          <button
+            onClick={handleRestoreDraft}
+            style={{
+              padding: '5px 14px', borderRadius: 6, border: 'none',
+              background: C.purple, color: '#fff',
+              fontFamily: F.sans, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            Restore
+          </button>
+          <button
+            onClick={handleDiscardDraft}
+            style={{
+              padding: '5px 14px', borderRadius: 6,
+              border: `1px solid ${C.border}`, background: C.surface,
+              color: C.textSub, fontFamily: F.sans, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+            }}
+          >
+            Discard
+          </button>
+        </div>
+      )}
+
       <Stepper step={step} />
 
       {/* Step 0: Location & Screen Selection */}
