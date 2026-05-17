@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { C, F } from '../../design/tokens.js';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
@@ -9,6 +10,14 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { SkeletonRow, SkeletonTable } from '../../components/ui/Skeleton.jsx';
 
 export function Revenue({ campaigns, loading = false }) {
+  const [period, setPeriod] = useState(null);
+
+  const filteredCampaigns = period === null ? campaigns : campaigns.filter(c => {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - period);
+    return new Date(c.start_date) >= cutoff;
+  });
+
   if (loading) {
     return (
       <div>
@@ -17,17 +26,29 @@ export function Revenue({ campaigns, loading = false }) {
       </div>
     );
   }
-  const total    = campaigns.reduce((a, c) => a + c.budget, 0);
+  const total    = filteredCampaigns.reduce((a, c) => a + c.budget, 0);
   const platform = Math.round(total * 0.12);
   const owners   = Math.round(total * 0.88 * 0.40);
   const network  = total - platform - owners;
-  const cities   = [...new Set(campaigns.map(c => c.city))];
-  const maxRev   = Math.max(...cities.map(city => campaigns.filter(c => c.city === city).reduce((a, c) => a + c.budget, 0)), 1);
+  const cities   = [...new Set(filteredCampaigns.map(c => c.city))];
+  const maxRev   = Math.max(...cities.map(city => filteredCampaigns.filter(c => c.city === city).reduce((a, c) => a + c.budget, 0)), 1);
 
   return (
     <div>
       <PageHeader title="Revenue" subtitle="Platform earnings, owner payouts, and network splits"
-        actions={<Btn variant="secondary" size="sm">↓ Export Report</Btn>} />
+        actions={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {[[30, '30d'], [90, '90d'], [365, '365d'], [null, 'All']].map(([d, label]) => (
+              <button key={label} onClick={() => setPeriod(d)} style={{
+                padding: '5px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer',
+                border: `1px solid ${period === d ? C.purple : C.border}`,
+                background: period === d ? C.purpleSoft : C.surface,
+                color: period === d ? C.purple : C.textSub, fontFamily: F.sans, fontWeight: 500,
+              }}>{label}</button>
+            ))}
+            <Btn variant="secondary" size="sm">↓ Export Report</Btn>
+          </div>
+        } />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
         <KPI label="Total Ad Spend"   value={`£${total.toLocaleString()}`}    sub="from advertisers" trend={14} icon="💰" />
         <KPI label="Platform Revenue" value={`£${platform.toLocaleString()}`} sub="12% fee" color={C.blue} icon="$" />
@@ -50,7 +71,7 @@ export function Revenue({ campaigns, loading = false }) {
         <Card>
           <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>By City</div>
           {cities.map(city => {
-            const rev = campaigns.filter(c => c.city === city).reduce((a, c) => a + c.budget, 0);
+            const rev = filteredCampaigns.filter(c => c.city === city).reduce((a, c) => a + c.budget, 0);
             return (
               <div key={city} style={{ marginBottom: 14 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, fontFamily: F.sans }}>
@@ -73,7 +94,7 @@ export function Revenue({ campaigns, loading = false }) {
           { key: 'budget',   label: 'Network',      render: v => <span style={{ fontFamily: F.mono }}>£{Math.round(v * 0.88 * 0.60).toLocaleString()}</span> },
           { key: 'status',   label: 'Status',       render: v => <Badge status={v} /> },
         ]}
-        rows={campaigns} />
+        rows={filteredCampaigns} />
     </div>
   );
 }

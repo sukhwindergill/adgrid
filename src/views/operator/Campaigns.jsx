@@ -4,6 +4,7 @@ import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
 import { SkeletonRow, SkeletonCard } from '../../components/ui/Skeleton.jsx';
 import { useConfirm } from '../../components/primitives/ConfirmModal.jsx';
+import { useToast } from '../../components/primitives/Toast.jsx';
 
 function ApproveBtn({ campaign, setCampaigns }) {
   const [loading, setLoading] = useState(false);
@@ -86,6 +87,8 @@ function NewCampaignModal({ onClose, onSave, dbScreens = [] }) {
     budget: 500, headline: '', cta: 'Learn More →', color: '#7c3aed', destination: '',
   });
   const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+  const toast = useToast();
 
   const screen = dbScreens.find(s => s.id === form.screenId);
   const days = form.start && form.end ? Math.max(1, Math.round((new Date(form.end) - new Date(form.start)) / (1000 * 60 * 60 * 24))) : 30;
@@ -103,6 +106,7 @@ function NewCampaignModal({ onClose, onSave, dbScreens = [] }) {
 
   const handleSave = async () => {
     if (!validate()) return;
+    setSaving(true);
     const { data: row, error } = await supabase.from('bookings').insert({
       advertiser_name: form.advertiser,
       screen_name:     screen?.name || '',
@@ -122,19 +126,17 @@ function NewCampaignModal({ onClose, onSave, dbScreens = [] }) {
       slots:           form.slots,
       duration:        form.duration,
     }).select().single();
-    const saved = row ?? {
-      id: `BK-${String(Date.now()).slice(-4)}`,
-      ...form,
-      screen: screen?.name || '',
-      city: screen?.city || '',
-      spent: 0, impressions: estImpr, scans: 0, status: 'scheduled',
-    };
-    onSave({ ...form, ...saved, screen: screen?.name || '', city: screen?.city || '', spent: 0, scans: 0,
-      advertiser: saved.advertiser_name ?? form.advertiser,
-      start: saved.start_date ?? form.start, end: saved.end_date ?? form.end,
-      days: saved.schedule_days ?? form.days, timeStart: saved.time_start ?? form.timeStart,
-      timeEnd: saved.time_end ?? form.timeEnd, color: saved.accent_color ?? form.color,
-      destination: saved.destination_url ?? form.destination,
+    setSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    onSave({ ...form, ...row, screen: screen?.name || '', city: screen?.city || '', spent: 0, scans: 0,
+      advertiser: row.advertiser_name ?? form.advertiser,
+      start: row.start_date ?? form.start, end: row.end_date ?? form.end,
+      days: row.schedule_days ?? form.days, timeStart: row.time_start ?? form.timeStart,
+      timeEnd: row.time_end ?? form.timeEnd, color: row.accent_color ?? form.color,
+      destination: row.destination_url ?? form.destination,
     });
   };
 
@@ -260,7 +262,7 @@ function NewCampaignModal({ onClose, onSave, dbScreens = [] }) {
           <Btn variant="secondary" onClick={step === 1 ? onClose : () => setStep(s => s - 1)}>{step === 1 ? 'Cancel' : '← Back'}</Btn>
           {step < 3
             ? <Btn onClick={() => setStep(s => s + 1)} disabled={step === 1 && !form.advertiser}>Next →</Btn>
-            : <Btn onClick={handleSave} style={{ boxShadow: '0 6px 20px rgba(124,58,237,0.4)' }}>🚀 Launch Campaign</Btn>
+            : <Btn onClick={handleSave} disabled={saving} style={{ boxShadow: '0 6px 20px rgba(124,58,237,0.4)' }}>{saving ? 'Saving…' : '🚀 Launch Campaign'}</Btn>
           }
         </div>
       </div>
