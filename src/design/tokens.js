@@ -8,7 +8,7 @@ export const C = {
   text: '#0a0a0a',
   textMid: '#262626',
   textSub: '#525252',
-  textMuted: '#a3a3a3',
+  textMuted: '#737373',
 
   purple: '#7c3aed',
   purpleDark: '#6d28d9',
