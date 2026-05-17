@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
+import { ToastProvider } from './components/primitives/Toast.jsx'
+import { ConfirmProvider } from './components/primitives/ConfirmModal.jsx'
 import { DisplayPlayer } from './views/display/DisplayPlayer.jsx'
 
 const path = window.location.pathname;
@@ -13,9 +15,13 @@ createRoot(document.getElementById('root')).render(
     {displayMatch ? (
       <DisplayPlayer screenToken={displayMatch[1]} />
     ) : (
-      <AuthProvider>
-        <App />
-      </AuthProvider>
+      <ToastProvider>
+        <ConfirmProvider>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </ConfirmProvider>
+      </ToastProvider>
     )}
   </StrictMode>,
 )
