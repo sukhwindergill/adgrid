@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { C, F, SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
+import { C, F } from '../../lib/constants.js';
 import { SkeletonCard, SkeletonRow } from '../../components/ui/Skeleton.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
@@ -60,31 +60,6 @@ function ScreenCard({ screen, onClick }) {
     </Card>
   );
 }
-
-async function startStripeConnect(setConnecting) {
-  setConnecting(true);
-  const state = crypto.randomUUID();
-  sessionStorage.setItem('stripe_connect_state', state);
-  const { data: { session } } = await supabase.auth.getSession();
-  try {
-    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-connect-account`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ returnUrl: window.location.origin, state }),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    const { url } = await res.json();
-    window.location.href = url;
-  } catch (e) {
-    sessionStorage.removeItem('stripe_connect_state');
-    setConnecting(false);
-    console.error('Stripe Connect error:', e.message);
-  }
-}
-
 
 function AddScreenModal({ onClose, onAdded }) {
   const [form, setForm] = useState({
@@ -222,7 +197,7 @@ services:
   );
 }
 
-export function ScreensView({ dbScreens, setDbScreens, profile, loading = false, onSelectScreen }) {
+export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelectScreen }) {
   const [filter, setFilter] = useState('All');
   const [showAdd, setShowAdd] = useState(false);
   const { isMobile, isTablet } = useBreakpoint();
