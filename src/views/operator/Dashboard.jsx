@@ -9,6 +9,7 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { SkeletonKPI } from '../../components/primitives/Skeleton.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { SectionHeader } from '../../components/primitives/SectionHeader.jsx';
 
 
 function LiveCounter({ base }) {
@@ -140,10 +141,7 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
       {/* Active campaigns + screen health */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 320px', gap: 20 }}>
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans }}>Active Campaigns</h2>
-            <Btn variant="ghost" size="sm" onClick={() => setNav('campaigns')}>View all →</Btn>
-          </div>
+          <SectionHeader title="Active Campaigns" action={<Btn variant="ghost" size="sm" onClick={() => setNav('campaigns')}>View all →</Btn>} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {active.slice(0, 5).map(c => {
               const pct = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
@@ -183,7 +181,7 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
 
         {/* Screen health */}
         <div>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Network Health</h2>
+          <SectionHeader title="Network Health" />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {liveScreens.slice(0, 5).map(s => (
               <Card key={s.id} style={{ padding: '13px 16px' }}>
