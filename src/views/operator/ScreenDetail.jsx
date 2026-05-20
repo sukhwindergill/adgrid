@@ -35,7 +35,7 @@ async function startStripeConnect(setConnecting) {
   }
 }
 
-export function ScreenDetailView({ screenId, onBack, profile }) {
+export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated }) {
   const [screen, setScreen] = useState(null);
   const [heartbeats, setHeartbeats] = useState([]);
   const [screenCampaigns, setScreenCampaigns] = useState([]);
@@ -150,7 +150,7 @@ export function ScreenDetailView({ screenId, onBack, profile }) {
         <EditScreenModal
           screen={screen}
           onClose={() => setShowEdit(false)}
-          onSaved={updated => setScreen(updated)}
+          onSaved={updated => { setScreen(updated); onScreenUpdated?.(updated); }}
         />
       )}
 
