@@ -89,7 +89,6 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
       <PageHeader
         title="Dashboard"
         subtitle={new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        actions={<Btn onClick={() => setNav('campaigns')}>+ New Campaign</Btn>}
       />
 
       {/* Hero: live counter */}
