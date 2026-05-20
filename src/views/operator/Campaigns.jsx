@@ -356,7 +356,7 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
               <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>
                 No campaigns yet
               </div>
-              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20, maxWidth: 320, margin: '0 auto 20px' }}>
+              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, maxWidth: 320, margin: '0 auto 20px' }}>
                 Create your first campaign to start reaching customers on your screens.
               </div>
               <Btn onClick={() => setShowNew(true)}>
