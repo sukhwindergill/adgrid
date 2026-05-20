@@ -49,19 +49,29 @@ function DayBars({ data }) {
   );
 }
 
-function useImpressionStats(days = 7) {
+function useImpressionStats(period = 7, customFrom = '', customTo = '') {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hasReal, setHasReal] = useState(false);
 
   useEffect(() => {
-    const since = new Date();
-    since.setDate(since.getDate() - days);
+    let from, to;
+
+    if (period === 'custom' && customFrom && customTo) {
+      from = new Date(customFrom);
+      to = new Date(customTo);
+      to.setHours(23, 59, 59, 999);
+    } else {
+      to = new Date();
+      from = new Date();
+      from.setDate(from.getDate() - Number(period));
+    }
 
     supabase
       .from('impression_events')
       .select('window_start, people_count, avg_dwell_seconds, avg_attention_score, age_18_24, age_25_34, age_35_44, age_45_54, age_55_plus, gender_male, gender_female, gender_unknown')
-      .gte('window_start', since.toISOString())
+      .gte('window_start', from.toISOString())
+      .lte('window_start', to.toISOString())
       .order('window_start', { ascending: true })
       .then(({ data }) => {
         if (data && data.length > 0) {
@@ -70,7 +80,7 @@ function useImpressionStats(days = 7) {
         }
         setLoading(false);
       });
-  }, [days]);
+  }, [period, customFrom, customTo]);
 
   const stats = useMemo(() => {
     if (!hasReal) return null;
@@ -122,9 +132,11 @@ function useImpressionStats(days = 7) {
 
 export function Analytics({ campaigns }) {
   const [filters, setFilters] = useState({ gender: '', age: '' });
-  const [period, setPeriod] = useState(7);
+  const [period, setPeriod] = useState(7); // 7 | 30 | 90 | 'custom'
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
   const { isMobile } = useBreakpoint();
-  const { stats, loading, hasReal } = useImpressionStats(period);
+  const { stats, loading, hasReal } = useImpressionStats(period, customFrom, customTo);
 
   const totalImpr  = campaigns.reduce((a, c) => a + (c.impressions || 0), 0);
   const totalScans = campaigns.reduce((a, c) => a + (c.scans || 0), 0);
@@ -163,20 +175,59 @@ export function Analytics({ campaigns }) {
   return (
     <div>
       <PageHeader title="Analytics"
-        subtitle={hasReal ? `Real impression data · ${period}-day window` : 'Impression tracking, scan rates, demographics, and campaign performance'}
+        subtitle={hasReal ? `Real impression data · ${period === 'custom' ? 'custom range' : period + '-day window'}` : 'Impression tracking, scan rates, demographics, and campaign performance'}
         actions={
-          <div style={{ display: 'flex', gap: 4 }}>
-            {[7, 14, 30].map(d => (
-              <button key={d} onClick={() => setPeriod(d)} style={{
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {[7, 30, 90].map(d => (
+                <button key={d} onClick={() => { setPeriod(d); setCustomFrom(''); setCustomTo(''); }} style={{
+                  padding: '5px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer',
+                  border: `1px solid ${period === d ? C.purple : C.border}`,
+                  background: period === d ? C.purpleSoft : C.surface,
+                  color: period === d ? C.purple : C.textSub, fontFamily: F.sans, fontWeight: 500,
+                }}>{d}d</button>
+              ))}
+            </div>
+            <select
+              value={period === 'custom' ? 'custom' : period}
+              onChange={e => setPeriod(e.target.value === 'custom' ? 'custom' : Number(e.target.value))}
+              style={{
                 padding: '5px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer',
-                border: `1px solid ${period === d ? C.purple : C.border}`,
-                background: period === d ? C.purpleSoft : C.surface,
-                color: period === d ? C.purple : C.textSub, fontFamily: F.sans, fontWeight: 500,
-              }}>{d}d</button>
-            ))}
+                border: `1px solid ${period === 'custom' ? C.purple : C.border}`,
+                background: period === 'custom' ? C.purpleSoft : C.surface,
+                color: period === 'custom' ? C.purple : C.textSub, fontFamily: F.sans, fontWeight: 500,
+                appearance: 'none', paddingRight: 24, backgroundImage: `url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="12" height="8"%3E%3Cpath fill="%23666" d="M0 0l6 8 6-8z"/%3E%3C/svg%3E')`,
+                backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center',
+              }}
+            >
+              <option value="custom">Custom…</option>
+            </select>
           </div>
         }
       />
+
+      {period === 'custom' && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '12px 16px', background: C.surface, border: `1px solid ${C.border}`,
+          borderRadius: 12, marginBottom: 16,
+        }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: C.textSub, fontFamily: F.sans }}>Date range:</span>
+          <input
+            type="date"
+            value={customFrom}
+            onChange={e => setCustomFrom(e.target.value)}
+            style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: F.sans, background: C.surface, color: C.text, outline: 'none' }}
+          />
+          <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans }}>to</span>
+          <input
+            type="date"
+            value={customTo}
+            onChange={e => setCustomTo(e.target.value)}
+            style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: F.sans, background: C.surface, color: C.text, outline: 'none' }}
+          />
+        </div>
+      )}
 
       {!hasReal && !loading && (
         <div style={{
