@@ -273,7 +273,7 @@ export default function App() {
 
   // ── View routing ───────────────────────────────────────────────────────────
   const view = () => {
-    if (detail && (active === 'campaigns' || active === 'analytics' || active === 'adv-campaigns')) {
+    if (detail && (active === 'campaigns' || active === 'analytics' || active === 'adv-campaigns' || active === 'approval')) {
       return <CampaignDetail campaign={detail} onBack={() => setDetail(null)} onUpdate={updateCampaign} />;
     }
 
@@ -354,7 +354,10 @@ export default function App() {
       />
     );
     if (active === 'approval')      return <ApprovalQueue campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} />;
-    if (active === 'screen-detail') return <ScreenDetailView screenId={selectedScreenId} onBack={() => navigate('screens')} profile={profile} />;
+    if (active === 'screen-detail') {
+      if (!selectedScreenId) { navigate('screens'); return null; }
+      return <ScreenDetailView screenId={selectedScreenId} onBack={() => navigate('screens')} profile={profile} />;
+    }
     if (active === 'notif-prefs')   return <NotificationPrefsView />;
     if (active === 'campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} />;
     if (active === 'analytics')    return <Analytics campaigns={campaigns} loading={dataLoading} />;
