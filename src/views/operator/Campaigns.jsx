@@ -1,73 +1,9 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
 import { SkeletonRow, SkeletonCard } from '../../components/ui/Skeleton.jsx';
-import { useConfirm } from '../../components/primitives/ConfirmModal.jsx';
 import { useToast } from '../../components/primitives/Toast.jsx';
-
-function ApproveBtn({ campaign, setCampaigns }) {
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState(null);
-  const confirm = useConfirm();
-
-  const approve = async e => {
-    e.preventDefault();
-    e.stopPropagation();
-    setLoading(true);
-    setErr(null);
-
-    const { data: { session } } = await supabase.auth.getSession();
-
-    // Try Stripe charge first; fall back to direct DB update if advertiser has no Stripe
-    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/charge-campaign`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ campaign_id: campaign.id }),
-    });
-
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      const msg = body.error ?? 'Charge failed';
-
-      // If advertiser has no payment method yet, still allow manual approval
-      const isNoPayment = msg.toLowerCase().includes('no payment') || msg.toLowerCase().includes('no card');
-      if (isNoPayment) {
-        const confirmed = await confirm({
-          title: 'Approve without charging?',
-          message: `${msg}\n\nYou can collect payment manually.`,
-          confirmLabel: 'Approve',
-          danger: false,
-        });
-        if (!confirmed) { setLoading(false); return; }
-        const { error: dbErr } = await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
-        if (dbErr) { setErr(dbErr.message); setLoading(false); return; }
-        setCampaigns(prev => prev.map(x => x.id === campaign.id ? { ...x, status: 'scheduled' } : x));
-        setLoading(false);
-        return;
-      }
-
-      setErr(msg);
-      setLoading(false);
-      return;
-    }
-
-    setCampaigns(prev => prev.map(x => x.id === campaign.id ? { ...x, status: 'scheduled', payment_status: 'paid' } : x));
-    setLoading(false);
-  };
-
-  return (
-    <div>
-      <Btn variant="success" size="sm" onClick={approve} disabled={loading}>
-        {loading ? '…' : '✓ Approve'}
-      </Btn>
-      {err && <div style={{ fontSize: 10, color: C.red, fontFamily: F.sans, marginTop: 3, maxWidth: 110 }}>{err}</div>}
-    </div>
-  );
-}
+import { ApproveBtn } from '../../lib/campaignActions.js';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
@@ -349,10 +285,30 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
       </div>
 
       {shown.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
-          <div style={{ fontSize: 32, marginBottom: 10 }}>📭</div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No campaigns found</div>
-          <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Try adjusting your filters</div>
+        <div style={{ textAlign: 'center', padding: '56px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
+          {campaigns.length === 0 ? (
+            <>
+              <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>
+                No campaigns yet
+              </div>
+              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, maxWidth: 320, margin: '0 auto 20px' }}>
+                Create your first campaign to start reaching customers on your screens.
+              </div>
+              <Btn onClick={() => setShowNew(true)}>
+                + Create your first campaign
+              </Btn>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>
+                No campaigns match these filters
+              </div>
+              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>
+                Try adjusting the status filter or city selector.
+              </div>
+            </>
+          )}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

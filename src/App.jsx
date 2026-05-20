@@ -7,6 +7,7 @@ import { useToast } from './components/primitives/Toast.jsx';
 import { LoginPage } from './components/login/LoginPage.jsx';
 import { GlobalHeader } from './components/layout/GlobalHeader.jsx';
 import { AppShell } from './components/layout/AppShell.jsx';
+import { Sidebar } from './components/layout/Sidebar.jsx';
 import { ErrorBoundary } from './components/primitives/ErrorBoundary.jsx';
 
 // Operator views
@@ -28,6 +29,11 @@ import AdvertiserBillingView  from './views/advertiser/BillingView.jsx';
 import SettingsView           from './views/advertiser/SettingsView.jsx';
 import AdvIntegrationsView    from './views/advertiser/AdvIntegrationsView.jsx';
 
+// Operator views (new)
+import { ApprovalQueue }         from './views/operator/ApprovalQueue.jsx';
+import { ScreenDetailView }      from './views/operator/ScreenDetail.jsx';
+import { NotificationPrefsView } from './views/shared/NotificationPrefsView.jsx';
+
 // Shared views
 import { SignalsView }      from './views/shared/SignalsView.jsx';
 import { IntegrationsView } from './views/shared/IntegrationsView.jsx';
@@ -39,6 +45,7 @@ import { DisplayPlayer } from './views/display/DisplayPlayer.jsx';
 import { MarketingHome } from './views/marketing/Home.jsx';
 
 import { C, F } from './design/tokens.js';
+import { Skeleton } from './components/ui/Skeleton.jsx';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -61,14 +68,15 @@ export default function App() {
   const { user, profile, role, loading, signOut } = useAuth();
   const toast = useToast();
 
-  const [active,        setActive]        = useState('overview');
-  const [impersonating, setImpersonating] = useState(null); // { id, name }
+  const [active,           setActive]        = useState('overview');
+  const [impersonating,    setImpersonating] = useState(null); // { id, name }
   const impersonationLogId = useRef(null);
-  const [campaigns,     setCampaigns]     = useState([]);
-  const [dbScreens,     setDbScreens]     = useState([]);
-  const [detail,        setDetail]        = useState(null);
-  const [dataLoading,   setDataLoading]   = useState(false);
-  const [loadError,     setLoadError]     = useState(null);
+  const [campaigns,        setCampaigns]     = useState([]);
+  const [dbScreens,        setDbScreens]     = useState([]);
+  const [detail,           setDetail]        = useState(null);
+  const [dataLoading,      setDataLoading]   = useState(false);
+  const [loadError,        setLoadError]     = useState(null);
+  const [selectedScreenId, setSelectedScreenId] = useState(null);
 
   // ── Impersonation audit trail ─────────────────────────────────────────────
   useEffect(() => {
@@ -189,8 +197,18 @@ export default function App() {
   // ── Loading / auth gates ───────────────────────────────────────────────────
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Loading…</div>
+      <div style={{ minHeight: '100vh', background: C.bg, padding: '40px 28px' }}>
+        <div style={{ maxWidth: 1320, margin: '0 auto' }}>
+          <Skeleton height={32} radius={8} style={{ width: 180, marginBottom: 32 }} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+            {[0,1,2,3].map(i => <Skeleton key={i} height={90} radius={12} />)}
+          </div>
+          <Skeleton height={220} radius={12} style={{ marginBottom: 20 }} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <Skeleton height={160} radius={12} />
+            <Skeleton height={160} radius={12} />
+          </div>
+        </div>
       </div>
     );
   }
@@ -205,6 +223,7 @@ export default function App() {
   const effectiveRole = impersonating ? 'advertiser' : role;
   const isAdv = effectiveRole === 'advertiser';
   const displayUser = { name: profile?.name || user.email?.split('@')[0] || 'User', email: user.email, role };
+  const pendingCount = campaigns.filter(c => c.status === 'pending_review').length;
 
   // ── Mutation helpers ───────────────────────────────────────────────────────
   const navigate = v => { setActive(v); setDetail(null); };
@@ -254,7 +273,7 @@ export default function App() {
 
   // ── View routing ───────────────────────────────────────────────────────────
   const view = () => {
-    if (detail && (active === 'campaigns' || active === 'analytics' || active === 'adv-campaigns')) {
+    if (detail && (active === 'campaigns' || active === 'analytics' || active === 'adv-campaigns' || active === 'approval')) {
       return <CampaignDetail campaign={detail} onBack={() => setDetail(null)} onUpdate={updateCampaign} />;
     }
 
@@ -320,11 +339,26 @@ export default function App() {
       if (active === 'adv-billing')      return <AdvertiserBillingView />;
       if (active === 'adv-integrations') return <AdvIntegrationsView />;
       if (active === 'adv-settings')     return <SettingsView />;
+      if (active === 'notif-prefs')      return <NotificationPrefsView />;
       return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navigate} advertiserId={impersonating?.id ?? user.id} />;
     }
 
     if (active === 'overview')     return <Dashboard campaigns={campaigns} dbScreens={dbScreens} setNav={navigate} loading={dataLoading} />;
-    if (active === 'screens')      return <ScreensView dbScreens={dbScreens} setDbScreens={setDbScreens} profile={profile} loading={dataLoading} />;
+    if (active === 'screens')      return (
+      <ScreensView
+        dbScreens={dbScreens}
+        setDbScreens={setDbScreens}
+        profile={profile}
+        loading={dataLoading}
+        onSelectScreen={id => { setSelectedScreenId(id); navigate('screen-detail'); }}
+      />
+    );
+    if (active === 'approval')      return <ApprovalQueue campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} />;
+    if (active === 'screen-detail') {
+      if (!selectedScreenId) { navigate('screens'); return null; }
+      return <ScreenDetailView screenId={selectedScreenId} onBack={() => navigate('screens')} profile={profile} onScreenUpdated={updated => setDbScreens(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s))} />;
+    }
+    if (active === 'notif-prefs')   return <NotificationPrefsView />;
     if (active === 'campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} />;
     if (active === 'analytics')    return <Analytics campaigns={campaigns} loading={dataLoading} />;
     if (active === 'audience')     return <Audience campaigns={campaigns} />;
@@ -341,13 +375,20 @@ export default function App() {
     <AppShell
       impersonating={impersonating}
       onStopImpersonation={stopImpersonation}
-      header={
-        <GlobalHeader
+      sidebar={
+        <Sidebar
           active={active}
           setActive={navigate}
+          isAdv={isAdv}
           user={displayUser}
           onSignOut={signOut}
-          isAdv={isAdv}
+          pendingCount={pendingCount}
+        />
+      }
+      header={
+        <GlobalHeader
+          user={displayUser}
+          onSignOut={signOut}
         />
       }
     >

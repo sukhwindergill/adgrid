@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { C, F, SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
-import { SkeletonCard, SkeletonRow, Skeleton } from '../../components/ui/Skeleton.jsx';
+import { C, F } from '../../lib/constants.js';
+import { SkeletonCard, SkeletonRow } from '../../components/ui/Skeleton.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
@@ -9,7 +9,6 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
-import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
@@ -59,232 +58,6 @@ function ScreenCard({ screen, onClick }) {
         </div>
       </div>
     </Card>
-  );
-}
-
-async function startStripeConnect(setConnecting) {
-  setConnecting(true);
-  const state = crypto.randomUUID();
-  sessionStorage.setItem('stripe_connect_state', state);
-  const { data: { session } } = await supabase.auth.getSession();
-  try {
-    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-connect-account`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ returnUrl: window.location.origin, state }),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    const { url } = await res.json();
-    window.location.href = url;
-  } catch (e) {
-    sessionStorage.removeItem('stripe_connect_state');
-    setConnecting(false);
-    console.error('Stripe Connect error:', e.message);
-  }
-}
-
-function UptimeGrid({ hourly }) {
-  // 168 hourly buckets (7 days), grouped into 7 rows of 24
-  const days = [];
-  for (let d = 0; d < 7; d++) days.push(hourly.slice(d * 24, d * 24 + 24));
-  const dayLabels = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    dayLabels.push(d.toLocaleDateString('en', { weekday: 'short' }));
-  }
-  return (
-    <div>
-      {days.map((row, di) => (
-        <div key={di} style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
-          <span style={{ fontSize: 9, color: C.textMuted, fontFamily: F.sans, width: 26, flexShrink: 0 }}>{dayLabels[di]}</span>
-          <div style={{ display: 'flex', gap: 2, flex: 1 }}>
-            {row.map((v, hi) => (
-              <div key={hi} title={`${String(hi).padStart(2,'0')}:00`} style={{
-                flex: 1, height: 12, borderRadius: 2,
-                background: v === 1 ? C.green : v === -1 ? C.surfaceAlt : C.border,
-                opacity: v === 1 ? 0.85 : 0.4,
-              }} />
-            ))}
-          </div>
-        </div>
-      ))}
-      <div style={{ display: 'flex', gap: 4, marginTop: 6, alignItems: 'center' }}>
-        <div style={{ width: 10, height: 10, borderRadius: 2, background: C.green, opacity: 0.85 }} />
-        <span style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, marginRight: 10 }}>Online</span>
-        <div style={{ width: 10, height: 10, borderRadius: 2, background: C.border, opacity: 0.4 }} />
-        <span style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>No data</span>
-      </div>
-    </div>
-  );
-}
-
-function ScreenDetail({ screen, onBack, profile }) {
-  const [connecting, setConnecting] = useState(false);
-  const [heartbeats, setHeartbeats] = useState([]);
-  const [screenCampaigns, setScreenCampaigns] = useState([]);
-  const [loadingData, setLoadingData] = useState(true);
-
-  useEffect(() => {
-    const since = new Date();
-    since.setDate(since.getDate() - 7);
-    Promise.all([
-      supabase
-        .from('display_heartbeats')
-        .select('created_at')
-        .eq('screen_id', screen.id)
-        .gte('created_at', since.toISOString()),
-      supabase
-        .from('bookings')
-        .select('id, advertiser_name, status, budget, start_date, end_date, impressions, scans, payment_status')
-        .eq('screen_name', screen.name)
-        .order('created_at', { ascending: false }),
-    ]).then(([hbRes, campRes]) => {
-      setHeartbeats(hbRes.data ?? []);
-      setScreenCampaigns(campRes.data ?? []);
-      setLoadingData(false);
-    });
-  }, [screen.id, screen.name]);
-
-  const { uptimePct, hourlyGrid } = useMemo(() => {
-    const now = new Date();
-    // Build set of (day*24 + hour) keys that have heartbeats
-    const buckets = new Set();
-    for (const hb of heartbeats) {
-      const d = new Date(hb.created_at);
-      const hoursAgo = Math.floor((now - d) / 3600000);
-      if (hoursAgo < 168) buckets.add(167 - hoursAgo);
-    }
-    const grid = Array.from({ length: 168 }, (_, i) => buckets.has(i) ? 1 : 0);
-    const pct = heartbeats.length > 0
-      ? Math.min(100, (buckets.size / 168) * 100).toFixed(1)
-      : null;
-    return { uptimePct: pct, hourlyGrid: grid };
-  }, [heartbeats]);
-
-  const totalCampRevenue = screenCampaigns.reduce((a, c) => a + (c.budget || 0), 0);
-
-  return (
-    <div>
-      <PageHeader
-        title={screen.name}
-        subtitle={`${screen.neighbourhood} · ${screen.city} · ${screen.owner}`}
-        back="All Screens"
-        onBack={onBack}
-        actions={<><Badge status={screen.status} /><Btn variant="secondary" size="sm">✏ Edit</Btn></>}
-      />
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
-        <KPI label="Total Ad Revenue"  value={`£${totalCampRevenue.toLocaleString()}`} sub="all campaigns" color={C.green} />
-        <KPI label="Impressions/mo"    value={screen.impressions > 0 ? `${(screen.impressions / 1000).toFixed(0)}K` : '—'} sub="estimated" />
-        <KPI label="Campaigns"         value={screenCampaigns.length} sub={`${screenCampaigns.filter(c => c.status === 'active' || c.status === 'scheduled').length} active`} />
-        <KPI label="7-Day Uptime"      value={uptimePct !== null ? `${uptimePct}%` : screen.status === 'live' ? '99.2%' : '—'}
-          sub={uptimePct !== null ? 'from heartbeats' : 'estimated'} color={uptimePct > 95 ? C.green : uptimePct > 80 ? C.amber : C.red} />
-      </div>
-
-      {/* Uptime grid + screen details */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
-        <Card>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>
-            7-Day Uptime
-            {heartbeats.length === 0 && !loadingData && (
-              <span style={{ fontSize: 11, color: C.textMuted, fontWeight: 400, marginLeft: 8 }}>(no heartbeat data — screen may be offline)</span>
-            )}
-          </div>
-          {loadingData
-            ? <Skeleton height={110} radius={6} />
-            : <UptimeGrid hourly={hourlyGrid} />
-          }
-        </Card>
-
-        <Card>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Screen Details</div>
-          {[
-            ['Screen ID', screen.id?.slice(0, 8) + '…'],
-            ['Owner', screen.owner],
-            ['City', screen.city],
-            ['Neighbourhood', screen.neighbourhood],
-            ['Display Size', screen.display_size || '—'],
-            ['Max Ad Duration', (screen.maxDuration || screen.max_ad_duration || 30) + 's'],
-            ['CPM Floor', `£${screen.cpm?.toFixed(2) || '4.20'}`],
-          ].map(([l, v]) => (
-            <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
-              <span style={{ fontSize: 12, color: C.textSub }}>{l}</span>
-              <span style={{ fontSize: 12, fontWeight: 500, color: C.text, maxWidth: 200, textAlign: 'right' }}>{v}</span>
-            </div>
-          ))}
-        </Card>
-      </div>
-
-      {/* Revenue split + payout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
-        <Card>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Revenue Split</div>
-          <div style={{ height: 6, borderRadius: 3, overflow: 'hidden', display: 'flex', marginBottom: 12 }}>
-            <div style={{ width: '12%', background: C.blue }} />
-            <div style={{ width: '35%', background: C.green }} />
-            <div style={{ flex: 1, background: C.surfaceAlt }} />
-          </div>
-          {[
-            ['Platform (12%)', `£${Math.round(totalCampRevenue * 0.12).toLocaleString()}`, C.blue],
-            ['Owner (40%)', `£${Math.round(totalCampRevenue * 0.88 * 0.40).toLocaleString()}`, C.green],
-            ['Network pool', `£${Math.round(totalCampRevenue * 0.88 * 0.60).toLocaleString()}`, C.textSub],
-          ].map(([l, v, c]) => (
-            <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
-              <span style={{ fontSize: 12, color: C.textSub }}>{l}</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: c }}>{v}</span>
-            </div>
-          ))}
-        </Card>
-
-        <Card>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Payout Setup</div>
-          {profile?.connect_status === 'active' ? (
-            <div style={{ padding: '10px 12px', background: C.greenSoft, border: `1px solid ${C.greenBorder}`, borderRadius: 8, fontSize: 12, color: C.green, fontFamily: F.sans }}>
-              ✓ Stripe Connect active — payouts enabled
-            </div>
-          ) : (
-            <>
-              <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 10 }}>
-                Connect a Stripe account to receive payouts for ad revenue on your screens.
-              </div>
-              <Btn size="sm" disabled={connecting} onClick={() => startStripeConnect(setConnecting)}>
-                {connecting ? 'Redirecting…' : 'Connect Stripe Account'}
-              </Btn>
-            </>
-          )}
-        </Card>
-      </div>
-
-      {/* Campaign history */}
-      <Card style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.border}`, fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans }}>
-          Campaign History
-          <span style={{ fontSize: 12, fontWeight: 400, color: C.textMuted, marginLeft: 8 }}>{screenCampaigns.length} total</span>
-        </div>
-        {loadingData ? (
-          <div style={{ padding: 20 }}><Skeleton height={120} radius={6} /></div>
-        ) : screenCampaigns.length === 0 ? (
-          <div style={{ padding: '32px 20px', textAlign: 'center', color: C.textMuted, fontSize: 13, fontFamily: F.sans }}>
-            No campaigns have run on this screen yet.
-          </div>
-        ) : (
-          <Table
-            columns={[
-              { key: 'advertiser_name', label: 'Advertiser', render: v => <span style={{ fontWeight: 500, color: C.text, fontFamily: F.sans }}>{v}</span> },
-              { key: 'status', label: 'Status', render: v => <Badge status={v} /> },
-              { key: 'budget', label: 'Budget', render: v => <span style={{ fontFamily: F.mono, fontWeight: 600 }}>£{(v || 0).toLocaleString()}</span> },
-              { key: 'impressions', label: 'Impressions', render: v => <span style={{ fontFamily: F.mono }}>{v ? `${(v/1000).toFixed(1)}K` : '—'}</span> },
-              { key: 'scans', label: 'Scans', render: v => <span style={{ fontFamily: F.mono, color: C.purple }}>{v ?? '—'}</span> },
-              { key: 'start_date', label: 'Dates', render: (v, r) => <span style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub }}>{v} → {r.end_date}</span> },
-            ]}
-            rows={screenCampaigns}
-          />
-        )}
-      </Card>
-    </div>
   );
 }
 
@@ -424,9 +197,10 @@ services:
   );
 }
 
-export function ScreensView({ dbScreens, setDbScreens, profile, loading = false }) {
-  const [selected, setSelected] = useState(null);
+export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelectScreen }) {
   const [filter, setFilter] = useState('All');
+  const [showAdd, setShowAdd] = useState(false);
+  const { isMobile, isTablet } = useBreakpoint();
 
   if (loading) {
     return (
@@ -438,10 +212,6 @@ export function ScreensView({ dbScreens, setDbScreens, profile, loading = false 
       </div>
     );
   }
-  const [showAdd, setShowAdd] = useState(false);
-  const { isMobile, isTablet } = useBreakpoint();
-
-  if (selected) return <ScreenDetail screen={selected} onBack={() => setSelected(null)} profile={profile} />;
 
   const allScreens = dbScreens || [];
   const cities = ['All', ...new Set(allScreens.map(s => s.city))];
@@ -501,7 +271,7 @@ export function ScreensView({ dbScreens, setDbScreens, profile, loading = false 
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>
-          {shown.map(s => <ScreenCard key={s.id} screen={s} onClick={() => setSelected(s)} />)}
+          {shown.map(s => <ScreenCard key={s.id} screen={s} onClick={() => onSelectScreen && onSelectScreen(s.id)} />)}
         </div>
       )}
     </div>
