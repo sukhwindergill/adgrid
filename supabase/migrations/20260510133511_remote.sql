@@ -1,0 +1,1 @@
+-- remote migration 20260510133511 (applied directly to remote, placeholder for CLI)
