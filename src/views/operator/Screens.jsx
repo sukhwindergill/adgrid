@@ -390,8 +390,7 @@ services:
   );
 }
 
-export function ScreensView({ dbScreens, setDbScreens, profile, loading = false }) {
-  const [selected, setSelected] = useState(null);
+export function ScreensView({ dbScreens, setDbScreens, profile, loading = false, onSelectScreen }) {
   const [filter, setFilter] = useState('All');
 
   if (loading) {
@@ -406,8 +405,6 @@ export function ScreensView({ dbScreens, setDbScreens, profile, loading = false 
   }
   const [showAdd, setShowAdd] = useState(false);
   const { isMobile, isTablet } = useBreakpoint();
-
-  if (selected) return <ScreenDetail screen={selected} onBack={() => setSelected(null)} profile={profile} />;
 
   const allScreens = dbScreens || [];
   const cities = ['All', ...new Set(allScreens.map(s => s.city))];
@@ -467,7 +464,7 @@ export function ScreensView({ dbScreens, setDbScreens, profile, loading = false 
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>
-          {shown.map(s => <ScreenCard key={s.id} screen={s} onClick={() => setSelected(s)} />)}
+          {shown.map(s => <ScreenCard key={s.id} screen={s} onClick={() => onSelectScreen && onSelectScreen(s.id)} />)}
         </div>
       )}
     </div>
