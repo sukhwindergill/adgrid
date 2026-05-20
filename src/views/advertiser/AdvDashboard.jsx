@@ -5,8 +5,10 @@ import { Badge } from '../../components/primitives/Badge.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
+import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
 export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
+  const { isMobile } = useBreakpoint();
   const myCampaigns = campaigns.filter(c => c.advertiser_id === advertiserId);
   const totalSpend  = myCampaigns.reduce((a, c) => a + c.budget, 0);
   const totalSpent  = myCampaigns.reduce((a, c) => a + c.spent, 0);
@@ -40,30 +42,67 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.1)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
               >
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px 120px 100px 130px', gap: 16, alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{c.screen}</div>
-                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.city} · {c.category} · {c.start} → {c.end}</div>
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>Spend</span>
-                      <span style={{ fontSize: 11, fontWeight: 500, color: C.text, fontFamily: F.mono }}>£{c.spent.toLocaleString()} / £{c.budget.toLocaleString()}</span>
+                {isMobile ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {/* Row 1: Name + Status Badge */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{c.screen}</div>
+                        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.city} · {c.category} · {c.start} → {c.end}</div>
+                      </div>
+                      <Badge status={c.status} />
                     </div>
-                    <ProgressBar value={c.spent} max={c.budget} height={4} />
+                    {/* Row 2: Budget + Impressions + Scans */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                          <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>Budget</span>
+                        </div>
+                        <div style={{ fontSize: 11, fontWeight: 500, color: C.text, fontFamily: F.mono }}>£{c.spent.toLocaleString()} / £{c.budget.toLocaleString()}</div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: C.textSub, fontFamily: F.sans, marginBottom: 4 }}>Impressions</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{(c.impressions / 1000).toFixed(1)}K</div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: C.textSub, fontFamily: F.sans, marginBottom: 4 }}>Scans</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: C.purple, fontFamily: F.mono }}>{c.scans}</div>
+                      </div>
+                    </div>
+                    {/* Row 3: Progress Bar */}
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>Spend</span>
+                      </div>
+                      <ProgressBar value={c.spent} max={c.budget} height={4} />
+                    </div>
                   </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{(c.impressions / 1000).toFixed(1)}K</div>
-                    <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>impressions</div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px 120px 100px 130px', gap: 16, alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{c.screen}</div>
+                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.city} · {c.category} · {c.start} → {c.end}</div>
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>Spend</span>
+                        <span style={{ fontSize: 11, fontWeight: 500, color: C.text, fontFamily: F.mono }}>£{c.spent.toLocaleString()} / £{c.budget.toLocaleString()}</span>
+                      </div>
+                      <ProgressBar value={c.spent} max={c.budget} height={4} />
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{(c.impressions / 1000).toFixed(1)}K</div>
+                      <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>impressions</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: C.purple, fontFamily: F.mono }}>{c.scans}</div>
+                      <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>scans</div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <Badge status={c.status} />
+                    </div>
                   </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: C.purple, fontFamily: F.mono }}>{c.scans}</div>
-                    <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>scans</div>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Badge status={c.status} />
-                  </div>
-                </div>
+                )}
               </Card>
             ))}
           </div>
