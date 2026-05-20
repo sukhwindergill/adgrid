@@ -349,10 +349,30 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
       </div>
 
       {shown.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
-          <div style={{ fontSize: 32, marginBottom: 10 }}>📭</div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No campaigns found</div>
-          <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Try adjusting your filters</div>
+        <div style={{ textAlign: 'center', padding: '56px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
+          {campaigns.length === 0 ? (
+            <>
+              <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>
+                No campaigns yet
+              </div>
+              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20, maxWidth: 320, margin: '0 auto 20px' }}>
+                Create your first campaign to start reaching customers on your screens.
+              </div>
+              <Btn onClick={() => setShowNew(true)}>
+                + Create your first campaign
+              </Btn>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>
+                No campaigns match these filters
+              </div>
+              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>
+                Try adjusting the status filter or city selector.
+              </div>
+            </>
+          )}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
