@@ -14,11 +14,12 @@ export const C = {
   purpleDark: '#6d28d9',
   purpleSoft: '#f5f3ff',
   purpleBorder: '#ddd6fe',
+  purpleLight: '#f5f3ff',
 
-  green: '#10b981', greenSoft: '#ecfdf5', greenBorder: '#a7f3d0',
+  green: '#10b981', greenSoft: '#ecfdf5', greenBorder: '#a7f3d0', greenLight: '#ecfdf5',
   amber: '#f59e0b', amberSoft: '#fffbeb', amberBorder: '#fde68a',
-  red:   '#ef4444', redSoft:   '#fef2f2', redBorder:   '#fecaca',
-  blue:  '#3b82f6', blueSoft:  '#eff6ff', blueBorder:  '#bfdbfe',
+  red:   '#ef4444', redSoft:   '#fef2f2', redBorder:   '#fecaca', redLight: '#fef2f2',
+  blue:  '#3b82f6', blueSoft:  '#eff6ff', blueBorder:  '#bfdbfe', blueLight: '#eff6ff',
 };
 
 export const F = {
