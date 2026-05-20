@@ -39,6 +39,7 @@ import { DisplayPlayer } from './views/display/DisplayPlayer.jsx';
 import { MarketingHome } from './views/marketing/Home.jsx';
 
 import { C, F } from './design/tokens.js';
+import { Skeleton } from './components/ui/Skeleton.jsx';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -189,8 +190,18 @@ export default function App() {
   // ── Loading / auth gates ───────────────────────────────────────────────────
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Loading…</div>
+      <div style={{ minHeight: '100vh', background: C.bg, padding: '40px 28px' }}>
+        <div style={{ maxWidth: 1320, margin: '0 auto' }}>
+          <Skeleton height={32} radius={8} style={{ width: 180, marginBottom: 32 }} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+            {[0,1,2,3].map(i => <Skeleton key={i} height={90} radius={12} />)}
+          </div>
+          <Skeleton height={220} radius={12} style={{ marginBottom: 20 }} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <Skeleton height={160} radius={12} />
+            <Skeleton height={160} radius={12} />
+          </div>
+        </div>
       </div>
     );
   }
