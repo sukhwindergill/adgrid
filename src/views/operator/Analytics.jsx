@@ -20,8 +20,8 @@ function HeatmapGrid({ data }) {
     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
       {data.map((v, i) => (
         <div key={i} title={`${String(i).padStart(2, '0')}:00 — ${v} people`} style={{
-          width: 36, height: 36, borderRadius: 6, background: C.purple,
-          opacity: 0.06 + (v / max) * 0.94,
+          width: 36, height: 36, borderRadius: 6, background: v === 0 ? C.surfaceAlt : C.purple,
+          opacity: v === 0 ? 1 : 0.20 + (v / max) * 0.80,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 9, fontFamily: F.mono, color: v / max > 0.4 ? '#fff' : C.textMuted,
           cursor: 'default', transition: 'transform 0.15s',
