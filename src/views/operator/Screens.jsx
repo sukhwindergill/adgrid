@@ -197,10 +197,11 @@ services:
   );
 }
 
-export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelectScreen }) {
+export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelectScreen, verificationStatus, onVerify }) {
   const [filter, setFilter] = useState('All');
   const [showAdd, setShowAdd] = useState(false);
   const { isMobile, isTablet } = useBreakpoint();
+  const isVerified = verificationStatus === 'verified' || verificationStatus == null;
 
   if (loading) {
     return (
@@ -241,7 +242,16 @@ export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelect
 
       <PageHeader title="Screens"
         subtitle={`${allScreens.length} registered · ${allScreens.filter(s => s.status === 'live').length} live · ${allScreens.filter(s => s.status === 'pending').length} pending`}
-        actions={<><Btn variant="secondary" size="sm">↓ Export</Btn><Btn onClick={() => setShowAdd(true)}>+ Register Screen</Btn></>} />
+        actions={<>
+          <Btn variant="secondary" size="sm">↓ Export</Btn>
+          <Btn
+            onClick={() => isVerified ? setShowAdd(true) : onVerify?.()}
+            title={isVerified ? undefined : 'Verify your identity first'}
+          >
+            + Register Screen
+          </Btn>
+        </>}
+      />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
         <KPI label="Total Screens"     value={allScreens.length} />
@@ -267,7 +277,7 @@ export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelect
           <div style={{ fontSize: 32, marginBottom: 12 }}>📺</div>
           <div style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No screens registered yet</div>
           <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>Register your first screen to start running campaigns on the network.</div>
-          <Btn onClick={() => setShowAdd(true)}>+ Register Screen</Btn>
+          <Btn onClick={() => isVerified ? setShowAdd(true) : onVerify?.()}>+ Register Screen</Btn>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>

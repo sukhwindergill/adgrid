@@ -44,6 +44,12 @@ import { Placeholder }      from './views/shared/Placeholder.jsx';
 import { DisplayPlayer } from './views/display/DisplayPlayer.jsx';
 import { MarketingHome } from './views/marketing/Home.jsx';
 
+// Operator identity verification
+import { VerificationOnboarding } from './views/operator/VerificationOnboarding.jsx';
+import { VerificationQueue }      from './views/operator/VerificationQueue.jsx';
+import { VerificationBanner }     from './components/operator/VerificationBanner.jsx';
+import { InviteAcceptPage }       from './views/invite/InviteAcceptPage.jsx';
+
 import { C, F } from './design/tokens.js';
 import { Skeleton } from './components/ui/Skeleton.jsx';
 
@@ -213,6 +219,10 @@ export default function App() {
     );
   }
 
+  // Invite acceptance — public, no auth required
+  const inviteMatch = window.location.pathname.match(/^\/invite\/([a-f0-9]{64})$/);
+  if (inviteMatch) return <InviteAcceptPage token={inviteMatch[1]} />;
+
   if (!user) {
     const path = window.location.pathname;
     // Show login page directly on /login, otherwise show marketing home
@@ -343,7 +353,16 @@ export default function App() {
       return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navigate} advertiserId={impersonating?.id ?? user.id} />;
     }
 
-    if (active === 'overview')     return <Dashboard campaigns={campaigns} dbScreens={dbScreens} setNav={navigate} loading={dataLoading} />;
+    if (active === 'overview')     return (
+      <>
+        <VerificationBanner status={profile?.verification_status} onStartVerification={() => navigate('op-verify')} />
+        <Dashboard campaigns={campaigns} dbScreens={dbScreens} setNav={navigate} loading={dataLoading} />
+      </>
+    );
+    if (active === 'op-verify')    return (
+      <VerificationOnboarding profile={profile} onVerified={() => navigate('overview')} />
+    );
+    if (active === 'op-verify-queue') return <VerificationQueue />;
     if (active === 'screens')      return (
       <ScreensView
         dbScreens={dbScreens}
@@ -351,6 +370,8 @@ export default function App() {
         profile={profile}
         loading={dataLoading}
         onSelectScreen={id => { setSelectedScreenId(id); navigate('screen-detail'); }}
+        verificationStatus={profile?.verification_status}
+        onVerify={() => navigate('op-verify')}
       />
     );
     if (active === 'approval')      return <ApprovalQueue campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} />;
@@ -383,6 +404,8 @@ export default function App() {
           user={displayUser}
           onSignOut={signOut}
           pendingCount={pendingCount}
+          isPlatformOwner={profile?.is_platform_owner ?? false}
+          verificationStatus={role === 'operator' ? (profile?.verification_status ?? null) : null}
         />
       }
       header={
