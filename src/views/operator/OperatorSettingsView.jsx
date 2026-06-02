@@ -254,6 +254,7 @@ function TeamTab({ profile }) {
   async function invite() {
     if (!inviteEmail) return;
     const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setMsg('Session expired. Please log in again.'); return; }
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/invite-team-member`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
@@ -266,7 +267,8 @@ function TeamTab({ profile }) {
   }
 
   async function removeMember(id) {
-    await supabase.from('team_members').delete().eq('id', id);
+    const { error } = await supabase.from('team_members').delete().eq('id', id);
+    if (error) { setMsg('Failed to remove member.'); return; }
     setMembers(m => m.filter(x => x.id !== id));
   }
 
@@ -364,15 +366,19 @@ function PayoutsTab({ profile }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <div style={{
             width: 10, height: 10, borderRadius: '50%',
-            background: connectStatus === 'active' ? C.green : C.amber,
+            background: connectStatus === 'active' ? C.green : connectStatus ? C.amber : C.border,
           }} />
           <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>
-            {connectStatus === 'active' ? 'Connected' : 'Not connected'}
+            {connectStatus === 'active' ? 'Connected' : connectStatus ? 'Pending verification' : 'Not connected'}
           </div>
         </div>
         {connectStatus === 'active' ? (
           <div style={{ fontSize: 13, color: C.textSub }}>
             Your Stripe account is connected. Payouts are processed automatically when campaigns complete.
+          </div>
+        ) : connectStatus ? (
+          <div style={{ fontSize: 13, color: C.textSub }}>
+            Your Stripe account is under review. You'll be notified once verified.
           </div>
         ) : (
           <>
