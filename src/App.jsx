@@ -20,6 +20,7 @@ import { Audience }       from './views/operator/Audience.jsx';
 import { Revenue }        from './views/operator/Revenue.jsx';
 import { Billing }        from './views/operator/Billing.jsx';
 import AdvertisersView    from './views/operator/AdvertisersView.jsx';
+import { OperatorSettingsView } from './views/operator/OperatorSettingsView.jsx';
 
 // Advertiser views
 import { AdvDashboard }       from './views/advertiser/AdvDashboard.jsx';
@@ -368,6 +369,7 @@ export default function App() {
     if (active === 'signals')      return <SignalsView campaigns={campaigns} />;
     if (active === 'integrations') return <IntegrationsView />;
     if (active === 'display')      return <DisplayView campaigns={campaigns} />;
+    if (active === 'op-settings')  return <OperatorSettingsView />;
     return <Dashboard campaigns={campaigns} setNav={navigate} loading={dataLoading} />;
   };
 

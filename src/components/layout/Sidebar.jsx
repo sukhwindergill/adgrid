@@ -41,6 +41,7 @@ const OP_SECONDARY = [
   { id: 'signals',      label: 'Live Signals',     icon: 'signals' },
   { id: 'integrations', label: 'Integrations',     icon: 'integrations' },
   { id: 'display',      label: 'Display Manager',  icon: 'display' },
+  { id: 'op-settings',  label: 'Settings',         icon: 'settings' },
 ];
 
 const ADV_PRIMARY = [
