@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase.js';
 import { C, F } from '../../design/tokens.js';
 import { SkeletonRow, SkeletonCard } from '../../components/ui/Skeleton.jsx';
 import { useToast } from '../../components/primitives/Toast.jsx';
-import { ApproveBtn } from '../../lib/campaignActions.js';
+import { ApproveBtn } from '../../lib/campaignActions.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
