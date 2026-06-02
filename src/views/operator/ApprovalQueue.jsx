@@ -134,41 +134,24 @@ function CampaignCard({ campaign, setCampaigns, setDetail }) {
 
         {/* Details */}
         <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Placement */}
-          <div>
-            <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>Placement</div>
-            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-              <InfoRow label="Screen" value={campaign.screen} />
-              <InfoRow label="City" value={campaign.city} />
-              <InfoRow label="Dates" value={`${campaign.start} → ${campaign.end}`} mono />
-              <InfoRow label="Budget" value={`£${campaign.budget?.toLocaleString()}`} mono />
-            </div>
-          </div>
-
-          {/* Links */}
-          <div>
-            <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>Links</div>
-            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-              {campaign.destination && (
-                <InfoRow label="QR Destination" value={campaign.destination} href={campaign.destination} mono />
-              )}
-              {brandSite && brandSite !== campaign.destination && (
-                <InfoRow label="Brand Site" value={brandSite} href={brandSite} />
-              )}
-            </div>
-            {!campaign.destination && (
-              <div style={{ fontSize: 11, color: C.amber, fontFamily: F.sans }}>⚠ No destination URL set</div>
+          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+            <InfoRow label="Screen" value={campaign.screen} />
+            <InfoRow label="City" value={campaign.city} />
+            <InfoRow label="Category" value={campaign.category} />
+            <InfoRow label="Start" value={campaign.start} mono />
+            <InfoRow label="End" value={campaign.end} mono />
+            <InfoRow label="Budget" value={`£${campaign.budget?.toLocaleString()}`} mono />
+            <InfoRow label="Headline" value={campaign.headline} />
+            <InfoRow label="CTA" value={campaign.cta} />
+            {campaign.destination && (
+              <InfoRow label="Destination URL" value={campaign.destination} href={campaign.destination} mono />
             )}
-          </div>
-
-          {/* Creative copy */}
-          <div>
-            <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>Copy</div>
-            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-              <InfoRow label="Headline" value={campaign.headline} />
-              <InfoRow label="CTA" value={campaign.cta} />
-              <InfoRow label="Accent Color" value={campaign.color} />
-            </div>
+            {brandSite && brandSite !== campaign.destination && (
+              <InfoRow label="Brand Site" value={brandSite} href={brandSite} />
+            )}
+            {!campaign.destination && (
+              <div style={{ fontSize: 11, color: C.amber, fontFamily: F.sans }}>⚠ No destination URL</div>
+            )}
           </div>
         </div>
 
