@@ -445,7 +445,9 @@ export default function App() {
     );
     if (active === 'overview')     return (
       <>
-        <VerificationBanner status={profile?.verification_status} onStartVerification={() => navigate('op-verify')} />
+        {!profile?.is_platform_owner && (
+          <VerificationBanner status={profile?.verification_status} onStartVerification={() => navigate('op-verify')} />
+        )}
         <Dashboard campaigns={campaigns} dbScreens={dbScreens} setNav={navigate} loading={dataLoading} />
       </>
     );
