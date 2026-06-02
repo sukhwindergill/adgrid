@@ -46,6 +46,8 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   const [tab, setTab] = useState('overview');
   const [cvEvents, setCvEvents] = useState([]);
   const [cvLoading, setCvLoading] = useState(false);
+  const [hwType, setHwType] = useState('kiosk');
+  const [connStatus, setConnStatus] = useState(null); // null | 'checking' | 'ok' | 'none'
 
   // Fetch screen record
   useEffect(() => {
@@ -434,6 +436,146 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
             );
           })()}
         </div>
+      )}
+
+      {tab === 'setup' && screen && (
+  <div>
+    {/* Token section */}
+    <Card style={{ marginBottom: 16 }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Screen Token</div>
+      <div style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: 13, color: C.text, wordBreak: 'break-all', letterSpacing: '0.5px', marginBottom: 8 }}>
+        {screen.screen_token}
+      </div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <button
+          onClick={() => navigator.clipboard.writeText(screen.screen_token)}
+          style={{ padding: '5px 14px', borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface, color: C.textSub, fontSize: 12, fontFamily: F.sans, cursor: 'pointer' }}
+        >
+          Copy Token
+        </button>
+        <button
+          onClick={() => navigator.clipboard.writeText(`${window.location.origin}/display/${screen.screen_token}`)}
+          style={{ padding: '5px 14px', borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface, color: C.textSub, fontSize: 12, fontFamily: F.sans, cursor: 'pointer' }}
+        >
+          Copy Player URL
+        </button>
+      </div>
+    </Card>
+
+    {/* Hardware selector */}
+    <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
+      {[
+        { key: 'kiosk',  label: 'Browser Kiosk' },
+        { key: 'rpi',    label: 'Raspberry Pi 5' },
+        { key: 'minipc', label: 'Mini PC' },
+        { key: 'atv',    label: 'Android TV' },
+      ].map(h => (
+        <button key={h.key} onClick={() => setHwType(h.key)} style={{
+          padding: '7px 16px', borderRadius: 20, cursor: 'pointer',
+          border: `1px solid ${hwType === h.key ? C.purple : C.border}`,
+          background: hwType === h.key ? C.purpleSoft : C.surface,
+          color: hwType === h.key ? C.purple : C.textSub,
+          fontSize: 12, fontWeight: 500, fontFamily: F.sans,
+        }}>{h.label}</button>
+      ))}
+    </div>
+
+    {hwType === 'kiosk' && (
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Browser Kiosk Setup</div>
+        <ol style={{ paddingLeft: 20, fontFamily: F.sans, fontSize: 13, color: C.textSub, lineHeight: 2 }}>
+          <li>Open a Chromium-based browser on your display device.</li>
+          <li>Navigate to the player URL below.</li>
+          <li>Press <strong>F11</strong> (or Cmd+Ctrl+F on Mac) to enter fullscreen.</li>
+          <li>Enable auto-start in browser settings to launch on boot.</li>
+        </ol>
+        <div style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: 11, color: C.purple, wordBreak: 'break-all', marginTop: 12 }}>
+          {`${window.location.origin}/display/${screen.screen_token}`}
+        </div>
+      </Card>
+    )}
+
+    {(hwType === 'rpi' || hwType === 'minipc') && (
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
+          {hwType === 'rpi' ? 'Raspberry Pi 5' : 'Mini PC'} — Screen Agent Setup
+        </div>
+        <ol style={{ paddingLeft: 20, fontFamily: F.sans, fontSize: 13, color: C.textSub, lineHeight: 2 }}>
+          <li>Connect a USB camera to <strong>/dev/video0</strong>.</li>
+          <li>Install Docker: <code style={{ background: C.surfaceAlt, padding: '1px 5px', borderRadius: 3, fontFamily: F.mono, fontSize: 12 }}>curl -fsSL https://get.docker.com | sh</code></li>
+          <li>Create <code style={{ background: C.surfaceAlt, padding: '1px 5px', borderRadius: 3, fontFamily: F.mono, fontSize: 12 }}>docker-compose.yml</code> with the snippet below.</li>
+          <li>Run: <code style={{ background: C.surfaceAlt, padding: '1px 5px', borderRadius: 3, fontFamily: F.mono, fontSize: 12 }}>docker-compose up -d</code></li>
+        </ol>
+        <div style={{ background: '#0a0a0a', borderRadius: 8, padding: '12px 14px', fontFamily: F.mono, fontSize: 11, color: '#a3e635', whiteSpace: 'pre', overflowX: 'auto', marginTop: 12 }}>
+{`version: "3"
+services:
+  display:
+    image: adgrid/screen-agent:latest
+    environment:
+      SCREEN_TOKEN: "${screen.screen_token}"
+      SUPABASE_URL: "${import.meta.env.VITE_SUPABASE_URL}"
+      SUPABASE_ANON_KEY: "${import.meta.env.VITE_SUPABASE_ANON_KEY}"
+    devices:
+      - /dev/video0:/dev/video0
+    restart: unless-stopped`}
+        </div>
+      </Card>
+    )}
+
+    {hwType === 'atv' && (
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Android TV Setup</div>
+        <ol style={{ paddingLeft: 20, fontFamily: F.sans, fontSize: 13, color: C.textSub, lineHeight: 2 }}>
+          <li>Enable <strong>Developer Options</strong> on your Android TV device (Settings → About → click Build Number 7×).</li>
+          <li>Enable <strong>Install unknown apps</strong> in Developer Options.</li>
+          <li>Download the Adgrid APK to a USB drive or sideload via ADB.</li>
+          <li>Install and launch. Enter your screen token when prompted.</li>
+          <li>Token: <strong style={{ fontFamily: F.mono }}>{screen.screen_token}</strong></li>
+        </ol>
+        <div style={{ marginTop: 12, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder ?? '#fde68a'}`, borderRadius: 8, fontSize: 12, color: '#92400e', fontFamily: F.sans }}>
+          Note: Android TV app is in beta. Contact support for the APK download link.
+        </div>
+      </Card>
+    )}
+
+    {/* Test connection */}
+    <Card>
+      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Test Connection</div>
+      <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>
+        After completing setup, click below to verify your screen is sending heartbeats.
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <Btn
+          variant="secondary"
+          size="sm"
+          disabled={connStatus === 'checking'}
+          onClick={async () => {
+            setConnStatus('checking');
+            try {
+              const since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+              const { data } = await supabase
+                .from('display_heartbeats')
+                .select('id')
+                .eq('screen_id', screen.id)
+                .gte('created_at', since)
+                .limit(1);
+              setConnStatus(data && data.length > 0 ? 'ok' : 'none');
+            } catch {
+              setConnStatus('none');
+            }
+          }}
+        >
+          {connStatus === 'checking' ? 'Checking…' : 'Check Connection'}
+        </Btn>
+        {connStatus === 'ok' && (
+          <span style={{ fontSize: 13, color: C.green, fontFamily: F.sans }}>✓ Connected — heartbeat received</span>
+        )}
+        {connStatus === 'none' && (
+          <span style={{ fontSize: 13, color: C.amber, fontFamily: F.sans }}>No heartbeat in last 5 minutes — check your setup</span>
+        )}
+      </div>
+    </Card>
+  </div>
       )}
     </div>
   );
