@@ -50,6 +50,9 @@ import { VerificationQueue }      from './views/operator/VerificationQueue.jsx';
 import { VerificationBanner }     from './components/operator/VerificationBanner.jsx';
 import { InviteAcceptPage }       from './views/invite/InviteAcceptPage.jsx';
 
+// Admin
+import { AdminDashboard } from './views/admin/AdminDashboard.jsx';
+
 import { C, F } from './design/tokens.js';
 import { Skeleton } from './components/ui/Skeleton.jsx';
 
@@ -313,6 +316,8 @@ export default function App() {
               cta_text:        c.cta,
               slots:           c.slots,
               duration:        c.duration,
+              asset_url:       c.assetUrl ?? null,
+              asset_type:      c.assetType ?? null,
             }).select().single();
             if (error || !row) {
               toast.error(`Failed to submit campaign: ${error?.message ?? 'Unknown error'}`);
@@ -363,6 +368,7 @@ export default function App() {
       <VerificationOnboarding profile={profile} onVerified={() => navigate('overview')} />
     );
     if (active === 'op-verify-queue') return <VerificationQueue />;
+    if (active === 'admin')           return <AdminDashboard onNavigate={navigate} />;
     if (active === 'screens')      return (
       <ScreensView
         dbScreens={dbScreens}

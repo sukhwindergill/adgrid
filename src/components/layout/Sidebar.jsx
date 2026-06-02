@@ -197,7 +197,10 @@ export function Sidebar({ active, setActive, isAdv, user, onSignOut, pendingCoun
   const secondary = isAdv ? baseSecondary : [
     ...baseSecondary,
     ...(isPlatformOwner
-      ? [{ id: 'op-verify-queue', label: 'Operator Verification', icon: 'verify' }]
+      ? [
+          { id: 'admin',          label: 'Admin Dashboard',      icon: 'verify' },
+          { id: 'op-verify-queue', label: 'Operator Verification', icon: 'approval' },
+        ]
       : verificationStatus && verificationStatus !== 'verified'
       ? [{ id: 'op-verify', label: 'Verify Identity', icon: 'verify', badge: false }]
       : []),

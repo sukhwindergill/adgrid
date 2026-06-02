@@ -39,7 +39,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: campaigns } = await supabase
     .from("bookings")
-    .select("id, advertiser_name, headline, cta:cta_text, accent_color, destination_url, category, slots, duration, schedule_days, time_start, time_end")
+    .select("id, advertiser_name, headline, cta:cta_text, accent_color, destination_url, category, slots, duration, schedule_days, time_start, time_end, asset_url, asset_type")
     .eq("screen_name", screen.name)
     .in("status", ["scheduled", "active"])
     .lte("start_date", today)
@@ -52,11 +52,21 @@ Deno.serve(async (req: Request) => {
     return inDay && inTime;
   });
 
+  const isPlaying = activeCampaigns.length > 0;
+  const nowIso = now.toISOString();
+
+  // Update last_seen and health_status (fire and forget)
+  supabase
+    .from("screens")
+    .update({ last_seen: nowIso, health_status: isPlaying ? "online" : "idle" })
+    .eq("id", screen.id)
+    .then(() => {});
+
   // Log heartbeat (fire and forget)
   supabase.from("display_heartbeats").insert({
     screen_id: screen.id,
     campaign_id: activeCampaigns[0]?.id ?? null,
-    status: activeCampaigns.length > 0 ? "playing" : "idle",
+    status: isPlaying ? "playing" : "idle",
   }).then(() => {});
 
   return new Response(
