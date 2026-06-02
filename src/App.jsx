@@ -200,6 +200,16 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     const params = new URLSearchParams(window.location.search);
+
+    // Advertiser billing setup return
+    const setup = params.get('setup');
+    if (setup === 'success' || setup === 'cancelled') {
+      if (setup === 'success') toast.success('Payment method added successfully.');
+      window.history.replaceState({}, '', window.location.pathname);
+      setActive('adv-billing');
+      return;
+    }
+
     if (params.get('connect') === 'success') {
       const storedState = sessionStorage.getItem('stripe_connect_state');
       const returnedState = params.get('state');
@@ -312,9 +322,41 @@ export default function App() {
     }
 
     if (isAdv) {
-      if (active === 'adv-overview')     return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navigate} advertiserId={impersonating?.id ?? user.id} />;
-      if (active === 'adv-create')       return (
-        <CreateCampaign
+      // Payment method banner — shown on dashboard and campaign creation if no card on file
+      const noCard = !profile?.stripe_customer_id;
+      const paymentBanner = noCard && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px',
+          background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10,
+          fontFamily: F.sans, fontSize: 13, marginBottom: 16,
+        }}>
+          <span style={{ fontSize: 18 }}>💳</span>
+          <span style={{ flex: 1, color: '#92400e' }}>
+            Add a payment method so your campaigns can go live when approved.
+          </span>
+          <button
+            onClick={() => navigate('adv-billing')}
+            style={{
+              padding: '5px 14px', borderRadius: 7, border: 'none',
+              background: '#f59e0b', color: '#fff', fontFamily: F.sans,
+              fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+            }}
+          >
+            Set up billing →
+          </button>
+        </div>
+      );
+
+      if (active === 'adv-overview') return (
+        <>
+          {paymentBanner}
+          <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navigate} advertiserId={impersonating?.id ?? user.id} />
+        </>
+      );
+      if (active === 'adv-create') return (
+        <>
+          {paymentBanner}
+          <CreateCampaign
           dbScreens={dbScreens}
           onSave={async c => {
             const { data: row, error } = await supabase.from('bookings').insert({
@@ -368,6 +410,7 @@ export default function App() {
           }}
           onCancel={() => navigate('adv-overview')}
         />
+        </>
       );
       if (active === 'adv-campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} />;
       if (active === 'adv-analytics')    return <Analytics campaigns={campaigns} loading={dataLoading} />;

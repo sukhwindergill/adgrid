@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
@@ -411,13 +411,7 @@ export function OperatorOnboarding({ profile, screenCount, onComplete, onProfile
                       )}
 
                       {step.id === 'screen' && screenRegistered && (
-                        <div style={{
-                          marginTop: 14, padding: '12px 16px',
-                          background: C.greenSoft, border: `1px solid ${C.greenBorder}`,
-                          borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.green,
-                        }}>
-                          ✓ <strong>{screenRegistered.name}</strong> registered. Get your setup token in the Screens tab.
-                        </div>
+                        <ScreenRegisteredSuccess screen={screenRegistered} />
                       )}
                     </>
                   )}
@@ -463,3 +457,53 @@ const sel = {
   border: `1px solid ${C.border}`, background: C.surface,
   fontFamily: F.sans, fontSize: 13, color: C.text, outline: 'none',
 };
+
+// ── ScreenRegisteredSuccess ───────────────────────────────────────────────────
+
+function ScreenRegisteredSuccess({ screen }) {
+  const displayUrl = screen.screen_token
+    ? `${window.location.origin}/display/${screen.screen_token}`
+    : null;
+  const [copied, setCopied] = useState(false);
+
+  const copy = useCallback(() => {
+    if (!displayUrl) return;
+    navigator.clipboard.writeText(displayUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [displayUrl]);
+
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div style={{
+        padding: '12px 16px', background: C.greenSoft,
+        border: `1px solid ${C.greenBorder}`, borderRadius: 8,
+        fontFamily: F.sans, fontSize: 13, color: C.green, marginBottom: 12,
+      }}>
+        ✓ <strong>{screen.name}</strong> registered successfully.
+      </div>
+      {displayUrl && (
+        <div style={{
+          padding: '12px 14px', background: C.surfaceAlt,
+          border: `1px solid ${C.border}`, borderRadius: 8,
+        }}>
+          <div style={{ fontFamily: F.sans, fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 8 }}>
+            Display URL — point your physical screen here:
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub, flex: 1, wordBreak: 'break-all' }}>
+              {displayUrl}
+            </span>
+            <Btn size="sm" variant="secondary" onClick={copy}>
+              {copied ? '✓ Copied' : 'Copy'}
+            </Btn>
+          </div>
+          <div style={{ fontFamily: F.sans, fontSize: 11, color: C.textMuted, marginTop: 8 }}>
+            You can also find this URL in the Screen Details page after setup is complete.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
