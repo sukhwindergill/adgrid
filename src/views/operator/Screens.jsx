@@ -12,6 +12,19 @@ import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
+function healthSignal(screen) {
+  if (screen.health_status === 'degraded') {
+    return { dot: '#d97706', label: 'Degraded', pulse: false };
+  }
+  if (!screen.last_seen) {
+    return { dot: '#dc2626', label: 'Offline', pulse: false };
+  }
+  const minsAgo = (Date.now() - new Date(screen.last_seen).getTime()) / 60000;
+  if (minsAgo <= 5)  return { dot: C.green,  label: 'Live',    pulse: true  };
+  if (minsAgo <= 60) return { dot: '#d97706', label: 'Stale',  pulse: false };
+  return                    { dot: '#dc2626', label: 'Offline', pulse: false };
+}
+
 function ScreenCard({ screen, onClick }) {
   return (
     <Card style={{ padding: 20, transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'pointer' }}
@@ -21,12 +34,29 @@ function ScreenCard({ screen, onClick }) {
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-          {screen.status === 'live' && (
-            <span className="pulse" style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: C.green, marginTop: 4, flexShrink: 0 }} />
-          )}
+          {(() => {
+            const hs = healthSignal(screen);
+            return (
+              <span
+                className={hs.pulse ? 'pulse' : undefined}
+                style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: hs.dot, marginTop: 4, flexShrink: 0 }}
+              />
+            );
+          })()}
           <div>
             <div style={{ fontWeight: 600, color: C.text, fontFamily: F.sans, fontSize: 14, lineHeight: 1.3 }}>{screen.name}</div>
             <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{screen.neighbourhood} · {screen.city}</div>
+            {(() => {
+              const hs = healthSignal(screen);
+              if (hs.label !== 'Live') {
+                return (
+                  <div style={{ fontSize: 10, color: hs.dot, fontFamily: F.sans, fontWeight: 600, marginTop: 2 }}>
+                    {hs.label}
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
         </div>
         <Badge status={screen.status} />
@@ -70,6 +100,7 @@ function AddScreenModal({ onClose, onAdded }) {
   const [saving, setSaving] = useState(false);
   const [registered, setRegistered] = useState(null); // { token, id, name }
   const [err, setErr] = useState(null);
+  const [connCheck, setConnCheck] = useState(null);
 
   const save = async () => {
     if (!form.name.trim() || !form.owner.trim()) return;
@@ -152,6 +183,32 @@ services:
             </div>
           </div>
 
+          <div style={{ marginBottom: 16 }}>
+            <Btn
+              variant="secondary"
+              style={{ width: '100%', marginBottom: 8 }}
+              disabled={connCheck === 'checking'}
+              onClick={async () => {
+                setConnCheck('checking');
+                const since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+                const { data } = await supabase
+                  .from('display_heartbeats')
+                  .select('id')
+                  .eq('screen_id', registered.id)
+                  .gte('created_at', since)
+                  .limit(1);
+                setConnCheck(data && data.length > 0 ? 'connected' : 'none');
+              }}
+            >
+              {connCheck === 'checking' ? 'Checking…' : 'Check Connection'}
+            </Btn>
+            {connCheck === 'connected' && (
+              <div style={{ fontSize: 12, color: C.green, fontFamily: F.sans, textAlign: 'center' }}>✓ Heartbeat received — screen is online</div>
+            )}
+            {connCheck === 'none' && (
+              <div style={{ fontSize: 12, color: '#d97706', fontFamily: F.sans, textAlign: 'center' }}>No heartbeat yet — complete setup below then retry</div>
+            )}
+          </div>
           <Btn onClick={onClose} style={{ width: '100%' }}>Done</Btn>
         </div>
       </div>
