@@ -361,6 +361,7 @@ export default function App() {
           dbScreens={dbScreens}
           onSave={async c => {
             const { data: row, error } = await supabase.from('bookings').insert({
+              id:              crypto.randomUUID(),
               advertiser_name: c.advertiser,
               screen_name:     c.screen,
               city:            c.city || '',

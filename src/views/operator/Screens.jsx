@@ -95,19 +95,20 @@ function AddScreenModal({ onClose, onAdded }) {
     setErr(null);
     const { data: { user } } = await supabase.auth.getUser();
     const { data, error } = await supabase.from('screens').insert({
-      name: form.name.trim(),
-      location: form.location.trim() || form.city,
-      city: form.city,
-      status: 'pending',
+      id:          crypto.randomUUID(),
+      name:        form.name.trim(),
+      owner_name:  form.owner.trim(),
+      owner_type:  form.type,
+      location:    form.location.trim() || form.city,
+      city:        form.city,
+      status:      'pending',
       operator_id: user.id,
       impressions: form.monthly_traffic_estimate ? parseInt(form.monthly_traffic_estimate) * 1000 : 0,
-      cpm: parseFloat(form.cpm_floor) || 3.00,
-      cpm_floor: parseFloat(form.cpm_floor) || 3.00,
+      cpm_floor:   parseFloat(form.cpm_floor) || 3.00,
       display_size: form.display_size || null,
       monthly_traffic_estimate: form.monthly_traffic_estimate ? parseInt(form.monthly_traffic_estimate) : null,
       max_ad_duration: 30,
       monthly_revenue: 0,
-      campaigns: 0,
       lat: form.lat ? parseFloat(form.lat) : null,
       lng: form.lng ? parseFloat(form.lng) : null,
     }).select('id, name, screen_token').single();

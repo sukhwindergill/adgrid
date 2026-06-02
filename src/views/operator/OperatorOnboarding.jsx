@@ -141,7 +141,7 @@ function ProfileStep({ profile, onSaved }) {
 
 // ── AddScreenInline ────────────────────────────────────────────────────────────
 
-function AddScreenInline({ onAdded }) {
+function AddScreenInline({ onAdded, profile }) {
   const [form, setForm] = useState({ name: '', city: 'London', location: '', cpm_floor: '3.00' });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
@@ -152,16 +152,17 @@ function AddScreenInline({ onAdded }) {
     setErr(null);
     const { data: { user } } = await supabase.auth.getUser();
     const { data, error } = await supabase.from('screens').insert({
+      id:          crypto.randomUUID(),
       name:        form.name.trim(),
+      owner_name:  profile?.company_name || profile?.name || user.email,
+      owner_type:  'operator',
       location:    form.location.trim() || form.city,
       city:        form.city,
       status:      'pending',
       operator_id: user.id,
       cpm_floor:   parseFloat(form.cpm_floor) || 3.00,
-      cpm:         parseFloat(form.cpm_floor) || 3.00,
       max_ad_duration: 30,
       monthly_revenue: 0,
-      campaigns: 0,
     }).select('id, name, screen_token').single();
     setSaving(false);
     if (error) { setErr(error.message); return; }
@@ -407,7 +408,7 @@ export function OperatorOnboarding({ profile, screenCount, onComplete, onProfile
                       )}
 
                       {step.id === 'screen' && !screenRegistered && (
-                        <AddScreenInline onAdded={handleScreenAdded} />
+                        <AddScreenInline onAdded={handleScreenAdded} profile={localProfile} />
                       )}
 
                       {step.id === 'screen' && screenRegistered && (
