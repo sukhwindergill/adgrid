@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { C, F } from '../../design/tokens.js';
+import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
@@ -11,6 +12,7 @@ import { SkeletonRow, SkeletonTable } from '../../components/ui/Skeleton.jsx';
 
 export function Revenue({ campaigns, loading = false }) {
   const [period, setPeriod] = useState(null);
+  const { isMobile } = useBreakpoint();
 
   const filteredCampaigns = period === null ? campaigns : campaigns.filter(c => {
     const cutoff = new Date();
@@ -49,13 +51,13 @@ export function Revenue({ campaigns, loading = false }) {
             <Btn variant="secondary" size="sm">↓ Export Report</Btn>
           </div>
         } />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
         <KPI label="Total Ad Spend"   value={`£${total.toLocaleString()}`}    sub="from advertisers" trend={14} icon="💰" />
         <KPI label="Platform Revenue" value={`£${platform.toLocaleString()}`} sub="12% fee" color={C.blue} icon="$" />
         <KPI label="Owner Payouts"    value={`£${owners.toLocaleString()}`}   sub="40% of net" color={C.green} icon="🏦" />
         <KPI label="Network Pool"     value={`£${network.toLocaleString()}`}  sub="reinvestment" icon="♻" />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <Card>
           <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Revenue Split</div>
           <div style={{ height: 8, borderRadius: 4, overflow: 'hidden', display: 'flex', marginBottom: 16 }}>
