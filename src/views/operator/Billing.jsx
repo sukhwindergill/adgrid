@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
+import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { useToast } from '../../components/primitives/Toast.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
@@ -38,6 +39,7 @@ export function Billing() {
   const [tab, setTab]         = useState('overview');
   const [payingOut, setPaying] = useState(false);
   const { data, loading, error, refresh } = useBilling();
+  const { isMobile } = useBreakpoint();
 
   const charges       = data?.charges ?? [];
   const payouts       = data?.payouts ?? [];
@@ -86,7 +88,7 @@ export function Billing() {
       <PageHeader title="Billing & Payouts" subtitle="Stripe charges, owner revenue share, and payout management"
         actions={<a href="https://dashboard.stripe.com" target="_blank" rel="noreferrer"><Btn variant="secondary" size="sm">Stripe Dashboard ↗</Btn></a>} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
         <KPI label="Total Ad Spend"   value={`£${totalCharged.toLocaleString()}`}  sub="charged campaigns" trend={14} icon="💰" />
         <KPI label="Platform Net"     value={`£${platformNet.toLocaleString()}`}   sub="12% platform fee"  color={C.blue} icon="$" />
         <KPI label="Available Balance" value={balance ? `£${availableOut.toLocaleString()}` : '—'} sub={connectStatus === 'active' ? 'ready to pay out' : 'connect Stripe'} color={C.green} icon="✓" />
@@ -96,7 +98,7 @@ export function Billing() {
       <Tabs tabs={[{ id: 'overview', label: 'Overview' }, { id: 'charges', label: 'Charges' }, { id: 'payouts', label: 'Payouts' }]} active={tab} onChange={setTab} />
 
       {tab === 'overview' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
           <Card>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Revenue Split</div>
             <div style={{ height: 8, borderRadius: 4, overflow: 'hidden', display: 'flex', marginBottom: 14 }}>
