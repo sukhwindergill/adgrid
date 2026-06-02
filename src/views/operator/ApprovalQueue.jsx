@@ -8,6 +8,14 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { ApproveBtn } from '../../lib/campaignActions.jsx';
 import { useConfirm } from '../../components/primitives/ConfirmModal.jsx';
 
+// TODO: make SCREEN_OWNER_SHARE configurable per screen/tier when pricing model is finalised
+const SCREEN_OWNER_SHARE = 0.70;
+
+function earningsDisplay(budget) {
+  if (!budget) return null;
+  return `~£${Math.round(budget * SCREEN_OWNER_SHARE).toLocaleString()}`;
+}
+
 // Mini replica of the actual creative as it appears on screen
 function CreativePreview({ campaign }) {
   const bg = campaign.color || '#7c3aed';
