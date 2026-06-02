@@ -385,7 +385,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 24 }}>
                   <KPI label="People Seen (30d)" value={totalPeople.toLocaleString()} color={C.purple} />
                   <KPI label="Avg Dwell" value={`${avgDwell}s`} sub="per impression event" />
-                  <KPI label="Avg Attention" value={`${avgAttention}%`} color={avgAttention > 60 ? C.green : C.amber} />
+                  <KPI label="Avg Attention" value={`${avgAttention}%`} color={avgAttention === '—' ? C.textMuted : (avgAttention > 60 ? C.green : C.amber)} />
                 </div>
 
                 <Card style={{ marginBottom: 16 }}>
