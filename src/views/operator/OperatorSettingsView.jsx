@@ -119,29 +119,32 @@ function SecurityTab() {
   const [newEmail, setNewEmail] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
-  const [msg, setMsg] = useState(null);
+  const [emailMsg, setEmailMsg] = useState(null);
+  const [pwMsg,    setPwMsg]    = useState(null);
   const [emailSaving, setEmailSaving] = useState(false);
   const [pwSaving, setPwSaving] = useState(false);
 
   async function changeEmail() {
     if (!newEmail) return;
     setEmailSaving(true);
+    setEmailMsg(null);
     const { error } = await supabase.auth.updateUser({ email: newEmail });
     setEmailSaving(false);
-    setMsg(error ? error.message : 'Confirmation email sent. Check your inbox.');
+    setEmailMsg(error ? { text: error.message, ok: false } : { text: 'Confirmation email sent. Check your inbox.', ok: true });
     if (!error) setNewEmail('');
-    setTimeout(() => setMsg(null), 5000);
+    setTimeout(() => setEmailMsg(null), 5000);
   }
 
   async function changePassword() {
-    if (newPw !== confirmPw) { setMsg('Passwords do not match.'); return; }
-    if (newPw.length < 8) { setMsg('Password must be at least 8 characters.'); return; }
+    if (newPw !== confirmPw) { setPwMsg({ text: 'Passwords do not match.', ok: false }); return; }
+    if (newPw.length < 8) { setPwMsg({ text: 'Password must be at least 8 characters.', ok: false }); return; }
     setPwSaving(true);
+    setPwMsg(null);
     const { error } = await supabase.auth.updateUser({ password: newPw });
     setPwSaving(false);
-    setMsg(error ? error.message : 'Password updated.');
+    setPwMsg(error ? { text: error.message, ok: false } : { text: 'Password updated.', ok: true });
     setNewPw(''); setConfirmPw('');
-    setTimeout(() => setMsg(null), 4000);
+    setTimeout(() => setPwMsg(null), 4000);
   }
 
   return (
@@ -152,6 +155,11 @@ function SecurityTab() {
       </Field>
       <div style={{ marginBottom: 32 }}>
         <SaveBtn onClick={changeEmail} saving={emailSaving} label="Update Email" />
+        {emailMsg && (
+          <div style={{ fontSize: 13, color: emailMsg.ok ? C.green : C.red, fontFamily: F.sans, marginTop: 8 }}>
+            {emailMsg.text}
+          </div>
+        )}
       </div>
       <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 24 }}>
         <div style={{ fontSize: 15, fontWeight: 600, color: C.text, marginBottom: 16 }}>Change Password</div>
@@ -163,7 +171,7 @@ function SecurityTab() {
         </Field>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <SaveBtn onClick={changePassword} saving={pwSaving} label="Update Password" />
-          {msg && <span style={{ fontSize: 13, color: msg.includes('updated') || msg.includes('sent') ? C.green : C.red }}>{msg}</span>}
+          {pwMsg && <span style={{ fontSize: 13, color: pwMsg.ok ? C.green : C.red }}>{pwMsg.text}</span>}
         </div>
       </div>
     </div>
