@@ -53,6 +53,10 @@ import { InviteAcceptPage }       from './views/invite/InviteAcceptPage.jsx';
 // Admin
 import { AdminDashboard } from './views/admin/AdminDashboard.jsx';
 
+// Operator onboarding + settings
+import { OperatorOnboarding } from './views/operator/OperatorOnboarding.jsx';
+import { OperatorSettings }   from './views/operator/OperatorSettings.jsx';
+
 import { C, F } from './design/tokens.js';
 import { Skeleton } from './components/ui/Skeleton.jsx';
 
@@ -86,6 +90,7 @@ export default function App() {
   const [dataLoading,      setDataLoading]   = useState(false);
   const [loadError,        setLoadError]     = useState(null);
   const [selectedScreenId, setSelectedScreenId] = useState(null);
+  const [localProfile,     setLocalProfile]  = useState(null);
 
   // ── Impersonation audit trail ─────────────────────────────────────────────
   useEffect(() => {
@@ -179,6 +184,18 @@ export default function App() {
     }
   }, [user, role, loadData]);
 
+  // Sync local profile copy for mutable settings updates
+  useEffect(() => { setLocalProfile(profile); }, [profile]);
+
+  // Auto-route new operators who haven't completed onboarding
+  useEffect(() => {
+    if (!user || role !== 'operator' || !profile) return;
+    // Only redirect on first load (active still at default 'overview')
+    if (active !== 'overview') return;
+    const isIncomplete = !profile.name || !profile.company_name;
+    if (isIncomplete) setActive('op-onboarding');
+  }, [profile]);
+
   // ── Stripe Connect redirect ────────────────────────────────────────────────
   useEffect(() => {
     if (!user) return;
@@ -197,7 +214,11 @@ export default function App() {
         .update({ connect_status: 'active' })
         .eq('id', user.id)
         .then(({ error }) => {
-          if (error) console.error('Failed to update connect status:', error.message);
+          if (error) {
+            console.error('Failed to update connect status:', error.message);
+          } else {
+            toast.success('Bank account connected — payouts are now enabled!');
+          }
           window.location.replace(window.location.pathname);
         });
     }
@@ -358,6 +379,25 @@ export default function App() {
       return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navigate} advertiserId={impersonating?.id ?? user.id} />;
     }
 
+    if (active === 'op-onboarding') return (
+      <OperatorOnboarding
+        profile={localProfile ?? profile}
+        screenCount={dbScreens.length}
+        onComplete={() => navigate('overview')}
+        onProfileUpdate={updated => setLocalProfile(updated)}
+        onScreenAdded={screen => setDbScreens(prev => [
+          { ...screen, neighbourhood: screen.location, owner: screen.owner_name, cpm: screen.cpm_floor || 4.20, maxDuration: screen.max_ad_duration, revenue: 0, campaigns: 0 },
+          ...prev,
+        ])}
+        onNavigate={navigate}
+      />
+    );
+    if (active === 'op-settings')   return (
+      <OperatorSettings
+        profile={{ ...(localProfile ?? profile), email: user.email }}
+        onProfileUpdate={updated => setLocalProfile(updated)}
+      />
+    );
     if (active === 'overview')     return (
       <>
         <VerificationBanner status={profile?.verification_status} onStartVerification={() => navigate('op-verify')} />

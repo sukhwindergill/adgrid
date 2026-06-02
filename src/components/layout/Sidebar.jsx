@@ -42,6 +42,8 @@ const OP_SECONDARY = [
   { id: 'signals',      label: 'Live Signals',     icon: 'signals' },
   { id: 'integrations', label: 'Integrations',     icon: 'integrations' },
   { id: 'display',      label: 'Display Manager',  icon: 'display' },
+  { id: 'billing',      label: 'Billing',          icon: 'billing' },
+  { id: 'op-settings',  label: 'Settings',         icon: 'settings' },
 ];
 
 const ADV_PRIMARY = [
@@ -198,12 +200,15 @@ export function Sidebar({ active, setActive, isAdv, user, onSignOut, pendingCoun
     ...baseSecondary,
     ...(isPlatformOwner
       ? [
-          { id: 'admin',          label: 'Admin Dashboard',      icon: 'verify' },
-          { id: 'op-verify-queue', label: 'Operator Verification', icon: 'approval' },
+          { id: 'admin',           label: 'Admin Dashboard',       icon: 'verify' },
+          { id: 'op-verify-queue', label: 'Operator Verification',  icon: 'approval' },
         ]
-      : verificationStatus && verificationStatus !== 'verified'
-      ? [{ id: 'op-verify', label: 'Verify Identity', icon: 'verify', badge: false }]
-      : []),
+      : [
+          ...(verificationStatus && verificationStatus !== 'verified'
+            ? [{ id: 'op-verify',     label: 'Verify Identity',  icon: 'verify' }]
+            : []),
+          { id: 'op-onboarding', label: 'Setup guide',    icon: 'overview' },
+        ]),
   ];
 
   const width = collapsed ? 52 : 220;

@@ -4,7 +4,7 @@ import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
-import { ApproveBtn } from '../../lib/campaignActions.js';
+import { ApproveBtn } from '../../lib/campaignActions.jsx';
 import { useConfirm } from '../../components/primitives/ConfirmModal.jsx';
 
 function CampaignCard({ campaign, setCampaigns, setDetail }) {
