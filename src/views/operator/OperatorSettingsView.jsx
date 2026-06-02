@@ -183,6 +183,10 @@ function NotificationsTab({ profile }) {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
 
+  useEffect(() => {
+    if (profile?.notification_prefs) setPrefs(profile.notification_prefs);
+  }, [profile?.notification_prefs]);
+
   async function save() {
     setSaving(true);
     const { error } = await supabase.from('profiles').update({ notification_prefs: prefs }).eq('id', profile.id);
@@ -248,7 +252,7 @@ function TeamTab({ profile }) {
       .from('team_members')
       .select('*, user_profile:user_profile_id(name, email)')
       .eq('org_profile_id', profile.id)
-      .then(({ data }) => { setMembers(data ?? []); setLoading(false); });
+      .then(({ data, error }) => { if (error) console.error('team_members load error:', error); setMembers(data ?? []); setLoading(false); });
   }, [profile.id]);
 
   async function invite() {
@@ -341,6 +345,7 @@ function PayoutsTab({ profile }) {
     const state = crypto.randomUUID();
     sessionStorage.setItem('stripe_connect_state', state);
     const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setMsg('Session expired. Please log in again.'); setConnecting(false); return; }
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-connect-account`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
