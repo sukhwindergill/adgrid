@@ -23,7 +23,7 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
         actions={<Btn onClick={() => setAdvNav('adv-create')}>+ New Campaign</Btn>}
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
         <KPI label="Total Budget"  value={`£${totalSpend.toLocaleString()}`}        sub="across all campaigns" />
         <KPI label="Spent to Date" value={`£${totalSpent.toLocaleString()}`}         sub={`${totalSpend > 0 ? Math.round((totalSpent / totalSpend) * 100) : 0}% of budget`} color={C.blue} />
         <KPI label="Impressions"   value={`${(totalImpr / 1000).toFixed(1)}K`}       sub="verified plays" color={C.purple} />

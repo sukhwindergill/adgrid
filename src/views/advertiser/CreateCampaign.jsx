@@ -6,6 +6,7 @@ import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { CATEGORIES, DAYS, HOURS } from '../../lib/data.js';
+import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
 const STEP_LABELS = ['Location & Screens', 'Schedule & Creative', 'Budget & Launch'];
 
@@ -170,6 +171,7 @@ function ScreenMap({ center, radius, screens, selected, onToggle }) {
 const DRAFT_KEY = 'adgrid_campaign_draft';
 
 export function CreateCampaign({ onSave, onCancel, dbScreens = [] }) {
+  const { isMobile } = useBreakpoint();
   const [step, setStep]     = useState(0);
   const [radius, setRadius] = useState(8);
   const [selected, setSelected] = useState([]);
@@ -299,7 +301,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [] }) {
 
       {/* Step 0: Location & Screen Selection */}
       {step === 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 320px', gap: 24, alignItems: 'start' }}>
           <Card>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Select Screens by Area</div>
 
@@ -375,7 +377,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [] }) {
 
       {/* Step 1: Schedule & Creative */}
       {step === 1 && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 320px', gap: 24, alignItems: 'start' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <Card>
               <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Campaign Details</div>

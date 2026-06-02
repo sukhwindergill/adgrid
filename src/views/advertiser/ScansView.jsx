@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { C, F } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useBreakpoint } from "../../lib/useBreakpoint.js";
 
 function Card({ label, value, sub }) {
   return (
@@ -36,6 +37,7 @@ function exportCSV(rows) {
 }
 
 export default function ScansView({ impersonatingId }) {
+  const { isMobile } = useBreakpoint();
   const { user } = useAuth();
   const effectiveId = impersonatingId ?? user?.id;
   const [scans, setScans] = useState([]);
@@ -116,7 +118,7 @@ export default function ScansView({ impersonatingId }) {
   );
 
   return (
-    <div style={{ padding: "32px 40px", fontFamily: F.sans, maxWidth: 1100 }}>
+    <div style={{ padding: isMobile ? "20px 16px" : "32px 40px", fontFamily: F.sans, maxWidth: 1100 }}>
       <h2 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: "0 0 24px" }}>
         Scans & Data
       </h2>

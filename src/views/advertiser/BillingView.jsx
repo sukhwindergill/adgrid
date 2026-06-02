@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { C, F, SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
 import { useToast } from "../../components/primitives/Toast.jsx";
+import { useBreakpoint } from "../../lib/useBreakpoint.js";
 
 const STATUS_COLORS = {
   paid: { bg: "#f0fdf4", color: "#16a34a" },
@@ -21,6 +22,7 @@ function Badge({ status }) {
 }
 
 export default function BillingView() {
+  const { isMobile } = useBreakpoint();
   const [data, setData] = useState({ invoices: [], paymentMethods: [], portalUrl: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -97,7 +99,7 @@ export default function BillingView() {
   );
 
   return (
-    <div style={{ padding: "32px 40px", fontFamily: F.sans, maxWidth: 900 }}>
+    <div style={{ padding: isMobile ? "20px 16px" : "32px 40px", fontFamily: F.sans, maxWidth: 900 }}>
       <h2 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: "0 0 28px" }}>Billing</h2>
 
       <div style={{
@@ -171,7 +173,8 @@ export default function BillingView() {
             No invoices yet.
           </div>
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 500 }}>
             <thead>
               <tr style={{ background: C.bg }}>
                 {["Date", "Description", "Amount", "Status", "PDF"].map((h) => (
@@ -201,6 +204,7 @@ export default function BillingView() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>
