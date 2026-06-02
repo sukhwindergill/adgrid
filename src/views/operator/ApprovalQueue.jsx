@@ -77,25 +77,10 @@ function CreativePreview({ campaign }) {
   );
 }
 
-function InfoRow({ label, value, mono, purple, href }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
-      {href ? (
-        <a
-          href={href} target="_blank" rel="noopener noreferrer"
-          style={{ fontSize: 12, color: C.purple, fontFamily: mono ? F.mono : F.sans,
-            textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}
-        >{value}</a>
-      ) : (
-        <div style={{ fontSize: 12, fontWeight: 500, color: purple ? C.purple : C.text, fontFamily: mono ? F.mono : F.sans }}>{value || '—'}</div>
-      )}
-    </div>
-  );
-}
 
 function CampaignCard({ campaign, setCampaigns, setDetail }) {
   const confirm = useConfirm();
+  const earned = earningsDisplay(campaign.budget);
 
   const reject = async e => {
     e.preventDefault();
@@ -140,7 +125,7 @@ function CampaignCard({ campaign, setCampaigns, setDetail }) {
               <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Destination</div>
               <a
                 href={campaign.destination} target="_blank" rel="noopener noreferrer"
-                style={{ fontSize: 13, color: C.purple, fontFamily: F.mono, textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}
+                style={{ fontSize: 13, color: C.purple, fontFamily: F.mono, textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}
               >{campaign.destination}</a>
             </div>
           ) : (
@@ -154,10 +139,10 @@ function CampaignCard({ campaign, setCampaigns, setDetail }) {
                 {campaign.budget ? `£${campaign.budget.toLocaleString()}` : '—'}
               </div>
             </div>
-            {earningsDisplay(campaign.budget) && (
+            {earned && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.5px' }}>You Earn</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: C.purple, fontFamily: F.mono }}>{earningsDisplay(campaign.budget)}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.purple, fontFamily: F.mono }}>{earned}</div>
               </div>
             )}
           </div>
@@ -165,7 +150,7 @@ function CampaignCard({ campaign, setCampaigns, setDetail }) {
           {(campaign.start || campaign.end) && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Dates</div>
-              <div style={{ fontSize: 12, fontWeight: 500, color: C.text, fontFamily: F.mono }}>{campaign.start} – {campaign.end}</div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: C.text, fontFamily: F.mono }}>{[campaign.start, campaign.end].filter(Boolean).join(' – ')}</div>
             </div>
           )}
         </div>
