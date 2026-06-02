@@ -190,6 +190,7 @@ export default function App() {
   // Auto-route new operators who haven't completed onboarding
   useEffect(() => {
     if (!user || role !== 'operator' || !profile) return;
+    if (profile.is_platform_owner) return; // platform owners bypass onboarding redirect
     // Only redirect on first load (active still at default 'overview')
     if (active !== 'overview') return;
     const isIncomplete = !profile.name || !profile.company_name;
