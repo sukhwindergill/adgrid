@@ -43,6 +43,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   const [loadingData, setLoadingData] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [tab, setTab] = useState('overview');
 
   // Fetch screen record
   useEffect(() => {
@@ -167,6 +168,29 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         }
       />
 
+      {/* Tab bar */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: `1px solid ${C.border}`, paddingBottom: 0 }}>
+        {[
+          { key: 'overview', label: 'Overview' },
+          { key: 'cv',       label: 'CV Insights' },
+          { key: 'setup',    label: 'Setup Guide' },
+        ].map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            style={{
+              padding: '9px 18px', border: 'none', background: 'none', cursor: 'pointer',
+              fontFamily: F.sans, fontSize: 13, fontWeight: tab === t.key ? 600 : 400,
+              color: tab === t.key ? C.purple : C.textSub,
+              borderBottom: `2px solid ${tab === t.key ? C.purple : 'transparent'}`,
+              marginBottom: -1, transition: 'all 0.15s',
+            }}
+          >{t.label}</button>
+        ))}
+      </div>
+
+      {tab === 'overview' && (
+      <>
       {/* KPI row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
         <KPI
@@ -294,6 +318,8 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
           />
         )}
       </Card>
+      </>
+      )}
     </div>
   );
 }
