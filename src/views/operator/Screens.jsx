@@ -25,6 +25,13 @@ function healthSignal(screen) {
   return                    { dot: C.red,    label: 'Offline',  pulse: false };
 }
 
+function uptime(screen) {
+  if (!screen.last_seen) return '—';
+  const minsAgo = (Date.now() - new Date(screen.last_seen).getTime()) / 60000;
+  if (minsAgo <= 5) return 'Live';
+  return '—';
+}
+
 function ScreenCard({ screen, onClick }) {
   const hs = healthSignal(screen);
   return (
