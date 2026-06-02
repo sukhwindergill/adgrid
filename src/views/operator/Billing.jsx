@@ -126,7 +126,7 @@ export function Billing() {
               </div>
             ) : (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 16 }}>
                   {[['Available', `£${availableOut.toLocaleString()}`, C.green], ['Pending', `£${pendingIn.toLocaleString()}`, C.amber]].map(([l, v, c]) => (
                     <div key={l} style={{ padding: 14, background: C.surfaceAlt, borderRadius: 8 }}>
                       <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 4 }}>{l}</div>
