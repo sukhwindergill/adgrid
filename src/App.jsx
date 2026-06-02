@@ -44,6 +44,19 @@ import { Placeholder }      from './views/shared/Placeholder.jsx';
 import { DisplayPlayer } from './views/display/DisplayPlayer.jsx';
 import { MarketingHome } from './views/marketing/Home.jsx';
 
+// Operator identity verification
+import { VerificationOnboarding } from './views/operator/VerificationOnboarding.jsx';
+import { VerificationQueue }      from './views/operator/VerificationQueue.jsx';
+import { VerificationBanner }     from './components/operator/VerificationBanner.jsx';
+import { InviteAcceptPage }       from './views/invite/InviteAcceptPage.jsx';
+
+// Admin
+import { AdminDashboard } from './views/admin/AdminDashboard.jsx';
+
+// Operator onboarding + settings
+import { OperatorOnboarding } from './views/operator/OperatorOnboarding.jsx';
+import { OperatorSettings }   from './views/operator/OperatorSettings.jsx';
+
 import { C, F } from './design/tokens.js';
 import { Skeleton } from './components/ui/Skeleton.jsx';
 
@@ -77,6 +90,7 @@ export default function App() {
   const [dataLoading,      setDataLoading]   = useState(false);
   const [loadError,        setLoadError]     = useState(null);
   const [selectedScreenId, setSelectedScreenId] = useState(null);
+  const [localProfile,     setLocalProfile]  = useState(null);
 
   // ── Impersonation audit trail ─────────────────────────────────────────────
   useEffect(() => {
@@ -170,10 +184,33 @@ export default function App() {
     }
   }, [user, role, loadData]);
 
+  // Sync local profile copy for mutable settings updates
+  useEffect(() => { setLocalProfile(profile); }, [profile]);
+
+  // Auto-route new operators who haven't completed onboarding
+  useEffect(() => {
+    if (!user || role !== 'operator' || !profile) return;
+    if (profile.is_platform_owner) return; // platform owners bypass onboarding redirect
+    // Only redirect on first load (active still at default 'overview')
+    if (active !== 'overview') return;
+    const isIncomplete = !profile.name || !profile.company_name;
+    if (isIncomplete) setActive('op-onboarding');
+  }, [profile]);
+
   // ── Stripe Connect redirect ────────────────────────────────────────────────
   useEffect(() => {
     if (!user) return;
     const params = new URLSearchParams(window.location.search);
+
+    // Advertiser billing setup return
+    const setup = params.get('setup');
+    if (setup === 'success' || setup === 'cancelled') {
+      if (setup === 'success') toast.success('Payment method added successfully.');
+      window.history.replaceState({}, '', window.location.pathname);
+      setActive('adv-billing');
+      return;
+    }
+
     if (params.get('connect') === 'success') {
       const storedState = sessionStorage.getItem('stripe_connect_state');
       const returnedState = params.get('state');
@@ -188,7 +225,11 @@ export default function App() {
         .update({ connect_status: 'active' })
         .eq('id', user.id)
         .then(({ error }) => {
-          if (error) console.error('Failed to update connect status:', error.message);
+          if (error) {
+            console.error('Failed to update connect status:', error.message);
+          } else {
+            toast.success('Bank account connected — payouts are now enabled!');
+          }
           window.location.replace(window.location.pathname);
         });
     }
@@ -212,6 +253,10 @@ export default function App() {
       </div>
     );
   }
+
+  // Invite acceptance — public, no auth required
+  const inviteMatch = window.location.pathname.match(/^\/invite\/([a-f0-9]{64})$/);
+  if (inviteMatch) return <InviteAcceptPage token={inviteMatch[1]} />;
 
   if (!user) {
     const path = window.location.pathname;
@@ -278,12 +323,45 @@ export default function App() {
     }
 
     if (isAdv) {
-      if (active === 'adv-overview')     return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navigate} advertiserId={impersonating?.id ?? user.id} />;
-      if (active === 'adv-create')       return (
-        <CreateCampaign
+      // Payment method banner — shown on dashboard and campaign creation if no card on file
+      const noCard = !profile?.stripe_customer_id;
+      const paymentBanner = noCard && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px',
+          background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10,
+          fontFamily: F.sans, fontSize: 13, marginBottom: 16,
+        }}>
+          <span style={{ fontSize: 18 }}>💳</span>
+          <span style={{ flex: 1, color: '#92400e' }}>
+            Add a payment method so your campaigns can go live when approved.
+          </span>
+          <button
+            onClick={() => navigate('adv-billing')}
+            style={{
+              padding: '5px 14px', borderRadius: 7, border: 'none',
+              background: '#f59e0b', color: '#fff', fontFamily: F.sans,
+              fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+            }}
+          >
+            Set up billing →
+          </button>
+        </div>
+      );
+
+      if (active === 'adv-overview') return (
+        <>
+          {paymentBanner}
+          <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navigate} advertiserId={impersonating?.id ?? user.id} />
+        </>
+      );
+      if (active === 'adv-create') return (
+        <>
+          {paymentBanner}
+          <CreateCampaign
           dbScreens={dbScreens}
           onSave={async c => {
             const { data: row, error } = await supabase.from('bookings').insert({
+              id:              crypto.randomUUID(),
               advertiser_name: c.advertiser,
               screen_name:     c.screen,
               city:            c.city || '',
@@ -303,6 +381,8 @@ export default function App() {
               cta_text:        c.cta,
               slots:           c.slots,
               duration:        c.duration,
+              asset_url:       c.assetUrl ?? null,
+              asset_type:      c.assetType ?? null,
             }).select().single();
             if (error || !row) {
               toast.error(`Failed to submit campaign: ${error?.message ?? 'Unknown error'}`);
@@ -332,6 +412,7 @@ export default function App() {
           }}
           onCancel={() => navigate('adv-overview')}
         />
+        </>
       );
       if (active === 'adv-campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} />;
       if (active === 'adv-analytics')    return <Analytics campaigns={campaigns} loading={dataLoading} />;
@@ -343,7 +424,38 @@ export default function App() {
       return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navigate} advertiserId={impersonating?.id ?? user.id} />;
     }
 
-    if (active === 'overview')     return <Dashboard campaigns={campaigns} dbScreens={dbScreens} setNav={navigate} loading={dataLoading} />;
+    if (active === 'op-onboarding') return (
+      <OperatorOnboarding
+        profile={localProfile ?? profile}
+        screenCount={dbScreens.length}
+        onComplete={() => navigate('overview')}
+        onProfileUpdate={updated => setLocalProfile(updated)}
+        onScreenAdded={screen => setDbScreens(prev => [
+          { ...screen, neighbourhood: screen.location, owner: screen.owner_name, cpm: screen.cpm_floor || 4.20, maxDuration: screen.max_ad_duration, revenue: 0, campaigns: 0 },
+          ...prev,
+        ])}
+        onNavigate={navigate}
+      />
+    );
+    if (active === 'op-settings')   return (
+      <OperatorSettings
+        profile={{ ...(localProfile ?? profile), email: user.email }}
+        onProfileUpdate={updated => setLocalProfile(updated)}
+      />
+    );
+    if (active === 'overview')     return (
+      <>
+        {!profile?.is_platform_owner && (
+          <VerificationBanner status={profile?.verification_status} onStartVerification={() => navigate('op-verify')} />
+        )}
+        <Dashboard campaigns={campaigns} dbScreens={dbScreens} setNav={navigate} loading={dataLoading} />
+      </>
+    );
+    if (active === 'op-verify')    return (
+      <VerificationOnboarding profile={profile} onVerified={() => navigate('overview')} />
+    );
+    if (active === 'op-verify-queue') return <VerificationQueue />;
+    if (active === 'admin')           return <AdminDashboard onNavigate={navigate} />;
     if (active === 'screens')      return (
       <ScreensView
         dbScreens={dbScreens}
@@ -351,6 +463,8 @@ export default function App() {
         profile={profile}
         loading={dataLoading}
         onSelectScreen={id => { setSelectedScreenId(id); navigate('screen-detail'); }}
+        verificationStatus={profile?.verification_status}
+        onVerify={() => navigate('op-verify')}
       />
     );
     if (active === 'approval')      return <ApprovalQueue campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} />;
@@ -383,6 +497,8 @@ export default function App() {
           user={displayUser}
           onSignOut={signOut}
           pendingCount={pendingCount}
+          isPlatformOwner={profile?.is_platform_owner ?? false}
+          verificationStatus={role === 'operator' ? (profile?.verification_status ?? null) : null}
         />
       }
       header={

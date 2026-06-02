@@ -32,7 +32,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("stripe_customer_id, email, full_name")
+    .select("stripe_customer_id, email, name")
     .eq("id", user.id)
     .single();
 
@@ -41,7 +41,7 @@ Deno.serve(async (req: Request) => {
   if (!customerId) {
     const customer = await stripe.customers.create({
       email: profile?.email ?? user.email,
-      name: profile?.full_name ?? undefined,
+      name: profile?.name ?? undefined,
       metadata: { supabase_user_id: user.id },
     });
     customerId = customer.id;
@@ -52,12 +52,13 @@ Deno.serve(async (req: Request) => {
       .eq("id", user.id);
   }
 
+  // Return to root with ?setup=success so the SPA can route to the billing tab
   const session = await stripe.checkout.sessions.create({
     mode: "setup",
     customer: customerId,
     currency: "gbp",
-    success_url: `${origin}/billing?setup=success`,
-    cancel_url: `${origin}/billing?setup=cancelled`,
+    success_url: `${origin}?setup=success`,
+    cancel_url: `${origin}?setup=cancelled`,
   });
 
   return new Response(JSON.stringify({ url: session.url }), {

@@ -1,6 +1,26 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
+
+async function startStripeConnect(setConnecting) {
+  setConnecting(true);
+  const state = crypto.randomUUID();
+  sessionStorage.setItem('stripe_connect_state', state);
+  const { data: { session } } = await supabase.auth.getSession();
+  try {
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-connect-account`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ returnUrl: window.location.origin, state }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const { url } = await res.json();
+    window.location.href = url;
+  } catch (e) {
+    sessionStorage.removeItem('stripe_connect_state');
+    setConnecting(false);
+  }
+}
 import { C, F } from '../../design/tokens.js';
 import { useToast } from '../../components/primitives/Toast.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
@@ -37,6 +57,7 @@ export function Billing() {
   const toast = useToast();
   const [tab, setTab]         = useState('overview');
   const [payingOut, setPaying] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const { data, loading, error, refresh } = useBilling();
 
   const charges       = data?.charges ?? [];
@@ -118,9 +139,14 @@ export function Billing() {
           <Card>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Stripe Connect Balance</div>
             {connectStatus !== 'active' ? (
-              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.7 }}>
-                Connect your bank account via Stripe to receive payouts.
-                Go to <strong>Screens</strong> → <strong>Connect Stripe</strong> to get started.
+              <div>
+                <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, marginBottom: 14 }}>
+                  Connect your bank account via Stripe to receive ad revenue payouts.
+                  Stripe collects your banking details, verifies your business, and handles tax forms.
+                </div>
+                <Btn size="sm" onClick={() => startStripeConnect(setConnecting)} loading={connecting}>
+                  Connect bank account via Stripe →
+                </Btn>
               </div>
             ) : (
               <>

@@ -24,81 +24,107 @@ function buildQrUrl(destinationUrl, screenId, campaignId) {
 function CreativeSlide({ campaign, screenId }) {
   const bg = campaign.accent_color || '#7c3aed';
   const qrUrl = buildQrUrl(campaign.destination_url || 'https://adgrid.io', screenId, campaign.id);
+  const hasAsset = Boolean(campaign.asset_url);
+  const isVideo  = campaign.asset_type === 'video';
 
   return (
-    <div style={{
-      position: 'absolute', inset: 0,
-      background: `linear-gradient(160deg, #050a10 0%, #0d1520 60%, ${bg}22 100%)`,
-      display: 'flex', flexDirection: 'column',
-      alignItems: 'flex-start', justifyContent: 'flex-end',
-      padding: 'clamp(32px, 5vw, 80px)',
-      overflow: 'hidden',
-    }}>
-      {/* Background accent glow */}
-      <div style={{
-        position: 'absolute', top: '-10%', right: '-5%',
-        width: '50%', height: '60%',
-        background: `radial-gradient(ellipse, ${bg}33 0%, transparent 70%)`,
-        pointerEvents: 'none',
-      }} />
-
-      {/* Bottom accent line */}
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 4, background: bg }} />
-
-      {/* AdGrid watermark */}
-      <div style={{
-        position: 'absolute', top: 'clamp(20px, 3vw, 48px)', left: 'clamp(20px, 3vw, 48px)',
-        fontSize: 'clamp(10px, 1.2vw, 16px)', fontWeight: 700, letterSpacing: '3px',
-        color: 'rgba(255,255,255,0.2)', fontFamily: "'Inter', sans-serif", textTransform: 'uppercase',
-      }}>
-        ADGRID
-      </div>
-
-      {/* QR code — top right */}
-      <div style={{
-        position: 'absolute', top: 'clamp(20px, 3vw, 48px)', right: 'clamp(20px, 3vw, 48px)',
-        background: '#fff', borderRadius: 12, padding: 'clamp(8px, 1.2vw, 16px)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-      }}>
-        <QRCode value={qrUrl} size={Math.max(64, Math.floor(window.innerWidth * 0.12))} level="M" />
-        <div style={{
-          fontSize: 'clamp(8px, 0.8vw, 12px)', color: '#555', textAlign: 'center',
-          marginTop: 6, fontFamily: "'Inter', sans-serif", fontWeight: 500,
-        }}>Scan to learn more</div>
-      </div>
-
-      {/* Category tag */}
-      {campaign.category && (
-        <div style={{
-          fontSize: 'clamp(10px, 1vw, 14px)', letterSpacing: '3px', textTransform: 'uppercase',
-          color: 'rgba(255,255,255,0.4)', fontFamily: "'Inter', sans-serif", marginBottom: 'clamp(12px, 2vw, 24px)',
-        }}>
-          {campaign.category}
-        </div>
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+      {/* Asset background: video or image */}
+      {hasAsset && isVideo && (
+        <video
+          key={campaign.asset_url}
+          src={campaign.asset_url}
+          autoPlay muted loop playsInline
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      )}
+      {hasAsset && !isVideo && (
+        <img
+          src={campaign.asset_url}
+          alt=""
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+        />
       )}
 
-      {/* Headline */}
+      {/* Overlay: stronger when there's a background asset, lighter when text-only */}
       <div style={{
-        fontSize: 'clamp(32px, 6vw, 96px)', fontWeight: 800, color: '#fff',
-        lineHeight: 1.05, maxWidth: '70%', marginBottom: 'clamp(16px, 2.5vw, 40px)',
-        fontFamily: 'Georgia, serif', textShadow: '0 4px 24px rgba(0,0,0,0.5)',
+        position: 'absolute', inset: 0,
+        background: hasAsset
+          ? `linear-gradient(160deg, rgba(5,10,16,0.55) 0%, rgba(13,21,32,0.3) 50%, ${bg}22 100%)`
+          : `linear-gradient(160deg, #050a10 0%, #0d1520 60%, ${bg}22 100%)`,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'flex-start', justifyContent: 'flex-end',
+        padding: 'clamp(32px, 5vw, 80px)',
       }}>
-        {campaign.headline || campaign.advertiser_name}
-      </div>
+        {/* Background accent glow (text-only mode) */}
+        {!hasAsset && (
+          <div style={{
+            position: 'absolute', top: '-10%', right: '-5%',
+            width: '50%', height: '60%',
+            background: `radial-gradient(ellipse, ${bg}33 0%, transparent 70%)`,
+            pointerEvents: 'none',
+          }} />
+        )}
 
-      {/* CTA button */}
-      {campaign.cta && (
+        {/* Bottom accent line */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 4, background: bg }} />
+
+        {/* AdGrid watermark */}
         <div style={{
-          display: 'inline-block',
-          padding: 'clamp(8px, 1.2vw, 18px) clamp(20px, 3vw, 48px)',
-          border: `2px solid ${bg}`,
-          color: bg, fontSize: 'clamp(12px, 1.4vw, 22px)',
-          fontWeight: 600, borderRadius: 4,
-          fontFamily: "'Inter', sans-serif", letterSpacing: '1px',
+          position: 'absolute', top: 'clamp(20px, 3vw, 48px)', left: 'clamp(20px, 3vw, 48px)',
+          fontSize: 'clamp(10px, 1.2vw, 16px)', fontWeight: 700, letterSpacing: '3px',
+          color: 'rgba(255,255,255,0.2)', fontFamily: "'Inter', sans-serif", textTransform: 'uppercase',
         }}>
-          {campaign.cta}
+          ADGRID
         </div>
-      )}
+
+        {/* QR code — top right */}
+        <div style={{
+          position: 'absolute', top: 'clamp(20px, 3vw, 48px)', right: 'clamp(20px, 3vw, 48px)',
+          background: '#fff', borderRadius: 12, padding: 'clamp(8px, 1.2vw, 16px)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+        }}>
+          <QRCode value={qrUrl} size={Math.max(64, Math.floor(window.innerWidth * 0.12))} level="M" />
+          <div style={{
+            fontSize: 'clamp(8px, 0.8vw, 12px)', color: '#555', textAlign: 'center',
+            marginTop: 6, fontFamily: "'Inter', sans-serif", fontWeight: 500,
+          }}>Scan to learn more</div>
+        </div>
+
+        {/* Category tag */}
+        {campaign.category && (
+          <div style={{
+            fontSize: 'clamp(10px, 1vw, 14px)', letterSpacing: '3px', textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.4)', fontFamily: "'Inter', sans-serif", marginBottom: 'clamp(12px, 2vw, 24px)',
+          }}>
+            {campaign.category}
+          </div>
+        )}
+
+        {/* Headline */}
+        <div style={{
+          fontSize: 'clamp(32px, 6vw, 96px)', fontWeight: 800, color: '#fff',
+          lineHeight: 1.05, maxWidth: '70%', marginBottom: 'clamp(16px, 2.5vw, 40px)',
+          fontFamily: 'Georgia, serif', textShadow: '0 4px 24px rgba(0,0,0,0.5)',
+        }}>
+          {campaign.headline || campaign.advertiser_name}
+        </div>
+
+        {/* CTA button */}
+        {campaign.cta && (
+          <div style={{
+            display: 'inline-block',
+            padding: 'clamp(8px, 1.2vw, 18px) clamp(20px, 3vw, 48px)',
+            border: `2px solid ${bg}`,
+            color: bg, fontSize: 'clamp(12px, 1.4vw, 22px)',
+            fontWeight: 600, borderRadius: 4,
+            fontFamily: "'Inter', sans-serif", letterSpacing: '1px',
+            backdropFilter: 'blur(8px)', background: `${bg}22`,
+          }}>
+            {campaign.cta}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

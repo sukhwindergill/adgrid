@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { C, F, SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { Skeleton } from '../../components/ui/Skeleton.jsx';
@@ -10,6 +10,8 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
 import { UptimeGrid } from '../../components/shared/UptimeGrid.jsx';
 import { EditScreenModal } from '../../components/screens/EditScreenModal.jsx';
+import { ScreenPhotosManager } from '../../components/screens/ScreenPhotos.jsx';
+import QRCode from 'react-qr-code';
 
 async function startStripeConnect(setConnecting) {
   setConnecting(true);
@@ -228,6 +230,11 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         </Card>
       </div>
 
+      {/* Location photos */}
+      <Card style={{ marginBottom: 20 }}>
+        <ScreenPhotosManager screenId={screen.id} />
+      </Card>
+
       {/* Revenue split + payout */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
         <Card>
@@ -268,6 +275,11 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         </Card>
       </div>
 
+      {/* Device setup */}
+      {screen.screen_token && (
+        <DeviceSetupCard screenToken={screen.screen_token} screenName={screen.name} />
+      )}
+
       {/* Campaign history */}
       <Card style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.border}`, fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans }}>
@@ -295,5 +307,81 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         )}
       </Card>
     </div>
+  );
+}
+
+// ── Device Setup Card ─────────────────────────────────────────────────────────
+
+function DeviceSetupCard({ screenToken, screenName }) {
+  const displayUrl = `${window.location.origin}/display/${screenToken}`;
+  const [copied, setCopied] = useState(false);
+
+  const copy = useCallback(() => {
+    navigator.clipboard.writeText(displayUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [displayUrl]);
+
+  return (
+    <Card style={{ marginBottom: 20 }}>
+      <div style={{ fontFamily: F.sans, fontWeight: 600, fontSize: 14, color: C.text, marginBottom: 4 }}>
+        Device Setup
+      </div>
+      <div style={{ fontFamily: F.sans, fontSize: 12, color: C.textSub, marginBottom: 16 }}>
+        Point any browser-based device to this URL to display ads for <strong>{screenName}</strong>.
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 20, alignItems: 'start' }}>
+        <div>
+          {/* URL row */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16,
+            padding: '10px 14px', background: C.surfaceAlt, borderRadius: 8,
+            border: `1px solid ${C.border}`,
+          }}>
+            <span style={{ fontFamily: F.mono, fontSize: 12, color: C.text, flex: 1, wordBreak: 'break-all' }}>
+              {displayUrl}
+            </span>
+            <Btn size="sm" variant="secondary" onClick={copy} style={{ flexShrink: 0 }}>
+              {copied ? '✓ Copied' : 'Copy'}
+            </Btn>
+          </div>
+
+          {/* Instructions */}
+          <div style={{ fontFamily: F.sans, fontSize: 12, color: C.textSub, lineHeight: 1.7 }}>
+            <div style={{ fontWeight: 600, color: C.text, marginBottom: 8, fontSize: 12 }}>Quick setup:</div>
+            {[
+              ['Raspberry Pi / Linux', 'chromium-browser --kiosk --noerrdialogs --disable-infobars ' + displayUrl],
+              ['Windows', 'Start Chrome in kiosk mode: chrome.exe --kiosk ' + displayUrl],
+              ['Amazon Fire Stick', 'Install Silk Browser, navigate to the URL above, enable auto-start'],
+              ['Any device', 'Open in full-screen browser — press F11 on desktop Chrome/Firefox'],
+            ].map(([platform, cmd]) => (
+              <div key={platform} style={{ marginBottom: 10 }}>
+                <span style={{ fontWeight: 600, color: C.textMid }}>{platform}:</span>
+                <div style={{
+                  marginTop: 3, padding: '5px 10px', background: C.bg,
+                  border: `1px solid ${C.border}`, borderRadius: 6,
+                  fontFamily: F.mono, fontSize: 10, color: C.textSub, wordBreak: 'break-all',
+                }}>{cmd}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* QR code */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            padding: 12, background: '#fff', borderRadius: 10,
+            border: `1px solid ${C.border}`, display: 'inline-block',
+          }}>
+            <QRCode value={displayUrl} size={120} />
+          </div>
+          <div style={{ fontFamily: F.sans, fontSize: 10, color: C.textMuted, textAlign: 'center' }}>
+            Scan to open on device
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }

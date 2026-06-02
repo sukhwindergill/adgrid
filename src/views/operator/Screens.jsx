@@ -12,7 +12,20 @@ import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
+const HEALTH_COLOR = { online: C.green, idle: C.amber, offline: C.red, unknown: C.textMuted };
+
+function lastSeenLabel(ts) {
+  if (!ts) return null;
+  const mins = Math.round((Date.now() - new Date(ts).getTime()) / 60000);
+  if (mins < 2) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  return `${hrs}h ago`;
+}
+
 function ScreenCard({ screen, onClick }) {
+  const health = screen.health_status ?? 'unknown';
+  const healthColor = HEALTH_COLOR[health];
   return (
     <Card style={{ padding: 20, transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'pointer' }}
       onClick={onClick}
@@ -21,9 +34,7 @@ function ScreenCard({ screen, onClick }) {
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-          {screen.status === 'live' && (
-            <span className="pulse" style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: C.green, marginTop: 4, flexShrink: 0 }} />
-          )}
+          <span className={health === 'online' ? 'pulse' : undefined} style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: healthColor, marginTop: 4, flexShrink: 0 }} />
           <div>
             <div style={{ fontWeight: 600, color: C.text, fontFamily: F.sans, fontSize: 14, lineHeight: 1.3 }}>{screen.name}</div>
             <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{screen.neighbourhood} · {screen.city}</div>
@@ -53,8 +64,15 @@ function ScreenCard({ screen, onClick }) {
         <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>
           {screen.campaigns} active campaign{screen.campaigns !== 1 ? 's' : ''}
         </div>
-        <div style={{ fontSize: 12, fontWeight: 600, color: C.green, fontFamily: F.mono }}>
-          {screen.revenue > 0 ? `£${screen.revenue.toLocaleString()}/mo` : ''}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {screen.last_seen && (
+            <div style={{ fontSize: 10, color: healthColor, fontFamily: F.sans }}>
+              {health} · {lastSeenLabel(screen.last_seen)}
+            </div>
+          )}
+          <div style={{ fontSize: 12, fontWeight: 600, color: C.green, fontFamily: F.mono }}>
+            {screen.revenue > 0 ? `£${screen.revenue.toLocaleString()}/mo` : ''}
+          </div>
         </div>
       </div>
     </Card>
@@ -77,19 +95,20 @@ function AddScreenModal({ onClose, onAdded }) {
     setErr(null);
     const { data: { user } } = await supabase.auth.getUser();
     const { data, error } = await supabase.from('screens').insert({
-      name: form.name.trim(),
-      location: form.location.trim() || form.city,
-      city: form.city,
-      status: 'pending',
+      id:          crypto.randomUUID(),
+      name:        form.name.trim(),
+      owner_name:  form.owner.trim(),
+      owner_type:  form.type,
+      location:    form.location.trim() || form.city,
+      city:        form.city,
+      status:      'pending',
       operator_id: user.id,
       impressions: form.monthly_traffic_estimate ? parseInt(form.monthly_traffic_estimate) * 1000 : 0,
-      cpm: parseFloat(form.cpm_floor) || 3.00,
-      cpm_floor: parseFloat(form.cpm_floor) || 3.00,
+      cpm_floor:   parseFloat(form.cpm_floor) || 3.00,
       display_size: form.display_size || null,
       monthly_traffic_estimate: form.monthly_traffic_estimate ? parseInt(form.monthly_traffic_estimate) : null,
       max_ad_duration: 30,
       monthly_revenue: 0,
-      campaigns: 0,
       lat: form.lat ? parseFloat(form.lat) : null,
       lng: form.lng ? parseFloat(form.lng) : null,
     }).select('id, name, screen_token').single();
@@ -197,10 +216,11 @@ services:
   );
 }
 
-export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelectScreen }) {
+export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelectScreen, verificationStatus, onVerify }) {
   const [filter, setFilter] = useState('All');
   const [showAdd, setShowAdd] = useState(false);
   const { isMobile, isTablet } = useBreakpoint();
+  const isVerified = verificationStatus === 'verified' || verificationStatus == null;
 
   if (loading) {
     return (
@@ -241,7 +261,16 @@ export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelect
 
       <PageHeader title="Screens"
         subtitle={`${allScreens.length} registered · ${allScreens.filter(s => s.status === 'live').length} live · ${allScreens.filter(s => s.status === 'pending').length} pending`}
-        actions={<><Btn variant="secondary" size="sm">↓ Export</Btn><Btn onClick={() => setShowAdd(true)}>+ Register Screen</Btn></>} />
+        actions={<>
+          <Btn variant="secondary" size="sm">↓ Export</Btn>
+          <Btn
+            onClick={() => isVerified ? setShowAdd(true) : onVerify?.()}
+            title={isVerified ? undefined : 'Verify your identity first'}
+          >
+            + Register Screen
+          </Btn>
+        </>}
+      />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
         <KPI label="Total Screens"     value={allScreens.length} />
@@ -267,7 +296,7 @@ export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelect
           <div style={{ fontSize: 32, marginBottom: 12 }}>📺</div>
           <div style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No screens registered yet</div>
           <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>Register your first screen to start running campaigns on the network.</div>
-          <Btn onClick={() => setShowAdd(true)}>+ Register Screen</Btn>
+          <Btn onClick={() => isVerified ? setShowAdd(true) : onVerify?.()}>+ Register Screen</Btn>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>
