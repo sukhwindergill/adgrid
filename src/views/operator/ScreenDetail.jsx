@@ -44,6 +44,8 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   const [connecting, setConnecting] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [tab, setTab] = useState('overview');
+  const [cvEvents, setCvEvents] = useState([]);
+  const [cvLoading, setCvLoading] = useState(false);
 
   // Fetch screen record
   useEffect(() => {
@@ -113,6 +115,23 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       : null;
     return { uptimePct: pct, hourlyGrid: grid };
   }, [heartbeats]);
+
+  useEffect(() => {
+    if (tab !== 'cv' || !screen) return;
+    setCvLoading(true);
+    const since = new Date();
+    since.setDate(since.getDate() - 30);
+    supabase
+      .from('impression_events')
+      .select('window_start, people_count, avg_dwell_seconds, avg_attention_score, age_18_24, age_25_34, age_35_44, age_45_54, age_55_plus, gender_male, gender_female, gender_unknown')
+      .eq('screen_id', screen.id)
+      .gte('window_start', since.toISOString())
+      .order('window_start', { ascending: true })
+      .then(({ data }) => {
+        setCvEvents(data ?? []);
+        setCvLoading(false);
+      });
+  }, [tab, screen]);
 
   const totalCampRevenue = screenCampaigns.reduce((a, c) => a + (c.budget || 0), 0);
 
@@ -319,6 +338,102 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         )}
       </Card>
       </>
+      )}
+
+      {tab === 'cv' && (
+        <div>
+          {cvLoading ? (
+            <div style={{ padding: '48px 0', textAlign: 'center', color: C.textMuted, fontFamily: F.sans, fontSize: 13 }}>Loading CV data…</div>
+          ) : cvEvents.length === 0 ? (
+            <div style={{ padding: '48px 24px', textAlign: 'center', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
+              <div style={{ fontSize: 28, marginBottom: 12 }}>📷</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No CV data yet</div>
+              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Requires screen-agent with USB camera. See Setup Guide tab.</div>
+            </div>
+          ) : (() => {
+            const totalPeople  = cvEvents.reduce((a, e) => a + (e.people_count ?? 0), 0);
+            const avgDwell     = cvEvents.length ? (cvEvents.reduce((a, e) => a + (e.avg_dwell_seconds ?? 0), 0) / cvEvents.length).toFixed(1) : '—';
+            const avgAttention = cvEvents.length ? Math.round(cvEvents.reduce((a, e) => a + (e.avg_attention_score ?? 0), 0) / cvEvents.length * 100) : '—';
+
+            const ageBuckets = [
+              { label: '18–24', val: cvEvents.reduce((a, e) => a + (e.age_18_24 ?? 0), 0) },
+              { label: '25–34', val: cvEvents.reduce((a, e) => a + (e.age_25_34 ?? 0), 0) },
+              { label: '35–44', val: cvEvents.reduce((a, e) => a + (e.age_35_44 ?? 0), 0) },
+              { label: '45–54', val: cvEvents.reduce((a, e) => a + (e.age_45_54 ?? 0), 0) },
+              { label: '55+',   val: cvEvents.reduce((a, e) => a + (e.age_55_plus ?? 0), 0) },
+            ];
+            const maxAge = Math.max(...ageBuckets.map(b => b.val), 1);
+
+            const genderBuckets = [
+              { label: 'Male',    val: cvEvents.reduce((a, e) => a + (e.gender_male ?? 0), 0),    color: C.blue },
+              { label: 'Female',  val: cvEvents.reduce((a, e) => a + (e.gender_female ?? 0), 0),  color: C.purple },
+              { label: 'Unknown', val: cvEvents.reduce((a, e) => a + (e.gender_unknown ?? 0), 0), color: C.border },
+            ];
+            const maxGender = Math.max(...genderBuckets.map(b => b.val), 1);
+
+            const days7 = Array.from({ length: 7 }, (_, i) => {
+              const d = new Date();
+              d.setDate(d.getDate() - (6 - i));
+              const key = d.toISOString().slice(0, 10);
+              const count = cvEvents.filter(e => e.window_start?.slice(0, 10) === key).reduce((a, e) => a + (e.people_count ?? 0), 0);
+              return { key, count };
+            });
+            const maxDay = Math.max(...days7.map(d => d.count), 1);
+
+            return (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 24 }}>
+                  <KPI label="People Seen (30d)" value={totalPeople.toLocaleString()} color={C.purple} />
+                  <KPI label="Avg Dwell" value={`${avgDwell}s`} sub="per impression event" />
+                  <KPI label="Avg Attention" value={`${avgAttention}%`} color={avgAttention > 60 ? C.green : C.amber} />
+                </div>
+
+                <Card style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Age Breakdown</div>
+                  {ageBuckets.map(b => (
+                    <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                      <div style={{ width: 44, fontSize: 12, color: C.textSub, fontFamily: F.sans, textAlign: 'right', flexShrink: 0 }}>{b.label}</div>
+                      <div style={{ flex: 1, background: C.surfaceAlt, borderRadius: 4, height: 12, overflow: 'hidden' }}>
+                        <div style={{ width: `${(b.val / maxAge) * 100}%`, height: '100%', background: C.purple, borderRadius: 4, transition: 'width 0.3s' }} />
+                      </div>
+                      <div style={{ width: 40, fontSize: 12, color: C.text, fontFamily: F.mono, textAlign: 'right', flexShrink: 0 }}>{b.val.toLocaleString()}</div>
+                    </div>
+                  ))}
+                </Card>
+
+                <Card style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Gender Split</div>
+                  {genderBuckets.map(b => (
+                    <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                      <div style={{ width: 60, fontSize: 12, color: C.textSub, fontFamily: F.sans, textAlign: 'right', flexShrink: 0 }}>{b.label}</div>
+                      <div style={{ flex: 1, background: C.surfaceAlt, borderRadius: 4, height: 12, overflow: 'hidden' }}>
+                        <div style={{ width: `${(b.val / maxGender) * 100}%`, height: '100%', background: b.color, borderRadius: 4, transition: 'width 0.3s' }} />
+                      </div>
+                      <div style={{ width: 40, fontSize: 12, color: C.text, fontFamily: F.mono, textAlign: 'right', flexShrink: 0 }}>{b.val.toLocaleString()}</div>
+                    </div>
+                  ))}
+                </Card>
+
+                <Card>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>7-Day People Trend</div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 80 }}>
+                    {days7.map(d => (
+                      <div key={d.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                        <div style={{
+                          width: '100%', borderRadius: 3,
+                          height: `${Math.max(4, (d.count / maxDay) * 64)}px`,
+                          background: d.count > 0 ? C.purple : C.border,
+                          transition: 'height 0.2s',
+                        }} title={`${d.key}: ${d.count}`} />
+                        <div style={{ fontSize: 9, color: C.textMuted, fontFamily: F.sans }}>{d.key.slice(5)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </>
+            );
+          })()}
+        </div>
       )}
     </div>
   );
