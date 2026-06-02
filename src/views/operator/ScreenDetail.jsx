@@ -132,7 +132,8 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       .then(({ data }) => {
         setCvEvents(data ?? []);
         setCvLoading(false);
-      });
+      })
+      .catch(() => setCvLoading(false));
   }, [tab, screen]);
 
   const totalCampRevenue = screenCampaigns.reduce((a, c) => a + (c.budget || 0), 0);
