@@ -110,13 +110,6 @@ function CampaignCard({ campaign, setCampaigns, setDetail }) {
     setCampaigns(prev => prev.map(x => x.id === campaign.id ? { ...x, status: 'rejected' } : x));
   };
 
-  // Try to derive brand website from destination URL
-  let brandSite = null;
-  try {
-    const u = new URL(campaign.destination);
-    brandSite = u.origin;
-  } catch { /* ignore */ }
-
   return (
     <Card style={{ marginBottom: 16, padding: 0, overflow: 'hidden' }}>
       {/* Header strip */}
@@ -131,7 +124,7 @@ function CampaignCard({ campaign, setCampaigns, setDetail }) {
         <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>{campaign.category}</span>
       </div>
 
-      {/* Body: creative + details + actions */}
+      {/* Body: creative + quick facts + actions */}
       <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr auto', gap: 0 }}>
 
         {/* Creative preview */}
@@ -140,27 +133,41 @@ function CampaignCard({ campaign, setCampaigns, setDetail }) {
           <CreativePreview campaign={campaign} />
         </div>
 
-        {/* Details */}
-        <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* Quick facts */}
+        <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center' }}>
+          {campaign.destination ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Destination</div>
+              <a
+                href={campaign.destination} target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: 13, color: C.purple, fontFamily: F.mono, textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}
+              >{campaign.destination}</a>
+            </div>
+          ) : (
+            <div style={{ fontSize: 11, color: C.amber, fontFamily: F.sans }}>⚠ No destination URL</div>
+          )}
+
           <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-            <InfoRow label="Screen" value={campaign.screen} />
-            <InfoRow label="City" value={campaign.city} />
-            <InfoRow label="Category" value={campaign.category} />
-            <InfoRow label="Start" value={campaign.start} mono />
-            <InfoRow label="End" value={campaign.end} mono />
-            <InfoRow label="Budget" value={`£${campaign.budget?.toLocaleString()}`} mono />
-            <InfoRow label="Headline" value={campaign.headline} />
-            <InfoRow label="CTA" value={campaign.cta} />
-            {campaign.destination && (
-              <InfoRow label="Destination URL" value={campaign.destination} href={campaign.destination} mono />
-            )}
-            {brandSite && brandSite !== campaign.destination && (
-              <InfoRow label="Brand Site" value={brandSite} href={brandSite} />
-            )}
-            {!campaign.destination && (
-              <div style={{ fontSize: 11, color: C.amber, fontFamily: F.sans }}>⚠ No destination URL</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Budget</div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: C.text, fontFamily: F.mono }}>
+                {campaign.budget ? `£${campaign.budget.toLocaleString()}` : '—'}
+              </div>
+            </div>
+            {earningsDisplay(campaign.budget) && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.5px' }}>You Earn</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.purple, fontFamily: F.mono }}>{earningsDisplay(campaign.budget)}</div>
+              </div>
             )}
           </div>
+
+          {(campaign.start || campaign.end) && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Dates</div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: C.text, fontFamily: F.mono }}>{campaign.start} – {campaign.end}</div>
+            </div>
+          )}
         </div>
 
         {/* Actions */}
@@ -171,7 +178,7 @@ function CampaignCard({ campaign, setCampaigns, setDetail }) {
         }}>
           <ApproveBtn campaign={campaign} setCampaigns={setCampaigns} />
           <Btn variant="danger" size="sm" onClick={reject}>✗ Reject</Btn>
-          <Btn variant="secondary" size="sm" onClick={() => setDetail(campaign)}>View Details</Btn>
+          <Btn variant="secondary" size="sm" onClick={() => setDetail(campaign)}>View Details →</Btn>
         </div>
       </div>
     </Card>
