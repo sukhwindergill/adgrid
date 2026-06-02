@@ -155,7 +155,7 @@ function AddScreenInline({ onAdded, profile }) {
       id:          crypto.randomUUID(),
       name:        form.name.trim(),
       owner_name:  profile?.company_name || profile?.name || user.email,
-      owner_type:  'operator',
+      owner_type:  'Business',
       location:    form.location.trim() || form.city,
       city:        form.city,
       status:      'pending',
