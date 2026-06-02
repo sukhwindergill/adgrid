@@ -7,6 +7,7 @@ import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { CATEGORIES, DAYS, HOURS } from '../../lib/data.js';
+import { ScreenPhotoStrip, PhotoLightbox } from '../../components/screens/ScreenPhotos.jsx';
 
 const ACCEPTED = 'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm';
 const MAX_MB = 100;
@@ -171,6 +172,111 @@ function ScreenMap({ center, radius, screens, selected, onToggle }) {
   );
 }
 
+// ── Screen selection card with photo strip ────────────────────────────────────
+
+function ScreenCard({ screen, selected, distance, onToggle, onViewPhotos }) {
+  const [photos, setPhotos] = useState([]);
+
+  useEffect(() => {
+    supabase
+      .from('screen_photos')
+      .select('id, url, caption')
+      .eq('screen_id', screen.id)
+      .order('sort_order')
+      .limit(5)
+      .then(({ data }) => setPhotos(data ?? []));
+  }, [screen.id]);
+
+  return (
+    <div style={{
+      borderRadius: 10, border: `1px solid ${selected ? C.purple : C.border}`,
+      background: selected ? C.purpleSoft : C.surface,
+      transition: 'all 0.15s', overflow: 'hidden',
+    }}>
+      {/* Main row */}
+      <div
+        onClick={onToggle}
+        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', cursor: 'pointer' }}
+      >
+        <div style={{
+          width: 18, height: 18, borderRadius: 4, flexShrink: 0,
+          border: `2px solid ${selected ? C.purple : C.border}`,
+          background: selected ? C.purple : 'transparent',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {selected && <span style={{ color: '#fff', fontSize: 10 }}>✓</span>}
+        </div>
+
+        {/* First photo thumbnail */}
+        {photos.length > 0 && (
+          <img
+            src={photos[0].url} alt=""
+            onClick={e => { e.stopPropagation(); onViewPhotos(photos, 0); }}
+            style={{
+              width: 44, height: 36, objectFit: 'cover', borderRadius: 6,
+              flexShrink: 0, cursor: 'zoom-in', border: `1px solid ${C.border}`,
+            }}
+          />
+        )}
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{screen.name}</div>
+          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 1 }}>
+            {screen.city} · {(screen.impressions / 1000).toFixed(0)}K impr/mo · £{screen.cpm} CPM
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+          <span style={{ fontSize: 11, color: C.textMuted, fontFamily: F.mono }}>
+            {distance != null ? `${distance.toFixed(1)} km` : '—'}
+          </span>
+          {photos.length > 0 && (
+            <button
+              onClick={e => { e.stopPropagation(); onViewPhotos(photos, 0); }}
+              style={{
+                background: 'none', border: `1px solid ${C.border}`, borderRadius: 6,
+                padding: '2px 8px', fontSize: 10, fontFamily: F.sans, color: C.textSub,
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              {photos.length} photo{photos.length !== 1 ? 's' : ''} ↗
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Photo strip (visible when selected) */}
+      {selected && photos.length > 1 && (
+        <div
+          style={{ padding: '0 14px 10px', display: 'flex', gap: 4 }}
+          onClick={e => e.stopPropagation()}
+        >
+          {photos.map((p, i) => (
+            <img
+              key={p.id} src={p.url} alt={p.caption ?? ''}
+              onClick={() => onViewPhotos(photos, i)}
+              style={{
+                width: 56, height: 40, objectFit: 'cover', borderRadius: 6,
+                cursor: 'zoom-in', border: `2px solid ${i === 0 ? C.purple : C.border}`,
+                flexShrink: 0,
+              }}
+            />
+          ))}
+          <button
+            onClick={() => onViewPhotos(photos, 0)}
+            style={{
+              width: 56, height: 40, borderRadius: 6, border: `1px dashed ${C.border}`,
+              background: C.surfaceAlt, cursor: 'pointer',
+              fontFamily: F.sans, fontSize: 10, color: C.textMuted,
+              flexShrink: 0,
+            }}
+          >See all</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const DRAFT_KEY = 'adgrid_campaign_draft';
 
 export function CreateCampaign({ onSave, onCancel, dbScreens = [] }) {
@@ -186,6 +292,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [] }) {
   });
   const [errors, setErrors] = useState({});
   const [draftBanner, setDraftBanner] = useState(false);
+  const [previewScreen, setPreviewScreen] = useState(null); // { screen, photos, startIdx }
   const [assetFile, setAssetFile]         = useState(null);   // File object
   const [assetPreview, setAssetPreview]   = useState(null);   // local object URL
   const [assetUrl, setAssetUrl]           = useState('');     // Supabase Storage public URL
@@ -392,38 +499,41 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [] }) {
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {visibleScreens.map(s => (
-                <div key={s.id} onClick={() => toggleScreen(s.id)} style={{
-                  display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-                  borderRadius: 10, border: `1px solid ${selected.includes(s.id) ? C.purple : C.border}`,
-                  background: selected.includes(s.id) ? C.purpleSoft : C.surface,
-                  cursor: 'pointer', transition: 'all 0.15s',
-                }}>
-                  <div style={{
-                    width: 18, height: 18, borderRadius: 4, border: `2px solid ${selected.includes(s.id) ? C.purple : C.border}`,
-                    background: selected.includes(s.id) ? C.purple : 'transparent',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  }}>
-                    {selected.includes(s.id) && <span style={{ color: '#fff', fontSize: 10 }}>✓</span>}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{s.name}</div>
-                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{s.city} · {(s.impressions / 1000).toFixed(0)}K impr/mo · £{s.cpm} CPM</div>
-                  </div>
-                  <span style={{ fontSize: 11, color: C.textMuted, fontFamily: F.mono }}>{screenDist(s, center) != null ? `${screenDist(s, center).toFixed(1)} km` : '—'}</span>
-                </div>
+                <ScreenCard
+                  key={s.id}
+                  screen={s}
+                  selected={selected.includes(s.id)}
+                  distance={screenDist(s, center)}
+                  onToggle={() => toggleScreen(s.id)}
+                  onViewPhotos={(photos, idx) => setPreviewScreen({ screen: s, photos, startIdx: idx })}
+                />
               ))}
             </div>
+            {previewScreen && (
+              <PhotoLightbox
+                photos={previewScreen.photos}
+                startIndex={previewScreen.startIdx}
+                onClose={() => setPreviewScreen(null)}
+              />
+            )}
           </Card>
 
           <Card style={{ position: 'sticky', top: 80 }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Selection Summary</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: C.purple, fontFamily: F.mono, marginBottom: 4 }}>{selected.length}</div>
             <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 16 }}>screens selected</div>
-            {selected.length === 0 && <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, marginBottom: 16 }}>Select at least 1 screen to continue</div>}
+            {selected.length === 0 && (
+              <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, marginBottom: 16 }}>
+                Select at least 1 screen to continue
+              </div>
+            )}
             {selScreenObjs.map(s => (
-              <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
-                <span style={{ fontSize: 12, color: C.text }}>{s.name}</span>
-                <span style={{ fontSize: 12, color: C.textMuted }}>{s.city}</span>
+              <div key={s.id} style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 10, marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: F.sans }}>
+                  <span style={{ fontSize: 12, color: C.text, fontWeight: 500 }}>{s.name}</span>
+                  <span style={{ fontSize: 12, color: C.textMuted }}>{s.city}</span>
+                </div>
+                <ScreenPhotoStrip screenId={s.id} compact />
               </div>
             ))}
           </Card>

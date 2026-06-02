@@ -10,6 +10,7 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
 import { UptimeGrid } from '../../components/shared/UptimeGrid.jsx';
 import { EditScreenModal } from '../../components/screens/EditScreenModal.jsx';
+import { ScreenPhotosManager } from '../../components/screens/ScreenPhotos.jsx';
 
 async function startStripeConnect(setConnecting) {
   setConnecting(true);
@@ -227,6 +228,11 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
           ))}
         </Card>
       </div>
+
+      {/* Location photos */}
+      <Card style={{ marginBottom: 20 }}>
+        <ScreenPhotosManager screenId={screen.id} />
+      </Card>
 
       {/* Revenue split + payout */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
