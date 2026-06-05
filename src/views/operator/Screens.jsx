@@ -11,6 +11,7 @@ import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { VENUE_TAXONOMY } from '../../lib/venueTypes.js';
 
 function healthSignal(screen) {
   if (screen.health_status === 'degraded') {
@@ -34,54 +35,80 @@ function uptime(screen) {
 
 function ScreenCard({ screen, onClick }) {
   const hs = healthSignal(screen);
+  const firstPhoto = screen.screen_photos?.[0];
+  const venueLabel = screen.venue_subtype ||
+    (screen.venue_category ? VENUE_TAXONOMY[screen.venue_category]?.label : null);
+
   return (
-    <Card style={{ padding: 20, transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'pointer' }}
+    <Card style={{ padding: 0, transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'pointer', overflow: 'hidden' }}
       onClick={onClick}
       onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.1)'; }}
       onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-          <span
-            className={hs.pulse ? 'pulse' : undefined}
-            style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: hs.dot, marginTop: 4, flexShrink: 0 }}
-          />
-          <div>
-            <div style={{ fontWeight: 600, color: C.text, fontFamily: F.sans, fontSize: 14, lineHeight: 1.3 }}>{screen.name}</div>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{screen.neighbourhood} · {screen.city}</div>
-            {hs.label !== 'Live' && (
-              <div style={{ fontSize: 10, color: hs.dot, fontFamily: F.sans, fontWeight: 600, marginTop: 2 }}>
-                {hs.label}
+      {/* Photo banner */}
+      {firstPhoto && (
+        <img src={firstPhoto} alt={screen.name}
+          style={{ width: '100%', height: 80, objectFit: 'cover', display: 'block' }} />
+      )}
+
+      <div style={{ padding: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+            <span
+              className={hs.pulse ? 'pulse' : undefined}
+              style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: hs.dot, marginTop: 4, flexShrink: 0 }}
+            />
+            <div>
+              <div style={{ fontWeight: 600, color: C.text, fontFamily: F.sans, fontSize: 14, lineHeight: 1.3 }}>{screen.name}</div>
+              <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+                {screen.neighbourhood} · {screen.city}
+                {screen.environment && (
+                  <span style={{ marginLeft: 6, color: C.textMuted }}>· {screen.environment === 'indoor' ? 'Indoor' : 'Outdoor'}</span>
+                )}
               </div>
+              {hs.label !== 'Live' && (
+                <div style={{ fontSize: 10, color: hs.dot, fontFamily: F.sans, fontWeight: 600, marginTop: 2 }}>
+                  {hs.label}
+                </div>
+              )}
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+            <Badge status={screen.status} />
+            {venueLabel && (
+              <span style={{
+                fontSize: 10, fontWeight: 600, fontFamily: F.sans,
+                background: C.blueSoft, color: C.blue,
+                padding: '2px 8px', borderRadius: 10,
+              }}>{venueLabel}</span>
             )}
           </div>
         </div>
-        <Badge status={screen.status} />
-      </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 12 }}>
-        <div>
-          <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>Impressions/mo</div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono, marginTop: 2 }}>
-            {screen.impressions > 0 ? `${(screen.impressions / 1000).toFixed(0)}K` : '—'}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 12 }}>
+          <div>
+            <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>Impressions/mo</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono, marginTop: 2 }}>
+              {screen.impressions > 0 ? `${(screen.impressions / 1000).toFixed(0)}K` : '—'}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>CPM</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono, marginTop: 2 }}>£{screen.cpm?.toFixed(2) || '4.20'}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>Uptime</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: screen.status === 'live' ? C.green : C.textMuted, fontFamily: F.mono, marginTop: 2 }}>{uptime(screen)}</div>
           </div>
         </div>
-        <div>
-          <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>CPM</div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono, marginTop: 2 }}>£{screen.cpm?.toFixed(2) || '4.20'}</div>
-        </div>
-        <div>
-          <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>Uptime</div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: screen.status === 'live' ? C.green : C.textMuted, fontFamily: F.mono, marginTop: 2 }}>{uptime(screen)}</div>
-        </div>
-      </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>
-          {screen.campaigns} active campaign{screen.campaigns !== 1 ? 's' : ''}
-        </div>
-        <div style={{ fontSize: 12, fontWeight: 600, color: C.green, fontFamily: F.mono }}>
-          {screen.revenue > 0 ? `£${screen.revenue.toLocaleString()}/mo` : ''}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>
+            {screen.campaigns} active campaign{screen.campaigns !== 1 ? 's' : ''}
+          </div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: C.green, fontFamily: F.mono }}>
+            {screen.revenue > 0 ? `£${screen.revenue.toLocaleString()}/mo` : ''}
+          </div>
         </div>
       </div>
     </Card>
