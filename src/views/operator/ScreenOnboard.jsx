@@ -344,12 +344,13 @@ function StepConnect({ screen, onDone, onSkip }) {
     setStatus('checking');
     try {
       const since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('display_heartbeats')
         .select('id')
         .eq('screen_id', screen.id)
         .gte('created_at', since)
         .limit(1);
+      if (error) throw error;
       setStatus(data && data.length > 0 ? 'connected' : 'none');
     } catch {
       setStatus('none');
