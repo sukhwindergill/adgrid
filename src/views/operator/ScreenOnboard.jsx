@@ -175,7 +175,7 @@ function CopyBox({ label, value }) {
     navigator.clipboard.writeText(value).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    });
+    }).catch(() => {});
   };
   return (
     <div style={{ marginBottom: 16 }}>
@@ -206,7 +206,7 @@ function CodeBox({ label, value }) {
     navigator.clipboard.writeText(value).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    });
+    }).catch(() => {});
   };
   return (
     <div style={{ marginBottom: 16 }}>
