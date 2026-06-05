@@ -399,7 +399,92 @@ function StepScreens({ form, setForm, matchedScreens }) {
 }
 
 function StepCreative({ form, setForm }) {
-  return <div style={{ padding: 32, textAlign: 'center', color: C.textSub, fontFamily: F.sans }}>Step 4 — Creative (coming soon)</div>;
+  const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
+  const setOverride = (screenId, k, v) => setForm(s => ({
+    ...s,
+    per_screen_overrides: {
+      ...s.per_screen_overrides,
+      [screenId]: { ...(s.per_screen_overrides[screenId] || {}), [k]: v },
+    },
+  }));
+
+  const previewCampaign = {
+    headline: form.headline,
+    cta_text: form.cta_text,
+    accent_color: form.accent_color,
+    destination_url: form.destination_url,
+    category: form.category,
+  };
+
+  const selectedScreenIds = form.selected_screen_ids;
+
+  return (
+    <div style={{ maxWidth: 700, margin: '0 auto' }}>
+      <Card style={{ padding: 32 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 24px' }}>Create your ad</h2>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 28 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <Inp label="Headline" placeholder="e.g. Start Your Morning Right"
+              value={form.headline} onChange={e => setField('headline', e.target.value)} />
+            <Inp label="CTA Text" placeholder="e.g. Learn More"
+              value={form.cta_text} onChange={e => setField('cta_text', e.target.value)} />
+            <Inp label="Destination URL" placeholder="https://example.com" type="url"
+              value={form.destination_url} onChange={e => setField('destination_url', e.target.value)} />
+            <SelInput label="Category" value={form.category} onChange={e => setField('category', e.target.value)}>
+              {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+            </SelInput>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>Accent Colour</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <input type="color" value={form.accent_color} onChange={e => setField('accent_color', e.target.value)}
+                  style={{ width: 40, height: 36, border: `1px solid ${C.border}`, borderRadius: 6, cursor: 'pointer', padding: 2 }} />
+                <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.mono }}>{form.accent_color}</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Preview</div>
+            <CreativePreview campaign={previewCampaign} />
+          </div>
+        </div>
+
+        {selectedScreenIds.length > 0 && (
+          <div style={{ marginTop: 24, borderTop: `1px solid ${C.border}`, paddingTop: 20 }}>
+            <button
+              type="button"
+              onClick={() => setField('show_overrides', !form.show_overrides)}
+              style={{ background: 'none', border: 'none', fontSize: 13, color: C.purple, cursor: 'pointer', fontFamily: F.sans, padding: 0 }}
+            >
+              {form.show_overrides ? '▾' : '▸'} Customise creative per screen ({selectedScreenIds.length} screens)
+            </button>
+            {form.show_overrides && (
+              <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans }}>Leave blank to use the campaign creative above.</div>
+                {selectedScreenIds.map(screenId => {
+                  const ov = form.per_screen_overrides[screenId] || {};
+                  return (
+                    <div key={screenId} style={{ padding: 16, background: C.surfaceAlt, borderRadius: 8 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
+                        Screen {screenId.slice(0, 8)}…
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                        <Inp label="Headline override" placeholder="Leave blank for default"
+                          value={ov.headline || ''} onChange={e => setOverride(screenId, 'headline', e.target.value)} />
+                        <Inp label="CTA override" placeholder="Leave blank for default"
+                          value={ov.cta_text || ''} onChange={e => setOverride(screenId, 'cta_text', e.target.value)} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
 }
 
 function StepBudget({ form, setForm, matchedScreens }) {
