@@ -33,6 +33,7 @@ import AdvIntegrationsView    from './views/advertiser/AdvIntegrationsView.jsx';
 // Operator views (new)
 import { ApprovalQueue }         from './views/operator/ApprovalQueue.jsx';
 import { ScreenDetailView }      from './views/operator/ScreenDetail.jsx';
+import { ScreenOnboardView }     from './views/operator/ScreenOnboard.jsx';
 import { NotificationPrefsView } from './views/shared/NotificationPrefsView.jsx';
 
 // Shared views
@@ -345,13 +346,31 @@ export default function App() {
     }
 
     if (active === 'overview')     return <Dashboard campaigns={campaigns} dbScreens={dbScreens} setNav={navigate} loading={dataLoading} />;
+    if (active === 'screen-onboard') return (
+      <ScreenOnboardView
+        onComplete={(newScreen) => {
+          setDbScreens(prev => [...prev, {
+            ...newScreen,
+            neighbourhood: newScreen.location || '',
+            cpm: 3.00,
+            maxDuration: 30,
+            revenue: 0,
+            campaigns: 0,
+            status: 'pending',
+          }]);
+          setSelectedScreenId(newScreen.id);
+          navigate('screen-detail');
+        }}
+        onCancel={() => navigate('screens')}
+      />
+    );
     if (active === 'screens')      return (
       <ScreensView
         dbScreens={dbScreens}
         setDbScreens={setDbScreens}
-        profile={profile}
         loading={dataLoading}
         onSelectScreen={id => { setSelectedScreenId(id); navigate('screen-detail'); }}
+        onStartOnboard={() => navigate('screen-onboard')}
       />
     );
     if (active === 'approval')      return <ApprovalQueue campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} />;
