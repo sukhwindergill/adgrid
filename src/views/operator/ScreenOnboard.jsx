@@ -156,7 +156,7 @@ function StepRegister({ onBack, onScreenCreated }) {
 
         <div style={{ display: 'flex', gap: 10 }}>
           <Btn variant="secondary" onClick={onBack} style={{ flex: 1 }}>← Back</Btn>
-          <Btn onClick={handleSubmit} disabled={!valid || saving} style={{ flex: 2 }}>
+          <Btn onClick={handleSubmit} disabled={!valid || saving} style={{ flex: 1 }}>
             {saving ? 'Registering…' : 'Next →'}
           </Btn>
         </div>
