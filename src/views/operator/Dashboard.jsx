@@ -170,10 +170,33 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
               );
             })}
             {active.length === 0 && (
-              <Card style={{ textAlign: 'center', padding: 32 }}>
-                <div style={{ fontSize: 28, marginBottom: 8 }}>📺</div>
-                <div style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans }}>No active campaigns</div>
-              </Card>
+              dbScreens.length === 0 ? (
+                <Card style={{
+                  padding: '32px 28px',
+                  background: 'linear-gradient(135deg, #f5f3ff, #eff6ff)',
+                  border: `1px solid ${C.purpleBorder}`,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: 40 }}>📺</div>
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>
+                        No screens yet
+                      </div>
+                      <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5 }}>
+                        Register your first screen to start receiving campaign bookings.
+                      </div>
+                    </div>
+                    <Btn onClick={() => setNav('screen-onboard')}>
+                      Set up your first screen →
+                    </Btn>
+                  </div>
+                </Card>
+              ) : (
+                <Card style={{ textAlign: 'center', padding: 32 }}>
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>📺</div>
+                  <div style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans }}>No active campaigns</div>
+                </Card>
+              )
             )}
           </div>
         </div>
