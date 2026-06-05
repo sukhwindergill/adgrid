@@ -184,7 +184,7 @@ function StepRegister({ onBack, onScreenCreated }) {
           <Inp label="Business / Owner Name" placeholder="e.g. Corner Brew Coffee"
             value={form.owner_name} onChange={e => set('owner_name', e.target.value)} />
 
-          <SelInput label="Country" value={form.country} onChange={e => set('country', e.target.value)}>
+          <SelInput label="Country" value={form.country} onChange={e => setForm(s => ({ ...s, country: e.target.value, state: '', city: '' }))}>
             {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
           </SelInput>
 
@@ -202,8 +202,7 @@ function StepRegister({ onBack, onScreenCreated }) {
             value={form.location} onChange={e => set('location', e.target.value)} />
 
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>Venue Category</div>
-            <SelInput label="" value={form.venue_category} onChange={e => handleCategoryChange(e.target.value)}>
+            <SelInput label="Venue Category" value={form.venue_category} onChange={e => handleCategoryChange(e.target.value)}>
               <option value="">Select category…</option>
               {Object.entries(VENUE_TAXONOMY).map(([key, { label }]) => (
                 <option key={key} value={key}>{label}</option>
