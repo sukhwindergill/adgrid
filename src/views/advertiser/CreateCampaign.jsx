@@ -488,7 +488,82 @@ function StepCreative({ form, setForm }) {
 }
 
 function StepBudget({ form, setForm, matchedScreens }) {
-  return <div style={{ padding: 32, textAlign: 'center', color: C.textSub, fontFamily: F.sans }}>Step 5 — Budget & Schedule (coming soon)</div>;
+  const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
+
+  const days = form.start_date && form.end_date
+    ? Math.max(1, Math.round((new Date(form.end_date) - new Date(form.start_date)) / (1000 * 60 * 60 * 24)))
+    : 30;
+  const totalImpr = matchedScreens.reduce((a, s) => a + (s.impressions || 0), 0);
+  const budgetMin = Math.round((totalImpr / 1000) * 3 * (days / 30));
+  const budgetMax = Math.round((totalImpr / 1000) * 8 * (days / 30));
+  const budget = parseFloat(form.budget) || 0;
+  const tooLow = budget > 0 && matchedScreens.length > 0 && days > 0
+    && (budget / matchedScreens.length / days) < 0.50;
+
+  return (
+    <div style={{ maxWidth: 580, margin: '0 auto' }}>
+      <Card style={{ padding: 32 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 24px' }}>Budget & Schedule</h2>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Budget type</div>
+            <PillGroup
+              options={[{ value: 'total', label: 'Total budget' }, { value: 'daily', label: 'Daily limit' }]}
+              value={form.budget_mode}
+              onChange={v => setField('budget_mode', v)}
+            />
+          </div>
+
+          <Inp
+            label={form.budget_mode === 'daily' ? 'Daily limit (£)' : 'Total budget (£)'}
+            type="number" step="1" placeholder="e.g. 200"
+            value={form.budget} onChange={e => setField('budget', e.target.value)}
+            hint={totalImpr > 0 && days > 0 ? `Suggested for ${matchedScreens.length} screens over ${days} days: £${budgetMin}–£${budgetMax}` : undefined}
+          />
+
+          {tooLow && (
+            <div style={{ padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: 12, color: C.amber, fontFamily: F.sans }}>
+              ⚠ Budget may be too low to run consistently across all selected screens. Consider increasing your budget or reducing screen count.
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Inp label="Start date" type="date" value={form.start_date} onChange={e => setField('start_date', e.target.value)} />
+            <Inp label="End date" type="date" value={form.end_date} onChange={e => setField('end_date', e.target.value)} />
+          </div>
+
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Days of week</div>
+            <PillGroup
+              options={DAYS}
+              value={form.schedule_days}
+              onChange={v => setField('schedule_days', v)}
+              multi={true}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Inp label="From" type="time" value={form.time_start} onChange={e => setField('time_start', e.target.value)} />
+            <Inp label="Until" type="time" value={form.time_end} onChange={e => setField('time_end', e.target.value)} />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <input type="checkbox" id="peak_hours" checked={form.peak_hours_preferred}
+              onChange={e => setField('peak_hours_preferred', e.target.checked)}
+              style={{ marginTop: 2, cursor: 'pointer' }}
+            />
+            <label htmlFor="peak_hours" style={{ fontSize: 13, color: C.text, fontFamily: F.sans, cursor: 'pointer' }}>
+              <span style={{ fontWeight: 500 }}>Prioritise peak footfall periods</span>
+              <span style={{ display: 'block', fontSize: 11, color: C.textMuted, marginTop: 2 }}>
+                Ad system will favour slots when screen CV data shows highest foot traffic.
+              </span>
+            </label>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
 }
 
 function StepLaunch({ form, setForm }) {
