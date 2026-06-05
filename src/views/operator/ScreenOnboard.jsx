@@ -100,6 +100,7 @@ function StepRegister({ onBack, onScreenCreated }) {
     setSaving(true);
     setErr(null);
     const { data, error } = await supabase.from('screens').insert({
+      id:             crypto.randomUUID(),
       name:           form.name.trim(),
       location:       form.location.trim(),
       city:           form.city,
