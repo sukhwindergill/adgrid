@@ -284,6 +284,7 @@ export default function App() {
       if (active === 'adv-create')       return (
         <CreateCampaign
           dbScreens={dbScreens}
+          campaigns={campaigns}
           onSave={async c => {
             const { data: row, error } = await supabase.from('bookings').insert({
               advertiser_name: c.advertiser,

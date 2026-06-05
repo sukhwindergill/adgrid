@@ -1,22 +1,32 @@
+// src/views/advertiser/CreateCampaign.jsx
 import { useState, useEffect, useRef } from 'react';
+import { supabase } from '../../lib/supabase.js';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
+import { ErrorBanner } from '../../components/primitives/ErrorBanner.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
-import { CATEGORIES, DAYS, HOURS } from '../../lib/data.js';
+import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
+import { CATEGORIES } from '../../lib/data.js';
+import { VENUE_TAXONOMY, COUNTRIES } from '../../lib/venueTypes.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 
-const STEP_LABELS = ['Location & Screens', 'Schedule & Creative', 'Budget & Launch'];
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+const STEP_LABELS = ['Area', 'Filters', 'Screens', 'Creative', 'Budget', 'Launch', 'Review'];
 
 const CITY_CENTERS = {
-  'Toronto':     [43.6532, -79.3832],
-  'London':      [51.5074, -0.1278],
-  'Manchester':  [53.4808, -2.2426],
-  'Birmingham':  [52.4862, -1.8904],
-  'Vancouver':   [49.2827, -123.1207],
-  'Edinburgh':   [55.9533, -3.1883],
+  'Toronto':    [43.6532, -79.3832],
+  'London':     [51.5074, -0.1278],
+  'Manchester': [53.4808, -2.2426],
+  'Birmingham': [52.4862, -1.8904],
+  'Vancouver':  [49.2827, -123.1207],
+  'Edinburgh':  [55.9533, -3.1883],
 };
 
 function haversine(lat1, lon1, lat2, lon2) {
@@ -27,500 +37,452 @@ function haversine(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function screenDist(screen, center) {
-  if (screen.lat == null || screen.lng == null) return null;
-  return haversine(center[0], center[1], screen.lat, screen.lng);
-}
+// ─── Stepper ─────────────────────────────────────────────────────────────────
 
-
-const DEVICE_PRESETS = {
-  portrait:  { w: 160, h: 284, label: 'Portrait 9:16' },
-  landscape: { w: 284, h: 160, label: 'Landscape 16:9' },
-  '4k':      { w: 320, h: 180, label: '4K 16:9' },
-};
-
-function Stepper({ step }) {
+function Stepper({ step, onCancel }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 32, maxWidth: 600 }}>
-      {STEP_LABELS.map((s, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', flex: i < STEP_LABELS.length - 1 ? 1 : 'auto' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: F.mono, fontSize: 13, fontWeight: 600,
-              background: i < step ? C.green : i === step ? C.purple : C.border,
-              color: i <= step ? '#fff' : C.textMuted,
-            }}>{i < step ? '✓' : i + 1}</div>
-            <span style={{ fontSize: 11, fontFamily: F.sans, color: i === step ? C.text : C.textMuted, fontWeight: i === step ? 600 : 400, whiteSpace: 'nowrap' }}>{s}</span>
-          </div>
-          {i < STEP_LABELS.length - 1 && (
-            <div style={{ flex: 1, height: 1, background: i < step ? C.green : C.border, margin: '0 8px', marginBottom: 20, minWidth: 30 }} />
-          )}
-        </div>
-      ))}
+    <div style={{ marginBottom: 28 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>Step {step + 1} of {STEP_LABELS.length}</div>
+        <button onClick={onCancel} style={{ background: 'none', border: 'none', fontSize: 12, color: C.textMuted, cursor: 'pointer', fontFamily: F.sans }}>Cancel</button>
+      </div>
+      <div style={{ height: 4, background: C.border, borderRadius: 2 }}>
+        <div style={{ height: '100%', width: `${(step / (STEP_LABELS.length - 1)) * 100}%`, background: C.purple, borderRadius: 2, transition: 'width 0.3s' }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+        {STEP_LABELS.map((l, i) => (
+          <div key={l} style={{ fontSize: 10, fontFamily: F.sans, color: i <= step ? C.purple : C.textMuted, fontWeight: i === step ? 600 : 400 }}>{l}</div>
+        ))}
+      </div>
     </div>
   );
 }
 
+// ─── PillGroup ────────────────────────────────────────────────────────────────
+
+function PillGroup({ options, value, onChange, multi = false }) {
+  const vals = multi ? (value || []) : null;
+  return (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      {options.map(opt => {
+        const v = typeof opt === 'string' ? opt : opt.value;
+        const l = typeof opt === 'string' ? opt : opt.label;
+        const active = multi ? vals.includes(v) : value === v;
+        return (
+          <button key={v} type="button" onClick={() => {
+            if (multi) {
+              onChange(active ? vals.filter(x => x !== v) : [...vals, v]);
+            } else {
+              onChange(v);
+            }
+          }} style={{
+            padding: '7px 14px', borderRadius: 20, cursor: 'pointer',
+            border: `1px solid ${active ? C.purple : C.border}`,
+            background: active ? C.purpleSoft : C.surface,
+            color: active ? C.purple : C.textSub,
+            fontSize: 12, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
+          }}>{l}</button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Leaflet map (radius mode only) ──────────────────────────────────────────
+
 function ScreenMap({ center, radius, screens, selected, onToggle }) {
-  const mapRef = useRef(null);
+  const mapRef    = useRef(null);
   const leafletRef = useRef(null);
   const markersRef = useRef([]);
-  const circleRef = useRef(null);
+  const circleRef  = useRef(null);
 
   useEffect(() => {
-    let L;
-    let map;
-
     async function init() {
       if (leafletRef.current) return;
-
-      // Load leaflet CSS once
       if (!document.getElementById('leaflet-css')) {
         const link = document.createElement('link');
-        link.id = 'leaflet-css';
-        link.rel = 'stylesheet';
+        link.id = 'leaflet-css'; link.rel = 'stylesheet';
         link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
         document.head.appendChild(link);
       }
-
-      L = (await import('leaflet')).default;
-
-      // Fix default icon paths broken by bundlers
+      const L = (await import('leaflet')).default;
       delete L.Icon.Default.prototype._getIconUrl;
       L.Icon.Default.mergeOptions({
         iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
         iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
       });
-
-      map = L.map(mapRef.current, { zoomControl: true, scrollWheelZoom: false }).setView(center, 13);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 18,
-      }).addTo(map);
-
+      const map = L.map(mapRef.current, { zoomControl: true, scrollWheelZoom: false }).setView(center, 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 18 }).addTo(map);
       leafletRef.current = { L, map };
     }
-
     init().then(() => {
       if (!leafletRef.current) return;
-      const { L: Leaflet, map: m } = leafletRef.current;
-
-      // Update radius circle
+      const { L: Lf, map: m } = leafletRef.current;
       if (circleRef.current) circleRef.current.remove();
-      circleRef.current = Leaflet.circle(center, {
-        radius: radius * 1000,
-        color: '#7c3aed', fillColor: '#7c3aed', fillOpacity: 0.06, weight: 2, dashArray: '6 4',
-      }).addTo(m);
-
-      // Update screen markers
-      markersRef.current.forEach(m2 => m2.remove());
-      markersRef.current = screens
-        .filter(s => s.lat != null && s.lng != null)
-        .map(s => {
-          const isSel = selected.includes(s.id);
-          const d = haversine(center[0], center[1], s.lat, s.lng);
-          const inRadius = d <= radius;
-          const icon = Leaflet.divIcon({
-            className: '',
-            html: `<div style="
-              width:14px;height:14px;border-radius:50%;
-              background:${isSel ? '#7c3aed' : inRadius ? '#16a34a' : '#9ca3af'};
-              border:2px solid #fff;
-              box-shadow:${isSel ? '0 0 0 3px #f5f3ff' : '0 1px 3px rgba(0,0,0,0.3)'};
-              cursor:${inRadius ? 'pointer' : 'default'};
-            "></div>`,
-            iconSize: [14, 14],
-            iconAnchor: [7, 7],
-          });
-          const marker = Leaflet.marker([s.lat, s.lng], { icon });
-          marker.bindTooltip(s.name, { permanent: false, direction: 'top', offset: [0, -8] });
-          if (inRadius) marker.on('click', () => onToggle(s.id));
-          return marker.addTo(m);
+      circleRef.current = Lf.circle(center, { radius: radius * 1000, color: '#7c3aed', fillColor: '#7c3aed', fillOpacity: 0.06, weight: 2, dashArray: '6 4' }).addTo(m);
+      m.setView(center, 12);
+      markersRef.current.forEach(mk => mk.remove());
+      markersRef.current = screens.filter(s => s.lat != null && s.lon != null).map(s => {
+        const d = haversine(center[0], center[1], s.lat, s.lon);
+        const inRadius = d <= radius;
+        const isSel = selected.includes(s.id);
+        const icon = Lf.divIcon({
+          className: '',
+          html: `<div style="width:14px;height:14px;border-radius:50%;background:${isSel ? '#7c3aed' : inRadius ? '#16a34a' : '#9ca3af'};border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.3);cursor:${inRadius ? 'pointer' : 'default'}"></div>`,
+          iconSize: [14, 14], iconAnchor: [7, 7],
         });
+        const marker = Lf.marker([s.lat, s.lon], { icon });
+        marker.bindTooltip(s.name, { permanent: false, direction: 'top', offset: [0, -8] });
+        if (inRadius) marker.on('click', () => onToggle(s.id));
+        return marker.addTo(m);
+      });
     });
   }, [center, radius, screens, selected]);
 
   useEffect(() => () => {
-    if (leafletRef.current?.map) {
-      leafletRef.current.map.remove();
-      leafletRef.current = null;
-    }
+    if (leafletRef.current?.map) { leafletRef.current.map.remove(); leafletRef.current = null; }
   }, []);
 
-  const screensWithCoords = screens.filter(s => s.lat != null && s.lng != null);
+  return <div ref={mapRef} style={{ height: 260, borderRadius: 12, overflow: 'hidden', border: `1px solid ${C.border}`, marginBottom: 16 }} />;
+}
+
+// ─── Step 1: Area ─────────────────────────────────────────────────────────────
+
+function StepArea({ form, setForm, reachSummary, allScreens, onPrevCampaigns }) {
+  const [geocoding, setGeocoding] = useState(false);
+
+  const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
+
+  const geocodeCenter = async (query) => {
+    if (!query.trim()) return;
+    if (CITY_CENTERS[query]) {
+      setForm(s => ({ ...s, radius_center_lat: CITY_CENTERS[query][0], radius_center_lon: CITY_CENTERS[query][1] }));
+      return;
+    }
+    setGeocoding(true);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`);
+      const data = await res.json();
+      if (data[0]) {
+        setForm(s => ({ ...s, radius_center_lat: parseFloat(data[0].lat), radius_center_lon: parseFloat(data[0].lon) }));
+      }
+    } catch (_) {}
+    setGeocoding(false);
+  };
+
+  const radiusCenter = form.radius_center_lat && form.radius_center_lon
+    ? [form.radius_center_lat, form.radius_center_lon]
+    : CITY_CENTERS['Toronto'];
+
+  const radiusScreens = allScreens.filter(s => s.lat != null && s.lon != null);
 
   return (
-    <div style={{ position: 'relative', marginBottom: 16 }}>
-      <div ref={mapRef} style={{ height: 280, borderRadius: 12, overflow: 'hidden', border: `1px solid ${C.border}`, zIndex: 0 }} />
-      {screensWithCoords.length === 0 && screens.length > 0 && (
-        <div style={{
-          position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)',
-          fontSize: 11, color: C.textSub, fontFamily: F.sans,
-          background: 'rgba(255,255,255,0.9)', padding: '4px 10px', borderRadius: 6,
-          border: `1px solid ${C.border}`,
-        }}>
-          Screens registered without coordinates — add lat/lng to see pins
+    <div style={{ maxWidth: 620, margin: '0 auto' }}>
+      <Card style={{ padding: 32 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 4px' }}>Where do you want to advertise?</h2>
+        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 20px' }}>Choose an area and we'll find matching screens for you.</p>
+
+        {onPrevCampaigns && (
+          <div style={{ marginBottom: 20 }}>
+            <button onClick={onPrevCampaigns} style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans, padding: 0 }}>
+              ↩ Start from a previous campaign →
+            </button>
+          </div>
+        )}
+
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Area type</div>
+          <PillGroup
+            options={[
+              { value: 'country', label: 'Country' },
+              { value: 'state',   label: 'State / Province' },
+              { value: 'city',    label: 'City' },
+              { value: 'radius',  label: 'Radius' },
+            ]}
+            value={form.area_type}
+            onChange={v => setField('area_type', v)}
+          />
         </div>
-      )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <SelInput label="Country" value={form.country} onChange={e => setField('country', e.target.value)}>
+            {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+          </SelInput>
+
+          {(form.area_type === 'state' || form.area_type === 'city' || form.area_type === 'radius') && (
+            <Inp label="State / Province" placeholder="e.g. Ontario" value={form.state} onChange={e => setField('state', e.target.value)} />
+          )}
+
+          {(form.area_type === 'city' || form.area_type === 'radius') && (
+            <Inp label="City" placeholder="e.g. Toronto" value={form.city} onChange={e => setField('city', e.target.value)} />
+          )}
+
+          {form.area_type === 'radius' && (
+            <div>
+              <Inp
+                label="Center location"
+                placeholder="e.g. King St W, Toronto"
+                value={form.radius_center}
+                onChange={e => setField('radius_center', e.target.value)}
+                onBlur={e => geocodeCenter(e.target.value)}
+              />
+              {geocoding && <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 4 }}>Locating…</div>}
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>
+                  Radius: {form.radius_km} km
+                </div>
+                <PillGroup
+                  options={[5, 10, 25, 50, 100].map(v => ({ value: v, label: `${v}km` }))}
+                  value={form.radius_km}
+                  onChange={v => setField('radius_km', v)}
+                />
+              </div>
+              <div style={{ marginTop: 16 }}>
+                <ScreenMap
+                  center={radiusCenter}
+                  radius={form.radius_km}
+                  screens={radiusScreens}
+                  selected={form.selected_screen_ids}
+                  onToggle={id => setForm(s => ({
+                    ...s,
+                    selected_screen_ids: s.selected_screen_ids.includes(id)
+                      ? s.selected_screen_ids.filter(x => x !== id)
+                      : [...s.selected_screen_ids, id],
+                  }))}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {reachSummary && (
+          <div style={{ marginTop: 16, padding: '10px 14px', background: C.purpleSoft, borderRadius: 8, fontSize: 13, color: C.purple, fontFamily: F.sans }}>
+            {reachSummary}
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
 
-const DRAFT_KEY = 'adgrid_campaign_draft';
+// ─── Step 2: Filters ──────────────────────────────────────────────────────────
 
-export function CreateCampaign({ onSave, onCancel, dbScreens = [] }) {
-  const { isMobile } = useBreakpoint();
-  const [step, setStep]     = useState(0);
-  const [radius, setRadius] = useState(8);
-  const [selected, setSelected] = useState([]);
-  const [device, setDevice] = useState('landscape');
+function StepFilters({ form, setForm, reachSummary }) {
+  const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
+  return (
+    <div style={{ maxWidth: 560, margin: '0 auto' }}>
+      <Card style={{ padding: 32 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 4px' }}>Filter screens</h2>
+        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>Narrow down by type of venue. All optional.</p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Environment</div>
+            <PillGroup
+              options={[{ value: 'any', label: 'Any' }, { value: 'indoor', label: 'Indoor' }, { value: 'outdoor', label: 'Outdoor' }]}
+              value={form.env_filter}
+              onChange={v => setField('env_filter', v)}
+            />
+          </div>
+          <div>
+            <SelInput label="Venue Category" value={form.venue_filter} onChange={e => setField('venue_filter', e.target.value)}>
+              <option value="">Any venue type</option>
+              {Object.entries(VENUE_TAXONOMY).map(([key, { label }]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </SelInput>
+          </div>
+        </div>
+
+        {reachSummary && (
+          <div style={{ marginTop: 20, padding: '10px 14px', background: C.purpleSoft, borderRadius: 8, fontSize: 13, color: C.purple, fontFamily: F.sans }}>
+            {reachSummary}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+// ─── Steps 3-7: Placeholders ─────────────────────────────────────────────────
+
+function StepScreens({ form, setForm, matchedScreens }) {
+  return <div style={{ padding: 32, textAlign: 'center', color: C.textSub, fontFamily: F.sans }}>Step 3 — Screen Picker (coming soon)</div>;
+}
+
+function StepCreative({ form, setForm }) {
+  return <div style={{ padding: 32, textAlign: 'center', color: C.textSub, fontFamily: F.sans }}>Step 4 — Creative (coming soon)</div>;
+}
+
+function StepBudget({ form, setForm, matchedScreens }) {
+  return <div style={{ padding: 32, textAlign: 'center', color: C.textSub, fontFamily: F.sans }}>Step 5 — Budget & Schedule (coming soon)</div>;
+}
+
+function StepLaunch({ form, setForm }) {
+  return <div style={{ padding: 32, textAlign: 'center', color: C.textSub, fontFamily: F.sans }}>Step 6 — Launch Preference (coming soon)</div>;
+}
+
+function StepReview({ form, matchedScreens, onSubmit, submitting, err }) {
+  return <div style={{ padding: 32, textAlign: 'center', color: C.textSub, fontFamily: F.sans }}>Step 7 — Review & Submit (coming soon)</div>;
+}
+
+// ─── Main Wizard ─────────────────────────────────────────────────────────────
+
+export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [] }) {
+  const { user, profile } = useAuth();
+  const [step, setStep] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitErr, setSubmitErr] = useState(null);
+  const [showDupModal, setShowDupModal] = useState(false);
+
   const [form, setForm] = useState({
-    advertiser: '', category: 'Food & Beverage',
-    start: '', end: '', days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-    timeStart: '07:00', timeEnd: '20:00', slots: 10, duration: 10,
-    budget: 500, headline: '', cta: 'Learn More →', color: '#7c3aed', destination: '',
+    area_type: 'city',
+    country: 'CA',
+    state: '',
+    city: '',
+    radius_center: '',
+    radius_center_lat: null,
+    radius_center_lon: null,
+    radius_km: 10,
+    env_filter: 'any',
+    venue_filter: '',
+    selected_screen_ids: [],
+    headline: '',
+    cta_text: '',
+    destination_url: '',
+    accent_color: '#7c3aed',
+    category: 'Food & Beverage',
+    per_screen_overrides: {},
+    show_overrides: false,
+    budget_mode: 'total',
+    budget: '',
+    start_date: '',
+    end_date: '',
+    schedule_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    time_start: '07:00',
+    time_end: '22:00',
+    peak_hours_preferred: false,
+    start_when: 'partial',
   });
-  const [errors, setErrors] = useState({});
-  const [draftBanner, setDraftBanner] = useState(false);
 
-  // On mount: check for a saved draft
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(DRAFT_KEY);
-      if (raw) setDraftBanner(true);
-    } catch (_) {}
-  }, []);
-
-  // Auto-save form to localStorage on every change
-  useEffect(() => {
-    try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
-    } catch (_) {}
-  }, [form]);
-
-  const liveScreens    = dbScreens.filter(s => s.status === 'live');
-  const primaryCity    = liveScreens[0]?.city || 'Toronto';
-  const center         = CITY_CENTERS[primaryCity] || CITY_CENTERS['Toronto'];
-  const visibleScreens = liveScreens.filter(s => {
-    const d = screenDist(s, center);
-    return d === null || d <= radius; // show if no coords or within radius
-  });
-  const selScreenObjs  = liveScreens.filter(s => selected.includes(s.id));
-  const primaryScreen  = selScreenObjs[0] || liveScreens[0];
-
-  const days = form.start && form.end ? Math.max(1, Math.round((new Date(form.end) - new Date(form.start)) / (1000 * 60 * 60 * 24))) : 30;
-  const estImpr = primaryScreen ? Math.round((primaryScreen.impressions * (form.slots / 100) / 30) * days * Math.max(1, selected.length)) : 0;
-
-  const validate = () => {
-    const e = {};
-    if (!form.advertiser.trim()) e.advertiser = 'Required';
-    if (!form.start) e.start = 'Required';
-    if (!form.end)   e.end   = 'Required';
-    try {
-      const url = new URL(
-        form.destination.startsWith('http') ? form.destination : `https://${form.destination}`
-      );
-      if (!url.hostname.includes('.')) throw new Error('invalid');
-    } catch {
-      e.destination = 'Enter a valid URL (e.g. https://example.com)';
+  // Screen matching
+  const matchedScreens = (() => {
+    let screens = dbScreens.filter(s => s.status !== 'inactive');
+    if (form.area_type === 'country') {
+      screens = screens.filter(s => s.country === form.country);
+    } else if (form.area_type === 'state') {
+      screens = screens.filter(s => s.country === form.country && s.state?.toLowerCase() === form.state.toLowerCase());
+    } else if (form.area_type === 'city') {
+      screens = screens.filter(s => s.city?.toLowerCase() === form.city.toLowerCase());
+    } else if (form.area_type === 'radius') {
+      const lat = form.radius_center_lat;
+      const lon = form.radius_center_lon;
+      if (lat && lon) {
+        screens = screens.filter(s => {
+          if (s.lat == null || s.lon == null) return false;
+          return haversine(lat, lon, s.lat, s.lon) <= form.radius_km;
+        });
+      }
     }
-    setErrors(e);
-    return Object.keys(e).length === 0;
+    if (form.env_filter !== 'any') screens = screens.filter(s => s.environment === form.env_filter);
+    if (form.venue_filter) screens = screens.filter(s => s.venue_category === form.venue_filter);
+    return screens;
+  })();
+
+  // Auto-select all matched screens when the matched set changes
+  const matchedKey = matchedScreens.map(s => s.id).join(',');
+  useEffect(() => {
+    setForm(s => ({ ...s, selected_screen_ids: matchedScreens.map(sc => sc.id) }));
+  }, [matchedKey]);
+
+  const selectedScreens = matchedScreens.filter(s => form.selected_screen_ids.includes(s.id));
+  const totalImpressions = selectedScreens.reduce((a, s) => a + (s.impressions || 0), 0);
+
+  const reachSummary = matchedScreens.length > 0
+    ? `~${matchedScreens.length} screen${matchedScreens.length !== 1 ? 's' : ''} · ~${(totalImpressions / 1000).toFixed(0)}K impressions/mo estimated`
+    : form.area_type === 'radius' && !form.radius_center_lat
+    ? 'Enter a center location to see matching screens'
+    : 'No screens match — try widening your area or removing filters';
+
+  const next = () => setStep(s => Math.min(s + 1, STEP_LABELS.length - 1));
+  const back = () => setStep(s => Math.max(s - 1, 0));
+
+  const loadDuplicate = (c) => {
+    setForm(s => ({
+      ...s,
+      headline: c.headline || '',
+      cta_text: c.cta_text || c.cta || '',
+      destination_url: c.destination_url || c.destination || '',
+      accent_color: c.accent_color || c.color || '#7c3aed',
+      category: c.category || 'Food & Beverage',
+      budget: String(c.budget || ''),
+      budget_mode: c.budget_mode || 'total',
+      start_date: '',
+      end_date: '',
+      schedule_days: c.schedule_days || c.days || ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      time_start: c.time_start || c.timeStart || '07:00',
+      time_end: c.time_end || c.timeEnd || '22:00',
+      peak_hours_preferred: c.peak_hours_preferred || false,
+      start_when: c.start_when || 'partial',
+    }));
+    setShowDupModal(false);
   };
 
-  const handleLaunch = () => {
-    if (!validate()) return;
-    const screenId = selected[0] || liveScreens[0]?.id;
-    const screen   = dbScreens.find(s => s.id === screenId);
-    try { localStorage.removeItem(DRAFT_KEY); } catch (_) {}
-    onSave({
-      id: `BK-${String(Date.now()).slice(-4)}`,
-      ...form, screenId,
-      screen: screen?.name || '',
-      city: screen?.city || '',
-      spent: 0, impressions: 0, scans: 0, status: 'pending_review',
-    });
+  const handleSubmit = async () => {
+    setSubmitErr('Submit not yet implemented — coming in Task 7');
   };
-
-  const handleRestoreDraft = () => {
-    try {
-      const raw = localStorage.getItem(DRAFT_KEY);
-      if (raw) setForm(JSON.parse(raw));
-    } catch (_) {}
-    setDraftBanner(false);
-  };
-
-  const handleDiscardDraft = () => {
-    try { localStorage.removeItem(DRAFT_KEY); } catch (_) {}
-    setDraftBanner(false);
-  };
-
-  const toggleScreen = (id) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-
-  const dev = DEVICE_PRESETS[device];
 
   return (
     <div>
       <PageHeader title="New Campaign" back="Overview" onBack={onCancel} />
+      <Stepper step={step} onCancel={onCancel} />
 
-      {draftBanner && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12,
-          background: C.amberSoft, border: `1px solid ${C.amberBorder}`,
-          borderRadius: 8, padding: '12px 16px', marginBottom: 20,
-        }}>
-          <span style={{ flex: 1, color: C.amber, fontFamily: F.sans, fontSize: 13 }}>
-            You have a saved draft — restore it?
-          </span>
-          <button
-            onClick={handleRestoreDraft}
-            style={{
-              padding: '5px 14px', borderRadius: 6, border: 'none',
-              background: C.purple, color: '#fff',
-              fontFamily: F.sans, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-            }}
-          >
-            Restore
-          </button>
-          <button
-            onClick={handleDiscardDraft}
-            style={{
-              padding: '5px 14px', borderRadius: 6,
-              border: `1px solid ${C.border}`, background: C.surface,
-              color: C.textSub, fontFamily: F.sans, fontSize: 12, fontWeight: 500, cursor: 'pointer',
-            }}
-          >
-            Discard
-          </button>
-        </div>
-      )}
-
-      <Stepper step={step} />
-
-      {/* Step 0: Location & Screen Selection */}
-      {step === 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 320px', gap: 24, alignItems: 'start' }}>
-          <Card>
-            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Select Screens by Area</div>
-
-            {/* Leaflet map */}
-            <ScreenMap
-              center={center}
-              radius={radius}
-              screens={liveScreens}
-              selected={selected}
-              onToggle={toggleScreen}
-            />
-            <div style={{ fontSize: 10, color: C.textSub, fontFamily: F.sans, marginBottom: 16, marginTop: -10, textAlign: 'right' }}>
-              {visibleScreens.length} screens in radius
-            </div>
-
-            {/* Radius slider */}
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <label style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans }}>Search Radius</label>
-                <span style={{ fontSize: 13, fontWeight: 600, color: C.purple, fontFamily: F.mono }}>{radius} km</span>
-              </div>
-              <input type="range" min={1} max={25} value={radius} onChange={e => setRadius(parseInt(e.target.value))} style={{ width: '100%', accentColor: C.purple }} />
-            </div>
-
-            {/* Screen list */}
-            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 10 }}>
-              Available Screens ({visibleScreens.length})
-            </div>
-            {liveScreens.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '24px', background: C.surfaceAlt, borderRadius: 10, color: C.textSub, fontFamily: F.sans, fontSize: 13 }}>
-                No live screens available yet. Contact your network operator.
+      {showDupModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
+          <Card style={{ padding: 28, width: '100%', maxWidth: 480, maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Start from a previous campaign</div>
+            {campaigns.length === 0 ? (
+              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>No previous campaigns found.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {campaigns.map(c => (
+                  <button key={c.id} onClick={() => loadDuplicate(c)} style={{
+                    background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8,
+                    padding: '12px 16px', cursor: 'pointer', textAlign: 'left',
+                  }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans }}>{c.headline || c.advertiser}</div>
+                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{c.city} · £{c.budget}</div>
+                  </button>
+                ))}
               </div>
             )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {visibleScreens.map(s => (
-                <div key={s.id} onClick={() => toggleScreen(s.id)} style={{
-                  display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-                  borderRadius: 10, border: `1px solid ${selected.includes(s.id) ? C.purple : C.border}`,
-                  background: selected.includes(s.id) ? C.purpleSoft : C.surface,
-                  cursor: 'pointer', transition: 'all 0.15s',
-                }}>
-                  <div style={{
-                    width: 18, height: 18, borderRadius: 4, border: `2px solid ${selected.includes(s.id) ? C.purple : C.border}`,
-                    background: selected.includes(s.id) ? C.purple : 'transparent',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  }}>
-                    {selected.includes(s.id) && <span style={{ color: '#fff', fontSize: 10 }}>✓</span>}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{s.name}</div>
-                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{s.city} · {(s.impressions / 1000).toFixed(0)}K impr/mo · £{s.cpm} CPM</div>
-                  </div>
-                  <span style={{ fontSize: 11, color: C.textMuted, fontFamily: F.mono }}>{screenDist(s, center) != null ? `${screenDist(s, center).toFixed(1)} km` : '—'}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card style={{ position: 'sticky', top: 80 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Selection Summary</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: C.purple, fontFamily: F.mono, marginBottom: 4 }}>{selected.length}</div>
-            <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 16 }}>screens selected</div>
-            {selected.length === 0 && <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, marginBottom: 16 }}>Select at least 1 screen to continue</div>}
-            {selScreenObjs.map(s => (
-              <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
-                <span style={{ fontSize: 12, color: C.text }}>{s.name}</span>
-                <span style={{ fontSize: 12, color: C.textMuted }}>{s.city}</span>
-              </div>
-            ))}
+            <Btn variant="secondary" onClick={() => setShowDupModal(false)} style={{ width: '100%', marginTop: 16 }}>Cancel</Btn>
           </Card>
         </div>
       )}
 
-      {/* Step 1: Schedule & Creative */}
-      {step === 1 && (
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 320px', gap: 24, alignItems: 'start' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <Card>
-              <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Campaign Details</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <Inp label="Brand / Advertiser Name" placeholder="e.g. Tim Hortons" value={form.advertiser} onChange={e => setForm(f => ({ ...f, advertiser: e.target.value }))} error={errors.advertiser} />
-                <SelInput label="Ad Category" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
-                  {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-                </SelInput>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <Inp label="Start Date" type="date" value={form.start} onChange={e => setForm(f => ({ ...f, start: e.target.value }))} error={errors.start} min={new Date().toISOString().split('T')[0]} />
-                  <Inp label="End Date" type="date" value={form.end} onChange={e => setForm(f => ({ ...f, end: e.target.value }))} error={errors.end} min={form.start} />
-                </div>
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, display: 'block', marginBottom: 6 }}>Days of Week</label>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {DAYS.map(d => {
-                      const on = (form.days || []).includes(d);
-                      return (
-                        <button key={d} onClick={() => setForm(f => ({ ...f, days: on ? f.days.filter(x => x !== d) : [...f.days, d] }))}
-                          style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${on ? C.purple : C.border}`, background: on ? C.purpleSoft : C.surface, color: on ? C.purple : C.textSub, fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: F.sans }}>
-                          {d}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <SelInput label="Start Time" value={form.timeStart} onChange={e => setForm(f => ({ ...f, timeStart: e.target.value }))}>
-                    {HOURS.map(h => <option key={h}>{h}</option>)}
-                  </SelInput>
-                  <SelInput label="End Time" value={form.timeEnd} onChange={e => setForm(f => ({ ...f, timeEnd: e.target.value }))}>
-                    {HOURS.map(h => <option key={h}>{h}</option>)}
-                  </SelInput>
-                </div>
-              </div>
-            </Card>
+      {step === 0 && <StepArea form={form} setForm={setForm} reachSummary={reachSummary} allScreens={dbScreens} onPrevCampaigns={campaigns.length > 0 ? () => setShowDupModal(true) : null} />}
+      {step === 1 && <StepFilters form={form} setForm={setForm} reachSummary={reachSummary} />}
+      {step === 2 && <StepScreens form={form} setForm={setForm} matchedScreens={matchedScreens} />}
+      {step === 3 && <StepCreative form={form} setForm={setForm} />}
+      {step === 4 && <StepBudget form={form} setForm={setForm} matchedScreens={selectedScreens} />}
+      {step === 5 && <StepLaunch form={form} setForm={setForm} />}
+      {step === 6 && <StepReview form={form} matchedScreens={selectedScreens} onSubmit={handleSubmit} submitting={submitting} err={submitErr} />}
 
-            <Card>
-              <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Creative</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <Inp label="Ad Headline" placeholder="e.g. Start Your Morning Right" value={form.headline} onChange={e => setForm(f => ({ ...f, headline: e.target.value }))} />
-                <Inp label="Call to Action" placeholder="e.g. Order Now →" value={form.cta} onChange={e => setForm(f => ({ ...f, cta: e.target.value }))} />
-                <Inp label="QR Code Destination URL" placeholder="https://yoursite.com/promo" value={form.destination} onChange={e => setForm(f => ({ ...f, destination: e.target.value }))} error={errors.destination} hint="Where people go after scanning your QR code" />
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, display: 'block', marginBottom: 6 }}>Accent Colour</label>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {['#7c3aed', '#f59e0b', '#10b981', '#ef4444', '#3b82f6', '#0a0a0a'].map(col => (
-                      <div key={col} onClick={() => setForm(f => ({ ...f, color: col }))}
-                        style={{ width: 28, height: 28, borderRadius: '50%', background: col, cursor: 'pointer', border: `3px solid ${form.color === col ? C.purple : 'transparent'}`, outline: `1px solid ${C.border}` }} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* Device preview */}
-          <Card style={{ position: 'sticky', top: 80 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Preview</div>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-              {Object.entries(DEVICE_PRESETS).map(([k, v]) => (
-                <button key={k} onClick={() => setDevice(k)} style={{
-                  flex: 1, padding: '5px', borderRadius: 6, fontSize: 10, fontFamily: F.sans, cursor: 'pointer',
-                  border: `1px solid ${device === k ? C.purple : C.border}`,
-                  background: device === k ? C.purpleSoft : C.surface,
-                  color: device === k ? C.purple : C.textSub,
-                }}>{v.label}</button>
-              ))}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <div style={{ width: dev.w, height: dev.h, borderRadius: 8, overflow: 'hidden', position: 'relative', background: 'linear-gradient(145deg,#050a10,#0a1520)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top,rgba(0,0,0,0.88),rgba(0,0,0,0.1))' }} />
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px 12px' }}>
-                  <div style={{ fontSize: 6, color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 4, fontFamily: F.sans }}>{form.category}</div>
-                  <div style={{ fontFamily: 'Georgia,serif', fontSize: dev.h > 200 ? 14 : 10, fontWeight: 700, color: '#fff', lineHeight: 1.2, marginBottom: 6 }}>{form.headline || 'Your Headline'}</div>
-                  <div style={{ display: 'inline-block', padding: '3px 8px', border: `1px solid ${form.color}`, color: form.color, fontSize: 7, borderRadius: 2, fontFamily: F.sans }}>{form.cta}</div>
-                </div>
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: form.color }} />
-                {/* QR overlay */}
-                <div style={{ position: 'absolute', bottom: 6, right: 6, width: 20, height: 20, background: '#fff', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8 }}>⬛</div>
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Step 2: Budget & Launch */}
-      {step === 2 && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24, alignItems: 'start' }}>
-          <Card>
-            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 20 }}>Campaign Budget</div>
-            <Inp label="Total Campaign Budget (£)" type="number" min={100} value={form.budget}
-              onChange={e => setForm(f => ({ ...f, budget: parseInt(e.target.value) || 0 }))}
-              hint={`~${estImpr.toLocaleString()} impressions over ${days} days`} />
-            <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 12 }}>
-              {[['Total Impressions', estImpr.toLocaleString()], ['Expected Scans', Math.floor(estImpr * 0.003).toLocaleString()], ['Estimated ROI', `${estImpr > 0 ? ((Math.floor(estImpr * 0.003) * 12) / form.budget * 100).toFixed(0) : 0}%`], ['Cost per Scan', `£${estImpr > 0 ? (form.budget / Math.max(1, estImpr * 0.003)).toFixed(2) : '—'}`]].map(([l, v]) => (
-                <div key={l} style={{ padding: 16, background: C.purpleSoft, borderRadius: 10, border: `1px solid ${C.purpleBorder}` }}>
-                  <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginBottom: 4 }}>{l}</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{v}</div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card style={{ position: 'sticky', top: 80 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Campaign Summary</div>
-            {[['Brand', form.advertiser || '—'], ['Screens', selected.length > 0 ? `${selected.length} selected` : liveScreens[0]?.name || '—'], ['Duration', `${days} days`], ['Impressions', `~${estImpr.toLocaleString()}`], ['Expected Scans', Math.floor(estImpr * 0.003).toLocaleString()]].map(([l, v]) => (
-              <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
-                <span style={{ fontSize: 12, color: C.textSub }}>{l}</span>
-                <span style={{ fontSize: 12, fontWeight: 500, color: C.text }}>{v}</span>
-              </div>
-            ))}
-            <div style={{ marginTop: 14, padding: 14, background: C.purpleSoft, borderRadius: 10 }}>
-              <div style={{ fontSize: 28, fontWeight: 800, color: C.text, fontFamily: F.mono }}>£{form.budget.toLocaleString()}</div>
-              <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginBottom: 8 }}>total campaign budget</div>
-              {[['Platform (12%)', `£${Math.round(form.budget * 0.12)}`], ['Screen Owner (40%)', `£${Math.round(form.budget * 0.88 * 0.40)}`], ['Network', `£${Math.round(form.budget * 0.88 * 0.60)}`]].map(([l, v]) => (
-                <div key={l} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.textSub, fontFamily: F.sans, marginBottom: 3 }}>
-                  <span>{l}</span><span style={{ fontWeight: 500, color: C.textMid }}>{v}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Navigation */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 28, paddingTop: 20, borderTop: `1px solid ${C.border}` }}>
-        <Btn variant="secondary" onClick={step === 0 ? onCancel : () => setStep(s => s - 1)}>
-          {step === 0 ? 'Cancel' : '← Back'}
-        </Btn>
-        {step < 2 ? (
-          <Btn onClick={() => setStep(s => s + 1)} disabled={step === 0 && selected.length === 0}>
-            Next →
-          </Btn>
-        ) : (
-          <Btn
-            onClick={handleLaunch}
-            style={{ boxShadow: '0 6px 20px rgba(124,58,237,0.4)', minWidth: 180, justifyContent: 'center' }}
+      {step < 6 && (
+        <div style={{ maxWidth: 620, margin: '20px auto 0', display: 'flex', gap: 10 }}>
+          {step > 0 && <Btn variant="secondary" onClick={back} style={{ flex: 1 }}>← Back</Btn>}
+          <Btn onClick={next} style={{ flex: 1 }}
+            disabled={
+              (step === 0 && form.area_type === 'radius' && !form.radius_center_lat) ||
+              (step === 2 && form.selected_screen_ids.length === 0)
+            }
           >
-            🚀 Launch Campaign
+            {step === 1 ? 'See screens →' : step === 5 ? 'Review →' : 'Next →'}
           </Btn>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
