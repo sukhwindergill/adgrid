@@ -285,53 +285,9 @@ export default function App() {
         <CreateCampaign
           dbScreens={dbScreens}
           campaigns={campaigns}
-          onSave={async c => {
-            const { data: row, error } = await supabase.from('bookings').insert({
-              advertiser_name: c.advertiser,
-              screen_name:     c.screen,
-              city:            c.city || '',
-              start_date:      c.start,
-              end_date:        c.end,
-              schedule_days:   c.days,
-              time_start:      c.timeStart,
-              time_end:        c.timeEnd,
-              budget:          c.budget,
-              impressions:     0,
-              accent_color:    c.color,
-              destination_url: c.destination,
-              status:          'pending_review',
-              advertiser_id:   user.id,
-              category:        c.category,
-              headline:        c.headline,
-              cta_text:        c.cta,
-              slots:           c.slots,
-              duration:        c.duration,
-            }).select().single();
-            if (error || !row) {
-              toast.error(`Failed to submit campaign: ${error?.message ?? 'Unknown error'}`);
-              return;
-            }
-            setCampaigns(p => [{
-              ...c, ...row,
-              advertiser: row.advertiser_name,
-              screen: row.screen_name,
-              start: row.start_date,
-              end: row.end_date,
-              days: row.schedule_days,
-              timeStart: row.time_start,
-              timeEnd: row.time_end,
-              color: row.accent_color,
-              destination: row.destination_url,
-            }, ...p]);
+          onSave={c => {
+            setCampaigns(p => [c, ...p]);
             navigate('adv-campaigns');
-            supabase.from('profiles').select('id').eq('role', 'operator').then(({ data: ops }) => {
-              (ops ?? []).forEach(op => {
-                callNotification(op.id, 'campaign_submitted', {
-                  advertiserName: profile?.name ?? user?.user_metadata?.name ?? 'An advertiser',
-                  appUrl: '',
-                });
-              });
-            });
           }}
           onCancel={() => navigate('adv-overview')}
         />

@@ -800,6 +800,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaignId);
       }
 
+      setSubmitting(false);
       onSave({
         id: campaignId,
         advertiser: profile?.name || user.email?.split('@')[0] || 'Advertiser',
