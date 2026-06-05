@@ -88,176 +88,8 @@ function ScreenCard({ screen, onClick }) {
   );
 }
 
-function AddScreenModal({ onClose, onAdded }) {
-  const [form, setForm] = useState({
-    name: '', owner: '', type: 'Business', city: 'Toronto', location: '',
-    display_size: '', monthly_traffic_estimate: '', cpm_floor: '3.00',
-    lat: '', lng: '',
-  });
-  const [saving, setSaving] = useState(false);
-  const [registered, setRegistered] = useState(null); // { token, id, name }
-  const [err, setErr] = useState(null);
-  const [connCheck, setConnCheck] = useState(null);
-
-  const save = async () => {
-    if (!form.name.trim() || !form.owner.trim()) return;
-    setSaving(true);
-    setErr(null);
-    const { data: { user } } = await supabase.auth.getUser();
-    const { data, error } = await supabase.from('screens').insert({
-      name: form.name.trim(),
-      location: form.location.trim() || form.city,
-      city: form.city,
-      status: 'pending',
-      operator_id: user.id,
-      impressions: form.monthly_traffic_estimate ? parseInt(form.monthly_traffic_estimate) * 1000 : 0,
-      cpm: parseFloat(form.cpm_floor) || 3.00,
-      cpm_floor: parseFloat(form.cpm_floor) || 3.00,
-      display_size: form.display_size || null,
-      monthly_traffic_estimate: form.monthly_traffic_estimate ? parseInt(form.monthly_traffic_estimate) : null,
-      max_ad_duration: 30,
-      monthly_revenue: 0,
-      campaigns: 0,
-      lat: form.lat ? parseFloat(form.lat) : null,
-      lng: form.lng ? parseFloat(form.lng) : null,
-    }).select('id, name, screen_token').single();
-
-    if (error) { setErr(error.message); setSaving(false); return; }
-    setRegistered({ token: data.screen_token, id: data.id, name: data.name });
-    onAdded(data);
-    setSaving(false);
-  };
-
-  if (registered) {
-    const playerUrl = `${window.location.origin}/display/${registered.token}`;
-    const composeSnippet = `version: "3"
-services:
-  display:
-    image: adgrid/screen-agent:latest
-    environment:
-      SCREEN_TOKEN: "${registered.token}"
-      SUPABASE_URL: "${import.meta.env.VITE_SUPABASE_URL}"
-      SUPABASE_ANON_KEY: "${import.meta.env.VITE_SUPABASE_ANON_KEY}"
-    devices:
-      - /dev/video0:/dev/video0
-    restart: unless-stopped`;
-
-    return (
-      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, backdropFilter: 'blur(2px)' }}>
-        <div style={{ background: C.surface, borderRadius: 14, width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', padding: 28, boxShadow: '0 24px 60px rgba(0,0,0,0.2)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: C.greenSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>✓</div>
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans }}>Screen Registered!</div>
-              <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans }}>{registered.name}</div>
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>Your Screen Token</div>
-            <div style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: 13, color: C.text, wordBreak: 'break-all', letterSpacing: '0.5px' }}>
-              {registered.token}
-            </div>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 4 }}>Keep this private — it authenticates your display.</div>
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>Option A — Browser Kiosk</div>
-            <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 6 }}>Open this URL fullscreen on any display with a browser:</div>
-            <div style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: 11, color: C.purple, wordBreak: 'break-all' }}>
-              {playerUrl}
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>Option B — Screen Agent (with CV tracking)</div>
-            <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 6 }}>Run on a Raspberry Pi 5 or mini PC with a USB camera. Enables verified impression tracking:</div>
-            <div style={{ background: '#0a0a0a', borderRadius: 8, padding: '12px 14px', fontFamily: F.mono, fontSize: 11, color: '#a3e635', whiteSpace: 'pre', overflowX: 'auto' }}>
-              {composeSnippet}
-            </div>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 6 }}>
-              Then run: <code style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 4 }}>docker-compose up -d</code>
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <Btn
-              variant="secondary"
-              style={{ width: '100%', marginBottom: 8 }}
-              disabled={connCheck === 'checking'}
-              onClick={async () => {
-                setConnCheck('checking');
-                try {
-                  const since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-                  const { data } = await supabase
-                    .from('display_heartbeats')
-                    .select('id')
-                    .eq('screen_id', registered.id)
-                    .gte('created_at', since)
-                    .limit(1);
-                  setConnCheck(data && data.length > 0 ? 'connected' : 'none');
-                } catch {
-                  setConnCheck('none');
-                }
-              }}
-            >
-              {connCheck === 'checking' ? 'Checking…' : 'Check Connection'}
-            </Btn>
-            {connCheck === 'connected' && (
-              <div style={{ fontSize: 12, color: C.green, fontFamily: F.sans, textAlign: 'center' }}>✓ Heartbeat received — screen is online</div>
-            )}
-            {connCheck === 'none' && (
-              <div style={{ fontSize: 12, color: C.amber, fontFamily: F.sans, textAlign: 'center' }}>No heartbeat yet — complete setup below then retry</div>
-            )}
-          </div>
-          <Btn onClick={onClose} style={{ width: '100%' }}>Done</Btn>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
-      <div style={{ background: C.surface, borderRadius: 14, width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto', padding: 28, boxShadow: '0 24px 60px rgba(0,0,0,0.15)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans }}>Register New Screen</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, color: C.textMuted, cursor: 'pointer' }}>×</button>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
-          <Inp label="Screen Name" placeholder="e.g. Corner Brew — King St" value={form.name} onChange={e => setForm(s => ({ ...s, name: e.target.value }))} />
-          <Inp label="Owner / Business Name" placeholder="e.g. Corner Brew Coffee" value={form.owner} onChange={e => setForm(s => ({ ...s, owner: e.target.value }))} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <SelInput label="Owner Type" value={form.type} onChange={e => setForm(s => ({ ...s, type: e.target.value }))}>
-              <option>Business</option><option>Landlord</option>
-            </SelInput>
-            <SelInput label="City" value={form.city} onChange={e => setForm(s => ({ ...s, city: e.target.value }))}>
-              {['Toronto', 'London', 'Manchester', 'Birmingham', 'Vancouver', 'Edinburgh'].map(c => <option key={c}>{c}</option>)}
-            </SelInput>
-          </div>
-          <Inp label="Location / Address" placeholder="e.g. King St W & Bay St, Toronto" value={form.location} onChange={e => setForm(s => ({ ...s, location: e.target.value }))} />
-          <Inp label="Display Size (optional)" placeholder="e.g. 55 inch 4K, 72 inch LED" value={form.display_size} onChange={e => setForm(s => ({ ...s, display_size: e.target.value }))} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Inp label="Latitude (optional)" type="number" step="any" placeholder="e.g. 51.5074" value={form.lat} onChange={e => setForm(s => ({ ...s, lat: e.target.value }))} hint="For map placement" />
-            <Inp label="Longitude (optional)" type="number" step="any" placeholder="e.g. -0.1278" value={form.lng} onChange={e => setForm(s => ({ ...s, lng: e.target.value }))} hint="For map placement" />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Inp label="Monthly Footfall (thousands)" type="number" placeholder="e.g. 50" value={form.monthly_traffic_estimate} onChange={e => setForm(s => ({ ...s, monthly_traffic_estimate: e.target.value }))} hint="Estimated people/month ÷ 1000" />
-            <Inp label="CPM Floor (£)" type="number" step="0.50" placeholder="3.00" value={form.cpm_floor} onChange={e => setForm(s => ({ ...s, cpm_floor: e.target.value }))} hint="Minimum cost per 1,000 impressions" />
-          </div>
-        </div>
-        {err && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginBottom: 12 }}>{err}</div>}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
-          <Btn onClick={save} disabled={!form.name || !form.owner || saving}>{saving ? 'Registering…' : 'Register Screen'}</Btn>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelectScreen }) {
+export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelectScreen, onStartOnboard }) {
   const [filter, setFilter] = useState('All');
-  const [showAdd, setShowAdd] = useState(false);
   const { isMobile, isTablet } = useBreakpoint();
 
   if (loading) {
@@ -280,26 +112,9 @@ export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelect
 
   return (
     <div>
-      {showAdd && (
-        <AddScreenModal
-          onClose={() => setShowAdd(false)}
-          onAdded={newScreen => {
-            if (setDbScreens) setDbScreens(prev => [...prev, {
-              ...newScreen,
-              neighbourhood: newScreen.location,
-              cpm: newScreen.cpm || 3.00,
-              maxDuration: newScreen.max_ad_duration || 30,
-              revenue: 0,
-              campaigns: 0,
-              status: 'pending',
-            }]);
-          }}
-        />
-      )}
-
       <PageHeader title="Screens"
         subtitle={`${allScreens.length} registered · ${allScreens.filter(s => s.status === 'live').length} live · ${allScreens.filter(s => s.status === 'pending').length} pending`}
-        actions={<><Btn variant="secondary" size="sm">↓ Export</Btn><Btn onClick={() => setShowAdd(true)}>+ Register Screen</Btn></>} />
+        actions={<><Btn variant="secondary" size="sm">↓ Export</Btn><Btn onClick={onStartOnboard}>+ Register Screen</Btn></>} />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
         <KPI label="Total Screens"     value={allScreens.length} />
@@ -325,7 +140,7 @@ export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelect
           <div style={{ fontSize: 32, marginBottom: 12 }}>📺</div>
           <div style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No screens registered yet</div>
           <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>Register your first screen to start running campaigns on the network.</div>
-          <Btn onClick={() => setShowAdd(true)}>+ Register Screen</Btn>
+          <Btn onClick={onStartOnboard}>+ Register Screen</Btn>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>
