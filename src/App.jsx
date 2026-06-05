@@ -374,7 +374,7 @@ export default function App() {
         onStartOnboard={() => navigate('screen-onboard')}
       />
     );
-    if (active === 'approval')      return <ApprovalQueue campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} />;
+    if (active === 'approval')      return <ApprovalQueue campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} dbScreens={dbScreens} />;
     if (active === 'screen-detail') {
       if (!selectedScreenId) { navigate('screens'); return null; }
       return <ScreenDetailView screenId={selectedScreenId} onBack={() => navigate('screens')} profile={profile} onScreenUpdated={updated => setDbScreens(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s))} />;
