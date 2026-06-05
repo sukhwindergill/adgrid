@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase.js';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
@@ -9,6 +11,34 @@ import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
 export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
   const { isMobile } = useBreakpoint();
+  const [campaignScreens, setCampaignScreens] = useState({}); // map: campaignId -> [{screen_id, status}]
+
+  useEffect(() => {
+    const fetchCampaignScreens = async () => {
+      const myCampaignIds = campaigns
+        .filter(c => c.advertiser_id === advertiserId)
+        .map(c => c.id);
+
+      if (myCampaignIds.length === 0) return;
+
+      const { data, error } = await supabase
+        .from('campaign_screens')
+        .select('campaign_id, screen_id, status')
+        .in('campaign_id', myCampaignIds);
+
+      if (!error && data) {
+        const map = {};
+        data.forEach(row => {
+          if (!map[row.campaign_id]) map[row.campaign_id] = [];
+          map[row.campaign_id].push(row);
+        });
+        setCampaignScreens(map);
+      }
+    };
+
+    fetchCampaignScreens();
+  }, [campaigns, advertiserId]);
+
   const myCampaigns = campaigns.filter(c => c.advertiser_id === advertiserId);
   const totalSpend  = myCampaigns.reduce((a, c) => a + c.budget, 0);
   const totalSpent  = myCampaigns.reduce((a, c) => a + c.spent, 0);
@@ -37,7 +67,15 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
             <Btn variant="ghost" size="sm" onClick={() => setAdvNav('adv-campaigns')}>View all →</Btn>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {myCampaigns.map(c => (
+            {myCampaigns.map(c => {
+              const screens = campaignScreens[c.id] || [];
+              const screenCount = screens.length;
+              const hasPending = screens.some(s => s.status === 'pending');
+              const hasApproved = screens.some(s => s.status === 'approved' || s.status === 'auto_approved');
+              const isPartiallyApproved = hasPending && hasApproved;
+              const displayStatus = isPartiallyApproved ? 'partially_approved' : c.status;
+
+              return (
               <Card key={c.id} style={{ padding: '16px 20px', transition: 'transform 0.2s, box-shadow 0.2s' }}
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.1)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
@@ -47,10 +85,12 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
                     {/* Row 1: Name + Status Badge */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{c.screen}</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>
+                          {screenCount > 0 ? `${screenCount} screens` : c.screen}
+                        </div>
                         <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.city} · {c.category} · {c.start} → {c.end}</div>
                       </div>
-                      <Badge status={c.status} />
+                      <Badge status={displayStatus} />
                     </div>
                     {/* Row 2: Budget + Impressions + Scans */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
@@ -80,7 +120,9 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px 120px 100px 130px', gap: 16, alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{c.screen}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>
+                        {screenCount > 0 ? `${screenCount} screens` : c.screen}
+                      </div>
                       <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.city} · {c.category} · {c.start} → {c.end}</div>
                     </div>
                     <div>
@@ -99,12 +141,13 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
                       <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>scans</div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                      <Badge status={c.status} />
+                      <Badge status={displayStatus} />
                     </div>
                   </div>
                 )}
               </Card>
-            ))}
+            );
+            })}
           </div>
         </div>
       ) : (
