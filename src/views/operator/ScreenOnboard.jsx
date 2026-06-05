@@ -7,6 +7,7 @@ import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { ErrorBanner } from '../../components/primitives/ErrorBanner.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS } from '../../lib/venueTypes.js';
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
@@ -85,31 +86,80 @@ function StepWelcome({ onNext }) {
 
 // ─── Placeholders for remaining steps (added in later tasks) ──────────────────
 
-const CITIES = ['Toronto', 'London', 'Manchester', 'Birmingham', 'Vancouver', 'Edinburgh'];
+function PillGroup({ options, value, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      {options.map(opt => {
+        const v = typeof opt === 'string' ? opt : opt.value;
+        const l = typeof opt === 'string' ? opt : opt.label;
+        const active = value === v;
+        return (
+          <button
+            key={v}
+            type="button"
+            onClick={() => onChange(v)}
+            style={{
+              padding: '7px 16px', borderRadius: 20, cursor: 'pointer',
+              border: `1px solid ${active ? C.purple : C.border}`,
+              background: active ? C.purpleSoft : C.surface,
+              color: active ? C.purple : C.textSub,
+              fontSize: 12, fontWeight: 500, fontFamily: F.sans,
+              transition: 'all 0.15s',
+            }}
+          >{l}</button>
+        );
+      })}
+    </div>
+  );
+}
 
 function StepRegister({ onBack, onScreenCreated }) {
   const { user } = useAuth();
-  const [form, setForm] = useState({ name: '', owner_name: '', location: '', city: 'Toronto', display_size: '' });
+  const [form, setForm] = useState({
+    name: '', owner_name: '', country: 'CA', state: '', city: '',
+    location: '', venue_category: '', venue_subtype: '', environment: '',
+    screen_position: '', display_size: '', lat: '', lng: '', showLatLng: false,
+  });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
 
-  const valid = form.name.trim() && form.owner_name.trim() && form.location.trim() && form.city && form.display_size.trim();
+  const set = (key, val) => setForm(s => ({ ...s, [key]: val }));
+
+  const handleCategoryChange = (val) => {
+    setForm(s => ({ ...s, venue_category: val, venue_subtype: '' }));
+  };
+
+  const subtypes = form.venue_category ? (VENUE_TAXONOMY[form.venue_category]?.subtypes ?? []) : [];
+
+  const valid =
+    form.name.trim() && form.owner_name.trim() && form.state.trim() &&
+    form.city.trim() && form.location.trim() && form.venue_category &&
+    (subtypes.length === 0 || form.venue_subtype) &&
+    form.environment && form.screen_position && form.display_size.trim();
 
   const handleSubmit = async () => {
     if (!valid) return;
     setSaving(true);
     setErr(null);
     const { data, error } = await supabase.from('screens').insert({
-      id:             crypto.randomUUID(),
-      name:           form.name.trim(),
-      owner_name:     form.owner_name.trim(),
-      owner_type:     'Business',
-      location:       form.location.trim(),
-      city:           form.city,
-      display_size:   form.display_size.trim(),
-      status:         'pending',
-      operator_id:    user.id,
+      id:              crypto.randomUUID(),
+      name:            form.name.trim(),
+      owner_name:      form.owner_name.trim(),
+      owner_type:      'Business',
+      country:         form.country,
+      state:           form.state.trim(),
+      city:            form.city.trim(),
+      location:        form.location.trim(),
+      venue_category:  form.venue_category,
+      venue_subtype:   form.venue_subtype || null,
+      environment:     form.environment,
+      screen_position: form.screen_position,
+      display_size:    form.display_size.trim(),
+      status:          'pending',
+      operator_id:     user.id,
       max_ad_duration: 30,
+      lat:             form.lat ? parseFloat(form.lat) : null,
+      lon:             form.lng ? parseFloat(form.lng) : null,
     }).select('id, name, screen_token').single();
 
     if (error) { setErr(error.message); setSaving(false); return; }
@@ -118,47 +168,94 @@ function StepRegister({ onBack, onScreenCreated }) {
   };
 
   return (
-    <div style={{ maxWidth: 560, margin: '0 auto' }}>
+    <div style={{ maxWidth: 600, margin: '0 auto' }}>
       <Card style={{ padding: 36 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 4, margin: '0 0 4px' }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 4px' }}>
           Tell us about your screen
         </h2>
-        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 28, margin: '0 0 28px' }}>
+        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 28px' }}>
           These details help advertisers find and book your screen.
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 28 }}>
-          <Inp
-            label="Screen Name"
-            placeholder="e.g. Corner Brew — King St"
-            value={form.name}
-            onChange={e => setForm(s => ({ ...s, name: e.target.value }))}
-          />
-          <Inp
-            label="Business / Owner Name"
-            placeholder="e.g. Corner Brew Coffee"
-            value={form.owner_name}
-            onChange={e => setForm(s => ({ ...s, owner_name: e.target.value }))}
-          />
-          <Inp
-            label="Location / Address"
-            placeholder="e.g. King St W & Bay St, Toronto"
-            value={form.location}
-            onChange={e => setForm(s => ({ ...s, location: e.target.value }))}
-          />
-          <SelInput
-            label="City"
-            value={form.city}
-            onChange={e => setForm(s => ({ ...s, city: e.target.value }))}
-          >
-            {CITIES.map(c => <option key={c}>{c}</option>)}
+          <Inp label="Screen Name" placeholder="e.g. Corner Brew — King St"
+            value={form.name} onChange={e => set('name', e.target.value)} />
+
+          <Inp label="Business / Owner Name" placeholder="e.g. Corner Brew Coffee"
+            value={form.owner_name} onChange={e => set('owner_name', e.target.value)} />
+
+          <SelInput label="Country" value={form.country} onChange={e => set('country', e.target.value)}>
+            {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
           </SelInput>
+
           <Inp
-            label="Display Size"
-            placeholder="e.g. 55 inch 4K, 72 inch LED"
-            value={form.display_size}
-            onChange={e => setForm(s => ({ ...s, display_size: e.target.value }))}
+            label={STATE_LABEL[form.country] || 'Province / State'}
+            placeholder="e.g. Ontario"
+            value={form.state}
+            onChange={e => set('state', e.target.value)}
           />
+
+          <Inp label="City" placeholder="e.g. Toronto"
+            value={form.city} onChange={e => set('city', e.target.value)} />
+
+          <Inp label="Location / Address" placeholder="e.g. King St W & Bay St"
+            value={form.location} onChange={e => set('location', e.target.value)} />
+
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>Venue Category</div>
+            <SelInput label="" value={form.venue_category} onChange={e => handleCategoryChange(e.target.value)}>
+              <option value="">Select category…</option>
+              {Object.entries(VENUE_TAXONOMY).map(([key, { label }]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </SelInput>
+          </div>
+
+          {subtypes.length > 0 && (
+            <SelInput label="Venue Type" value={form.venue_subtype} onChange={e => set('venue_subtype', e.target.value)}>
+              <option value="">Select type…</option>
+              {subtypes.map(s => <option key={s} value={s}>{s}</option>)}
+            </SelInput>
+          )}
+
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Environment</div>
+            <PillGroup
+              options={[{ value: 'indoor', label: 'Indoor' }, { value: 'outdoor', label: 'Outdoor' }]}
+              value={form.environment}
+              onChange={val => set('environment', val)}
+            />
+          </div>
+
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Screen Position</div>
+            <PillGroup
+              options={SCREEN_POSITION_OPTIONS}
+              value={form.screen_position}
+              onChange={val => set('screen_position', val)}
+            />
+          </div>
+
+          <Inp label="Display Size" placeholder="e.g. 55 inch 4K, 72 inch LED"
+            value={form.display_size} onChange={e => set('display_size', e.target.value)} />
+
+          <div>
+            <button
+              type="button"
+              onClick={() => set('showLatLng', !form.showLatLng)}
+              style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans, padding: 0 }}
+            >
+              {form.showLatLng ? '▾' : '▸'} Add location coordinates (for radius targeting)
+            </button>
+            {form.showLatLng && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
+                <Inp label="Latitude" type="number" step="any" placeholder="e.g. 43.6532"
+                  value={form.lat} onChange={e => set('lat', e.target.value)} />
+                <Inp label="Longitude" type="number" step="any" placeholder="e.g. -79.3832"
+                  value={form.lng} onChange={e => set('lng', e.target.value)} />
+              </div>
+            )}
+          </div>
         </div>
 
         <ErrorBanner message={err} onDismiss={() => setErr(null)} />
