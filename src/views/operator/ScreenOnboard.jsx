@@ -167,8 +167,174 @@ function StepRegister({ onBack, onScreenCreated }) {
   );
 }
 
+const HARDWARE_OPTIONS = ['Browser Kiosk', 'Raspberry Pi 5', 'Mini PC', 'Android TV'];
+
+function CopyBox({ label, value }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <div style={{ marginBottom: 16 }}>
+      {label && (
+        <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+          {label}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+        <div style={{
+          flex: 1, background: C.surfaceAlt, border: `1px solid ${C.border}`,
+          borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: 12,
+          color: C.text, wordBreak: 'break-all', lineHeight: 1.5,
+        }}>
+          {value}
+        </div>
+        <Btn variant="secondary" size="sm" onClick={copy} style={{ flexShrink: 0, minWidth: 64 }}>
+          {copied ? '✓ Copied' : 'Copy'}
+        </Btn>
+      </div>
+    </div>
+  );
+}
+
+function CodeBox({ label, value }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <div style={{ marginBottom: 16 }}>
+      {label && (
+        <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+          {label}
+        </div>
+      )}
+      <div style={{ position: 'relative' }}>
+        <pre style={{
+          background: '#0a0a0a', borderRadius: 8, padding: '14px 16px',
+          fontFamily: F.mono, fontSize: 11, color: '#a3e635',
+          whiteSpace: 'pre', overflowX: 'auto', margin: 0,
+        }}>{value}</pre>
+        <button onClick={copy} style={{
+          position: 'absolute', top: 8, right: 8,
+          background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+          borderRadius: 4, color: '#fff', fontSize: 11, padding: '3px 10px',
+          cursor: 'pointer', fontFamily: F.sans,
+        }}>
+          {copied ? '✓' : 'Copy'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function HardwareInstructions({ hardware, screen }) {
+  const playerUrl = `${window.location.origin}/display/${screen.screen_token}`;
+  const composeSnippet = `version: "3"
+services:
+  display:
+    image: adgrid/screen-agent:latest
+    environment:
+      SCREEN_TOKEN: "${screen.screen_token}"
+      SUPABASE_URL: "${import.meta.env.VITE_SUPABASE_URL || ''}"
+      SUPABASE_ANON_KEY: "${import.meta.env.VITE_SUPABASE_ANON_KEY || ''}"
+    devices:
+      - /dev/video0:/dev/video0
+    restart: unless-stopped`;
+
+  if (hardware === 'Browser Kiosk') return (
+    <div>
+      <CopyBox label="Player URL" value={playerUrl} />
+      <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.7 }}>
+        Open this URL fullscreen on your display.<br />
+        On Chrome: press <kbd style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>F11</kbd> for fullscreen.<br />
+        The screen will automatically show ads when campaigns are running.
+      </div>
+    </div>
+  );
+
+  if (hardware === 'Raspberry Pi 5' || hardware === 'Mini PC') return (
+    <div>
+      <CodeBox label="docker-compose.yml" value={composeSnippet} />
+      <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.8 }}>
+        1. Install Docker on your device.<br />
+        2. Save the above as <code style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>docker-compose.yml</code>.<br />
+        3. Run: <code style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>docker-compose up -d</code><br />
+        4. Connect a USB camera to /dev/video0 for CV impression tracking.
+      </div>
+    </div>
+  );
+
+  // Android TV
+  return (
+    <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.8 }}>
+      1. Enable Developer Options on your Android TV.<br />
+      2. Install the ADGRID APK via sideloading.<br />
+      3. Enter your screen token when prompted.
+      <div style={{ marginTop: 12 }}>
+        <CopyBox label="Screen Token" value={screen.screen_token} />
+      </div>
+    </div>
+  );
+}
+
 function StepSetup({ screen, onNext, onBack, onSkip }) {
-  return <div>Step 3 — coming in Task 3</div>;
+  const [hardware, setHardware] = useState('Browser Kiosk');
+
+  return (
+    <div style={{ maxWidth: 620, margin: '0 auto' }}>
+      <Card style={{ padding: 36 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 4px' }}>
+          Set up your display
+        </h2>
+        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>
+          Choose your hardware and follow the instructions below.
+        </p>
+
+        {/* Hardware selector */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
+          {HARDWARE_OPTIONS.map(hw => (
+            <button key={hw} onClick={() => setHardware(hw)} style={{
+              padding: '7px 16px', borderRadius: 20, cursor: 'pointer',
+              border: `1px solid ${hardware === hw ? C.purple : C.border}`,
+              background: hardware === hw ? C.purpleSoft : C.surface,
+              color: hardware === hw ? C.purple : C.textSub,
+              fontSize: 12, fontWeight: 500, fontFamily: F.sans,
+              transition: 'all 0.15s',
+            }}>{hw}</button>
+          ))}
+        </div>
+
+        {/* Token (always visible) */}
+        <div style={{ background: C.surfaceAlt, borderRadius: 10, padding: '14px 16px', marginBottom: 24 }}>
+          <CopyBox label="Your Screen Token" value={screen.screen_token} />
+          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>
+            Keep this private — it authenticates your display.
+          </div>
+        </div>
+
+        {/* Hardware-specific instructions */}
+        <div style={{ marginBottom: 28 }}>
+          <HardwareInstructions hardware={hardware} screen={screen} />
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <Btn variant="secondary" onClick={onBack} style={{ flexShrink: 0 }}>← Back</Btn>
+          <Btn onClick={onNext} style={{ flex: 1 }}>I've completed setup →</Btn>
+          <button onClick={onSkip} style={{
+            background: 'none', border: 'none', fontSize: 12, color: C.textMuted,
+            cursor: 'pointer', fontFamily: F.sans, flexShrink: 0,
+          }}>Do this later →</button>
+        </div>
+      </Card>
+    </div>
+  );
 }
 
 function StepConnect({ screen, onDone, onSkip }) {
