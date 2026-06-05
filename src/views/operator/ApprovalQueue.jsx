@@ -78,7 +78,21 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
     if (!ok) return;
     setActing(true);
     for (const row of myRows) {
-      await approveScreen(row.screen_id);
+      await supabase.from('campaign_screens')
+        .update({ status: 'approved', approved_at: new Date().toISOString() })
+        .eq('campaign_id', campaign.id)
+        .eq('screen_id', row.screen_id);
+      onApproved(campaign.id, row.screen_id);
+    }
+    // Promote campaign
+    if (campaign.start_when === 'partial') {
+      await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
+    } else {
+      const { data: remaining } = await supabase
+        .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
+      if (!remaining || remaining.length === 0) {
+        await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
+      }
     }
     setActing(false);
   };
@@ -271,6 +285,18 @@ export function ApprovalQueue({ campaigns, setCampaigns, setDetail, dbScreens = 
           .eq('campaign_id', campaign.id)
           .eq('screen_id', row.screen_id);
         handleApproved(campaign.id, row.screen_id);
+      }
+      // Promote campaign to scheduled after approving all my rows
+      if (rows.length > 0) {
+        if (campaign.start_when === 'partial') {
+          await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
+        } else {
+          const { data: remaining } = await supabase
+            .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
+          if (!remaining || remaining.length === 0) {
+            await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
+          }
+        }
       }
     }
   };
