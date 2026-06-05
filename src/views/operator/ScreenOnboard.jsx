@@ -387,12 +387,86 @@ services:
   );
 }
 
+function PhotoUpload({ screen }) {
+  const [photos, setPhotos] = useState(screen.screen_photos || []);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFiles = async (files) => {
+    if (photos.length >= 4) return;
+    const toUpload = Array.from(files).slice(0, 4 - photos.length);
+    setUploading(true);
+    const newUrls = [];
+    for (const file of toUpload) {
+      const path = `${screen.id}/${crypto.randomUUID()}`;
+      const { error } = await supabase.storage.from('screen-photos').upload(path, file);
+      if (!error) {
+        const { data } = supabase.storage.from('screen-photos').getPublicUrl(path);
+        newUrls.push(data.publicUrl);
+      }
+    }
+    const updated = [...photos, ...newUrls];
+    setPhotos(updated);
+    await supabase.from('screens').update({ screen_photos: updated }).eq('id', screen.id);
+    setUploading(false);
+  };
+
+  const removePhoto = async (url) => {
+    const updated = photos.filter(p => p !== url);
+    setPhotos(updated);
+    await supabase.from('screens').update({ screen_photos: updated }).eq('id', screen.id);
+  };
+
+  return (
+    <div style={{ marginBottom: 28, paddingBottom: 28, borderBottom: `1px solid ${C.border}` }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>
+        Add photos of your screen
+      </div>
+      <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>
+        Advertisers use these to verify placement before booking. Up to 4 photos.
+      </div>
+
+      {photos.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+          {photos.map((url, i) => (
+            <div key={url} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden' }}>
+              <img src={url} alt={`Screen photo ${i + 1}`}
+                style={{ width: '100%', height: 100, objectFit: 'cover', display: 'block' }} />
+              <button onClick={() => removePhoto(url)} style={{
+                position: 'absolute', top: 4, right: 4,
+                background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%',
+                width: 22, height: 22, color: '#fff', cursor: 'pointer', fontSize: 14,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+              }}>×</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {photos.length < 4 && (
+        <label style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          border: `2px dashed ${C.border}`, borderRadius: 10, padding: '20px',
+          cursor: uploading ? 'default' : 'pointer', background: C.surfaceAlt,
+          fontSize: 13, color: C.textSub, fontFamily: F.sans, gap: 8,
+        }}>
+          <input type="file" accept="image/*" multiple style={{ display: 'none' }}
+            disabled={uploading}
+            onChange={e => handleFiles(e.target.files)} />
+          {uploading ? 'Uploading…' : '+ Add photos'}
+        </label>
+      )}
+    </div>
+  );
+}
+
 function StepSetup({ screen, onNext, onBack, onSkip }) {
   const [hardware, setHardware] = useState('Browser Kiosk');
 
   return (
     <div style={{ maxWidth: 620, margin: '0 auto' }}>
       <Card style={{ padding: 36 }}>
+        <PhotoUpload screen={screen} />
+
         <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 4px' }}>
           Set up your display
         </h2>
