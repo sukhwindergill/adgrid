@@ -107,8 +107,6 @@ function StepRegister({ onBack, onScreenCreated }) {
       status:         'pending',
       operator_id:    user.id,
       max_ad_duration: 30,
-      monthly_revenue: 0,
-      campaigns:      0,
     }).select('id, name, screen_token').single();
 
     if (error) { setErr(error.message); setSaving(false); return; }
