@@ -307,8 +307,95 @@ function StepFilters({ form, setForm, reachSummary }) {
 
 // ─── Steps 3-7: Placeholders ─────────────────────────────────────────────────
 
+function ScreenPickerCard({ screen, selected, onToggle }) {
+  const firstPhoto = screen.screen_photos?.[0];
+  const venueLabel = screen.venue_subtype || screen.venue_category;
+  const isSelected = selected.includes(screen.id);
+
+  return (
+    <div
+      onClick={() => onToggle(screen.id)}
+      style={{
+        border: `2px solid ${isSelected ? C.purple : C.border}`,
+        borderRadius: 10, overflow: 'hidden', cursor: 'pointer',
+        background: isSelected ? C.purpleSoft : C.surface,
+        transition: 'all 0.15s', position: 'relative',
+      }}
+    >
+      {firstPhoto && (
+        <img src={firstPhoto} alt={screen.name} style={{ width: '100%', height: 72, objectFit: 'cover', display: 'block' }} />
+      )}
+      <div style={{ padding: '10px 12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, lineHeight: 1.3 }}>{screen.name}</div>
+          <div style={{
+            width: 18, height: 18, borderRadius: 4, border: `2px solid ${isSelected ? C.purple : C.border}`,
+            background: isSelected ? C.purple : 'transparent', flexShrink: 0, marginLeft: 8, marginTop: 1,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {isSelected && <span style={{ color: '#fff', fontSize: 11, lineHeight: 1 }}>✓</span>}
+          </div>
+        </div>
+        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+          {screen.city}{screen.environment ? ` · ${screen.environment === 'indoor' ? 'Indoor' : 'Outdoor'}` : ''}
+        </div>
+        {venueLabel && (
+          <span style={{ display: 'inline-block', marginTop: 6, fontSize: 10, fontWeight: 600, background: C.blueSoft, color: C.blue, padding: '1px 7px', borderRadius: 10, fontFamily: F.sans }}>
+            {venueLabel}
+          </span>
+        )}
+        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 4 }}>
+          ~{screen.impressions > 0 ? `${(screen.impressions / 1000).toFixed(0)}K impr/mo` : 'No data yet'}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function StepScreens({ form, setForm, matchedScreens }) {
-  return <div style={{ padding: 32, textAlign: 'center', color: C.textSub, fontFamily: F.sans }}>Step 3 — Screen Picker (coming soon)</div>;
+  const toggleScreen = (id) => setForm(s => ({
+    ...s,
+    selected_screen_ids: s.selected_screen_ids.includes(id)
+      ? s.selected_screen_ids.filter(x => x !== id)
+      : [...s.selected_screen_ids, id],
+  }));
+
+  const selectAll = () => setForm(s => ({ ...s, selected_screen_ids: matchedScreens.map(sc => sc.id) }));
+  const deselectAll = () => setForm(s => ({ ...s, selected_screen_ids: [] }));
+
+  const selectedCount = form.selected_screen_ids.length;
+  const totalImpr = matchedScreens.filter(s => form.selected_screen_ids.includes(s.id)).reduce((a, s) => a + (s.impressions || 0), 0);
+
+  return (
+    <div style={{ maxWidth: 700, margin: '0 auto' }}>
+      <Card style={{ padding: 28 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: 0 }}>Select screens</h2>
+            <div style={{ fontSize: 12, color: C.purple, fontFamily: F.sans, marginTop: 4 }}>
+              {selectedCount} of {matchedScreens.length} selected · ~{(totalImpr / 1000).toFixed(0)}K impressions/mo
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={selectAll} style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans }}>Select all</button>
+            <button onClick={deselectAll} style={{ background: 'none', border: 'none', fontSize: 12, color: C.textMuted, cursor: 'pointer', fontFamily: F.sans }}>Deselect all</button>
+          </div>
+        </div>
+
+        {matchedScreens.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '32px 24px', color: C.textSub, fontFamily: F.sans, fontSize: 13 }}>
+            No screens match your filters. Try widening your area or removing filters.
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+            {matchedScreens.map(s => (
+              <ScreenPickerCard key={s.id} screen={s} selected={form.selected_screen_ids} onToggle={toggleScreen} />
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
 }
 
 function StepCreative({ form, setForm }) {
