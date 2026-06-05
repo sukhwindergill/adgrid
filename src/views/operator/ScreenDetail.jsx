@@ -10,6 +10,9 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
 import { UptimeGrid } from '../../components/shared/UptimeGrid.jsx';
 import { EditScreenModal } from '../../components/screens/EditScreenModal.jsx';
+import { Inp } from '../../components/primitives/Inp.jsx';
+import { SelInput } from '../../components/primitives/SelInput.jsx';
+import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS } from '../../lib/venueTypes.js';
 
 async function startStripeConnect(setConnecting) {
   setConnecting(true);
@@ -33,6 +36,188 @@ async function startStripeConnect(setConnecting) {
     setConnecting(false);
     console.error('Stripe Connect error:', e.message);
   }
+}
+
+function PillGroup({ options, value, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      {options.map(opt => {
+        const v = typeof opt === 'string' ? opt : opt.value;
+        const l = typeof opt === 'string' ? opt : opt.label;
+        const active = value === v;
+        return (
+          <button key={v} type="button" onClick={() => onChange(v)} style={{
+            padding: '7px 16px', borderRadius: 20, cursor: 'pointer',
+            border: `1px solid ${active ? C.purple : C.border}`,
+            background: active ? C.purpleSoft : C.surface,
+            color: active ? C.purple : C.textSub,
+            fontSize: 12, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
+          }}>{l}</button>
+        );
+      })}
+    </div>
+  );
+}
+
+function DetailsTab({ screen, onSaved }) {
+  const [photos, setPhotos] = useState(screen.screen_photos || []);
+  const [uploading, setUploading] = useState(false);
+  const [fields, setFields] = useState({
+    country:         screen.country || 'CA',
+    state:           screen.state || '',
+    city:            screen.city || '',
+    venue_category:  screen.venue_category || '',
+    venue_subtype:   screen.venue_subtype || '',
+    environment:     screen.environment || '',
+    screen_position: screen.screen_position || '',
+    lat:             screen.lat != null ? String(screen.lat) : '',
+    lon:             screen.lon != null ? String(screen.lon) : '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  const set = (key, val) => setFields(s => ({ ...s, [key]: val }));
+  const handleCategoryChange = (val) => setFields(s => ({ ...s, venue_category: val, venue_subtype: '' }));
+  const subtypes = fields.venue_category ? (VENUE_TAXONOMY[fields.venue_category]?.subtypes ?? []) : [];
+
+  const handleSave = async () => {
+    setSaving(true);
+    setMsg(null);
+    const { error } = await supabase.from('screens').update({
+      country:         fields.country,
+      state:           fields.state.trim() || null,
+      city:            fields.city.trim() || null,
+      venue_category:  fields.venue_category || null,
+      venue_subtype:   fields.venue_subtype || null,
+      environment:     fields.environment || null,
+      screen_position: fields.screen_position || null,
+      lat:             fields.lat ? parseFloat(fields.lat) : null,
+      lon:             fields.lon ? parseFloat(fields.lon) : null,
+    }).eq('id', screen.id);
+    setSaving(false);
+    if (error) { setMsg({ ok: false, text: error.message }); return; }
+    setMsg({ ok: true, text: 'Changes saved.' });
+    onSaved?.({ ...screen, ...fields, lat: fields.lat ? parseFloat(fields.lat) : null, lon: fields.lon ? parseFloat(fields.lon) : null });
+  };
+
+  const handleUpload = async (files) => {
+    if (photos.length >= 4) return;
+    const toUpload = Array.from(files).slice(0, 4 - photos.length);
+    setUploading(true);
+    const newUrls = [];
+    for (const file of toUpload) {
+      const path = `${screen.id}/${crypto.randomUUID()}`;
+      const { error } = await supabase.storage.from('screen-photos').upload(path, file);
+      if (!error) {
+        const { data } = supabase.storage.from('screen-photos').getPublicUrl(path);
+        newUrls.push(data.publicUrl);
+      }
+    }
+    const updated = [...photos, ...newUrls];
+    setPhotos(updated);
+    await supabase.from('screens').update({ screen_photos: updated }).eq('id', screen.id);
+    setUploading(false);
+  };
+
+  const removePhoto = async (url) => {
+    const updated = photos.filter(p => p !== url);
+    setPhotos(updated);
+    await supabase.from('screens').update({ screen_photos: updated }).eq('id', screen.id);
+  };
+
+  return (
+    <div>
+      {/* Photos */}
+      <Card style={{ padding: 24, marginBottom: 20 }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Photos</div>
+        <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 16 }}>
+          Advertisers see these before booking. Up to 4 photos.
+        </div>
+        {photos.length > 0 ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 12 }}>
+            {photos.map((url, i) => (
+              <div key={url} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden' }}>
+                <img src={url} alt={`Screen photo ${i + 1}`}
+                  style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }} />
+                <button onClick={() => removePhoto(url)} style={{
+                  position: 'absolute', top: 6, right: 6,
+                  background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%',
+                  width: 24, height: 24, color: '#fff', cursor: 'pointer', fontSize: 14,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>×</button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, marginBottom: 12 }}>
+            No photos yet — add photos so advertisers can see your screen.
+          </div>
+        )}
+        {photos.length < 4 && (
+          <label style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: `2px dashed ${C.border}`, borderRadius: 10, padding: '16px',
+            cursor: uploading ? 'default' : 'pointer', background: C.surfaceAlt,
+            fontSize: 13, color: C.textSub, fontFamily: F.sans,
+          }}>
+            <input type="file" accept="image/*" multiple style={{ display: 'none' }}
+              disabled={uploading} onChange={e => handleUpload(e.target.files)} />
+            {uploading ? 'Uploading…' : '+ Add photos'}
+          </label>
+        )}
+      </Card>
+
+      {/* Venue details */}
+      <Card style={{ padding: 24 }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 20 }}>Venue Details</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
+          <SelInput label="Country" value={fields.country} onChange={e => set('country', e.target.value)}>
+            {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+          </SelInput>
+          <Inp label={STATE_LABEL[fields.country] || 'Province / State'} placeholder="e.g. Ontario"
+            value={fields.state} onChange={e => set('state', e.target.value)} />
+          <Inp label="City" placeholder="e.g. Toronto"
+            value={fields.city} onChange={e => set('city', e.target.value)} />
+          <SelInput label="Venue Category" value={fields.venue_category} onChange={e => handleCategoryChange(e.target.value)}>
+            <option value="">None</option>
+            {Object.entries(VENUE_TAXONOMY).map(([key, { label }]) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </SelInput>
+          {subtypes.length > 0 && (
+            <SelInput label="Venue Type" value={fields.venue_subtype} onChange={e => set('venue_subtype', e.target.value)}>
+              <option value="">None</option>
+              {subtypes.map(s => <option key={s} value={s}>{s}</option>)}
+            </SelInput>
+          )}
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Environment</div>
+            <PillGroup
+              options={[{ value: 'indoor', label: 'Indoor' }, { value: 'outdoor', label: 'Outdoor' }]}
+              value={fields.environment}
+              onChange={val => set('environment', val)}
+            />
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Screen Position</div>
+            <PillGroup options={SCREEN_POSITION_OPTIONS} value={fields.screen_position} onChange={val => set('screen_position', val)} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Inp label="Latitude (optional)" type="number" step="any" placeholder="e.g. 43.6532"
+              value={fields.lat} onChange={e => set('lat', e.target.value)} />
+            <Inp label="Longitude (optional)" type="number" step="any" placeholder="e.g. -79.3832"
+              value={fields.lon} onChange={e => set('lon', e.target.value)} />
+          </div>
+        </div>
+        {msg && (
+          <div style={{ fontSize: 12, color: msg.ok ? C.green : C.red, fontFamily: F.sans, marginBottom: 12 }}>
+            {msg.text}
+          </div>
+        )}
+        <Btn onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</Btn>
+      </Card>
+    </div>
+  );
 }
 
 export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated }) {
@@ -194,6 +379,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: `1px solid ${C.border}`, paddingBottom: 0 }}>
         {[
           { key: 'overview', label: 'Overview' },
+          { key: 'details',  label: 'Details' },
           { key: 'cv',       label: 'CV Insights' },
           { key: 'setup',    label: 'Setup Guide' },
         ].map(t => (
@@ -341,6 +527,13 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         )}
       </Card>
       </>
+      )}
+
+      {tab === 'details' && (
+        <DetailsTab
+          screen={screen}
+          onSaved={updated => { setScreen(prev => ({ ...prev, ...updated })); onScreenUpdated?.(updated); }}
+        />
       )}
 
       {tab === 'cv' && (
