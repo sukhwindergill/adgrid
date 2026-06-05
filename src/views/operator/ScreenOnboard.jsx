@@ -337,7 +337,7 @@ function StepSetup({ screen, onNext, onBack, onSkip }) {
   );
 }
 
-function StepConnect({ screen, onDone, onSkip }) {
+function StepConnect({ screen, onDone, onSkip, onBack }) {
   const [status, setStatus] = useState('idle'); // 'idle' | 'checking' | 'connected' | 'none'
 
   const check = async () => {
@@ -397,6 +397,12 @@ function StepConnect({ screen, onDone, onSkip }) {
           Skip for now →
         </button>
       </Card>
+      <div style={{ textAlign: 'center', marginTop: 12 }}>
+        <button onClick={onBack} style={{
+          background: 'none', border: 'none', fontSize: 12,
+          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans,
+        }}>← Back to setup guide</button>
+      </div>
     </div>
   );
 }
@@ -429,7 +435,7 @@ export function ScreenOnboardView({ onComplete, onCancel }) {
         <StepSetup
           screen={newScreen}
           onNext={() => setStep(4)}
-          onBack={() => setStep(2)}
+          onBack={() => setStep(1)}
           onSkip={() => onComplete(newScreen)}
         />
       )}
@@ -438,6 +444,7 @@ export function ScreenOnboardView({ onComplete, onCancel }) {
           screen={newScreen}
           onDone={() => onComplete(newScreen)}
           onSkip={() => onComplete(newScreen)}
+          onBack={() => setStep(3)}
         />
       )}
     </div>
