@@ -89,11 +89,11 @@ const CITIES = ['Toronto', 'London', 'Manchester', 'Birmingham', 'Vancouver', 'E
 
 function StepRegister({ onBack, onScreenCreated }) {
   const { user } = useAuth();
-  const [form, setForm] = useState({ name: '', location: '', city: 'Toronto', display_size: '' });
+  const [form, setForm] = useState({ name: '', owner_name: '', location: '', city: 'Toronto', display_size: '' });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
 
-  const valid = form.name.trim() && form.location.trim() && form.city && form.display_size.trim();
+  const valid = form.name.trim() && form.owner_name.trim() && form.location.trim() && form.city && form.display_size.trim();
 
   const handleSubmit = async () => {
     if (!valid) return;
@@ -102,6 +102,8 @@ function StepRegister({ onBack, onScreenCreated }) {
     const { data, error } = await supabase.from('screens').insert({
       id:             crypto.randomUUID(),
       name:           form.name.trim(),
+      owner_name:     form.owner_name.trim(),
+      owner_type:     'Business',
       location:       form.location.trim(),
       city:           form.city,
       display_size:   form.display_size.trim(),
@@ -131,6 +133,12 @@ function StepRegister({ onBack, onScreenCreated }) {
             placeholder="e.g. Corner Brew — King St"
             value={form.name}
             onChange={e => setForm(s => ({ ...s, name: e.target.value }))}
+          />
+          <Inp
+            label="Business / Owner Name"
+            placeholder="e.g. Corner Brew Coffee"
+            value={form.owner_name}
+            onChange={e => setForm(s => ({ ...s, owner_name: e.target.value }))}
           />
           <Inp
             label="Location / Address"
