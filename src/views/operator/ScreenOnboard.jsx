@@ -338,7 +338,66 @@ function StepSetup({ screen, onNext, onBack, onSkip }) {
 }
 
 function StepConnect({ screen, onDone, onSkip }) {
-  return <div>Step 4 — coming in Task 4</div>;
+  const [status, setStatus] = useState('idle'); // 'idle' | 'checking' | 'connected' | 'none'
+
+  const check = async () => {
+    setStatus('checking');
+    try {
+      const since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { data } = await supabase
+        .from('display_heartbeats')
+        .select('id')
+        .eq('screen_id', screen.id)
+        .gte('created_at', since)
+        .limit(1);
+      setStatus(data && data.length > 0 ? 'connected' : 'none');
+    } catch {
+      setStatus('none');
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: 520, margin: '0 auto' }}>
+      <Card style={{ padding: 40, textAlign: 'center' }}>
+        <div style={{ fontSize: 48, marginBottom: 20 }}>
+          {status === 'connected' ? '✅' : status === 'none' ? '⚠️' : '📡'}
+        </div>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 12px' }}>
+          {status === 'connected' ? 'Screen is live!' : 'Test your connection'}
+        </h2>
+        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, margin: '0 0 28px' }}>
+          {status === 'connected'
+            ? `${screen.name} is connected and sending heartbeats. You're all set.`
+            : status === 'none'
+            ? 'No heartbeat detected yet. Make sure your display is running and try again.'
+            : "Click the button below after your display is running. We'll check if it's sending a heartbeat to our servers."}
+        </p>
+
+        {status !== 'connected' && (
+          <Btn
+            onClick={check}
+            disabled={status === 'checking'}
+            style={{ width: '100%', marginBottom: 12 }}
+          >
+            {status === 'checking' ? 'Checking…' : status === 'none' ? 'Retry' : 'Test Connection'}
+          </Btn>
+        )}
+
+        {status === 'connected' && (
+          <Btn onClick={onDone} style={{ width: '100%', marginBottom: 12 }}>
+            Go to my screen →
+          </Btn>
+        )}
+
+        <button onClick={onSkip} style={{
+          background: 'none', border: 'none', fontSize: 12,
+          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans,
+        }}>
+          Skip for now →
+        </button>
+      </Card>
+    </div>
+  );
 }
 
 // ─── Main Wizard ─────────────────────────────────────────────────────────────
