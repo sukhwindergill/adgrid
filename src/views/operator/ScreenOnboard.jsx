@@ -331,12 +331,14 @@ function StepSetup({ screen, onNext, onBack, onSkip }) {
           <HardwareInstructions hardware={hardware} screen={screen} />
         </div>
 
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <Btn variant="secondary" onClick={onBack} style={{ flexShrink: 0 }}>← Back</Btn>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Btn variant="secondary" onClick={onBack} style={{ flex: 1 }}>← Back</Btn>
           <Btn onClick={onNext} style={{ flex: 1 }}>I've completed setup →</Btn>
+        </div>
+        <div style={{ textAlign: 'center', marginTop: 12 }}>
           <button onClick={onSkip} style={{
             background: 'none', border: 'none', fontSize: 12, color: C.textMuted,
-            cursor: 'pointer', fontFamily: F.sans, flexShrink: 0,
+            cursor: 'pointer', fontFamily: F.sans,
           }}>Do this later →</button>
         </div>
       </Card>
