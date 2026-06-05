@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { C, F } from '../../design/tokens.js';
 import { SkeletonRow, SkeletonCard } from '../../components/ui/Skeleton.jsx';
@@ -210,7 +210,65 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
   const [filter, setFilter] = useState('all');
   const [city, setCity]     = useState('All');
   const [showNew, setShowNew] = useState(false);
+  const [campaignScreens, setCampaignScreens] = useState({});
+  const [screenData, setScreenData] = useState({});
   const { isMobile } = useBreakpoint();
+
+  // Fetch campaign_screens data for all campaigns
+  useEffect(() => {
+    if (campaigns.length === 0) return;
+
+    async function fetchCampaignScreens() {
+      try {
+        // Fetch all campaign_screens rows
+        const { data: screenRows, error: screenErr } = await supabase
+          .from('campaign_screens')
+          .select('campaign_id, screen_id, status')
+          .in('campaign_id', campaigns.map(c => c.id));
+
+        if (screenErr) {
+          console.error('Failed to fetch campaign_screens:', screenErr);
+          return;
+        }
+
+        // Build a map of campaign_id -> [campaign_screens]
+        const screensByCampaign = {};
+        screenRows?.forEach(row => {
+          if (!screensByCampaign[row.campaign_id]) {
+            screensByCampaign[row.campaign_id] = [];
+          }
+          screensByCampaign[row.campaign_id].push(row);
+        });
+
+        // Fetch screen details for all unique screen_ids
+        const screenIds = [...new Set(screenRows?.map(s => s.screen_id) || [])];
+        if (screenIds.length > 0) {
+          const { data: screens, error: screenDetailErr } = await supabase
+            .from('screens')
+            .select('id, name, city')
+            .in('id', screenIds);
+
+          if (screenDetailErr) {
+            console.error('Failed to fetch screen details:', screenDetailErr);
+            return;
+          }
+
+          // Build a map of screen_id -> screen details
+          const screenMap = {};
+          screens?.forEach(s => {
+            screenMap[s.id] = s;
+          });
+          setScreenData(screenMap);
+        }
+
+        setCampaignScreens(screensByCampaign);
+      } catch (err) {
+        console.error('Error fetching campaign screens:', err);
+      }
+    }
+
+    fetchCampaignScreens();
+  }, [campaigns]);
 
   if (loading) {
     return (
@@ -224,12 +282,18 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
   }
 
   function exportCSV(rows) {
-    const headers = ['ID', 'Advertiser', 'Screen', 'City', 'Status', 'Budget', 'Start', 'End', 'Impressions', 'Scans'];
+    const headers = ['ID', 'Advertiser', 'Screen Count', 'City', 'Status', 'Budget', 'Start', 'End', 'Impressions', 'Scans'];
     const escape = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const lines = rows.map(c => [
-      c.id, c.advertiser, c.screen, c.city, c.status,
-      c.budget, c.start, c.end, c.impressions ?? 0, c.scans ?? 0,
-    ].map(escape).join(','));
+    const lines = rows.map(c => {
+      const screens = campaignScreens[c.id] || [];
+      const screenCount = screens.length;
+      const cities = [...new Set(screens.map(s => screenData[s.screen_id]?.city).filter(Boolean))];
+      const displayCity = cities.length === 1 ? cities[0] : (c.city || '');
+      return [
+        c.id, c.advertiser, screenCount, displayCity, c.status,
+        c.budget, c.start, c.end, c.impressions ?? 0, c.scans ?? 0,
+      ].map(escape).join(',');
+    });
     const csv = [headers.join(','), ...lines].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
@@ -239,10 +303,24 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
     URL.revokeObjectURL(a.href);
   }
 
-  const cities = ['All', ...new Set(campaigns.map(c => c.city))];
+  // Build list of unique cities from campaign_screens
+  const allCities = new Set();
+  allCities.add('All');
+  Object.values(campaignScreens).forEach(screens => {
+    screens.forEach(s => {
+      const screenCity = screenData[s.screen_id]?.city;
+      if (screenCity) allCities.add(screenCity);
+    });
+  });
+  const cities = Array.from(allCities);
+
   const shown  = campaigns
     .filter(c => filter === 'all' || c.status === filter)
-    .filter(c => city === 'All' || c.city === city);
+    .filter(c => {
+      if (city === 'All') return true;
+      const screens = campaignScreens[c.id] || [];
+      return screens.some(s => screenData[s.screen_id]?.city === city);
+    });
 
   return (
     <div>
@@ -315,6 +393,25 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
           {shown.map(c => {
             const pct = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
             const isPending = c.status === 'pending_review';
+
+            // Get campaign_screens for this campaign
+            const screens = campaignScreens[c.id] || [];
+            const screenCount = screens.length;
+
+            // Derive city from the screens' cities (prefer unique city if all same, else use campaign city as fallback)
+            const cities = [...new Set(screens.map(s => screenData[s.screen_id]?.city).filter(Boolean))];
+            const displayCity = cities.length === 1 ? cities[0] : (c.city || '');
+
+            // Calculate multi-screen status badge logic
+            let badgeStatus = c.status;
+            if (c.status === 'approved' || c.status === 'scheduled') {
+              const hasPending = screens.some(s => s.status === 'pending');
+              const hasApproved = screens.some(s => s.status === 'approved' || s.status === 'auto_approved');
+              if (hasPending && hasApproved) {
+                badgeStatus = 'partially_approved';
+              }
+            }
+
             return (
               <div key={c.id}
                 onClick={e => { if (!e.defaultPrevented) setDetail(c); }}
@@ -332,7 +429,7 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
                       <div style={{ fontWeight: 600, color: C.text, fontFamily: F.sans }}>{c.advertiser}</div>
                       {isPending && <span style={{ fontSize: 10, background: C.amber, color: '#fff', padding: '1px 6px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>REVIEW</span>}
                     </div>
-                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.category} · {c.screen} · {c.city}</div>
+                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.category} · {screenCount} screens · {displayCity}</div>
                   </div>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -357,7 +454,7 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
                       <Btn variant="danger"  size="sm" onClick={e => { e.preventDefault(); e.stopPropagation(); setDetail(c); }}>✗ Reject…</Btn>
                     </div>
                   ) : (
-                    <Badge status={c.status} />
+                    <Badge status={badgeStatus} />
                   )}
                 </div>
               </div>
