@@ -567,11 +567,80 @@ function StepBudget({ form, setForm, matchedScreens }) {
 }
 
 function StepLaunch({ form, setForm }) {
-  return <div style={{ padding: 32, textAlign: 'center', color: C.textSub, fontFamily: F.sans }}>Step 6 — Launch Preference (coming soon)</div>;
+  const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
+  return (
+    <div style={{ maxWidth: 540, margin: '0 auto' }}>
+      <Card style={{ padding: 32 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 8px' }}>How should it launch?</h2>
+        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>
+          Screen owners need to approve your campaign before it runs on their display.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[
+            { value: 'partial', title: 'Go live as screens approve', desc: 'Your campaign starts running on each screen as soon as that screen\'s owner approves. Other screens join when they approve.' },
+            { value: 'all', title: 'Wait for all screens', desc: 'Campaign stays pending until every targeted screen owner has approved. Coordinated launch across all screens.' },
+          ].map(opt => (
+            <button key={opt.value} type="button" onClick={() => setField('start_when', opt.value)} style={{
+              padding: '16px 18px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+              border: `2px solid ${form.start_when === opt.value ? C.purple : C.border}`,
+              background: form.start_when === opt.value ? C.purpleSoft : C.surface,
+              transition: 'all 0.15s',
+            }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>{opt.title}</div>
+              <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5 }}>{opt.desc}</div>
+            </button>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
 }
 
 function StepReview({ form, matchedScreens, onSubmit, submitting, err }) {
-  return <div style={{ padding: 32, textAlign: 'center', color: C.textSub, fontFamily: F.sans }}>Step 7 — Review & Submit (coming soon)</div>;
+  const days = form.start_date && form.end_date
+    ? Math.max(1, Math.round((new Date(form.end_date) - new Date(form.start_date)) / (1000 * 60 * 60 * 24)))
+    : null;
+  const totalImpr = matchedScreens.reduce((a, s) => a + (s.impressions || 0), 0);
+
+  const rows = [
+    ['Area', `${form.area_type === 'radius' ? `${form.radius_km}km radius` : form.city || form.state || form.country}`],
+    ['Screens', `${form.selected_screen_ids.length} selected · ~${(totalImpr / 1000).toFixed(0)}K impr/mo`],
+    ['Headline', form.headline || '—'],
+    ['Budget', `£${form.budget || '—'} (${form.budget_mode === 'daily' ? 'daily' : 'total'})`],
+    ['Dates', form.start_date && form.end_date ? `${form.start_date} → ${form.end_date}${days ? ` (${days} days)` : ''}` : '—'],
+    ['Time', `${form.time_start} – ${form.time_end}`],
+    ['Days', form.schedule_days.join(', ')],
+    ['Launch', form.start_when === 'partial' ? 'Go live as screens approve' : 'Wait for all screens'],
+  ];
+
+  return (
+    <div style={{ maxWidth: 580, margin: '0 auto' }}>
+      <Card style={{ padding: 32 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 8px' }}>Review your campaign</h2>
+        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>Check everything looks right before submitting.</p>
+
+        <div style={{ display: 'flex', gap: 24, marginBottom: 24, flexWrap: 'wrap' }}>
+          <div style={{ width: 180, flexShrink: 0 }}>
+            <CreativePreview campaign={{ headline: form.headline, cta_text: form.cta_text, accent_color: form.accent_color, destination_url: form.destination_url, category: form.category }} />
+          </div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            {rows.map(([label, value]) => (
+              <div key={label} style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.04em', minWidth: 70, paddingTop: 1 }}>{label}</div>
+                <div style={{ fontSize: 13, color: C.text, fontFamily: F.sans }}>{value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {err && <ErrorBanner message={err} onDismiss={() => {}} />}
+
+        <Btn onClick={onSubmit} disabled={submitting} style={{ width: '100%', fontSize: 15, padding: '14px 24px' }}>
+          {submitting ? 'Submitting…' : 'Submit Campaign →'}
+        </Btn>
+      </Card>
+    </div>
+  );
 }
 
 // ─── Main Wizard ─────────────────────────────────────────────────────────────
@@ -677,7 +746,85 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
   };
 
   const handleSubmit = async () => {
-    setSubmitErr('Submit not yet implemented — coming in Task 7');
+    setSubmitting(true);
+    setSubmitErr(null);
+    try {
+      const campaignId = crypto.randomUUID();
+      const firstScreen = selectedScreens[0];
+      const { error: bookingErr } = await supabase.from('bookings').insert({
+        id:                    campaignId,
+        advertiser_id:         user.id,
+        advertiser_name:       profile?.name || user.email?.split('@')[0] || 'Advertiser',
+        screen_name:           firstScreen?.name || '',
+        city:                  form.city || form.state || form.country || '',
+        headline:              form.headline,
+        cta_text:              form.cta_text,
+        destination_url:       form.destination_url,
+        accent_color:          form.accent_color,
+        category:              form.category,
+        budget:                parseFloat(form.budget) || 0,
+        budget_mode:           form.budget_mode,
+        start_when:            form.start_when,
+        start_date:            form.start_date || null,
+        end_date:              form.end_date || null,
+        schedule_days:         form.schedule_days,
+        time_start:            form.time_start,
+        time_end:              form.time_end,
+        peak_hours_preferred:  form.peak_hours_preferred,
+        status:                'pending_review',
+        payment_status:        'unpaid',
+        impressions:           0,
+        spent:                 0,
+        scans:                 0,
+      });
+      if (bookingErr) throw new Error(bookingErr.message);
+
+      const screenRows = form.selected_screen_ids.map(screen_id => {
+        const screen = matchedScreens.find(s => s.id === screen_id);
+        const ov = form.per_screen_overrides[screen_id] || {};
+        return {
+          campaign_id:     campaignId,
+          screen_id,
+          status:          screen?.auto_approve ? 'auto_approved' : 'pending',
+          headline:        ov.headline || null,
+          cta_text:        ov.cta_text || null,
+          accent_color:    ov.accent_color || null,
+          destination_url: ov.destination_url || null,
+        };
+      });
+      const { error: screenErr } = await supabase.from('campaign_screens').insert(screenRows);
+      if (screenErr) throw new Error(screenErr.message);
+
+      const hasAutoApproved = screenRows.some(r => r.status === 'auto_approved');
+      if (hasAutoApproved && form.start_when === 'partial') {
+        await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaignId);
+      }
+
+      onSave({
+        id: campaignId,
+        advertiser: profile?.name || user.email?.split('@')[0] || 'Advertiser',
+        advertiser_id: user.id,
+        screen: firstScreen?.name || '',
+        city: form.city || '',
+        headline: form.headline,
+        cta: form.cta_text,
+        color: form.accent_color,
+        destination: form.destination_url,
+        category: form.category,
+        budget: parseFloat(form.budget) || 0,
+        budget_mode: form.budget_mode,
+        start: form.start_date,
+        end: form.end_date,
+        days: form.schedule_days,
+        timeStart: form.time_start,
+        timeEnd: form.time_end,
+        spent: 0, impressions: 0, scans: 0,
+        status: hasAutoApproved && form.start_when === 'partial' ? 'scheduled' : 'pending_review',
+      });
+    } catch (e) {
+      setSubmitErr(e.message || 'Failed to submit campaign');
+      setSubmitting(false);
+    }
   };
 
   return (
