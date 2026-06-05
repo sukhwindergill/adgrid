@@ -171,7 +171,7 @@ function DetailsTab({ screen, onSaved }) {
       <Card style={{ padding: 24 }}>
         <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 20 }}>Venue Details</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
-          <SelInput label="Country" value={fields.country} onChange={e => set('country', e.target.value)}>
+          <SelInput label="Country" value={fields.country} onChange={e => setFields(s => ({ ...s, country: e.target.value, state: '' }))}>
             {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
           </SelInput>
           <Inp label={STATE_LABEL[fields.country] || 'Province / State'} placeholder="e.g. Ontario"

@@ -614,7 +614,7 @@ export function ScreenOnboardView({ onComplete, onCancel }) {
         <StepSetup
           screen={newScreen}
           onNext={() => setStep(4)}
-          onBack={() => setStep(1)}
+          onBack={() => setStep(2)}
           onSkip={() => onComplete(newScreen)}
         />
       )}
