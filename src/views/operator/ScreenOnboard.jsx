@@ -85,8 +85,86 @@ function StepWelcome({ onNext }) {
 
 // ─── Placeholders for remaining steps (added in later tasks) ──────────────────
 
-function StepRegister({ onNext, onBack, onScreenCreated }) {
-  return <div>Step 2 — coming in Task 2</div>;
+const CITIES = ['Toronto', 'London', 'Manchester', 'Birmingham', 'Vancouver', 'Edinburgh'];
+
+function StepRegister({ onBack, onScreenCreated }) {
+  const { user } = useAuth();
+  const [form, setForm] = useState({ name: '', location: '', city: 'Toronto', display_size: '' });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState(null);
+
+  const valid = form.name.trim() && form.location.trim() && form.city && form.display_size.trim();
+
+  const handleSubmit = async () => {
+    if (!valid) return;
+    setSaving(true);
+    setErr(null);
+    const { data, error } = await supabase.from('screens').insert({
+      name:           form.name.trim(),
+      location:       form.location.trim(),
+      city:           form.city,
+      display_size:   form.display_size.trim(),
+      status:         'pending',
+      operator_id:    user.id,
+      max_ad_duration: 30,
+      monthly_revenue: 0,
+      campaigns:      0,
+    }).select('id, name, screen_token').single();
+
+    if (error) { setErr(error.message); setSaving(false); return; }
+    setSaving(false);
+    onScreenCreated({ id: data.id, name: data.name, screen_token: data.screen_token });
+  };
+
+  return (
+    <div style={{ maxWidth: 560, margin: '0 auto' }}>
+      <Card style={{ padding: 36 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 4, margin: '0 0 4px' }}>
+          Tell us about your screen
+        </h2>
+        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 28, margin: '0 0 28px' }}>
+          These details help advertisers find and book your screen.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 28 }}>
+          <Inp
+            label="Screen Name"
+            placeholder="e.g. Corner Brew — King St"
+            value={form.name}
+            onChange={e => setForm(s => ({ ...s, name: e.target.value }))}
+          />
+          <Inp
+            label="Location / Address"
+            placeholder="e.g. King St W & Bay St, Toronto"
+            value={form.location}
+            onChange={e => setForm(s => ({ ...s, location: e.target.value }))}
+          />
+          <SelInput
+            label="City"
+            value={form.city}
+            onChange={e => setForm(s => ({ ...s, city: e.target.value }))}
+          >
+            {CITIES.map(c => <option key={c}>{c}</option>)}
+          </SelInput>
+          <Inp
+            label="Display Size"
+            placeholder="e.g. 55 inch 4K, 72 inch LED"
+            value={form.display_size}
+            onChange={e => setForm(s => ({ ...s, display_size: e.target.value }))}
+          />
+        </div>
+
+        <ErrorBanner message={err} onDismiss={() => setErr(null)} />
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Btn variant="secondary" onClick={onBack} style={{ flex: 1 }}>← Back</Btn>
+          <Btn onClick={handleSubmit} disabled={!valid || saving} style={{ flex: 2 }}>
+            {saving ? 'Registering…' : 'Next →'}
+          </Btn>
+        </div>
+      </Card>
+    </div>
+  );
 }
 
 function StepSetup({ screen, onNext, onBack, onSkip }) {
