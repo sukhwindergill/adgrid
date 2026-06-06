@@ -78,8 +78,10 @@ export function AuthProvider({ children }) {
   async function setActiveMode(mode) {
     setActiveModeState(mode)
     if (user) {
-      await supabase.from('profiles').update({ active_mode: mode }).eq('id', user.id)
+      const { error } = await supabase.from('profiles').update({ active_mode: mode }).eq('id', user.id)
+      return { error }
     }
+    return { error: null }
   }
 
   return (
