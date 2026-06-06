@@ -15,6 +15,7 @@ function buildQrUrl(destinationUrl, screenId, campaignId) {
     u.searchParams.set('utm_medium', 'dooh');
     u.searchParams.set('ag_screen', screenId ?? '');
     u.searchParams.set('ag_campaign', campaignId ?? '');
+    u.searchParams.set('s', screenId ?? '');
     return u.toString();
   } catch {
     return destinationUrl;
