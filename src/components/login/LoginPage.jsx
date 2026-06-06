@@ -34,7 +34,6 @@ export function LoginPage() {
     setOauthLoading(provider);
     const { error } = await signInWithOAuth(provider);
     if (error) { setErr(error.message); setOauthLoading(''); }
-    // On success, Supabase redirects — no need to reset state
   };
 
   const isSuccess = err.includes('Check');
