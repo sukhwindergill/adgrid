@@ -180,6 +180,15 @@ function StepArea({ form, setForm, reachSummary, allScreens, onPrevCampaigns }) 
   return (
     <div style={{ maxWidth: 620, margin: '0 auto' }}>
       <Card style={{ padding: 32 }}>
+        <div style={{ marginBottom: 24 }}>
+          <Inp
+            label="Campaign name"
+            placeholder="e.g. Summer Promo 2026"
+            value={form.name}
+            onChange={e => setField('name', e.target.value)}
+          />
+        </div>
+
         <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 4px' }}>Where do you want to advertise?</h2>
         <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 20px' }}>Choose an area and we'll find matching screens for you.</p>
 
@@ -653,6 +662,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
   const [showDupModal, setShowDupModal] = useState(false);
 
   const [form, setForm] = useState({
+    name: '',
     area_type: 'city',
     country: 'CA',
     state: '',
@@ -754,6 +764,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       const { error: bookingErr } = await supabase.from('bookings').insert({
         id:                    campaignId,
         advertiser_id:         user.id,
+        campaign_name:         form.name || null,
         advertiser_name:       profile?.name || user.email?.split('@')[0] || 'Advertiser',
         screen_name:           firstScreen?.name || '',
         city:                  form.city || form.state || form.country || '',
