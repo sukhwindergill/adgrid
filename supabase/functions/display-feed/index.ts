@@ -37,25 +37,54 @@ Deno.serve(async (req: Request) => {
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const currentDay = dayNames[now.getDay()];
 
-  const { data: campaigns } = await supabase
-    .from("bookings")
-    .select("id, advertiser_name, headline, cta:cta_text, accent_color, destination_url, category, slots, duration, schedule_days, time_start, time_end")
-    .eq("screen_name", screen.name)
-    .in("status", ["scheduled", "active"])
-    .lte("start_date", today)
-    .gte("end_date", today);
+  // Step 1: find approved campaign_screens for this screen (includes per-screen creative overrides)
+  const { data: csRows } = await supabase
+    .from("campaign_screens")
+    .select("campaign_id, status, headline, cta_text, accent_color, destination_url")
+    .eq("screen_id", screen.id)
+    .in("status", ["approved", "auto_approved"]);
 
-  const activeCampaigns = (campaigns ?? []).filter(c => {
-    const days: string[] = c.schedule_days ?? [];
-    const inDay = days.length === 0 || days.includes(currentDay);
-    const inTime = currentTime >= (c.time_start ?? "00:00") && currentTime <= (c.time_end ?? "23:59");
-    return inDay && inTime;
-  });
+  const activeCampaigns: Record<string, unknown>[] = [];
 
-  // Log heartbeat (fire and forget)
+  if (csRows && csRows.length > 0) {
+    const campaignIds = csRows.map((r) => r.campaign_id);
+
+    // Step 2: fetch bookings for those campaigns filtered by date and live status
+    const { data: bookings } = await supabase
+      .from("bookings")
+      .select("id, advertiser_name, headline, cta_text, accent_color, destination_url, category, slots, duration, schedule_days, time_start, time_end")
+      .in("id", campaignIds)
+      .in("status", ["scheduled", "active"])
+      .lte("start_date", today)
+      .gte("end_date", today);
+
+    if (bookings) {
+      const csMap = new Map(csRows.map((r) => [r.campaign_id, r]));
+
+      for (const b of bookings) {
+        const cs = csMap.get(b.id);
+        const days: string[] = (b.schedule_days as string[]) ?? [];
+        const inDay = days.length === 0 || days.includes(currentDay);
+        const inTime = currentTime >= ((b.time_start as string) ?? "00:00") && currentTime <= ((b.time_end as string) ?? "23:59");
+        if (!inDay || !inTime) continue;
+        // Apply per-screen creative overrides from campaign_screens
+        activeCampaigns.push({
+          ...b,
+          cta: cs?.cta_text || b.cta_text,
+          headline: cs?.headline || b.headline,
+          accent_color: cs?.accent_color || b.accent_color,
+          destination_url: cs?.destination_url || b.destination_url,
+        });
+      }
+    }
+  }
+
+  // Log heartbeat (fire and forget).
+  // campaign_id is only set when exactly one campaign is active — with multiple
+  // campaigns the screen rotates client-side so we can't know which is showing.
   supabase.from("display_heartbeats").insert({
     screen_id: screen.id,
-    campaign_id: activeCampaigns[0]?.id ?? null,
+    campaign_id: activeCampaigns.length === 1 ? (activeCampaigns[0].id as string) : null,
     status: activeCampaigns.length > 0 ? "playing" : "idle",
   }).then(() => {});
 

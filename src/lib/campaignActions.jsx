@@ -54,6 +54,7 @@ export function ApproveBtn({ campaign, setCampaigns }) {
       return;
     }
 
+    await supabase.from('bookings').update({ status: 'scheduled', payment_status: 'paid' }).eq('id', campaign.id);
     setCampaigns(prev => prev.map(x => x.id === campaign.id ? { ...x, status: 'scheduled', payment_status: 'paid' } : x));
     setLoading(false);
   };

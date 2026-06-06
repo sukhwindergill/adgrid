@@ -133,6 +133,7 @@ export function DisplayPlayer({ screenToken }) {
   const [campaigns, setCampaigns]   = useState([]);
   const [screenId, setScreenId]     = useState(null);
   const [currentIdx, setCurrentIdx] = useState(0);
+  const currentIdxRef = useRef(0);
   const [fadeIn, setFadeIn]         = useState(true);
   const [status, setStatus]         = useState('loading'); // 'loading' | 'ok' | 'error'
   const [errMsg, setErrMsg]         = useState('');
@@ -173,6 +174,7 @@ export function DisplayPlayer({ screenToken }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           screen_token: screenToken,
+          campaign_id: campaigns[currentIdxRef.current]?.id ?? null,
           people_count: 1,
           dwell_seconds: ROTATE_INTERVAL_MS / 1000,
           attention_score: 1.0,
@@ -188,7 +190,11 @@ export function DisplayPlayer({ screenToken }) {
     rotateRef.current = setInterval(() => {
       setFadeIn(false);
       setTimeout(() => {
-        setCurrentIdx(i => (i + 1) % campaigns.length);
+        setCurrentIdx(i => {
+          const next = (i + 1) % campaigns.length;
+          currentIdxRef.current = next;
+          return next;
+        });
         setFadeIn(true);
       }, 400);
     }, ROTATE_INTERVAL_MS);
