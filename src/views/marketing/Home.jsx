@@ -135,9 +135,11 @@ const CSS = `
   background-size: 200% 200%;
   animation: borderRotate 4s ease infinite;
   z-index: -1; opacity: 0;
-  transition: opacity 0.3s ease;
+  /* promote to own compositor layer so opacity transition doesn't repaint gradient */
+  will-change: opacity;
+  transition: opacity 0.4s ease;
 }
-.card-border:hover::before    { opacity: 1; }
+.card-border:hover::before     { opacity: 1; }
 .card-border.always-on::before { opacity: 1; }
 
 /* ── Primary button (pulsing glow) ── */
@@ -148,12 +150,15 @@ const CSS = `
   font-family: var(--inter); font-weight: 600; font-size: 16px;
   border: none; cursor: pointer; letter-spacing: -0.01em;
   white-space: nowrap; line-height: 1;
+  /* transition includes box-shadow so hover exit eases out from current anim frame */
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.35s ease;
+}
+/* animation only when not hovered — avoids abrupt animation: none jump */
+.btn-p:not(:hover) {
   animation: ctaPulse 2.5s ease-in-out infinite;
   will-change: box-shadow;
-  transition: transform 0.2s, filter 0.2s;
 }
 .btn-p:hover {
-  animation: none;
   box-shadow: 0 0 40px rgba(0,194,255,0.6);
   transform: translateY(-2px);
   filter: brightness(1.1);
