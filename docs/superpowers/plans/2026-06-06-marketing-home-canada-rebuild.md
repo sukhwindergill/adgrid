@@ -1,9 +1,29 @@
-import { useState, useEffect, useRef } from 'react';
+# Marketing Home — Canada OOH Marketplace Rebuild
 
-// ─── Design System — Canada OOH Marketplace ───────────────────────────────────
-// Colors: #0A0A0F · #00C2FF → #7B2FFF · Inter 700/800 · one message per section
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-const CSS = `
+**Goal:** Rebuild `src/views/marketing/Home.jsx` from a UK computer-vision DOOH site into the Canada OOH Marketplace per the Adgrid Master Brief.
+
+**Architecture:** Single JSX file with inline CSS string + React components per section. All motion effects (animated grid, cursor glow, 3D tilt, spring reveals, gradient borders, parallax) implemented in CSS + vanilla JS via useEffect. No new dependencies.
+
+**Tech Stack:** React, inline CSS string injected via useEffect, IntersectionObserver, requestAnimationFrame, CSS keyframe animations.
+
+---
+
+## File Structure
+
+- **Modify:** `src/views/marketing/Home.jsx` — full rewrite. Remove Leaflet import. Keep `MarketingHome` named export with same `{ onSignup, onLogin }` props.
+
+---
+
+### Task 1: Design System CSS + Global Effects
+
+**Files:**
+- Modify: `src/views/marketing/Home.jsx`
+
+- [ ] **Step 1: Replace the entire CSS constant** with the new design system. Paste this as the `CSS` constant at the top of the file (after removing the old one):
+
+```css
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -57,18 +77,18 @@ const CSS = `
   100% { transform: scale(2.5); opacity: 0; }
 }
 @keyframes orbDrift1 {
-  0%, 100% { transform: translate(0, 0); }
-  33%       { transform: translate(-30px, 20px); }
-  66%       { transform: translate(20px, -25px); }
+  0%, 100% { transform: translate(0,0); }
+  33%       { transform: translate(-30px,20px); }
+  66%       { transform: translate(20px,-25px); }
 }
 @keyframes orbDrift2 {
-  0%, 100% { transform: translate(0, 0); }
-  33%       { transform: translate(40px, -20px); }
-  66%       { transform: translate(-15px, 35px); }
+  0%, 100% { transform: translate(0,0); }
+  33%       { transform: translate(40px,-20px); }
+  66%       { transform: translate(-15px,35px); }
 }
 @keyframes orbDrift3 {
-  0%, 100% { transform: translate(0, 0); }
-  50%       { transform: translate(-35px, -20px); }
+  0%, 100% { transform: translate(0,0); }
+  50%       { transform: translate(-35px,-20px); }
 }
 @keyframes wordReveal {
   from { opacity: 0; transform: translateY(12px); }
@@ -99,7 +119,7 @@ const CSS = `
 .badge-load { animation: fadeUp 0.3s ease 1.1s both; }
 .orb-load   { animation: fadeUp 0.5s ease 1.3s both; }
 
-/* ── Scroll reveal — spring feel (slight overshoot) ── */
+/* ── Scroll reveal (spring physics feel) ── */
 .rv {
   opacity: 0;
   transform: translateY(32px) scale(0.97);
@@ -111,9 +131,9 @@ const CSS = `
 .d1{transition-delay:.06s} .d2{transition-delay:.12s} .d3{transition-delay:.18s}
 .d4{transition-delay:.24s} .d5{transition-delay:.30s} .d6{transition-delay:.36s}
 
-/* ── Animated gradient text ── */
+/* ── Gradient text (animated) ── */
 .gradient-text {
-  background: linear-gradient(135deg, #00C2FF, #7B2FFF, #00C2FF);
+  background: linear-gradient(135deg,#00C2FF,#7B2FFF,#00C2FF);
   background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -131,19 +151,19 @@ const CSS = `
   content: '';
   position: absolute; inset: -1px;
   border-radius: calc(var(--r) + 1px);
-  background: linear-gradient(135deg, #00C2FF, #7B2FFF, #00C2FF);
+  background: linear-gradient(135deg,#00C2FF,#7B2FFF,#00C2FF);
   background-size: 200% 200%;
   animation: borderRotate 4s ease infinite;
   z-index: -1; opacity: 0;
   transition: opacity 0.3s ease;
 }
-.card-border:hover::before    { opacity: 1; }
+.card-border:hover::before   { opacity: 1; }
 .card-border.always-on::before { opacity: 1; }
 
-/* ── Primary button (pulsing glow) ── */
+/* ── Buttons ── */
 .btn-p {
   display: inline-flex; align-items: center; gap: 8px;
-  background: linear-gradient(135deg, #00C2FF, #7B2FFF);
+  background: linear-gradient(135deg,#00C2FF,#7B2FFF);
   color: #fff; padding: 14px 28px; border-radius: var(--r-btn);
   font-family: var(--inter); font-weight: 600; font-size: 16px;
   border: none; cursor: pointer; letter-spacing: -0.01em;
@@ -158,8 +178,6 @@ const CSS = `
   transform: translateY(-2px);
   filter: brightness(1.1);
 }
-
-/* ── Secondary button ── */
 .btn-s {
   display: inline-flex; align-items: center; gap: 8px;
   background: transparent; color: #fff;
@@ -167,11 +185,8 @@ const CSS = `
   font-family: var(--inter); font-weight: 500; font-size: 16px;
   border: 1px solid var(--border); cursor: pointer;
   white-space: nowrap; transition: all 0.2s;
-  text-decoration: none;
 }
 .btn-s:hover { border-color: var(--c1); color: var(--c1); }
-
-/* ── White button (op CTA block) ── */
 .btn-w {
   display: inline-flex; align-items: center; gap: 8px;
   background: #fff; color: #0A0A0F;
@@ -182,7 +197,7 @@ const CSS = `
 }
 .btn-w:hover { background: #e8e8e8; }
 
-/* ── Hero animated grid ── */
+/* ── Hero grid background ── */
 .hero-bg-grid {
   position: absolute; inset: 0;
   background-image:
@@ -194,7 +209,7 @@ const CSS = `
   will-change: background-position;
 }
 
-/* ── Screen pins with ripple ── */
+/* ── Screen pins ── */
 .pin {
   position: absolute; width: 8px; height: 8px;
   background: var(--c1); border-radius: 50%;
@@ -234,16 +249,34 @@ const CSS = `
 }
 .fi:focus { border-color: var(--c1); box-shadow: 0 0 0 3px rgba(0,194,255,0.1); }
 .fi::placeholder { color: var(--muted); }
-select.fi { appearance: none; cursor: pointer; }
 
-/* ── Pull quote ── */
-.pull-quote {
-  border-left: 4px solid;
-  border-image: linear-gradient(to bottom, #00C2FF, #7B2FFF) 1;
-  padding-left: 32px;
+/* ── Cursor glow ── */
+body::before {
+  content: ''; position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none; z-index: 1;
+  background: radial-gradient(
+    500px circle at var(--cursor-x,50%) var(--cursor-y,50%),
+    rgba(0,194,255,0.04), transparent 70%
+  );
 }
 
-/* ── Feature card (3D tilt target) ── */
+/* ── Noise texture ── */
+body::after {
+  content: ''; position: fixed; inset: 0;
+  pointer-events: none; z-index: 9999; opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat; background-size: 128px;
+}
+
+/* ── Scroll indicator ── */
+.scroll-ind {
+  position: absolute; bottom: 32px; left: 50%;
+  animation: chevronBounce 2s ease-in-out infinite;
+  will-change: transform; cursor: pointer;
+}
+
+/* ── Feature card hover ── */
 .feature-card {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--r); padding: 28px;
@@ -255,36 +288,18 @@ select.fi { appearance: none; cursor: pointer; }
   box-shadow: 0 0 32px rgba(0,194,255,0.08);
 }
 
-/* ── Scroll indicator ── */
-.scroll-ind {
-  position: absolute; bottom: 32px; left: 50%;
-  animation: chevronBounce 2s ease-in-out infinite;
-  will-change: transform; cursor: pointer;
-}
-
-/* ── Cursor glow ── */
-body::before {
-  content: ''; position: fixed; top: 0; left: 0;
-  width: 100%; height: 100%;
-  pointer-events: none; z-index: 1;
-  background: radial-gradient(
-    500px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
-    rgba(0,194,255,0.04), transparent 70%
-  );
-}
-
-/* ── Noise texture overlay ── */
-body::after {
-  content: ''; position: fixed; inset: 0;
-  pointer-events: none; z-index: 9999; opacity: 0.04;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  background-repeat: repeat; background-size: 128px;
+/* ── Pull quote ── */
+.pull-quote {
+  border-left: 4px solid transparent;
+  border-image: linear-gradient(to bottom, #00C2FF, #7B2FFF) 1;
+  padding-left: 32px;
 }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .two-col    { grid-template-columns: 1fr !important; }
   .four-row   { grid-template-columns: 1fr 1fr !important; }
+  .three-col  { grid-template-columns: 1fr !important; }
   .steps-flow { flex-direction: column !important; align-items: center !important; }
   .step-arrow { transform: rotate(90deg); }
   .hero-h     { font-size: 40px !important; line-height: 1.1 !important; }
@@ -294,15 +309,13 @@ body::after {
   .footer-upper { flex-direction: column !important; gap: 40px !important; }
   .footer-links { flex-direction: row !important; gap: 48px !important; }
   .nav-mid    { display: none !important; }
-  .hamburger  { display: block !important; }
 }
 @media (max-width: 480px) {
   .four-row   { grid-template-columns: 1fr !important; }
-  .dual-cta   { flex-direction: column !important; align-items: stretch !important; }
+  .dual-cta   { flex-direction: column !important; }
   .dual-cta .btn-p, .dual-cta .btn-s { width: 100%; justify-content: center; }
   .stat-row   { grid-template-columns: 1fr !important; }
   .footer-links { flex-direction: column !important; }
-  .notify-row { flex-direction: column !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -311,10 +324,33 @@ body::after {
     transition-duration: 0.01ms !important;
   }
 }
-`;
+```
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+- [ ] **Step 2: Replace imports** at top of file:
 
+```jsx
+import { useState, useEffect, useRef } from 'react';
+```
+
+(Remove `react-leaflet` import — no longer needed.)
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add src/views/marketing/Home.jsx
+git commit -m "refactor: replace design system CSS for Canada OOH rebuild"
+```
+
+---
+
+### Task 2: Hooks + City Pin Data
+
+**Files:**
+- Modify: `src/views/marketing/Home.jsx`
+
+- [ ] **Step 1: Add Canadian screen pin positions** (used in hero background + S6):
+
+```jsx
 const CITY_PINS = [
   {x:22,y:25,delay:0},   {x:38,y:18,delay:0.3}, {x:55,y:22,delay:0.6},
   {x:70,y:30,delay:0.9}, {x:82,y:20,delay:1.2}, {x:18,y:42,delay:0.2},
@@ -325,9 +361,11 @@ const CITY_PINS = [
   {x:95,y:25,delay:0.4}, {x:50,y:82,delay:0.7}, {x:35,y:85,delay:1.1},
   {x:65,y:82,delay:0.3}, {x:80,y:78,delay:0.8},
 ];
+```
 
-// ─── Hooks ────────────────────────────────────────────────────────────────────
+- [ ] **Step 2: Keep `useReveal` and replace `useCounter`** with the spec's version:
 
+```jsx
 function useReveal(threshold = 0.15) {
   const ref = useRef(null);
   const [on, setOn] = useState(false);
@@ -352,7 +390,7 @@ function useCounter(target, duration = 1500, started = false) {
     const step = (ts) => {
       if (!t0) t0 = ts;
       const p = Math.min((ts - t0) / duration, 1);
-      const eased = 1 - Math.pow(1 - p, 3);
+      const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
       setVal(Math.round(eased * target));
       if (p < 1) requestAnimationFrame(step);
     };
@@ -360,9 +398,11 @@ function useCounter(target, duration = 1500, started = false) {
   }, [started, target, duration]);
   return val;
 }
+```
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+- [ ] **Step 3: Add `HeadlineReveal` helper** (word-by-word reveal with staggered animation):
 
+```jsx
 function HeadlineReveal({ lines, baseDelay = 0.45, style, className }) {
   let idx = 0;
   return (
@@ -389,7 +429,11 @@ function HeadlineReveal({ lines, baseDelay = 0.45, style, className }) {
     </h1>
   );
 }
+```
 
+- [ ] **Step 4: Add `CityPins` helper component** (reused in hero + S6):
+
+```jsx
 function CityPins({ style }) {
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', ...style }}>
@@ -399,6 +443,7 @@ function CityPins({ style }) {
           className="pin"
           style={{
             left: `${p.x}%`, top: `${p.y}%`,
+            '--pin-index': i,
             animationDelay: `${p.delay}s`,
           }}
         />
@@ -406,9 +451,25 @@ function CityPins({ style }) {
     </div>
   );
 }
+```
 
-// ─── Nav ──────────────────────────────────────────────────────────────────────
+- [ ] **Step 5: Commit**
 
+```bash
+git add src/views/marketing/Home.jsx
+git commit -m "refactor: hooks and city pin helpers for Canada rebuild"
+```
+
+---
+
+### Task 3: Nav + Hero (S1)
+
+**Files:**
+- Modify: `src/views/marketing/Home.jsx`
+
+- [ ] **Step 1: Write `Nav` component**. Sticky, blur bg on scroll, Canadian copy, mobile hamburger:
+
+```jsx
 function Nav({ onScrollTo, onLogin }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -436,10 +497,9 @@ function Nav({ onScrollTo, onLogin }) {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 clamp(20px,4vw,80px)', height: 72,
       }}>
-        <div
-          style={{ fontFamily: 'var(--inter)', fontSize: 22, fontWeight: 700, color: '#fff', cursor: 'pointer' }}
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        >
+        <div style={{
+          fontFamily: 'var(--inter)', fontSize: 22, fontWeight: 700, color: '#fff', cursor: 'pointer',
+        }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
           Adgrid
         </div>
 
@@ -453,26 +513,25 @@ function Nav({ onScrollTo, onLogin }) {
           {onLogin && (
             <button className="nl" onClick={onLogin} style={{ fontSize: 14 }}>Sign in</button>
           )}
-          <button
-            className="btn-p"
-            onClick={() => onScrollTo('waitlist-form')}
-            style={{ padding: '10px 20px', fontSize: 14 }}
-          >
+          <button className="btn-p" onClick={() => onScrollTo('waitlist-form')}
+            style={{ padding: '10px 20px', fontSize: 14 }}>
             Join the waitlist
           </button>
+          {/* Mobile hamburger */}
           <button
             onClick={() => setMenuOpen(v => !v)}
-            className="hamburger"
             style={{
               display: 'none', background: 'none', border: 'none', cursor: 'pointer',
-              color: '#fff', fontSize: 22, lineHeight: 1, padding: '4px 8px',
+              color: '#fff', fontSize: 24, lineHeight: 1,
             }}
+            className="hamburger"
           >
             {menuOpen ? '✕' : '☰'}
           </button>
         </div>
       </nav>
 
+      {/* Mobile full-screen menu */}
       {menuOpen && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 199,
@@ -498,57 +557,69 @@ function Nav({ onScrollTo, onLogin }) {
     </>
   );
 }
+```
 
-// ─── Hero (S1) ────────────────────────────────────────────────────────────────
+Add this CSS to the CSS constant (inside the responsive block):
+```css
+@media (max-width: 768px) {
+  .hamburger { display: block !important; }
+  .nav-mid   { display: none !important; }
+}
+```
 
+- [ ] **Step 2: Write `Hero` component** — full viewport, city grid, word-by-word headline, dual CTA, launch badge:
+
+```jsx
 function Hero({ onScrollTo }) {
+  const heroRef = useRef(null);
+
   return (
     <section style={{
       minHeight: '100svh', background: 'var(--bg)', paddingTop: 72,
       position: 'relative', overflow: 'hidden',
     }}>
-      {/* Animated grid background */}
+      {/* Animated grid */}
       <div className="hero-bg-grid" />
 
-      {/* City screen pins — low opacity */}
-      <div className="orb-load" style={{ position: 'absolute', inset: 0, opacity: 0.18, pointerEvents: 'none' }}>
+      {/* City screen pins */}
+      <div className="orb-load" style={{ position: 'absolute', inset: 0, opacity: 0.15, pointerEvents: 'none' }}>
         <CityPins />
       </div>
 
-      {/* Glow orbs — drifting */}
-      <div className="hero-orb orb-load" style={{
-        position: 'absolute', top: '-5%', left: '15%', width: 800, height: 800,
+      {/* Glow orbs */}
+      <div className="orb-load" style={{
+        position: 'absolute', top: '-5%', left: '20%', width: 800, height: 800, pointerEvents: 'none',
         background: 'radial-gradient(ellipse, rgba(0,194,255,0.10) 0%, transparent 70%)',
         animation: 'orbDrift1 12s ease-in-out infinite',
-        pointerEvents: 'none', willChange: 'transform',
+        will-change: 'transform',
       }} />
-      <div className="hero-orb orb-load" style={{
-        position: 'absolute', top: '25%', right: '-10%', width: 700, height: 700,
+      <div className="orb-load" style={{
+        position: 'absolute', top: '30%', right: '-10%', width: 700, height: 700, pointerEvents: 'none',
         background: 'radial-gradient(ellipse, rgba(123,47,255,0.10) 0%, transparent 70%)',
         animation: 'orbDrift2 18s ease-in-out infinite',
-        pointerEvents: 'none', willChange: 'transform',
+        will-change: 'transform',
       }} />
-      <div className="hero-orb orb-load" style={{
-        position: 'absolute', bottom: '5%', left: '-8%', width: 600, height: 600,
+      <div className="orb-load" style={{
+        position: 'absolute', bottom: '10%', left: '-5%', width: 600, height: 600, pointerEvents: 'none',
         background: 'radial-gradient(ellipse, rgba(0,194,255,0.08) 0%, transparent 70%)',
         animation: 'orbDrift3 24s ease-in-out infinite',
-        pointerEvents: 'none', willChange: 'transform',
+        will-change: 'transform',
       }} />
 
       {/* Content */}
-      <div className="hero-headline" style={{
+      <div ref={heroRef} className="hero-headline" style={{
         position: 'relative', zIndex: 2,
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         justifyContent: 'center', minHeight: 'calc(100svh - 72px)',
         padding: '48px clamp(20px,5vw,80px)',
         textAlign: 'center', maxWidth: 900, margin: '0 auto',
       }}>
-        {/* Tag */}
+        {/* Tag badge */}
         <div className="tag tag-load" style={{ marginBottom: 24 }}>
           Canada's OOH Marketplace
         </div>
 
-        {/* Headline — VERBATIM, word-by-word reveal */}
+        {/* Headline — VERBATIM */}
         <HeadlineReveal
           lines={["Canada's screens.", "Canada's brands.", "One marketplace."]}
           className="hero-h"
@@ -570,10 +641,7 @@ function Hero({ onScrollTo }) {
         </p>
 
         {/* Dual CTA */}
-        <div className="dual-cta cta-load" style={{
-          display: 'flex', gap: 16, flexWrap: 'wrap',
-          justifyContent: 'center', marginBottom: 28,
-        }}>
+        <div className="dual-cta cta-load" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 24 }}>
           <button className="btn-p" onClick={() => onScrollTo('waitlist-form')}>
             List your screens →
           </button>
@@ -602,9 +670,25 @@ function Hero({ onScrollTo }) {
     </section>
   );
 }
+```
 
-// ─── Problem Section (S2) ─────────────────────────────────────────────────────
+- [ ] **Step 3: Commit**
 
+```bash
+git add src/views/marketing/Home.jsx
+git commit -m "feat: Nav and Hero section for Canada OOH rebuild"
+```
+
+---
+
+### Task 4: Problem Section (S2) + How It Works (S3)
+
+**Files:**
+- Modify: `src/views/marketing/Home.jsx`
+
+- [ ] **Step 1: Write `ProblemSection`** (two-column cards, cyan/violet accents):
+
+```jsx
 function ProblemSection() {
   const [ref, on] = useReveal();
   return (
@@ -613,7 +697,7 @@ function ProblemSection() {
       padding: 'clamp(64px,10vw,100px) clamp(20px,5vw,80px)',
     }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div className={`rv ${on ? 'on' : ''}`} style={{ textAlign: 'center', marginBottom: 48 }}>
+        <div className={`rv ${on?'on':''}`} style={{ textAlign: 'center', marginBottom: 48 }}>
           <div className="tag" style={{ marginBottom: 20 }}>The Problem</div>
           {/* VERBATIM */}
           <h2 className="sec-h" style={{
@@ -625,12 +709,12 @@ function ProblemSection() {
         </div>
 
         <div className="two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-          {/* Operator card — cyan border */}
-          <div className={`rv d1 ${on ? 'on' : ''} card-border`} style={{
+          {/* Operator card */}
+          <div className={`rv d1 ${on?'on':''} card-border`} style={{
             borderLeft: '3px solid #00C2FF', padding: 40,
           }}>
             <div style={{ fontSize: 32, marginBottom: 16 }}>🖥️</div>
-            <h3 style={{ fontFamily: 'var(--inter)', fontWeight: 600, fontSize: 20, color: '#fff', marginBottom: 16, lineHeight: 1.3 }}>
+            <h3 style={{ fontFamily: 'var(--inter)', fontWeight: 600, fontSize: 20, color: '#fff', marginBottom: 16 }}>
               Your screens are underearning.
             </h3>
             <p style={{ fontFamily: 'var(--inter)', fontSize: 16, color: 'var(--sec)', lineHeight: 1.65, marginBottom: 24 }}>
@@ -647,7 +731,7 @@ function ProblemSection() {
               ].map(item => (
                 <li key={item} style={{
                   fontFamily: 'var(--inter)', fontSize: 14, color: 'var(--sec)',
-                  paddingLeft: 20, position: 'relative',
+                  paddingLeft: 16, position: 'relative',
                 }}>
                   <span style={{ position: 'absolute', left: 0, color: 'var(--c1)' }}>—</span>
                   {item}
@@ -656,12 +740,12 @@ function ProblemSection() {
             </ul>
           </div>
 
-          {/* Advertiser card — violet border */}
-          <div className={`rv d2 ${on ? 'on' : ''} card-border`} style={{
+          {/* Advertiser card */}
+          <div className={`rv d2 ${on?'on':''} card-border`} style={{
             borderLeft: '3px solid #7B2FFF', padding: 40,
           }}>
             <div style={{ fontSize: 32, marginBottom: 16 }}>📢</div>
-            <h3 style={{ fontFamily: 'var(--inter)', fontWeight: 600, fontSize: 20, color: '#fff', marginBottom: 16, lineHeight: 1.3 }}>
+            <h3 style={{ fontFamily: 'var(--inter)', fontWeight: 600, fontSize: 20, color: '#fff', marginBottom: 16 }}>
               OOH wasn't designed for you.
             </h3>
             <p style={{ fontFamily: 'var(--inter)', fontSize: 16, color: 'var(--sec)', lineHeight: 1.65, marginBottom: 24 }}>
@@ -678,7 +762,7 @@ function ProblemSection() {
               ].map(item => (
                 <li key={item} style={{
                   fontFamily: 'var(--inter)', fontSize: 14, color: 'var(--sec)',
-                  paddingLeft: 20, position: 'relative',
+                  paddingLeft: 16, position: 'relative',
                 }}>
                   <span style={{ position: 'absolute', left: 0, color: 'var(--c2)' }}>—</span>
                   {item}
@@ -688,8 +772,8 @@ function ProblemSection() {
           </div>
         </div>
 
-        {/* Connector text */}
-        <div className={`rv d3 ${on ? 'on' : ''}`} style={{ textAlign: 'center', marginTop: 48 }}>
+        {/* Connector */}
+        <div className={`rv d3 ${on?'on':''}`} style={{ textAlign: 'center', marginTop: 48 }}>
           <p style={{ fontFamily: 'var(--inter)', fontSize: 16, color: 'var(--muted)', fontStyle: 'italic' }}>
             "There's a better way. And it looks a lot like how digital advertising already works."
           </p>
@@ -698,9 +782,11 @@ function ProblemSection() {
     </section>
   );
 }
+```
 
-// ─── How It Works (S3) ────────────────────────────────────────────────────────
+- [ ] **Step 2: Write `HowItWorks` component** (3-step flow with gradient connectors):
 
+```jsx
 function HowItWorks() {
   const [ref, on] = useReveal();
   const steps = [
@@ -712,7 +798,7 @@ function HowItWorks() {
     {
       n: '02', icon: '🖱️',
       title: 'Advertisers bid in real-time',
-      body: 'Brands and local businesses browse available screens on a map, target by location and time slot, and launch campaigns — no phone calls, no contracts, no minimums.',
+      body: "Brands and local businesses browse available screens on a map, target by location and time slot, and launch campaigns — no phone calls, no contracts, no minimums.",
     },
     {
       n: '03', icon: '📈',
@@ -727,7 +813,7 @@ function HowItWorks() {
       padding: 'clamp(64px,10vw,100px) clamp(20px,5vw,80px)',
     }}>
       <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
-        <div className={`rv ${on ? 'on' : ''}`}>
+        <div className={`rv ${on?'on':''}`}>
           <div className="tag" style={{ marginBottom: 20 }}>How Adgrid Works</div>
           {/* VERBATIM */}
           <h2 className="sec-h" style={{
@@ -736,38 +822,32 @@ function HowItWorks() {
           }}>
             Simple for operators.<br />Simple for advertisers.
           </h2>
-          <p style={{
-            fontFamily: 'var(--inter)', fontSize: 18, color: 'var(--sec)', marginBottom: 64,
-          }}>
+          <p style={{ fontFamily: 'var(--inter)', fontSize: 18, color: 'var(--sec)', marginBottom: 64 }}>
             Three steps. No sales calls. No contracts. No guesswork.
           </p>
         </div>
 
         <div className="steps-flow" style={{ display: 'flex', alignItems: 'flex-start', gap: 0 }}>
           {steps.map((step, i) => (
-            <div key={step.n} style={{ display: 'contents' }}>
-              <div className={`rv d${i + 1} ${on ? 'on' : ''}`} style={{
-                flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                textAlign: 'center', padding: '0 16px',
+            <>
+              <div key={step.n} className={`rv d${i+1} ${on?'on':''}`} style={{
+                flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
+                padding: '0 16px',
               }}>
+                {/* Gradient circle */}
                 <div style={{
                   width: 56, height: 56, borderRadius: '50%',
                   background: 'linear-gradient(135deg, #00C2FF, #7B2FFF)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 24, marginBottom: 16, flexShrink: 0,
+                  fontFamily: 'var(--inter)', fontWeight: 700, color: '#fff',
                 }}>
                   {step.icon}
                 </div>
-                <div style={{
-                  fontFamily: 'var(--inter)', fontWeight: 700, fontSize: 11,
-                  color: 'var(--c1)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10,
-                }}>
+                <div style={{ fontFamily: 'var(--inter)', fontWeight: 700, fontSize: 11, color: 'var(--c1)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10 }}>
                   STEP {step.n}
                 </div>
-                <h3 style={{
-                  fontFamily: 'var(--inter)', fontWeight: 600, fontSize: 20,
-                  color: '#fff', marginBottom: 12, lineHeight: 1.3,
-                }}>
+                <h3 style={{ fontFamily: 'var(--inter)', fontWeight: 600, fontSize: 20, color: '#fff', marginBottom: 12, lineHeight: 1.3 }}>
                   {step.title}
                 </h3>
                 <p style={{ fontFamily: 'var(--inter)', fontSize: 15, color: 'var(--sec)', lineHeight: 1.65 }}>
@@ -778,20 +858,34 @@ function HowItWorks() {
                 <div className="step-arrow" style={{
                   fontSize: 24, color: 'rgba(0,194,255,0.4)',
                   paddingTop: 16, flexShrink: 0, alignSelf: 'center',
-                }}>
-                  →
-                </div>
+                }}>→</div>
               )}
-            </div>
+            </>
           ))}
         </div>
       </div>
     </section>
   );
 }
+```
 
-// ─── Operators Section (S4) ───────────────────────────────────────────────────
+- [ ] **Step 3: Commit**
 
+```bash
+git add src/views/marketing/Home.jsx
+git commit -m "feat: Problem and HowItWorks sections"
+```
+
+---
+
+### Task 5: Operators Section (S4) + Advertisers Section (S5)
+
+**Files:**
+- Modify: `src/views/marketing/Home.jsx`
+
+- [ ] **Step 1: Write `OperatorsSection`** (2×2 feature grid + always-on gradient border CTA):
+
+```jsx
 function OperatorsSection({ onScrollTo }) {
   const [ref, on] = useReveal();
   const features = [
@@ -805,11 +899,11 @@ function OperatorsSection({ onScrollTo }) {
     },
     {
       icon: '📊', title: 'Real-time analytics',
-      body: "See fill rates, revenue trends, and campaign performance in one clean dashboard. Know exactly what your inventory is worth — and what it's earning — at any moment.",
+      body: 'See fill rates, revenue trends, and campaign performance in one clean dashboard. Know exactly what your inventory is worth — and what it\'s earning — at any moment.',
     },
     {
       icon: '🚀', title: 'Fast onboarding. No lock-in.',
-      body: 'Connect your screens in minutes. No long-term contracts. No upfront costs. Adgrid earns a commission only when you earn.',
+      body: "Connect your screens in minutes. No long-term contracts. No upfront costs. Adgrid earns a commission only when you earn.",
     },
   ];
 
@@ -819,7 +913,7 @@ function OperatorsSection({ onScrollTo }) {
       padding: 'clamp(64px,10vw,100px) clamp(20px,5vw,80px)',
       position: 'relative', overflow: 'hidden',
     }}>
-      {/* Glow orb */}
+      {/* Glow orb left */}
       <div style={{
         position: 'absolute', top: '20%', left: '-10%', width: 700, height: 700,
         background: 'radial-gradient(ellipse, rgba(0,194,255,0.07) 0%, transparent 70%)',
@@ -827,7 +921,7 @@ function OperatorsSection({ onScrollTo }) {
       }} />
 
       <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        <div className={`rv ${on ? 'on' : ''}`} style={{ marginBottom: 48 }}>
+        <div className={`rv ${on?'on':''}`} style={{ marginBottom: 48 }}>
           <div className="tag" style={{ marginBottom: 20 }}>For Operators</div>
           {/* VERBATIM */}
           <h2 className="sec-h" style={{
@@ -846,17 +940,14 @@ function OperatorsSection({ onScrollTo }) {
           </p>
         </div>
 
-        {/* 2×2 feature grid */}
+        {/* 2x2 feature grid */}
         <div className="four-row" style={{
           display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 40,
         }}>
           {features.map((f, i) => (
-            <div key={f.title} className={`rv d${i + 1} ${on ? 'on' : ''} feature-card card-border`}>
+            <div key={f.title} className={`rv d${i+1} ${on?'on':''} feature-card card-border`}>
               <div style={{ fontSize: 28, marginBottom: 16 }}>{f.icon}</div>
-              <h3 style={{
-                fontFamily: 'var(--inter)', fontWeight: 600, fontSize: 20,
-                color: '#fff', marginBottom: 12, lineHeight: 1.3,
-              }}>
+              <h3 style={{ fontFamily: 'var(--inter)', fontWeight: 600, fontSize: 20, color: '#fff', marginBottom: 12, lineHeight: 1.3 }}>
                 {f.title}
               </h3>
               <p style={{ fontFamily: 'var(--inter)', fontSize: 15, color: 'var(--sec)', lineHeight: 1.65 }}>
@@ -867,20 +958,13 @@ function OperatorsSection({ onScrollTo }) {
         </div>
 
         {/* CTA block — always-on gradient border */}
-        <div className={`rv d5 ${on ? 'on' : ''}`} style={{
-          padding: 1, borderRadius: 17,
-          background: 'linear-gradient(135deg,#00C2FF,#7B2FFF,#00C2FF)',
-          backgroundSize: '200% 200%', animation: 'borderRotate 4s ease infinite',
-        }}>
+        <div className={`rv d5 ${on?'on':''}`} style={{ padding: 1, borderRadius: 17, background: 'linear-gradient(135deg,#00C2FF,#7B2FFF,#00C2FF)', backgroundSize: '200% 200%', animation: 'borderRotate 4s ease infinite' }}>
           <div className="cta-blk" style={{
-            background: 'var(--surface)', borderRadius: 16, padding: 48,
+            background: 'var(--surface)', borderRadius: 16, padding: '48px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 40,
           }}>
             <div>
-              <h3 style={{
-                fontFamily: 'var(--inter)', fontWeight: 700, fontSize: 24,
-                color: '#fff', marginBottom: 12, lineHeight: 1.3,
-              }}>
+              <h3 style={{ fontFamily: 'var(--inter)', fontWeight: 700, fontSize: 24, color: '#fff', marginBottom: 12 }}>
                 Be a launch operator in Toronto or Vancouver.
               </h3>
               <p style={{ fontFamily: 'var(--inter)', fontSize: 16, color: 'var(--sec)', lineHeight: 1.65 }}>
@@ -899,9 +983,11 @@ function OperatorsSection({ onScrollTo }) {
     </section>
   );
 }
+```
 
-// ─── Advertisers Section (S5) ─────────────────────────────────────────────────
+- [ ] **Step 2: Write `AdvertisersSection`** (4 feature pills + notify-me block):
 
+```jsx
 function AdvertisersSection() {
   const [ref, on] = useReveal();
   const [email, setEmail] = useState('');
@@ -920,7 +1006,7 @@ function AdvertisersSection() {
       padding: 'clamp(64px,10vw,100px) clamp(20px,5vw,80px)',
     }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-        <div className={`rv ${on ? 'on' : ''}`}>
+        <div className={`rv ${on?'on':''}`}>
           <div className="tag" style={{ marginBottom: 20 }}>For Advertisers</div>
           {/* VERBATIM */}
           <h2 className="sec-h" style={{
@@ -945,28 +1031,19 @@ function AdvertisersSection() {
           display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 20, marginBottom: 64,
         }}>
           {features.map((f, i) => (
-            <div key={f.title} className={`rv d${i + 1} ${on ? 'on' : ''}`} style={{
-              background: 'var(--bg)', border: '1px solid var(--border)',
-              borderRadius: 'var(--r)', padding: '28px 20px', textAlign: 'center',
+            <div key={f.title} className={`rv d${i+1} ${on?'on':''}`} style={{
+              background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--r)',
+              padding: '28px 20px', textAlign: 'center',
             }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>{f.icon}</div>
-              <div style={{ fontFamily: 'var(--inter)', fontWeight: 600, fontSize: 16, color: '#fff', marginBottom: 8 }}>
-                {f.title}
-              </div>
-              <div style={{ fontFamily: 'var(--inter)', fontSize: 14, color: 'var(--sec)', lineHeight: 1.5 }}>
-                {f.desc}
-              </div>
+              <div style={{ fontFamily: 'var(--inter)', fontWeight: 600, fontSize: 16, color: '#fff', marginBottom: 8 }}>{f.title}</div>
+              <div style={{ fontFamily: 'var(--inter)', fontSize: 14, color: 'var(--sec)', lineHeight: 1.5 }}>{f.desc}</div>
             </div>
           ))}
         </div>
 
-        {/* Notify-me block — always-on gradient border */}
-        <div className={`rv d5 ${on ? 'on' : ''}`} style={{
-          maxWidth: 560, margin: '0 auto',
-          padding: 1, borderRadius: 17,
-          background: 'linear-gradient(135deg,#00C2FF,#7B2FFF,#00C2FF)',
-          backgroundSize: '200% 200%', animation: 'borderRotate 4s ease infinite',
-        }}>
+        {/* Notify-me block — always-on gradient border, max-width 560 centered */}
+        <div className={`rv d5 ${on?'on':''}`} style={{ maxWidth: 560, margin: '0 auto', padding: 1, borderRadius: 17, background: 'linear-gradient(135deg,#00C2FF,#7B2FFF,#00C2FF)', backgroundSize: '200% 200%', animation: 'borderRotate 4s ease infinite' }}>
           <div style={{
             background: 'var(--surf-el)', borderRadius: 16, padding: 48, textAlign: 'center',
           }}>
@@ -978,16 +1055,10 @@ function AdvertisersSection() {
             }}>
               Coming soon
             </div>
-            <h3 style={{
-              fontFamily: 'var(--inter)', fontWeight: 700, fontSize: 24,
-              color: '#fff', marginBottom: 12, lineHeight: 1.3,
-            }}>
+            <h3 style={{ fontFamily: 'var(--inter)', fontWeight: 700, fontSize: 24, color: '#fff', marginBottom: 12 }}>
               Advertiser access is opening soon.
             </h3>
-            <p style={{
-              fontFamily: 'var(--inter)', fontSize: 15, color: 'var(--sec)',
-              lineHeight: 1.65, marginBottom: 28,
-            }}>
+            <p style={{ fontFamily: 'var(--inter)', fontSize: 15, color: 'var(--sec)', lineHeight: 1.65, marginBottom: 28 }}>
               We're onboarding operators first to build inventory across Toronto and Vancouver.
               Be the first to know when you can run your campaign.
             </p>
@@ -997,14 +1068,14 @@ function AdvertisersSection() {
                 ✓ We'll let you know!
               </div>
             ) : (
-              <div className="notify-row" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
                 <input
                   className="fi"
                   type="email"
                   placeholder="Your work email address"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  style={{ maxWidth: 260 }}
+                  style={{ maxWidth: 280 }}
                 />
                 <button className="btn-p" onClick={() => email && setDone(true)}>
                   Notify me
@@ -1013,7 +1084,8 @@ function AdvertisersSection() {
             )}
 
             <p style={{
-              fontFamily: 'var(--inter)', fontSize: 13, color: 'var(--muted)', marginTop: 16,
+              fontFamily: 'var(--inter)', fontSize: 13, color: 'var(--muted)',
+              marginTop: 16,
             }}>
               🔒 No spam. We'll only email you when advertiser access opens.
             </p>
@@ -1023,9 +1095,25 @@ function AdvertisersSection() {
     </section>
   );
 }
+```
 
-// ─── Opportunity Section (S6) ─────────────────────────────────────────────────
+- [ ] **Step 3: Commit**
 
+```bash
+git add src/views/marketing/Home.jsx
+git commit -m "feat: Operators and Advertisers sections"
+```
+
+---
+
+### Task 6: Opportunity Section (S6) + Waitlist Form (S7)
+
+**Files:**
+- Modify: `src/views/marketing/Home.jsx`
+
+- [ ] **Step 1: Write `OpportunitySection`** with animated stat counters and pull quote:
+
+```jsx
 function OpportunitySection() {
   const [ref, on] = useReveal(0.05);
   const count2 = useCounter(2, 1000, on);
@@ -1033,10 +1121,10 @@ function OpportunitySection() {
   const [show0, setShow0] = useState(false);
 
   useEffect(() => {
-    if (!on) return;
-    const t1 = setTimeout(() => setShow1B(true), 200);
-    const t2 = setTimeout(() => setShow0(true), 600);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    if (on) {
+      setTimeout(() => setShow1B(true), 200);
+      setTimeout(() => setShow0(true), 600);
+    }
   }, [on]);
 
   return (
@@ -1044,13 +1132,13 @@ function OpportunitySection() {
       background: 'var(--bg)',
       padding: 'clamp(64px,10vw,100px) clamp(20px,5vw,80px)',
     }}>
-      <div style={{ maxWidth: 800, margin: '0 auto' }}>
-        <div className={`rv ${on ? 'on' : ''}`} style={{ textAlign: 'center', marginBottom: 40 }}>
+      <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
+        <div className={`rv ${on?'on':''}`}>
           <div className="tag" style={{ marginBottom: 20 }}>The Opportunity</div>
           {/* VERBATIM */}
           <h2 className="sec-h" style={{
             fontFamily: 'var(--inter)', fontSize: 48, fontWeight: 700,
-            color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1,
+            color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: 40,
           }}>
             The Canadian OOH market is a{' '}
             <span className="gradient-text">$1B+ opportunity</span>{' '}
@@ -1064,18 +1152,18 @@ function OpportunitySection() {
           "Meanwhile, the screens are everywhere. Transit shelters. Gym lobbies. Restaurant walls. Retail corridors. Every major Canadian city is covered in digital displays that could be running targeted, dynamic, data-driven campaigns — and aren't.",
           "The infrastructure for a better market exists. The screens exist. The advertisers exist. What's been missing is the marketplace that connects them.",
         ].map((p, i) => (
-          <p key={i} className={`rv d${i + 1} ${on ? 'on' : ''}`} style={{
+          <p key={i} className={`rv d${i+1} ${on?'on':''}`} style={{
             fontFamily: 'var(--inter)', fontSize: 18, color: 'var(--sec)',
-            lineHeight: 1.7, marginBottom: 24,
+            lineHeight: 1.7, marginBottom: 24, textAlign: 'left',
           }}>
             {p}
           </p>
         ))}
 
         {/* Pull quote */}
-        <div className={`rv d4 ${on ? 'on' : ''} pull-quote`} style={{ marginBottom: 64 }}>
-          <p style={{
-            fontFamily: 'var(--inter)', fontWeight: 600, fontSize: 24, lineHeight: 1.4, color: '#fff',
+        <div className={`rv d4 ${on?'on':''} pull-quote`} style={{ textAlign: 'left', marginBottom: 64 }}>
+          <p className="gradient-text" style={{
+            fontFamily: 'var(--inter)', fontWeight: 600, fontSize: 24, lineHeight: 1.4,
           }}>
             "We're starting in Toronto and Vancouver because that's where the density is.
             We're building the infrastructure the whole country needs."
@@ -1087,18 +1175,30 @@ function OpportunitySection() {
           display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 0,
         }}>
           {[
-            { val: show1B ? '$1B+' : ' ', label: 'Canadian OOH market annually',                  ready: show1B },
-            { val: count2,                     label: 'Launch cities: Toronto & Vancouver',              ready: on },
-            { val: show0 ? '0' : ' ',    label: 'Self-serve OOH marketplaces in Canada before Adgrid', ready: show0 },
+            {
+              val: show1B ? '$1B+' : '',
+              label: 'Canadian OOH market annually',
+              reveal: show1B,
+            },
+            {
+              val: count2,
+              label: 'Launch cities: Toronto & Vancouver',
+              reveal: on,
+            },
+            {
+              val: show0 ? '0' : '',
+              label: 'Self-serve OOH marketplaces in Canada before Adgrid',
+              reveal: show0,
+            },
           ].map((s, i) => (
             <div key={s.label} style={{
               textAlign: 'center', padding: '0 32px',
               borderRight: i < 2 ? '1px solid var(--border)' : 'none',
             }}>
               <div className="gradient-text" style={{
-                fontFamily: 'var(--inter)', fontWeight: 800,
-                fontSize: 'clamp(40px,5vw,64px)', lineHeight: 1, marginBottom: 8,
-                opacity: s.ready ? 1 : 0, transition: 'opacity 0.4s ease',
+                fontFamily: 'var(--inter)', fontWeight: 800, fontSize: 'clamp(40px,5vw,64px)',
+                lineHeight: 1, marginBottom: 8,
+                opacity: s.reveal ? 1 : 0, transition: 'opacity 0.4s ease',
               }}>
                 {s.val}
               </div>
@@ -1112,17 +1212,21 @@ function OpportunitySection() {
     </section>
   );
 }
+```
 
-// ─── Waitlist Form (S7) ───────────────────────────────────────────────────────
+- [ ] **Step 2: Write `WaitlistForm`** (6 fields, always-on gradient border, success state):
 
+```jsx
 function WaitlistForm() {
   const [ref, on] = useReveal();
-  const [form, setForm] = useState({ name: '', email: '', company: '', city: '', screens: '', source: '' });
+  const [form, setForm] = useState({
+    name: '', email: '', company: '', city: '', screens: '', source: '',
+  });
   const [submitted, setSubmitted] = useState(false);
 
-  const set = field => e => setForm(prev => ({ ...prev, [field]: e.target.value }));
+  const set = (field) => (e) => setForm(prev => ({ ...prev, [field]: e.target.value }));
 
-  const handleSubmit = e => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (form.name && form.email) setSubmitted(true);
   };
@@ -1133,7 +1237,7 @@ function WaitlistForm() {
       padding: 'clamp(64px,10vw,100px) clamp(20px,5vw,80px)',
     }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-        <div className={`rv ${on ? 'on' : ''}`}>
+        <div className={`rv ${on?'on':''}`}>
           <div className="tag" style={{ marginBottom: 20 }}>Early Operator Access</div>
           {/* VERBATIM */}
           <h2 className="sec-h" style={{
@@ -1153,12 +1257,13 @@ function WaitlistForm() {
           </p>
         </div>
 
-        {/* Form — always-on gradient border */}
-        <div className={`rv d1 ${on ? 'on' : ''}`} style={{
+        {/* Form container — always-on gradient border */}
+        <div className={`rv d1 ${on?'on':''}`} style={{
           maxWidth: 640, margin: '0 auto',
           padding: 1, borderRadius: 17,
           background: 'linear-gradient(135deg,#00C2FF,#7B2FFF,#00C2FF)',
-          backgroundSize: '200% 200%', animation: 'borderRotate 4s ease infinite',
+          backgroundSize: '200% 200%',
+          animation: 'borderRotate 4s ease infinite',
         }}>
           <div style={{
             background: 'var(--bg)', borderRadius: 16,
@@ -1166,6 +1271,7 @@ function WaitlistForm() {
           }}>
             {submitted ? (
               <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                {/* Gradient checkmark */}
                 <div style={{
                   width: 64, height: 64, borderRadius: '50%',
                   background: 'linear-gradient(135deg,#00C2FF,#7B2FFF)',
@@ -1175,47 +1281,46 @@ function WaitlistForm() {
                   ✓
                 </div>
                 {/* VERBATIM */}
-                <h3 style={{
-                  fontFamily: 'var(--inter)', fontWeight: 700, fontSize: 28,
-                  color: '#fff', marginBottom: 12,
-                }}>
+                <h3 style={{ fontFamily: 'var(--inter)', fontWeight: 700, fontSize: 28, color: '#fff', marginBottom: 12 }}>
                   You're on the list.
                 </h3>
-                <p style={{
-                  fontFamily: 'var(--inter)', fontSize: 16, color: 'var(--sec)',
-                  marginBottom: 28, lineHeight: 1.6,
-                }}>
+                <p style={{ fontFamily: 'var(--inter)', fontSize: 16, color: 'var(--sec)', marginBottom: 28, lineHeight: 1.6 }}>
                   We'll be in touch shortly with next steps. Follow us on LinkedIn for launch updates.
                 </p>
-                <a href="#" className="btn-s" style={{ display: 'inline-flex' }}>
+                <a
+                  href="#"
+                  className="btn-s"
+                  style={{ display: 'inline-flex' }}
+                >
                   Follow Adgrid on LinkedIn →
                 </a>
               </div>
             ) : (
               <form onSubmit={handleSubmit} style={{ textAlign: 'left' }}>
-                {[
-                  { id: 'wl-name',    label: 'Full name',                field: 'name',    type: 'text',  placeholder: 'Jane Smith' },
-                  { id: 'wl-email',   label: 'Work email',               field: 'email',   type: 'email', placeholder: 'jane@yourcompany.com', required: true },
-                  { id: 'wl-company', label: 'Company or venue name',    field: 'company', type: 'text',  placeholder: 'Name of your business or network' },
-                ].map(({ id, label, field, type, placeholder, required }) => (
-                  <div key={id} style={{ marginBottom: 20 }}>
-                    <label htmlFor={id} style={{
-                      display: 'block', fontFamily: 'var(--inter)', fontWeight: 500,
-                      fontSize: 14, color: '#fff', marginBottom: 8,
-                    }}>
-                      {label}
-                    </label>
-                    <input id={id} className="fi" type={type} placeholder={placeholder}
-                      value={form[field]} onChange={set(field)} required={!!required} />
-                  </div>
-                ))}
-
-                {/* City select */}
+                {/* Field 1 */}
                 <div style={{ marginBottom: 20 }}>
-                  <label htmlFor="wl-city" style={{
-                    display: 'block', fontFamily: 'var(--inter)', fontWeight: 500,
-                    fontSize: 14, color: '#fff', marginBottom: 8,
-                  }}>
+                  <label className="form-label" htmlFor="wl-name" style={{ fontFamily: 'var(--inter)', fontWeight: 500, fontSize: 14, color: '#fff', display: 'block', marginBottom: 8 }}>
+                    Full name
+                  </label>
+                  <input id="wl-name" className="fi" type="text" placeholder="Jane Smith" value={form.name} onChange={set('name')} required />
+                </div>
+                {/* Field 2 */}
+                <div style={{ marginBottom: 20 }}>
+                  <label className="form-label" htmlFor="wl-email" style={{ fontFamily: 'var(--inter)', fontWeight: 500, fontSize: 14, color: '#fff', display: 'block', marginBottom: 8 }}>
+                    Work email
+                  </label>
+                  <input id="wl-email" className="fi" type="email" placeholder="jane@yourcompany.com" value={form.email} onChange={set('email')} required />
+                </div>
+                {/* Field 3 */}
+                <div style={{ marginBottom: 20 }}>
+                  <label className="form-label" htmlFor="wl-company" style={{ fontFamily: 'var(--inter)', fontWeight: 500, fontSize: 14, color: '#fff', display: 'block', marginBottom: 8 }}>
+                    Company or venue name
+                  </label>
+                  <input id="wl-company" className="fi" type="text" placeholder="Name of your business or network" value={form.company} onChange={set('company')} />
+                </div>
+                {/* Field 4 */}
+                <div style={{ marginBottom: 20 }}>
+                  <label className="form-label" htmlFor="wl-city" style={{ fontFamily: 'var(--inter)', fontWeight: 500, fontSize: 14, color: '#fff', display: 'block', marginBottom: 8 }}>
                     City
                   </label>
                   <select id="wl-city" className="fi" value={form.city} onChange={set('city')}>
@@ -1226,13 +1331,9 @@ function WaitlistForm() {
                     <option value="multiple">Multiple cities</option>
                   </select>
                 </div>
-
-                {/* Screens select */}
+                {/* Field 5 */}
                 <div style={{ marginBottom: 20 }}>
-                  <label htmlFor="wl-screens" style={{
-                    display: 'block', fontFamily: 'var(--inter)', fontWeight: 500,
-                    fontSize: 14, color: '#fff', marginBottom: 8,
-                  }}>
+                  <label className="form-label" htmlFor="wl-screens" style={{ fontFamily: 'var(--inter)', fontWeight: 500, fontSize: 14, color: '#fff', display: 'block', marginBottom: 8 }}>
                     Number of screens
                   </label>
                   <select id="wl-screens" className="fi" value={form.screens} onChange={set('screens')}>
@@ -1244,18 +1345,12 @@ function WaitlistForm() {
                     <option value="not-yet">Not yet deployed</option>
                   </select>
                 </div>
-
-                {/* Source (optional) */}
+                {/* Field 6 */}
                 <div style={{ marginBottom: 32 }}>
-                  <label htmlFor="wl-source" style={{
-                    display: 'block', fontFamily: 'var(--inter)', fontWeight: 500,
-                    fontSize: 14, color: '#fff', marginBottom: 8,
-                  }}>
-                    How did you hear about Adgrid?{' '}
-                    <span style={{ color: 'var(--muted)' }}>(optional)</span>
+                  <label className="form-label" htmlFor="wl-source" style={{ fontFamily: 'var(--inter)', fontWeight: 500, fontSize: 14, color: '#fff', display: 'block', marginBottom: 8 }}>
+                    How did you hear about Adgrid? <span style={{ color: 'var(--muted)' }}>(optional)</span>
                   </label>
-                  <input id="wl-source" className="fi" type="text"
-                    value={form.source} onChange={set('source')} />
+                  <input id="wl-source" className="fi" type="text" placeholder="" value={form.source} onChange={set('source')} />
                 </div>
 
                 <button type="submit" className="btn-p" style={{ width: '100%', justifyContent: 'center', padding: 16 }}>
@@ -1276,9 +1371,25 @@ function WaitlistForm() {
     </section>
   );
 }
+```
 
-// ─── Footer (S8) ──────────────────────────────────────────────────────────────
+- [ ] **Step 3: Commit**
 
+```bash
+git add src/views/marketing/Home.jsx
+git commit -m "feat: Opportunity section and Waitlist form"
+```
+
+---
+
+### Task 7: Footer (S8) + Root Component + Global Effects
+
+**Files:**
+- Modify: `src/views/marketing/Home.jsx`
+
+- [ ] **Step 1: Write `Footer`**:
+
+```jsx
 function Footer({ onLogin }) {
   const platform = [
     ['For Operators',   'operators'],
@@ -1288,7 +1399,7 @@ function Footer({ onLogin }) {
   ];
   const company = ['About', 'Contact', 'Privacy Policy', 'Terms of Service'];
 
-  const scrollTo = id => {
+  const scrollTo = (id) => {
     const el = document.getElementById(id);
     if (!el) return;
     window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
@@ -1301,35 +1412,29 @@ function Footer({ onLogin }) {
         padding: '64px clamp(20px,5vw,80px)',
         display: 'flex', justifyContent: 'space-between', gap: 40,
       }}>
-        {/* Brand */}
+        {/* Left: brand */}
         <div>
-          <div style={{
-            fontFamily: 'var(--inter)', fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 8,
-          }}>
+          <div style={{ fontFamily: 'var(--inter)', fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 8 }}>
             Adgrid
           </div>
           {/* VERBATIM */}
-          <div style={{
-            fontFamily: 'var(--inter)', fontSize: 16, color: 'var(--sec)', marginBottom: 20,
-          }}>
+          <div style={{ fontFamily: 'var(--inter)', fontSize: 16, color: 'var(--sec)', marginBottom: 20 }}>
             Canada's OOH marketplace.
           </div>
           <div style={{ display: 'flex', gap: 16 }}>
-            <a href="#"
-              style={{ color: 'var(--muted)', transition: 'color 0.2s' }}
-              onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-              onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}
-            >
+            {/* LinkedIn */}
+            <a href="#" style={{ color: 'var(--muted)', transition: 'color 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.color='#fff'}
+              onMouseLeave={e => e.currentTarget.style.color='var(--muted)'}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/>
                 <circle cx="4" cy="4" r="2"/>
               </svg>
             </a>
-            <a href="#"
-              style={{ color: 'var(--muted)', transition: 'color 0.2s' }}
-              onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-              onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}
-            >
+            {/* Instagram */}
+            <a href="#" style={{ color: 'var(--muted)', transition: 'color 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.color='#fff'}
+              onMouseLeave={e => e.currentTarget.style.color='var(--muted)'}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="2" y="2" width="20" height="20" rx="5"/>
                 <circle cx="12" cy="12" r="5"/>
@@ -1339,25 +1444,19 @@ function Footer({ onLogin }) {
           </div>
         </div>
 
-        {/* Link groups */}
+        {/* Right: link groups */}
         <div className="footer-links" style={{ display: 'flex', gap: 64 }}>
           <div>
-            <div style={{
-              fontFamily: 'var(--inter)', fontWeight: 600, fontSize: 14, color: '#fff', marginBottom: 16,
-            }}>
-              Platform
-            </div>
+            <div style={{ fontFamily: 'var(--inter)', fontWeight: 600, fontSize: 14, color: '#fff', marginBottom: 16 }}>Platform</div>
             {platform.map(([label, id]) => (
               <div key={label} style={{ marginBottom: 10 }}>
-                <button
-                  onClick={() => scrollTo(id)}
-                  style={{
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    fontFamily: 'var(--inter)', fontSize: 14, color: 'var(--sec)', padding: 0,
-                    transition: 'color 0.15s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-                  onMouseLeave={e => e.currentTarget.style.color = 'var(--sec)'}
+                <button onClick={() => scrollTo(id)} style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontFamily: 'var(--inter)', fontSize: 14, color: 'var(--sec)',
+                  padding: 0, transition: 'color 0.15s',
+                }}
+                  onMouseEnter={e => e.currentTarget.style.color='#fff'}
+                  onMouseLeave={e => e.currentTarget.style.color='var(--sec)'}
                 >
                   {label}
                 </button>
@@ -1365,20 +1464,15 @@ function Footer({ onLogin }) {
             ))}
           </div>
           <div>
-            <div style={{
-              fontFamily: 'var(--inter)', fontWeight: 600, fontSize: 14, color: '#fff', marginBottom: 16,
-            }}>
-              Company
-            </div>
+            <div style={{ fontFamily: 'var(--inter)', fontWeight: 600, fontSize: 14, color: '#fff', marginBottom: 16 }}>Company</div>
             {company.map(label => (
               <div key={label} style={{ marginBottom: 10 }}>
-                <span
-                  style={{
-                    fontFamily: 'var(--inter)', fontSize: 14, color: 'var(--sec)', cursor: 'pointer',
-                    transition: 'color 0.15s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-                  onMouseLeave={e => e.currentTarget.style.color = 'var(--sec)'}
+                <span style={{
+                  fontFamily: 'var(--inter)', fontSize: 14, color: 'var(--sec)', cursor: 'pointer',
+                  transition: 'color 0.15s',
+                }}
+                  onMouseEnter={e => e.currentTarget.style.color='#fff'}
+                  onMouseLeave={e => e.currentTarget.style.color='var(--sec)'}
                 >
                   {label}
                 </span>
@@ -1392,11 +1486,9 @@ function Footer({ onLogin }) {
       <div style={{
         borderTop: '1px solid var(--border)',
         padding: '24px clamp(20px,5vw,80px)',
-        maxWidth: 1200, margin: '0 auto',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        flexWrap: 'wrap', gap: 12,
+        flexWrap: 'wrap', gap: 12, maxWidth: 1200, margin: '0 auto',
       }}>
-        {/* VERBATIM */}
         <span style={{ fontFamily: 'var(--inter)', fontSize: 13, color: 'var(--muted)' }}>
           © 2026 Adgrid Technologies Inc. All rights reserved.
         </span>
@@ -1407,24 +1499,22 @@ function Footer({ onLogin }) {
     </footer>
   );
 }
+```
 
-// ─── Root ─────────────────────────────────────────────────────────────────────
+- [ ] **Step 2: Write `MarketingHome` root** with global effects (cursor glow, 3D tilt, parallax):
 
+```jsx
 export function MarketingHome({ onSignup, onLogin }) {
-  // Inject CSS
   useEffect(() => {
-    const existing = document.getElementById('adgrid-mktg-css');
-    if (existing) existing.remove();
-    const style = Object.assign(document.createElement('style'), {
-      id: 'adgrid-mktg-css', textContent: CSS,
-    });
-    document.head.appendChild(style);
+    // Inject CSS
+    const style = Object.assign(document.createElement('style'), { textContent: CSS, id: 'adgrid-mktg-css' });
+    if (!document.getElementById('adgrid-mktg-css')) document.head.appendChild(style);
     return () => { try { document.head.removeChild(style); } catch {} };
   }, []);
 
   // Cursor glow
   useEffect(() => {
-    const handle = e => {
+    const handle = (e) => {
       document.documentElement.style.setProperty('--cursor-x', e.clientX + 'px');
       document.documentElement.style.setProperty('--cursor-y', e.clientY + 'px');
     };
@@ -1432,7 +1522,7 @@ export function MarketingHome({ onSignup, onLogin }) {
     return () => window.removeEventListener('mousemove', handle);
   }, []);
 
-  // Scroll parallax (rAF-throttled)
+  // Scroll parallax
   useEffect(() => {
     let ticking = false;
     const handle = () => {
@@ -1455,32 +1545,38 @@ export function MarketingHome({ onSignup, onLogin }) {
     return () => window.removeEventListener('scroll', handle);
   }, []);
 
-  // 3D card tilt — runs on every render to pick up newly mounted cards
+  // 3D card tilt
   useEffect(() => {
     const cards = document.querySelectorAll('.feature-card');
-    const cleanup = Array.from(cards).map(card => {
-      const onMove = e => {
-        const r = card.getBoundingClientRect();
-        const rx = ((e.clientY - r.top - r.height / 2) / (r.height / 2)) * -6;
-        const ry = ((e.clientX - r.left - r.width / 2)  / (r.width  / 2)) * 6;
+    const handlers = Array.from(cards).map(card => {
+      const onMove = (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const cx = rect.width / 2;
+        const cy = rect.height / 2;
+        const rotX = ((y - cy) / cy) * -6;
+        const rotY = ((x - cx) / cx) * 6;
+        card.style.transform = `perspective(1000px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(4px)`;
         card.style.transition = 'none';
-        card.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(4px)`;
       };
       const onLeave = () => {
-        card.style.transition = 'transform 0.5s ease';
         card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateZ(0)';
+        card.style.transition = 'transform 0.5s ease';
       };
       card.addEventListener('mousemove', onMove);
       card.addEventListener('mouseleave', onLeave);
-      return () => {
+      return { card, onMove, onLeave };
+    });
+    return () => {
+      handlers.forEach(({ card, onMove, onLeave }) => {
         card.removeEventListener('mousemove', onMove);
         card.removeEventListener('mouseleave', onLeave);
-      };
-    });
-    return () => cleanup.forEach(fn => fn());
+      });
+    };
   });
 
-  const scrollTo = id => {
+  const scrollTo = (id) => {
     const el = document.getElementById(id);
     if (!el) return;
     window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
@@ -1500,3 +1596,52 @@ export function MarketingHome({ onSignup, onLogin }) {
     </div>
   );
 }
+```
+
+- [ ] **Step 3: Remove all old component code** (Hero, ProofStrip, ProofSection, MapSection, OperatorSection, AdvertiserSection, PrivacyStrip, FaqSection, WaitlistSection, LiveFeedMock, AnalyticsMock, CampaignMock, SCREENS, VENUES, genEvent from old code). Only keep the new components written in tasks 2–7.
+
+- [ ] **Step 4: Add `select` styling to CSS** (selects need same look as inputs):
+
+```css
+select.fi { appearance: none; cursor: pointer; }
+```
+
+- [ ] **Step 5: Final commit**
+
+```bash
+git add src/views/marketing/Home.jsx
+git commit -m "feat: Footer, root component, cursor/tilt/parallax global effects"
+```
+
+---
+
+## Self-Review
+
+**Spec coverage check:**
+- ✅ S1 Hero: word-by-word reveal, city pins, dual CTA, launch badge, scroll indicator
+- ✅ S2 Problem: two-col cards, cyan/violet borders, pain points, connector text
+- ✅ S3 How It Works: 3-step flow, gradient connectors, step numbers
+- ✅ S4 Operators: 2×2 feature grid, always-on gradient border CTA, glow orb
+- ✅ S5 Advertisers: 4-feature row, always-on notify-me block, coming-soon badge
+- ✅ S6 Opportunity: body copy, pull quote, 3 animated stats
+- ✅ S7 Waitlist Form: 6 fields, always-on border, success state "You're on the list."
+- ✅ S8 Footer: logo, tagline VERBATIM, social icons, two link groups, copyright VERBATIM
+- ✅ Motion: gridDrift, cursor glow, 3D card tilt, spring reveals, gradient borders, gradientShift, ctaPulse, stat counters, scroll parallax, pin pulse + ripple, noise texture, page load sequence
+- ✅ Nav: sticky, blur, Logo | For Operators/Advertisers/How It Works | Join the waitlist CTA
+- ✅ All VERBATIM copy preserved exactly
+- ✅ Section IDs: `how-it-works`, `operators`, `advertisers`, `waitlist-form`
+- ✅ Design tokens match brief exactly
+- ✅ `prefers-reduced-motion` respected
+- ✅ `will-change` on animated elements
+- ✅ `requestAnimationFrame` for parallax
+
+**Gaps found and fixed:**
+- Added `select.fi` styling (selects need same border/focus treatment as inputs)
+- Added `hamburger` display toggle to responsive CSS
+- 3D tilt runs as effect without deps array — reruns on each render to pick up new cards
+
+**Type consistency:**
+- `useReveal` returns `[ref, on]` — used consistently
+- `useCounter(target, duration, started)` — consistent across S6 usage
+- `onScrollTo` prop name used in Nav, Hero, OperatorsSection, MarketingHome
+- `MarketingHome({ onSignup, onLogin })` — same interface as before
