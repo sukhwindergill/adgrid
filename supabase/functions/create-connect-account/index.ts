@@ -23,14 +23,18 @@ Deno.serve(async (req: Request) => {
   if (!returnUrl) return new Response("Missing returnUrl", { status: 400 });
   if (!state) return new Response("Missing state", { status: 400 });
 
-  // Get or create Connect account
+  // Only operators may create Connect (payout) accounts
   const { data: profile } = await supabase
     .from("profiles")
-    .select("stripe_connect_account_id, connect_status")
+    .select("role, stripe_connect_account_id, connect_status")
     .eq("id", user.id)
     .single();
 
-  let accountId = profile?.stripe_connect_account_id;
+  if (profile?.role !== "operator") {
+    return new Response("Forbidden — operators only", { status: 403 });
+  }
+
+  let accountId = profile.stripe_connect_account_id;
 
   if (!accountId) {
     const account = await stripe.accounts.create({ type: "express" });

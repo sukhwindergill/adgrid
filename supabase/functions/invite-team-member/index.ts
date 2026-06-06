@@ -16,6 +16,11 @@ Deno.serve(async (req: Request) => {
   const { email, role, orgProfileId } = await req.json();
   if (!email || !orgProfileId) return new Response("Missing fields", { status: 400 });
 
+  // Caller must be the org owner
+  if (user.id !== orgProfileId) {
+    return new Response("Forbidden", { status: 403 });
+  }
+
   const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email);
   if (inviteError) {
     return new Response(JSON.stringify({ error: inviteError.message }), {

@@ -42,15 +42,35 @@ Deno.serve(async (req: Request) => {
 
   // ── GET summary: charges from bookings + payout balance ──────────────────
   if (req.method === "GET" && action === "summary") {
-    const { data: bookings } = await supabase
-      .from("bookings")
-      .select("id, advertiser_name, screen_name, budget, payment_status, payment_intent_id, status, start_date")
-      .in("status", ["scheduled", "active", "completed"])
-      .eq("payment_status", "paid")
-      .order("start_date", { ascending: false })
-      .limit(50);
+    // Scope to this operator's screens only
+    const { data: opScreens } = await supabase
+      .from("screens")
+      .select("id")
+      .eq("operator_id", user.id);
+    const screenIds = (opScreens ?? []).map((s: { id: string }) => s.id);
 
-    const charges = (bookings ?? []).map(b => ({
+    let bookings: unknown[] = [];
+    if (screenIds.length > 0) {
+      const { data: csRows } = await supabase
+        .from("campaign_screens")
+        .select("campaign_id")
+        .in("screen_id", screenIds);
+      const campaignIds = (csRows ?? []).map((r: { campaign_id: string }) => r.campaign_id);
+
+      if (campaignIds.length > 0) {
+        const { data: rows } = await supabase
+          .from("bookings")
+          .select("id, advertiser_name, screen_name, budget, payment_status, payment_intent_id, status, start_date")
+          .in("id", campaignIds)
+          .in("status", ["scheduled", "active", "completed"])
+          .eq("payment_status", "paid")
+          .order("start_date", { ascending: false })
+          .limit(50);
+        bookings = rows ?? [];
+      }
+    }
+
+    const charges = (bookings as Array<{payment_intent_id:string|null,id:string,advertiser_name:string,screen_name:string,start_date:string,budget:number}>).map(b => ({
       id: b.payment_intent_id ?? b.id,
       advertiser: b.advertiser_name,
       screen: b.screen_name,
