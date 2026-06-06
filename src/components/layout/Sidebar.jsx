@@ -24,6 +24,67 @@ const ICONS = {
   chevronRight: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>,
 };
 
+// ─── ModeSwitcher ─────────────────────────────────────────────────────────────
+
+function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
+  const modes = [
+    { id: 'operator',   label: 'Operator' },
+    { id: 'advertiser', label: 'Advertiser' },
+  ];
+
+  if (collapsed) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 8 }}>
+        {modes.map(m => (
+          <button
+            key={m.id}
+            title={m.label}
+            onClick={() => onSwitch(m.id)}
+            style={{
+              width: '100%', padding: '6px 0', border: 'none', borderRadius: 6, cursor: 'pointer',
+              background: activeMode === m.id
+                ? 'linear-gradient(135deg, rgba(124,58,237,0.25), rgba(168,85,247,0.15))'
+                : 'transparent',
+              color: activeMode === m.id ? '#a855f7' : '#555',
+              fontSize: 9, fontWeight: 700, fontFamily: F.sans, letterSpacing: '0.04em',
+              transition: 'all 0.15s',
+            }}
+          >
+            {m.id === 'operator' ? '📺' : '📢'}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      display: 'flex', background: 'rgba(0,0,0,0.2)', borderRadius: 8,
+      padding: 3, gap: 2, margin: '0 0 10px 0',
+      border: '1px solid rgba(255,255,255,0.06)',
+    }}>
+      {modes.map(m => (
+        <button
+          key={m.id}
+          onClick={() => onSwitch(m.id)}
+          style={{
+            flex: 1, padding: '7px 0', borderRadius: 6, border: 'none', cursor: 'pointer',
+            fontSize: 11, fontWeight: activeMode === m.id ? 600 : 500, fontFamily: F.sans,
+            transition: 'all 0.15s',
+            background: activeMode === m.id
+              ? 'linear-gradient(135deg, rgba(124,58,237,0.3), rgba(168,85,247,0.2))'
+              : 'transparent',
+            color: activeMode === m.id ? '#a855f7' : '#555',
+            boxShadow: activeMode === m.id ? '0 1px 4px rgba(124,58,237,0.2)' : 'none',
+          }}
+        >
+          {m.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ─── Nav definitions ──────────────────────────────────────────────────────────
 
 const OP_PRIMARY = [
@@ -170,7 +231,7 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
-export function Sidebar({ active, setActive, isAdv, user, onSignOut, pendingCount = 0 }) {
+export function Sidebar({ active, setActive, activeMode, onModeSwitch, user, onSignOut, pendingCount = 0 }) {
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem('sidebar_collapsed') === 'true';
@@ -192,6 +253,7 @@ export function Sidebar({ active, setActive, isAdv, user, onSignOut, pendingCoun
     }
   };
 
+  const isAdv     = activeMode === 'advertiser';
   const primary   = isAdv ? ADV_PRIMARY   : OP_PRIMARY;
   const secondary = isAdv ? ADV_SECONDARY : OP_SECONDARY;
 
@@ -251,6 +313,9 @@ export function Sidebar({ active, setActive, isAdv, user, onSignOut, pendingCoun
 
       {/* Nav content — scrollable */}
       <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: collapsed ? '8px 6px' : '8px 8px' }}>
+        {/* Mode switcher */}
+        <ModeSwitcher activeMode={activeMode} onSwitch={onModeSwitch} collapsed={collapsed} />
+
         {/* Primary nav */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {primary.map(item => (
