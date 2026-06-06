@@ -135,6 +135,13 @@ Deno.serve(async (req: Request) => {
     })
     .eq("id", campaign_id);
 
+  // Approve any pending campaign_screens rows so display-feed can serve the campaign
+  await supabase
+    .from("campaign_screens")
+    .update({ status: "approved", approved_at: new Date().toISOString() })
+    .eq("campaign_id", campaign_id)
+    .eq("status", "pending");
+
   return new Response(
     JSON.stringify({ success: true, payment_intent_id: paymentIntent.id }),
     { headers: { "Content-Type": "application/json" } },

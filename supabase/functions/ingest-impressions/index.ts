@@ -22,14 +22,16 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: CORS });
   }
 
-  const { screen_token, window_start, window_end, people_count,
+  const { screen_token, campaign_id, people_count,
+    dwell_seconds, attention_score,
+    window_start, window_end,
     avg_dwell_seconds, avg_attention_score,
     age_18_24, age_25_34, age_35_44, age_45_54, age_55_plus,
     gender_male, gender_female, gender_unknown } = body as Record<string, unknown>;
 
-  if (!screen_token || !window_start || !window_end) {
+  if (!screen_token) {
     return new Response(
-      JSON.stringify({ error: "screen_token, window_start, window_end required" }),
+      JSON.stringify({ error: "screen_token required" }),
       { status: 400, headers: CORS },
     );
   }
@@ -45,29 +47,19 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "Invalid screen token" }), { status: 401, headers: CORS });
   }
 
-  // Find which campaign was active during this window (if any)
-  const windowMid = new Date(
-    (new Date(window_start as string).getTime() + new Date(window_end as string).getTime()) / 2
-  ).toISOString().split("T")[0];
-
-  const { data: activeCampaign } = await supabase
-    .from("bookings")
-    .select("id")
-    .eq("screen_id", screen.id)
-    .in("status", ["scheduled", "active"])
-    .lte("start_date", windowMid)
-    .gte("end_date", windowMid)
-    .limit(1)
-    .maybeSingle();
+  // Derive window timestamps if not provided (browser player sends dwell_seconds)
+  const dwellSecs = Number(dwell_seconds) || Number(avg_dwell_seconds) || 10;
+  const winEnd = window_end ? new Date(window_end as string) : new Date();
+  const winStart = window_start ? new Date(window_start as string) : new Date(winEnd.getTime() - dwellSecs * 1000);
 
   const { error: insertError } = await supabase.from("impression_events").insert({
     screen_id: screen.id,
-    campaign_id: activeCampaign?.id ?? null,
-    window_start,
-    window_end,
+    campaign_id: campaign_id ?? null,
+    window_start: winStart.toISOString(),
+    window_end: winEnd.toISOString(),
     people_count: Number(people_count) || 0,
-    avg_dwell_seconds: Number(avg_dwell_seconds) || 0,
-    avg_attention_score: Number(avg_attention_score) || 0,
+    avg_dwell_seconds: dwellSecs,
+    avg_attention_score: Number(attention_score) || Number(avg_attention_score) || 0,
     age_18_24: Number(age_18_24) || 0,
     age_25_34: Number(age_25_34) || 0,
     age_35_44: Number(age_35_44) || 0,
