@@ -171,8 +171,8 @@ const CSS = `
   padding: 14px 28px; border-radius: var(--r-btn);
   font-family: var(--inter); font-weight: 500; font-size: 16px;
   border: 1px solid var(--border); cursor: pointer;
-  white-space: nowrap; transition: all 0.2s;
-  text-decoration: none;
+  white-space: nowrap; text-decoration: none;
+  transition: border-color 0.2s ease, color 0.2s ease;
 }
 .btn-s:hover { border-color: var(--c1); color: var(--c1); }
 
@@ -267,15 +267,15 @@ select.fi { appearance: none; cursor: pointer; }
   will-change: transform; cursor: pointer;
 }
 
-/* ── Cursor glow ── */
-body::before {
-  content: ''; position: fixed; top: 0; left: 0;
-  width: 100%; height: 100%;
+/* ── Cursor glow (positioned via transform on a div — no repaint) ── */
+.cursor-glow {
+  position: fixed; top: 0; left: 0;
+  width: 600px; height: 600px;
+  margin-left: -300px; margin-top: -300px;
+  background: radial-gradient(circle, rgba(0,194,255,0.05) 0%, transparent 70%);
   pointer-events: none; z-index: 1;
-  background: radial-gradient(
-    500px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
-    rgba(0,194,255,0.04), transparent 70%
-  );
+  will-change: transform;
+  transform: translate(-999px, -999px);
 }
 
 /* ── Noise texture overlay ── */
@@ -1427,11 +1427,13 @@ export function MarketingHome({ onSignup, onLogin }) {
     return () => { try { document.head.removeChild(style); } catch {} };
   }, []);
 
-  // Cursor glow
+  // Cursor glow — transform-based (no repaint, compositor only)
+  const glowRef = useRef(null);
   useEffect(() => {
+    const glow = glowRef.current;
+    if (!glow) return;
     const handle = e => {
-      document.documentElement.style.setProperty('--cursor-x', e.clientX + 'px');
-      document.documentElement.style.setProperty('--cursor-y', e.clientY + 'px');
+      glow.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
     };
     window.addEventListener('mousemove', handle, { passive: true });
     return () => window.removeEventListener('mousemove', handle);
@@ -1460,30 +1462,30 @@ export function MarketingHome({ onSignup, onLogin }) {
     return () => window.removeEventListener('scroll', handle);
   }, []);
 
-  // 3D card tilt — runs on every render to pick up newly mounted cards
+  // 3D card tilt — event delegation on document, runs once
   useEffect(() => {
-    const cards = document.querySelectorAll('.feature-card');
-    const cleanup = Array.from(cards).map(card => {
-      const onMove = e => {
-        const r = card.getBoundingClientRect();
-        const rx = ((e.clientY - r.top - r.height / 2) / (r.height / 2)) * -6;
-        const ry = ((e.clientX - r.left - r.width / 2)  / (r.width  / 2)) * 6;
-        card.style.transition = 'none';
-        card.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(4px)`;
-      };
-      const onLeave = () => {
-        card.style.transition = 'transform 0.5s ease';
-        card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateZ(0)';
-      };
-      card.addEventListener('mousemove', onMove);
-      card.addEventListener('mouseleave', onLeave);
-      return () => {
-        card.removeEventListener('mousemove', onMove);
-        card.removeEventListener('mouseleave', onLeave);
-      };
-    });
-    return () => cleanup.forEach(fn => fn());
-  });
+    const onMove = e => {
+      const card = e.target.closest('.feature-card');
+      if (!card) return;
+      const r = card.getBoundingClientRect();
+      const rx = ((e.clientY - r.top - r.height / 2) / (r.height / 2)) * -6;
+      const ry = ((e.clientX - r.left - r.width / 2)  / (r.width  / 2)) * 6;
+      card.style.transition = 'transform 0.1s ease, border-color 0.2s ease, box-shadow 0.2s ease';
+      card.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(4px)`;
+    };
+    const onLeave = e => {
+      const card = e.target.closest('.feature-card');
+      if (!card) return;
+      card.style.transition = 'transform 0.5s ease, border-color 0.2s ease, box-shadow 0.2s ease';
+      card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateZ(0)';
+    };
+    document.addEventListener('mousemove', onMove, { passive: true });
+    document.addEventListener('mouseleave', onLeave, true);
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseleave', onLeave, true);
+    };
+  }, []);
 
   const scrollTo = id => {
     const el = document.getElementById(id);
@@ -1493,6 +1495,7 @@ export function MarketingHome({ onSignup, onLogin }) {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', overflowX: 'hidden' }}>
+      <div ref={glowRef} className="cursor-glow" />
       <Nav onScrollTo={scrollTo} onLogin={onLogin} />
       <Hero onScrollTo={scrollTo} />
       <ProblemSection />
