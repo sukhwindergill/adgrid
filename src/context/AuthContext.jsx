@@ -4,9 +4,10 @@ import { supabase } from '../lib/supabase'
 const AuthContext = createContext({})
 
 export function AuthProvider({ children }) {
-  const [user, setUser]       = useState(null)
-  const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser]             = useState(null)
+  const [profile, setProfile]       = useState(null)
+  const [activeMode, setActiveModeState] = useState(null) // 'operator' | 'advertiser'
+  const [loading, setLoading]       = useState(true)
 
   async function fetchProfile(userId) {
     const { data } = await supabase
@@ -15,6 +16,7 @@ export function AuthProvider({ children }) {
       .eq('id', userId)
       .single()
     setProfile(data)
+    setActiveModeState(data?.active_mode ?? 'advertiser')
     return data
   }
 
@@ -24,9 +26,7 @@ export function AuthProvider({ children }) {
 
     const init = async () => {
       if (code) {
-        // OAuth PKCE callback — exchange code for session explicitly
         await supabase.auth.exchangeCodeForSession(code)
-        // Clean the URL so code isn't reused on refresh
         window.history.replaceState({}, '', window.location.pathname)
       }
       const { data: { session } } = await supabase.auth.getSession()
@@ -39,17 +39,17 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
       if (session?.user) fetchProfile(session.user.id)
-      else setProfile(null)
+      else { setProfile(null); setActiveModeState(null) }
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
-  async function signUp(email, password, role, name) {
+  async function signUp(email, password, name) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { role, name } },
+      options: { data: { name } },
     })
     return { data, error }
   }
@@ -63,6 +63,7 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut()
     setUser(null)
     setProfile(null)
+    setActiveModeState(null)
   }
 
   async function signInWithOAuth(provider) {
@@ -74,20 +75,15 @@ export function AuthProvider({ children }) {
     return { data, error }
   }
 
-  async function setRole(role) {
-    if (!user) return
-    const { error } = await supabase.auth.updateUser({ data: { role } })
-    if (!error) {
-      await supabase.from('profiles').upsert({ id: user.id, role }, { onConflict: 'id' })
-      await fetchProfile(user.id)
+  async function setActiveMode(mode) {
+    setActiveModeState(mode)
+    if (user) {
+      await supabase.from('profiles').update({ active_mode: mode }).eq('id', user.id)
     }
-    return { error }
   }
 
-  const role = profile?.role ?? user?.user_metadata?.role ?? null
-
   return (
-    <AuthContext.Provider value={{ user, profile, role, loading, signUp, signIn, signOut, signInWithOAuth, setRole }}>
+    <AuthContext.Provider value={{ user, profile, activeMode, loading, signUp, signIn, signOut, signInWithOAuth, setActiveMode }}>
       {children}
     </AuthContext.Provider>
   )
