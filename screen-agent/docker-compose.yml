@@ -9,6 +9,7 @@ version: "3.9"
 services:
   # ── Camera capture service ─────────────────────────────────────────────────
   camera:
+    image: adgrid/screen-agent-camera:latest
     build: ./camera
     volumes:
       - frame_data:/frames
@@ -21,6 +22,7 @@ services:
 
   # ── CV inference service ───────────────────────────────────────────────────
   inference:
+    image: adgrid/screen-agent-inference:latest
     build: ./inference
     volumes:
       - frame_data:/frames
@@ -34,6 +36,7 @@ services:
 
   # ── Event pusher ───────────────────────────────────────────────────────────
   pusher:
+    image: adgrid/screen-agent-pusher:latest
     build: ./pusher
     volumes:
       - frame_data:/frames
