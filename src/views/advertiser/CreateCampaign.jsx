@@ -557,18 +557,6 @@ function StepBudget({ form, setForm, matchedScreens }) {
             <Inp label="Until" type="time" value={form.time_end} onChange={e => setField('time_end', e.target.value)} />
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-            <input type="checkbox" id="peak_hours" checked={form.peak_hours_preferred}
-              onChange={e => setField('peak_hours_preferred', e.target.checked)}
-              style={{ marginTop: 2, cursor: 'pointer' }}
-            />
-            <label htmlFor="peak_hours" style={{ fontSize: 13, color: C.text, fontFamily: F.sans, cursor: 'pointer' }}>
-              <span style={{ fontWeight: 500 }}>Prioritise peak footfall periods</span>
-              <span style={{ display: 'block', fontSize: 11, color: C.textMuted, marginTop: 2 }}>
-                Ad system will favour slots when screen CV data shows highest foot traffic.
-              </span>
-            </label>
-          </div>
         </div>
       </Card>
     </div>
@@ -688,7 +676,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     schedule_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     time_start: '07:00',
     time_end: '22:00',
-    peak_hours_preferred: false,
+
     start_when: 'partial',
   });
 
@@ -749,7 +737,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       schedule_days: c.schedule_days || c.days || ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
       time_start: c.time_start || c.timeStart || '07:00',
       time_end: c.time_end || c.timeEnd || '22:00',
-      peak_hours_preferred: c.peak_hours_preferred || false,
+
       start_when: c.start_when || 'partial',
     }));
     setShowDupModal(false);
@@ -781,7 +769,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         schedule_days:         form.schedule_days,
         time_start:            form.time_start,
         time_end:              form.time_end,
-        peak_hours_preferred:  form.peak_hours_preferred,
+
         status:                'pending_review',
         payment_status:        'unpaid',
         impressions:           0,

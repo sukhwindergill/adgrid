@@ -6,7 +6,7 @@ const supabase = createClient(
 );
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
-const FROM_EMAIL = "onboarding@resend.dev";
+const FROM_EMAIL = "noreply@adgrid.io";
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_NOTIFICATION_SECRET") ?? "";
 
 const TEMPLATES: Record<string, (data: Record<string, string>) => { title: string; body: string; html: string }> = {
@@ -43,12 +43,12 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
   weekly_report: (d) => ({
     title: "Your weekly performance report",
     body: `${d.totalScans} scans across ${d.activeCampaigns} campaigns this week.`,
-    html: emailHtml("Weekly Performance Report", `This week: <strong>${d.totalScans} scans</strong> across <strong>${d.activeCampaigns} active campaigns</strong>.<br><br>Total spend: <strong>$${d.totalSpend}</strong>`, "View Analytics", d.appUrl ?? ""),
+    html: emailHtml("Weekly Performance Report", `This week: <strong>${d.totalScans} scans</strong> across <strong>${d.activeCampaigns} active campaigns</strong>.<br><br>Total spend: <strong>£${d.totalSpend}</strong>`, "View Analytics", d.appUrl ?? ""),
   }),
   payment_failed: (d) => ({
     title: "Payment failed",
-    body: `A payment of $${d.amount} failed. Please update your payment method.`,
-    html: emailHtml("Payment Failed", `A payment of <strong>$${d.amount}</strong> for your AdGrid account failed. Please update your payment method to avoid service interruption.`, "Update Payment", d.appUrl ?? ""),
+    body: `A payment of £${d.amount} failed. Please update your payment method.`,
+    html: emailHtml("Payment Failed", `A payment of <strong>£${d.amount}</strong> for your AdGrid account failed. Please update your payment method to avoid service interruption.`, "Update Payment", d.appUrl ?? ""),
   }),
   new_advertiser: (d) => ({
     title: "New advertiser signed up",
@@ -61,14 +61,14 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
     html: emailHtml("Campaign Submitted", `<strong>${d.advertiserName}</strong> submitted a new campaign. Review and approve it to get it live.`, "Review Campaign", d.appUrl ?? ""),
   }),
   payout_completed: (d) => ({
-    title: `Payout of $${d.amount} sent`,
-    body: `Your payout of $${d.amount} has been transferred to your bank.`,
-    html: emailHtml("Payout Sent", `Your payout of <strong>$${d.amount}</strong> has been transferred to your connected bank account via Stripe.`, "View Payouts", d.appUrl ?? ""),
+    title: `Payout of £${d.amount} sent`,
+    body: `Your payout of £${d.amount} has been transferred to your bank.`,
+    html: emailHtml("Payout Sent", `Your payout of <strong>£${d.amount}</strong> has been transferred to your connected bank account via Stripe.`, "View Payouts", d.appUrl ?? ""),
   }),
   weekly_revenue: (d) => ({
     title: "Weekly revenue summary",
-    body: `$${d.revenue} in revenue across ${d.screenCount} screens this week.`,
-    html: emailHtml("Weekly Revenue Summary", `This week your network earned <strong>$${d.revenue}</strong> across <strong>${d.screenCount} screens</strong>.`, "View Revenue", d.appUrl ?? ""),
+    body: `£${d.revenue} in revenue across ${d.screenCount} screens this week.`,
+    html: emailHtml("Weekly Revenue Summary", `This week your network earned <strong>£${d.revenue}</strong> across <strong>${d.screenCount} screens</strong>.`, "View Revenue", d.appUrl ?? ""),
   }),
   team_member_joined: (d) => ({
     title: "Team member joined",

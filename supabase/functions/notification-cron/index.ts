@@ -25,16 +25,12 @@ Deno.serve(async (_req: Request) => {
   // ── Low budget alerts (daily) ────────────────────────────────
   const { data: campaigns } = await supabase
     .from("bookings")
-    .select("id, advertiser_id, advertiser_name, start_date, end_date, budget")
+    .select("id, advertiser_id, advertiser_name, budget, spent")
     .eq("status", "active");
 
   const lowBudgetCampaigns = (campaigns ?? []).filter((c) => {
-    const start = new Date(c.start_date).getTime();
-    const end = new Date(c.end_date).getTime();
-    const now = today.getTime();
-    const total = end - start;
-    if (total <= 0) return false;
-    return (now - start) / total >= 0.8;
+    if (!c.budget || c.budget <= 0) return false;
+    return (c.spent ?? 0) / c.budget >= 0.8;
   });
 
   for (const c of lowBudgetCampaigns) {
