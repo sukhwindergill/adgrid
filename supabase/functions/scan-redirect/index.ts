@@ -16,7 +16,7 @@ Deno.serve(async (req: Request) => {
   // Look up campaign
   const { data: campaign, error } = await supabase
     .from("bookings")
-    .select("destination_url, screen_id, advertiser_id")
+    .select("destination_url, advertiser_id")
     .eq("id", campaignId)
     .single();
 
@@ -24,7 +24,19 @@ Deno.serve(async (req: Request) => {
     return new Response("Campaign not found", { status: 404 });
   }
 
-  const { destination_url, screen_id, advertiser_id } = campaign;
+  const { destination_url, advertiser_id } = campaign;
+
+  // screen_id: prefer ?s= param passed by DisplayPlayer QR, fall back to campaign_screens lookup
+  let screen_id: string | null = url.searchParams.get("s");
+  if (!screen_id) {
+    const { data: cs } = await supabase
+      .from("campaign_screens")
+      .select("screen_id")
+      .eq("campaign_id", campaignId)
+      .limit(1)
+      .maybeSingle();
+    screen_id = cs?.screen_id ?? null;
+  }
 
   // Derive device type from User-Agent
   const ua = req.headers.get("user-agent") ?? "";
@@ -66,7 +78,12 @@ Deno.serve(async (req: Request) => {
   }
 
   // Build destination URL with UTM params
-  const dest = new URL(destination_url);
+  let dest: URL;
+  try {
+    dest = new URL(destination_url);
+  } catch {
+    return new Response("Invalid destination URL", { status: 400 });
+  }
   if (!dest.searchParams.has("utm_source")) {
     dest.searchParams.set("utm_source", "adgrid");
     dest.searchParams.set("utm_medium", "ooh");

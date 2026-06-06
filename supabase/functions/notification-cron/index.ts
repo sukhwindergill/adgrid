@@ -102,14 +102,22 @@ Deno.serve(async (_req: Request) => {
       let revenue = 0;
 
       if (screenIds.length > 0) {
-        const { data: opCampaigns } = await supabase
-          .from("bookings")
-          .select("budget")
+        const { data: csRows } = await supabase
+          .from("campaign_screens")
+          .select("campaign_id")
           .in("screen_id", screenIds)
-          .eq("status", "active");
-        revenue = (opCampaigns ?? []).reduce(
-          (s: number, c: { budget: number }) => s + (c.budget ?? 0), 0
-        ) * 0.4;
+          .in("status", ["approved", "auto_approved"]);
+        const campaignIds = (csRows ?? []).map((r: { campaign_id: string }) => r.campaign_id);
+        if (campaignIds.length > 0) {
+          const { data: opCampaigns } = await supabase
+            .from("bookings")
+            .select("budget")
+            .in("id", campaignIds)
+            .eq("status", "active");
+          revenue = (opCampaigns ?? []).reduce(
+            (s: number, c: { budget: number }) => s + (c.budget ?? 0), 0
+          ) * 0.4;
+        }
       }
 
       await sendNotification(op.id, "weekly_revenue", {

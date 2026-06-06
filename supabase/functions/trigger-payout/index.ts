@@ -70,13 +70,23 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Sum campaign budgets on operator's screens within period
-  const { data: campaigns } = await supabase
-    .from("bookings")
-    .select("budget")
+  // Resolve campaign IDs on operator's screens via campaign_screens
+  const { data: csRows } = await supabase
+    .from("campaign_screens")
+    .select("campaign_id")
     .in("screen_id", screenIds)
-    .gte("start_date", periodStart)
-    .lte("end_date", periodEnd);
+    .in("status", ["approved", "auto_approved"]);
+  const campaignIds = (csRows ?? []).map((r: { campaign_id: string }) => r.campaign_id);
+
+  // Sum campaign budgets within period
+  const { data: campaigns } = campaignIds.length > 0
+    ? await supabase
+        .from("bookings")
+        .select("budget")
+        .in("id", campaignIds)
+        .gte("start_date", periodStart)
+        .lte("end_date", periodEnd)
+    : { data: [] };
 
   const totalBudget = (campaigns ?? []).reduce(
     (sum: number, c: { budget: number }) => sum + (c.budget ?? 0),
@@ -96,7 +106,7 @@ Deno.serve(async (req: Request) => {
   // Create Stripe Transfer
   const transfer = await stripe.transfers.create({
     amount: payoutAmount,
-    currency: "usd",
+    currency: "gbp",
     destination: profile.stripe_connect_account_id,
     metadata: { operator_id: user.id, period_start: periodStart, period_end: periodEnd },
   });
@@ -105,7 +115,7 @@ Deno.serve(async (req: Request) => {
   await supabase.from("payouts").insert({
     operator_id: user.id,
     amount: payoutAmount / 100,
-    currency: "usd",
+    currency: "gbp",
     stripe_transfer_id: transfer.id,
     status: "transferred",
     period_start: periodStart,
