@@ -296,7 +296,7 @@ export default function App() {
           onCancel={() => navigate('adv-overview')}
         />
       );
-      if (active === 'adv-campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} />;
+      if (active === 'adv-campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navigate('adv-create')} />;
       if (active === 'adv-analytics')    return <Analytics campaigns={campaigns} loading={dataLoading} />;
       if (active === 'adv-audience')     return <ScansView impersonatingId={impersonating?.id ?? null} />;
       if (active === 'adv-billing')      return <AdvertiserBillingView />;
@@ -341,7 +341,7 @@ export default function App() {
       return <ScreenDetailView screenId={selectedScreenId} onBack={() => navigate('screens')} profile={profile} onScreenUpdated={updated => setDbScreens(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s))} />;
     }
     if (active === 'notif-prefs')   return <NotificationPrefsView />;
-    if (active === 'campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} />;
+    if (active === 'campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navigate('adv-create')} />;
     if (active === 'analytics')    return <Analytics campaigns={campaigns} loading={dataLoading} />;
     if (active === 'audience')     return <Audience campaigns={campaigns} />;
     if (active === 'revenue')      return <Revenue campaigns={campaigns} loading={dataLoading} />;

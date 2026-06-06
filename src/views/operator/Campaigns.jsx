@@ -206,10 +206,9 @@ function NewCampaignModal({ onClose, onSave, dbScreens = [] }) {
   );
 }
 
-export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, loadError, loading = false }) {
+export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, loadError, loading = false, onNewCampaign }) {
   const [filter, setFilter] = useState('all');
   const [city, setCity]     = useState('All');
-  const [showNew, setShowNew] = useState(false);
   const [campaignScreens, setCampaignScreens] = useState({});
   const [screenData, setScreenData] = useState({});
   const { isMobile } = useBreakpoint();
@@ -324,7 +323,6 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
 
   return (
     <div>
-      {showNew && <NewCampaignModal onClose={() => setShowNew(false)} onSave={c => { setCampaigns(prev => [...prev, c]); setShowNew(false); }} dbScreens={dbScreens} />}
 
       {loadError && (
         <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: '#991b1b', fontSize: 14 }}>
@@ -334,7 +332,7 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
 
       <PageHeader title="Campaigns"
         subtitle={`${campaigns.filter(c => c.status === 'active').length} active · ${campaigns.filter(c => c.status === 'scheduled').length} scheduled · ${campaigns.filter(c => c.status === 'pending_review').length} pending review · ${campaigns.filter(c => c.status === 'paused').length} paused`}
-        actions={<><Btn variant="secondary" size="sm" onClick={() => exportCSV(shown)}>↓ Export CSV</Btn><Btn onClick={() => setShowNew(true)}>+ New Campaign</Btn></>} />
+        actions={<><Btn variant="secondary" size="sm" onClick={() => exportCSV(shown)}>↓ Export CSV</Btn><Btn onClick={onNewCampaign}>+ New Campaign</Btn></>} />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
         <KPI label="Total Campaigns" value={campaigns.length} />
@@ -373,7 +371,7 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
               <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, maxWidth: 320, margin: '0 auto 20px' }}>
                 Create your first campaign to start reaching customers on your screens.
               </div>
-              <Btn onClick={() => setShowNew(true)}>
+              <Btn onClick={onNewCampaign}>
                 + Create your first campaign
               </Btn>
             </>
