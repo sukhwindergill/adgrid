@@ -27,7 +27,7 @@ Derive a `healthSignal(screen)` helper:
 ### Changes
 - `ScreenCard`: replace/augment existing `screen.status === 'live'` pulse with `healthSignal`. Show coloured dot + text beneath screen name.
 - No DB changes. `screens.*` already fetched in App.jsx.
-- `AddScreenModal`: add a "Test Connection" step after registration — poll for a heartbeat for up to 60 s, show spinner then pass/fail. On fail, show retry + link to setup instructions.
+- `AddScreenModal`: after registration, show a "Check Connection" button. On click, one-shot query `display_heartbeats` for this screen where `created_at > now() - 5 min`. Show pass (green) or "No heartbeat yet" (amber) with a retry. No auto-polling.
 
 ---
 

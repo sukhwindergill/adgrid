@@ -231,7 +231,8 @@ export default function ScansView({ impersonatingId }) {
           <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.border}`, fontSize: 14, fontWeight: 600, color: C.text }}>
             Email Captures ({emailCaptures.length})
           </div>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 400 }}>
             <thead>
               <tr style={{ background: C.bg }}>
                 {["Email", "Consent", "Campaign", "Date"].map((h) => (
@@ -258,6 +259,7 @@ export default function ScansView({ impersonatingId }) {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

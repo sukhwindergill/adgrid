@@ -203,7 +203,7 @@ export default function AdvertisersView({ onImpersonate }) {
 
   useEffect(() => {
     Promise.all([
-      supabase.from("profiles").select("*").eq("role", "advertiser"),
+      supabase.from("profiles").select("*").or("role.eq.advertiser,active_mode.eq.advertiser"),
       supabase.from("bookings").select("*"),
       supabase.from("scans").select("advertiser_id"),
     ]).then(([advRes, campRes, scansRes]) => {
