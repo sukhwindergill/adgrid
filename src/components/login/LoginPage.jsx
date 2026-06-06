@@ -5,56 +5,15 @@ import { Card } from '../primitives/Card.jsx';
 import { Btn } from '../primitives/Btn.jsx';
 import { Inp } from '../primitives/Inp.jsx';
 
-function RolePromptModal({ onSelect }) {
-  const [chosen, setChosen] = useState('operator');
-  const [saving, setSaving] = useState(false);
-  const { setRole } = useAuth();
-
-  const confirm = async () => {
-    setSaving(true);
-    await setRole(chosen);
-    setSaving(false);
-    onSelect();
-  };
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, backdropFilter: 'blur(4px)' }}>
-      <Card style={{ width: '100%', maxWidth: 360, padding: 28, margin: 20 }}>
-        <div style={{ fontSize: 17, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>One more thing</div>
-        <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>How will you use ADGRID?</div>
-        <div style={{ display: 'flex', background: C.surfaceAlt, borderRadius: 8, padding: 3, marginBottom: 20, border: `1px solid ${C.border}` }}>
-          {[['operator', 'Screen Operator'], ['advertiser', 'Advertiser']].map(([v, l]) => (
-            <button key={v} onClick={() => setChosen(v)} style={{
-              flex: 1, padding: 9, borderRadius: 6, border: 'none', cursor: 'pointer',
-              fontSize: 13, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
-              background: chosen === v ? C.purple : 'transparent',
-              color: chosen === v ? '#fff' : C.textSub,
-            }}>{l}</button>
-          ))}
-        </div>
-        <Btn onClick={confirm} style={{ width: '100%', justifyContent: 'center' }} disabled={saving}>
-          {saving ? 'Saving…' : 'Continue →'}
-        </Btn>
-      </Card>
-    </div>
-  );
-}
-
 export function LoginPage() {
-  const { signIn, signUp, signInWithOAuth, user, role } = useAuth();
-  const [mode, setMode]       = useState('signin');
-  const [email, setEmail]     = useState('');
-  const [pass, setPass]       = useState('');
-  const [name, setName]       = useState('');
-  const [roleVal, setRoleVal] = useState('operator');
-  const [err, setErr]         = useState('');
-  const [loading, setLoading] = useState(false);
+  const { signIn, signUp, signInWithOAuth } = useAuth();
+  const [mode, setMode]     = useState('signin');
+  const [email, setEmail]   = useState('');
+  const [pass, setPass]     = useState('');
+  const [name, setName]     = useState('');
+  const [err, setErr]       = useState('');
+  const [loading, setLoading]     = useState(false);
   const [oauthLoading, setOauthLoading] = useState('');
-
-  // Show role prompt when OAuth user has no role yet
-  if (user && !role) {
-    return <RolePromptModal onSelect={() => {}} />;
-  }
 
   const handle = async () => {
     if (!email.includes('@')) { setErr('Enter a valid email address.'); return; }
@@ -64,7 +23,7 @@ export function LoginPage() {
       const { error } = await signIn(email, pass);
       if (error) setErr(error.message);
     } else {
-      const { error } = await signUp(email, pass, roleVal, name);
+      const { error } = await signUp(email, pass, name);
       if (error) setErr(error.message);
       else setErr('Check your email to confirm your account.');
     }
@@ -148,20 +107,6 @@ export function LoginPage() {
             <span style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>or</span>
             <div style={{ flex: 1, height: 1, background: C.border }} />
           </div>
-
-          {mode === 'signup' && (
-            <div style={{ display: 'flex', background: C.surfaceAlt, borderRadius: 8, padding: 3, marginBottom: 14, border: `1px solid ${C.border}` }}>
-              {[['operator', 'Operator'], ['advertiser', 'Advertiser']].map(([v, l]) => (
-                <button key={v} onClick={() => setRoleVal(v)} style={{
-                  flex: 1, padding: 7, borderRadius: 6, border: 'none', cursor: 'pointer',
-                  fontSize: 12, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
-                  background: roleVal === v ? C.purple : 'transparent',
-                  color: roleVal === v ? '#fff' : C.textSub,
-                  boxShadow: roleVal === v ? '0 1px 3px rgba(124,58,237,0.2)' : 'none',
-                }}>{l}</button>
-              ))}
-            </div>
-          )}
 
           {err && (
             <div style={{
