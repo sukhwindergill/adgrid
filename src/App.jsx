@@ -67,7 +67,7 @@ async function callNotification(userId, type, data = {}) {
 // ─── App ─────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const { user, profile, role, loading, signOut } = useAuth();
+  const { user, profile, activeMode, setActiveMode, loading, signOut } = useAuth();
   const toast = useToast();
 
   const [active,           setActive]        = useState('overview');
@@ -167,10 +167,10 @@ export default function App() {
 
   useEffect(() => {
     if (user) {
-      setActive(role === 'advertiser' ? 'adv-overview' : 'overview');
+      setActive(activeMode === 'advertiser' ? 'adv-overview' : 'overview');
       loadData();
     }
-  }, [user, role, loadData]);
+  }, [user, activeMode, loadData]);
 
   // ── Stripe Connect redirect ────────────────────────────────────────────────
   useEffect(() => {
@@ -222,9 +222,8 @@ export default function App() {
     return <MarketingHome onSignup={() => window.location.href = '/login'} onLogin={() => window.location.href = '/login'} />;
   }
 
-  const effectiveRole = impersonating ? 'advertiser' : role;
-  const isAdv = effectiveRole === 'advertiser';
-  const displayUser = { name: profile?.name || user.email?.split('@')[0] || 'User', email: user.email, role };
+  const isAdv = impersonating ? true : activeMode === 'advertiser';
+  const displayUser = { name: profile?.name || user.email?.split('@')[0] || 'User', email: user.email };
   const pendingCount = campaigns.filter(c => c.status === 'pending_review').length;
 
   // ── Mutation helpers ───────────────────────────────────────────────────────
@@ -316,6 +315,7 @@ export default function App() {
             status: 'pending',
           }]);
           setSelectedScreenId(newScreen.id);
+          setActiveMode('operator');
           navigate('screen-detail');
         }}
         onCancel={() => navigate('screens')}
@@ -357,7 +357,11 @@ export default function App() {
         <Sidebar
           active={active}
           setActive={navigate}
-          isAdv={isAdv}
+          activeMode={impersonating ? 'advertiser' : activeMode}
+          onModeSwitch={mode => {
+            setActiveMode(mode);
+            navigate(mode === 'advertiser' ? 'adv-overview' : 'overview');
+          }}
           user={displayUser}
           onSignOut={signOut}
           pendingCount={pendingCount}
