@@ -165,12 +165,17 @@ export default function App() {
     setDataLoading(false);
   }, []);
 
+  // Load data only when user changes (login/logout)
   useEffect(() => {
-    if (user) {
+    if (user) loadData();
+  }, [user, loadData]);
+
+  // Update nav when mode changes
+  useEffect(() => {
+    if (user && activeMode) {
       setActive(activeMode === 'advertiser' ? 'adv-overview' : 'overview');
-      loadData();
     }
-  }, [user, activeMode, loadData]);
+  }, [user, activeMode]);
 
   // ── Stripe Connect redirect ────────────────────────────────────────────────
   useEffect(() => {
