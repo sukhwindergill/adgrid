@@ -22,7 +22,7 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: CORS });
   }
 
-  const { screen_token, campaign_id, people_count,
+  const { screen_token, heartbeat_only, campaign_id, people_count,
     dwell_seconds, attention_score,
     window_start, window_end,
     avg_dwell_seconds, avg_attention_score,
@@ -45,6 +45,19 @@ Deno.serve(async (req: Request) => {
 
   if (screenError || !screen) {
     return new Response(JSON.stringify({ error: "Invalid screen token" }), { status: 401, headers: CORS });
+  }
+
+  // Heartbeat-only: update last_seen without inserting an impression_event
+  if (heartbeat_only) {
+    const { error: updateError } = await supabase
+      .from("screens")
+      .update({ last_seen: new Date().toISOString() })
+      .eq("id", screen.id);
+
+    if (updateError) {
+      return new Response(JSON.stringify({ error: updateError.message }), { status: 500, headers: CORS });
+    }
+    return new Response(JSON.stringify({ ok: true }), { headers: CORS });
   }
 
   // Derive window timestamps if not provided (browser player sends dwell_seconds)

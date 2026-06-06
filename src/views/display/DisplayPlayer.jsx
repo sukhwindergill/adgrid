@@ -165,6 +165,21 @@ export function DisplayPlayer({ screenToken }) {
     return () => clearInterval(poll);
   }, [screenToken]);
 
+  // Heartbeat — fire every 30s to keep last_seen updated on the screen record
+  useEffect(() => {
+    if (!screenToken) return;
+    const sendHeartbeat = () => {
+      fetch(`${SUPABASE_FUNCTIONS_URL}/ingest-impressions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ screen_token: screenToken, heartbeat_only: true }),
+      }).catch(e => console.error('Heartbeat error:', e));
+    };
+    sendHeartbeat(); // immediate on mount
+    const hb = setInterval(sendHeartbeat, POLL_INTERVAL_MS);
+    return () => clearInterval(hb);
+  }, [screenToken]);
+
   // Impression tracking — fire every rotation interval when a campaign is live
   useEffect(() => {
     if (!screenId || campaigns.length === 0) return;

@@ -58,6 +58,25 @@ def push_result(result: dict, filename: str) -> bool:
         print(f"[pusher] ✗ Error pushing {filename}: {e}", flush=True)
         return False
 
+def send_heartbeat():
+    try:
+        resp = requests.post(
+            INGEST_URL,
+            json={"screen_token": SCREEN_TOKEN, "heartbeat_only": True},
+            headers={
+                "Content-Type": "application/json",
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+            },
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            print("[pusher] ♥ Heartbeat sent", flush=True)
+        else:
+            print(f"[pusher] ✗ Heartbeat failed: {resp.status_code} {resp.text[:120]}", flush=True)
+    except Exception as e:
+        print(f"[pusher] ✗ Heartbeat error: {e}", flush=True)
+
 if __name__ == "__main__":
     if not SCREEN_TOKEN or not SUPABASE_URL:
         raise EnvironmentError("SCREEN_TOKEN and SUPABASE_URL must be set")
@@ -88,3 +107,5 @@ if __name__ == "__main__":
                             pass
             except Exception as e:
                 print(f"[pusher] Error reading {filename}: {e}", flush=True)
+
+        send_heartbeat()
