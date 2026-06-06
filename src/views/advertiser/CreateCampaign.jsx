@@ -13,6 +13,7 @@ import { CATEGORIES } from '../../lib/data.js';
 import { VENUE_TAXONOMY, COUNTRIES } from '../../lib/venueTypes.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -797,6 +798,31 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       const hasAutoApproved = screenRows.some(r => r.status === 'auto_approved');
       if (hasAutoApproved && form.start_when === 'partial') {
         await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaignId);
+      }
+
+      // Notify each unique operator whose screens were targeted
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && SUPABASE_FUNCTIONS_URL) {
+        const operatorIds = [...new Set(
+          form.selected_screen_ids
+            .map(sid => matchedScreens.find(s => s.id === sid)?.operator_id)
+            .filter(Boolean)
+        )];
+        const advertiserName = profile?.name || user.email?.split('@')[0] || 'Advertiser';
+        operatorIds.forEach(operatorId => {
+          fetch(`${SUPABASE_FUNCTIONS_URL}/send-notification`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              userId: operatorId,
+              type: 'campaign_submitted',
+              data: { advertiserName, appUrl: window.location.origin },
+            }),
+          }).catch(() => {});
+        });
       }
 
       setSubmitting(false);
