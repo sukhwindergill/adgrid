@@ -16,7 +16,16 @@ export function AuthProvider({ children }) {
       .eq('id', userId)
       .single()
     setProfile(data)
-    setActiveModeState(data?.active_mode ?? 'advertiser')
+    if (data?.active_mode) {
+      setActiveModeState(data.active_mode)
+    } else {
+      // Smart default: if user has screens, start in operator mode
+      const { count } = await supabase
+        .from('screens')
+        .select('id', { count: 'exact', head: true })
+        .eq('owner_id', userId)
+      setActiveModeState(count > 0 ? 'operator' : 'advertiser')
+    }
     return data
   }
 

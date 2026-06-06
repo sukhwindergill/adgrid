@@ -363,7 +363,7 @@ export default function App() {
           active={active}
           setActive={navigate}
           activeMode={impersonating ? 'advertiser' : activeMode}
-          onModeSwitch={mode => {
+          onModeSwitch={impersonating ? undefined : mode => {
             setActiveMode(mode);
             navigate(mode === 'advertiser' ? 'adv-overview' : 'overview');
           }}
