@@ -466,7 +466,7 @@ function NetworkMap({ style }) {
         {on && CONNECTOR_LINES.map((line, i) => {
           const a = CITY_PINS[line.from];
           const b = CITY_PINS[line.to];
-          const len = Math.hypot(b.x - a.x, b.y - a.y) * 4; // scale to viewBox units roughly
+          const len = Math.hypot(b.x - a.x, b.y - a.y);
           return (
             <path
               key={i}
