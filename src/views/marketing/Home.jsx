@@ -56,6 +56,11 @@ const CSS = `
   0%   { transform: scale(1);   opacity: 0.4; }
   100% { transform: scale(2.5); opacity: 0; }
 }
+@keyframes lineDraw {
+  from { stroke-dashoffset: var(--line-len, 240); opacity: 0; }
+  15%  { opacity: 0.5; }
+  to   { stroke-dashoffset: 0; opacity: 0.5; }
+}
 @keyframes orbDrift1 {
   0%, 100% { transform: translate(0, 0); }
   33%       { transform: translate(-30px, 20px); }
@@ -212,6 +217,14 @@ const CSS = `
   animation: ripple 2s ease-out infinite;
 }
 
+.net-line {
+  fill: none;
+  stroke: url(#netLineGrad);
+  stroke-width: 1.5;
+  stroke-dasharray: var(--line-len, 240);
+  animation: lineDraw 1.6s ease-out forwards;
+}
+
 /* ── Nav links ── */
 .nl {
   background: none; border: none; cursor: pointer;
@@ -315,6 +328,10 @@ body::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+  .pin, .pin::after, .net-line, .hero-orb {
+    animation: none !important;
+  }
+  .net-line { stroke-dashoffset: 0; opacity: 0.5; }
 }
 `;
 
