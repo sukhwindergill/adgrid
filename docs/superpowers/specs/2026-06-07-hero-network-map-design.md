@@ -3,33 +3,32 @@
 ## Goal
 Replace the current static/CSS-orb hero visual on the marketing Home ([Home.jsx](../../../src/views/marketing/Home.jsx)) with a polished, looping "live network" animation: a stylized Canada map with pulsing screen-location pins, drawing connector lines, and a ticking stat counter. Sells scale and reach at a glance, elevates the page from "nicely animated" to "high-end product."
 
-## Why HyperFrames
-The platform already leans on in-browser CSS/GSAP animation (orb drift, gradient text, scroll reveals — see CSS block in Home.jsx). HyperFrames extends that pattern with a single seek-driven GSAP timeline that coordinates many elements precisely, without adding a video render pipeline (ruled out Remotion/Canvas — see approaches below).
+## Why plain CSS/React (no new deps)
+Checked package.json: project has **no GSAP, no HyperFrames, no animation library** — Home.jsx is built entirely on CSS keyframes + small React hooks (`useReveal` for scroll-triggered reveals, `useCounter` for tick-up stats, per-element `delay` props for staggering — see `CITY_PINS` array and `.pin`/`pinPulse`/`ripple` keyframes already in the file). Matching that convention ships faster, adds zero dependencies, and keeps the file consistent with the rest of the page.
 
 ## Approaches considered
-- **A — Extend existing CSS/SVG keyframes**: fastest, zero new deps, but CSS keyframes can't coordinate many synced elements (pins + lines + counter) cleanly.
-- **B — HyperFrames composition (chosen)**: one paused `gsap.timeline()` drives every pin pulse, line draw, and counter tick in sync. Scrubbable, easy to extend with more cities later.
-- **C — Canvas/WebGL particles**: highest visual ceiling but heavy (custom render loop, perf tuning) — overkill for a 6-10s ambient loop.
+- **A — Plain CSS/SVG + small sequencing hook (chosen)**: reuse existing `pinPulse`/`ripple` keyframes, stagger via per-pin `delay`, animate SVG line `stroke-dashoffset` via CSS, drive the counter with the existing `useCounter` hook gated by `useReveal`. Zero new deps, fits codebase exactly.
+- **B — HyperFrames/GSAP composition**: would give precise single-timeline coordination, but requires adding a new runtime + GSAP dependency the project doesn't currently use — bigger lift than warranted for a 6-10s ambient loop.
+- **C — Canvas/WebGL particles**: highest visual ceiling but heavy (custom render loop, perf tuning) — overkill here.
 
 ## Composition
 - Stylized SVG outline of Canada, palette matches existing design tokens (`--c1` #00C2FF → `--c2` #7B2FFF gradient, `--bg` #0A0A0F backdrop)
 - 6-8 city pins: Toronto, Vancouver, Montreal, Calgary, Ottawa, Edmonton, Halifax, Winnipeg
 - Stat overlay: counter reading "2,400+ screens · 14 cities" (placeholder figures — confirm real numbers before ship)
 
-## Timeline (6-10s seamless loop)
-1. Pins pulse on in staggered sequence (scale + opacity, ripple effect — reuses `pinPulse`/`ripple` keyframe concepts already in Home.jsx CSS)
-2. Connector lines draw between active pins (stroke-dashoffset animation)
-3. Counter ticks up once, holds at final value
-4. Loop resets cleanly — final frame state matches frame 0 (no visible jump)
+## Timeline (6-10s seamless loop, CSS-driven)
+1. Pins pulse on in staggered sequence — reuse the existing `.pin` / `pinPulse` / `ripple` keyframes and `delay` stagger pattern from `CITY_PINS`
+2. Connector lines draw between a curated subset of active pins — SVG `<path>` with `stroke-dasharray`/`stroke-dashoffset` animated via a new CSS keyframe (`lineDraw`), staggered after pin pulse-in
+3. Counter ticks up once and holds — drive with the existing `useCounter(target, duration, started)` hook (already in Home.jsx), gated by `useReveal` so it fires once when the hero scrolls into view
+4. Infinite-looping pieces (pin pulse/ripple) already loop seamlessly via `infinite` CSS animation; the line-draw plays once per mount (matches "ambient, low distraction" — no jarring full-loop reset needed for a hero that's visible on load)
 
 ## Placement
-- Replaces the hero's current background visual in [Home.jsx](../../../src/views/marketing/Home.jsx) (the orb/grid section near the top)
-- Headline + CTA text overlay on top, unchanged in position; map sits as backdrop
-- Add subtle scrim/gradient behind text to preserve readability over the animated map
+- Upgrades the hero's existing low-opacity `<CityPins />` background layer in [Home.jsx](../../../src/views/marketing/Home.jsx) (around line 519) — adds the Canada outline, connector lines, and stat counter to that same backdrop layer; keeps current orbs/grid
+- Headline + CTA text overlay stays as-is on top; map sits as backdrop at low opacity (matches current `opacity: 0.18` treatment so text stays readable — no new scrim needed)
 
 ## Integration
-- HyperFrames comp embeds via its runtime player (HTML/GSAP), mounted inside the existing hero `<section>` 
-- Respect `prefers-reduced-motion`: fall back to a static frame (final pulse state) for users who request it
+- New `NetworkMap` component (SVG + pins + lines + counter), rendered inside the hero in place of/alongside `<CityPins />`
+- Respect `prefers-reduced-motion`: wrap animation classes in a media query (`@media (prefers-reduced-motion: reduce)`) that disables `pinPulse`/`ripple`/`lineDraw`, leaving static pins — same pattern would apply to existing orb animations if extended later
 
 ## Out of scope
 - Real screen-location data wiring (counter uses placeholder stat, not live DB query)
