@@ -442,6 +442,63 @@ function CityPins({ style }) {
   );
 }
 
+// ─── Network Map (animated hero backdrop) ────────────────────────────────────
+
+function NetworkMap({ style }) {
+  const [ref, on] = useReveal(0.2);
+  const screens = useCounter(2400, 1800, on);
+  const cities = useCounter(14, 1200, on);
+
+  return (
+    <div ref={ref} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', ...style }}>
+      {/* Connector lines, drawn over the pin scatter */}
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+      >
+        <defs>
+          <linearGradient id="netLineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#00C2FF" />
+            <stop offset="100%" stopColor="#7B2FFF" />
+          </linearGradient>
+        </defs>
+        {on && CONNECTOR_LINES.map((line, i) => {
+          const a = CITY_PINS[line.from];
+          const b = CITY_PINS[line.to];
+          const len = Math.hypot(b.x - a.x, b.y - a.y) * 4; // scale to viewBox units roughly
+          return (
+            <path
+              key={i}
+              className="net-line"
+              d={`M ${a.x} ${a.y} L ${b.x} ${b.y}`}
+              style={{
+                '--line-len': len,
+                animationDelay: `${line.delay}s`,
+              }}
+            />
+          );
+        })}
+      </svg>
+
+      {/* Pins — reuse existing scatter */}
+      <CityPins />
+
+      {/* Stat overlay */}
+      <div style={{
+        position: 'absolute', bottom: '6%', left: '50%', transform: 'translateX(-50%)',
+        display: 'flex', gap: 24, alignItems: 'center',
+        fontFamily: 'var(--inter)', fontSize: 13, color: 'var(--sec)',
+        letterSpacing: '0.02em', whiteSpace: 'nowrap',
+      }}>
+        <span><strong style={{ color: '#fff', fontWeight: 700 }}>{screens.toLocaleString()}+</strong> screens</span>
+        <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--muted)' }} />
+        <span><strong style={{ color: '#fff', fontWeight: 700 }}>{cities}</strong> cities</span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Nav ──────────────────────────────────────────────────────────────────────
 
 function Nav({ onScrollTo, onLogin }) {
