@@ -602,9 +602,9 @@ function Hero({ onScrollTo }) {
       {/* Animated grid background */}
       <div className="hero-bg-grid" />
 
-      {/* City screen pins — low opacity */}
-      <div className="orb-load" style={{ position: 'absolute', inset: 0, opacity: 0.18, pointerEvents: 'none' }}>
-        <CityPins />
+      {/* Live network map — pins, connector lines, stat counter */}
+      <div className="orb-load" style={{ position: 'absolute', inset: 0, opacity: 0.22, pointerEvents: 'none' }}>
+        <NetworkMap />
       </div>
 
       {/* Glow orbs — drifting */}
