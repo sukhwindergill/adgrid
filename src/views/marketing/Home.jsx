@@ -348,6 +348,19 @@ const CITY_PINS = [
   {x:65,y:82,delay:0.3}, {x:80,y:78,delay:0.8},
 ];
 
+// Connector lines reference CITY_PINS indices — curated subset forming a
+// loose east-west "network" arc across the existing pin scatter.
+const CONNECTOR_LINES = [
+  { from: 0,  to: 2,  delay: 0.0 },
+  { from: 2,  to: 4,  delay: 0.25 },
+  { from: 5,  to: 7,  delay: 0.5 },
+  { from: 7,  to: 9,  delay: 0.75 },
+  { from: 10, to: 12, delay: 1.0 },
+  { from: 12, to: 14, delay: 1.25 },
+  { from: 1,  to: 8,  delay: 1.5 },
+  { from: 6,  to: 13, delay: 1.75 },
+];
+
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
 function useReveal(threshold = 0.15) {
