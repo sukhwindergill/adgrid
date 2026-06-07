@@ -463,7 +463,9 @@ function NetworkMap({ style }) {
             <stop offset="100%" stopColor="#7B2FFF" />
           </linearGradient>
         </defs>
-        {on && CONNECTOR_LINES.map((line, i) => {
+        {on && CONNECTOR_LINES.filter(
+          (line) => CITY_PINS[line.from] && CITY_PINS[line.to]
+        ).map((line, i) => {
           const a = CITY_PINS[line.from];
           const b = CITY_PINS[line.to];
           const len = Math.hypot(b.x - a.x, b.y - a.y);
