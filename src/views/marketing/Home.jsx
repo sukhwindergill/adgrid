@@ -56,11 +56,6 @@ const CSS = `
   0%   { transform: scale(1);   opacity: 0.4; }
   100% { transform: scale(2.5); opacity: 0; }
 }
-@keyframes lineDraw {
-  from { stroke-dashoffset: var(--line-len, 240); opacity: 0; }
-  15%  { opacity: 0.5; }
-  to   { stroke-dashoffset: 0; opacity: 0.5; }
-}
 @keyframes orbDrift1 {
   0%, 100% { transform: translate(0, 0); }
   33%       { transform: translate(-30px, 20px); }
@@ -206,23 +201,16 @@ const CSS = `
 
 /* ── Screen pins with ripple ── */
 .pin {
-  position: absolute; width: 8px; height: 8px;
+  position: absolute; width: 11px; height: 11px;
   background: var(--c1); border-radius: 50%;
+  box-shadow: 0 0 14px 2px rgba(0, 194, 255, 0.6);
   animation: pinPulse 2s ease-in-out infinite;
   will-change: transform, opacity;
 }
 .pin::after {
-  content: ''; position: absolute; inset: -4px;
-  border-radius: 50%; background: rgba(0,194,255,0.3);
+  content: ''; position: absolute; inset: -6px;
+  border-radius: 50%; background: rgba(0,194,255,0.35);
   animation: ripple 2s ease-out infinite;
-}
-
-.net-line {
-  fill: none;
-  stroke: url(#netLineGrad);
-  stroke-width: 1.5;
-  stroke-dasharray: var(--line-len, 240);
-  animation: lineDraw 1.6s ease-out forwards;
 }
 
 /* ── Nav links ── */
@@ -328,37 +316,31 @@ body::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
-  .pin, .pin::after, .net-line, .hero-orb {
+  .pin, .pin::after, .hero-orb {
     animation: none !important;
   }
-  .net-line { stroke-dashoffset: 0; opacity: 0.5; }
 }
 `;
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
+// City pins placed on real relative geography —
+// west coast, prairies, central Canada, and the Atlantic provinces.
 const CITY_PINS = [
-  {x:22,y:25,delay:0},   {x:38,y:18,delay:0.3}, {x:55,y:22,delay:0.6},
-  {x:70,y:30,delay:0.9}, {x:82,y:20,delay:1.2}, {x:18,y:42,delay:0.2},
-  {x:32,y:48,delay:0.5}, {x:48,y:55,delay:0.8}, {x:63,y:45,delay:1.1},
-  {x:77,y:52,delay:1.4}, {x:12,y:62,delay:0.4}, {x:28,y:68,delay:0.7},
-  {x:42,y:72,delay:1.0}, {x:58,y:65,delay:0.1}, {x:73,y:70,delay:0.9},
-  {x:86,y:40,delay:1.3}, {x:90,y:58,delay:0.6}, {x:8, y:35,delay:1.5},
-  {x:95,y:25,delay:0.4}, {x:50,y:82,delay:0.7}, {x:35,y:85,delay:1.1},
-  {x:65,y:82,delay:0.3}, {x:80,y:78,delay:0.8},
-];
-
-// Connector lines reference CITY_PINS indices — curated subset forming a
-// loose east-west "network" arc across the existing pin scatter.
-const CONNECTOR_LINES = [
-  { from: 0,  to: 2,  delay: 0.0 },
-  { from: 2,  to: 4,  delay: 0.25 },
-  { from: 5,  to: 7,  delay: 0.5 },
-  { from: 7,  to: 9,  delay: 0.75 },
-  { from: 10, to: 12, delay: 1.0 },
-  { from: 12, to: 14, delay: 1.25 },
-  { from: 1,  to: 8,  delay: 1.5 },
-  { from: 6,  to: 13, delay: 1.75 },
+  {x:14,y:54,delay:0},    // Vancouver
+  {x:22,y:47,delay:0.3},  // Calgary
+  {x:24,y:39,delay:0.6},  // Edmonton
+  {x:18,y:33,delay:0.9},  // Yellowknife
+  {x:36,y:52,delay:0.2},  // Winnipeg
+  {x:46,y:45,delay:0.5},  // Regina
+  {x:50,y:60,delay:0.8},  // Thunder Bay
+  {x:58,y:64,delay:1.1},  // Toronto
+  {x:61,y:60,delay:1.4},  // Ottawa
+  {x:65,y:57,delay:0.4},  // Montreal
+  {x:70,y:51,delay:0.7},  // Quebec City
+  {x:80,y:57,delay:1.0},  // Halifax
+  {x:88,y:51,delay:1.3},  // St. John's
+  {x:30,y:35,delay:0.1},  // Saskatoon
 ];
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -448,41 +430,8 @@ function NetworkMap({ style }) {
   const [ref, on] = useReveal(0.2);
   const screens = useCounter(2400, 1800, on);
   const cities = useCounter(14, 1200, on);
-
   return (
     <div ref={ref} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', ...style }}>
-      {/* Connector lines, drawn over the pin scatter */}
-      <svg
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-      >
-        <defs>
-          <linearGradient id="netLineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#00C2FF" />
-            <stop offset="100%" stopColor="#7B2FFF" />
-          </linearGradient>
-        </defs>
-        {on && CONNECTOR_LINES.filter(
-          (line) => CITY_PINS[line.from] && CITY_PINS[line.to]
-        ).map((line, i) => {
-          const a = CITY_PINS[line.from];
-          const b = CITY_PINS[line.to];
-          const len = Math.hypot(b.x - a.x, b.y - a.y);
-          return (
-            <path
-              key={i}
-              className="net-line"
-              d={`M ${a.x} ${a.y} L ${b.x} ${b.y}`}
-              style={{
-                '--line-len': len,
-                animationDelay: `${line.delay}s`,
-              }}
-            />
-          );
-        })}
-      </svg>
-
       {/* Pins — reuse existing scatter */}
       <CityPins />
 
