@@ -1770,6 +1770,7 @@ export function MarketingHome({ onSignup, onLogin }) {
       <div ref={glowRef} className="cursor-glow" />
       <Nav onScrollTo={scrollTo} onLogin={onLogin} />
       <Hero onScrollTo={scrollTo} />
+      <ProductReel />
       <ProblemSection />
       <HowItWorks />
       <OperatorsSection onScrollTo={scrollTo} />
