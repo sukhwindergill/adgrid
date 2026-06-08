@@ -48,6 +48,10 @@ const CSS = `
   0%, 100% { box-shadow: 0 0 16px rgba(0,194,255,0.3), 0 0 32px rgba(123,47,255,0.15); }
   50%       { box-shadow: 0 0 32px rgba(0,194,255,0.5), 0 0 64px rgba(123,47,255,0.25); }
 }
+@keyframes panelFade {
+  from { opacity: 0; transform: translateY(8px) scale(0.99); }
+  to   { opacity: 1; transform: none; }
+}
 @keyframes pinPulse {
   0%, 100% { transform: scale(1);   opacity: 1; }
   50%       { transform: scale(1.4); opacity: 0.6; }
@@ -201,14 +205,15 @@ const CSS = `
 
 /* ── Screen pins with ripple ── */
 .pin {
-  position: absolute; width: 8px; height: 8px;
+  position: absolute; width: 11px; height: 11px;
   background: var(--c1); border-radius: 50%;
+  box-shadow: 0 0 14px 2px rgba(0, 194, 255, 0.6);
   animation: pinPulse 2s ease-in-out infinite;
   will-change: transform, opacity;
 }
 .pin::after {
-  content: ''; position: absolute; inset: -4px;
-  border-radius: 50%; background: rgba(0,194,255,0.3);
+  content: ''; position: absolute; inset: -6px;
+  border-radius: 50%; background: rgba(0,194,255,0.35);
   animation: ripple 2s ease-out infinite;
 }
 
@@ -310,25 +315,57 @@ body::after {
   .notify-row { flex-direction: column !important; }
 }
 
+.reel-frame { position: relative; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); box-shadow: 0 0 0 1px rgba(0,194,255,0.06), 0 24px 80px rgba(0,0,0,0.5); overflow: hidden; }
+.reel-frame-bar { display: flex; align-items: center; gap: 6px; padding: 14px 18px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02); }
+.reel-frame-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+.reel-stage { position: relative; aspect-ratio: 16 / 9; background: var(--bg); }
+.reel-panel { position: absolute; inset: 0; padding: clamp(20px, 4vw, 40px); opacity: 0; pointer-events: none; transition: opacity 0.6s ease; }
+.reel-panel.on { opacity: 1; pointer-events: auto; animation: panelFade 0.6s ease both; }
+.reel-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease; }
+.reel-dot.on { background: var(--c1); transform: scale(1.3); box-shadow: 0 0 10px 2px rgba(0,194,255,0.5); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+  .pin, .pin::after, .hero-orb, .reel-panel {
+    animation: none !important;
+  }
+  .reel-panel {
+    transition: none !important;
   }
 }
 `;
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
+// City pins placed on real relative geography —
+// west coast, prairies, central Canada, and the Atlantic provinces.
 const CITY_PINS = [
-  {x:22,y:25,delay:0},   {x:38,y:18,delay:0.3}, {x:55,y:22,delay:0.6},
-  {x:70,y:30,delay:0.9}, {x:82,y:20,delay:1.2}, {x:18,y:42,delay:0.2},
-  {x:32,y:48,delay:0.5}, {x:48,y:55,delay:0.8}, {x:63,y:45,delay:1.1},
-  {x:77,y:52,delay:1.4}, {x:12,y:62,delay:0.4}, {x:28,y:68,delay:0.7},
-  {x:42,y:72,delay:1.0}, {x:58,y:65,delay:0.1}, {x:73,y:70,delay:0.9},
-  {x:86,y:40,delay:1.3}, {x:90,y:58,delay:0.6}, {x:8, y:35,delay:1.5},
-  {x:95,y:25,delay:0.4}, {x:50,y:82,delay:0.7}, {x:35,y:85,delay:1.1},
-  {x:65,y:82,delay:0.3}, {x:80,y:78,delay:0.8},
+  {x:14,y:54,delay:0},    // Vancouver
+  {x:22,y:47,delay:0.3},  // Calgary
+  {x:24,y:39,delay:0.6},  // Edmonton
+  {x:18,y:33,delay:0.9},  // Yellowknife
+  {x:36,y:52,delay:0.2},  // Winnipeg
+  {x:46,y:45,delay:0.5},  // Regina
+  {x:50,y:60,delay:0.8},  // Thunder Bay
+  {x:58,y:64,delay:1.1},  // Toronto
+  {x:61,y:60,delay:1.4},  // Ottawa
+  {x:65,y:57,delay:0.4},  // Montreal
+  {x:70,y:51,delay:0.7},  // Quebec City
+  {x:80,y:57,delay:1.0},  // Halifax
+  {x:88,y:51,delay:1.3},  // St. John's
+  {x:30,y:35,delay:0.1},  // Saskatoon
+];
+
+// Drives the ProductReel cycle — one entry per mock screen. `Panel` is the
+// component that renders that screen's mock UI inside the device frame.
+const REEL_SCREENS = [
+  { key: 'operator',  label: 'Operator dashboard',   caption: 'List inventory, set floor prices, track fill rate and earnings — all from one screen.' },
+  { key: 'map',       label: 'Map & browse screens', caption: 'Advertisers browse available screens by location, audience, and price in real time.' },
+  { key: 'analytics', label: 'Campaign analytics',   caption: 'Impressions, reach, and spend — reported live, not weeks after the campaign ends.' },
+  { key: 'display',   label: 'Live display preview', caption: "See exactly what's playing on a screen, right now, from anywhere." },
 ];
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -409,6 +446,241 @@ function CityPins({ style }) {
         />
       ))}
     </div>
+  );
+}
+
+// ─── Network Map (animated hero backdrop) ────────────────────────────────────
+
+function NetworkMap({ style }) {
+  const [ref, on] = useReveal(0.2);
+  const screens = useCounter(2400, 1800, on);
+  const cities = useCounter(14, 1200, on);
+  return (
+    <div ref={ref} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', ...style }}>
+      {/* Pins — reuse existing scatter */}
+      <CityPins />
+
+      {/* Stat overlay */}
+      <div style={{
+        position: 'absolute', bottom: '6%', left: '50%', transform: 'translateX(-50%)',
+        display: 'flex', gap: 24, alignItems: 'center',
+        fontFamily: 'var(--inter)', fontSize: 13, color: 'var(--sec)',
+        letterSpacing: '0.02em', whiteSpace: 'nowrap',
+      }}>
+        <span><strong style={{ color: '#fff', fontWeight: 700 }}>{screens.toLocaleString()}+</strong> screens</span>
+        <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--muted)' }} />
+        <span><strong style={{ color: '#fff', fontWeight: 700 }}>{cities}</strong> cities</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Product Reel mock panels ─────────────────────────────────────────────────
+
+function OperatorPanel() {
+  const cards = [
+    { name: 'Queen St & Spadina',  fill: 82, earn: '$1,240' },
+    { name: 'Union Station Concourse', fill: 91, earn: '$2,860' },
+    { name: 'Yonge-Dundas Square', fill: 67, earn: '$1,975' },
+  ];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, height: '100%' }}>
+      <div style={{ fontFamily: 'var(--inter)', fontSize: 13, color: 'var(--sec)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+        Your inventory
+      </div>
+      {cards.map((c) => (
+        <div key={c.name} style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
+          borderRadius: 12, padding: '14px 18px',
+        }}>
+          <div>
+            <div style={{ fontFamily: 'var(--inter)', fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 6 }}>{c.name}</div>
+            <div style={{ width: 140, height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+              <div style={{ width: `${c.fill}%`, height: '100%', background: 'linear-gradient(90deg, var(--c1), var(--c2))', borderRadius: 3 }} />
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontFamily: 'var(--inter)', fontSize: 11, color: 'var(--muted)' }}>fill rate {c.fill}%</div>
+            <div style={{ fontFamily: 'var(--inter)', fontSize: 16, fontWeight: 700, color: 'var(--c1)' }}>{c.earn}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MapPanel() {
+  const pins = [
+    { x: 28, y: 35 }, { x: 52, y: 22 }, { x: 68, y: 48 }, { x: 40, y: 64 }, { x: 78, y: 30 },
+  ];
+  return (
+    <div style={{ position: 'relative', height: '100%', borderRadius: 12, overflow: 'hidden', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)' }}>
+      <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0 }}>
+        <line x1="0" y1="20" x2="100" y2="20" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+        <line x1="0" y1="50" x2="100" y2="50" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+        <line x1="0" y1="80" x2="100" y2="80" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+        <line x1="25" y1="0" x2="25" y2="100" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+        <line x1="60" y1="0" x2="60" y2="100" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+      </svg>
+      {pins.map((p, i) => (
+        <div key={i} style={{
+          position: 'absolute', left: `${p.x}%`, top: `${p.y}%`,
+          width: 10, height: 10, borderRadius: '50%',
+          background: 'var(--c1)', boxShadow: '0 0 12px 2px rgba(0,194,255,0.55)',
+          transform: 'translate(-50%, -50%)',
+        }} />
+      ))}
+      <div style={{
+        position: 'absolute', left: '52%', top: '22%', transform: 'translate(12px, -130%)',
+        background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8,
+        padding: '8px 12px', whiteSpace: 'nowrap',
+      }}>
+        <div style={{ fontFamily: 'var(--inter)', fontSize: 12, fontWeight: 600, color: '#fff' }}>Bloor & Bathurst</div>
+        <div style={{ fontFamily: 'var(--inter)', fontSize: 12, color: 'var(--c1)' }}>$18 / hr</div>
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsPanel() {
+  const bars = [38, 62, 51, 74, 88, 69, 95];
+  const stats = [
+    { label: 'Impressions', value: '482K' },
+    { label: 'Reach',       value: '96K' },
+    { label: 'Spend',       value: '$3,140' },
+  ];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, height: '100%' }}>
+      <div style={{ display: 'flex', gap: 16 }}>
+        {stats.map((s) => (
+          <div key={s.label} style={{
+            flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
+            borderRadius: 12, padding: '14px 16px',
+          }}>
+            <div style={{ fontFamily: 'var(--inter)', fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{s.label}</div>
+            <div style={{ fontFamily: 'var(--inter)', fontSize: 22, fontWeight: 700, color: '#fff' }}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{
+        flex: 1, display: 'flex', alignItems: 'flex-end', gap: 10,
+        background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
+        borderRadius: 12, padding: '20px 24px',
+      }}>
+        {bars.map((h, i) => (
+          <div key={i} style={{
+            flex: 1, height: `${h}%`, borderRadius: '4px 4px 0 0',
+            background: 'linear-gradient(180deg, var(--c1), var(--c2))',
+            opacity: 0.85,
+          }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DisplayPanel() {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      height: '100%', borderRadius: 12, overflow: 'hidden',
+      background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)',
+    }}>
+      <div style={{
+        width: '70%', aspectRatio: '16 / 9', borderRadius: 10, overflow: 'hidden',
+        border: '1px solid var(--border)', position: 'relative',
+        background: 'linear-gradient(135deg, rgba(0,194,255,0.18), rgba(123,47,255,0.22))',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{
+          position: 'absolute', top: 10, left: 12,
+          display: 'flex', alignItems: 'center', gap: 6,
+          fontFamily: 'var(--inter)', fontSize: 11, color: '#fff',
+          background: 'rgba(0,0,0,0.35)', borderRadius: 999, padding: '4px 10px',
+        }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3DDC73' }} />
+          LIVE — Union Station Concourse
+        </div>
+        <div style={{ fontFamily: 'var(--inter)', fontSize: 24, fontWeight: 700, color: '#fff', letterSpacing: '-0.01em' }}>
+          Now playing: Local Coffee Co.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const REEL_PANELS = {
+  operator: OperatorPanel,
+  map: MapPanel,
+  analytics: AnalyticsPanel,
+  display: DisplayPanel,
+};
+
+function ProductReel() {
+  const [ref, on] = useReveal(0.25);
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    if (!on) return;
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return;
+    const id = setInterval(() => {
+      setActive((i) => (i + 1) % REEL_SCREENS.length);
+    }, 4000);
+    return () => clearInterval(id);
+  }, [on]);
+
+  return (
+    <section id="product" ref={ref} style={{
+      background: 'var(--bg)',
+      padding: 'clamp(64px,10vw,100px) clamp(20px,5vw,80px)',
+    }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <div className={`rv ${on ? 'on' : ''}`} style={{ textAlign: 'center', marginBottom: 48 }}>
+          <div className="tag" style={{ marginBottom: 20 }}>See It In Action</div>
+          <h2 className="sec-h" style={{
+            fontFamily: 'var(--inter)', fontSize: 48, fontWeight: 700,
+            color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1,
+          }}>
+            From listing to live.<br />In minutes, not weeks.
+          </h2>
+        </div>
+
+        <div className={`rv d1 ${on ? 'on' : ''} reel-frame`}>
+          <div className="reel-frame-bar">
+            <span className="reel-frame-dot" style={{ background: '#FF5F57' }} />
+            <span className="reel-frame-dot" style={{ background: '#FEBC2E' }} />
+            <span className="reel-frame-dot" style={{ background: '#28C840' }} />
+            <span style={{ fontFamily: 'var(--inter)', fontSize: 12, color: 'var(--muted)', marginLeft: 12 }}>
+              app.adgrid.ca
+            </span>
+          </div>
+          <div className="reel-stage">
+            {REEL_SCREENS.map((screen, i) => {
+              const Panel = REEL_PANELS[screen.key];
+              return (
+                <div key={screen.key} className={`reel-panel ${i === active ? 'on' : ''}`}>
+                  <Panel />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className={`rv d2 ${on ? 'on' : ''}`} style={{ textAlign: 'center', marginTop: 28 }}>
+          <p style={{ fontFamily: 'var(--inter)', fontSize: 16, color: 'var(--sec)', minHeight: 24 }}>
+            <strong style={{ color: '#fff', fontWeight: 600 }}>{REEL_SCREENS[active].label}.</strong>{' '}
+            {REEL_SCREENS[active].caption}
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 20 }}>
+            {REEL_SCREENS.map((screen, i) => (
+              <span key={screen.key} className={`reel-dot ${i === active ? 'on' : ''}`} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -515,9 +787,9 @@ function Hero({ onScrollTo }) {
       {/* Animated grid background */}
       <div className="hero-bg-grid" />
 
-      {/* City screen pins — low opacity */}
-      <div className="orb-load" style={{ position: 'absolute', inset: 0, opacity: 0.18, pointerEvents: 'none' }}>
-        <CityPins />
+      {/* Live network map — pins, connector lines, stat counter */}
+      <div className="orb-load" style={{ position: 'absolute', inset: 0, opacity: 0.22, pointerEvents: 'none' }}>
+        <NetworkMap />
       </div>
 
       {/* Glow orbs — drifting */}
@@ -1498,6 +1770,7 @@ export function MarketingHome({ onSignup, onLogin }) {
       <div ref={glowRef} className="cursor-glow" />
       <Nav onScrollTo={scrollTo} onLogin={onLogin} />
       <Hero onScrollTo={scrollTo} />
+      <ProductReel />
       <ProblemSection />
       <HowItWorks />
       <OperatorsSection onScrollTo={scrollTo} />
