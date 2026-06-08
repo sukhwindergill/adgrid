@@ -48,6 +48,10 @@ const CSS = `
   0%, 100% { box-shadow: 0 0 16px rgba(0,194,255,0.3), 0 0 32px rgba(123,47,255,0.15); }
   50%       { box-shadow: 0 0 32px rgba(0,194,255,0.5), 0 0 64px rgba(123,47,255,0.25); }
 }
+@keyframes panelFade {
+  from { opacity: 0; transform: translateY(8px) scale(0.99); }
+  to   { opacity: 1; transform: none; }
+}
 @keyframes pinPulse {
   0%, 100% { transform: scale(1);   opacity: 1; }
   50%       { transform: scale(1.4); opacity: 0.6; }
@@ -311,13 +315,25 @@ body::after {
   .notify-row { flex-direction: column !important; }
 }
 
+.reel-frame { position: relative; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); box-shadow: 0 0 0 1px rgba(0,194,255,0.06), 0 24px 80px rgba(0,0,0,0.5); overflow: hidden; }
+.reel-frame-bar { display: flex; align-items: center; gap: 6px; padding: 14px 18px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02); }
+.reel-frame-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+.reel-stage { position: relative; aspect-ratio: 16 / 9; background: var(--bg); }
+.reel-panel { position: absolute; inset: 0; padding: clamp(20px, 4vw, 40px); opacity: 0; pointer-events: none; transition: opacity 0.6s ease; }
+.reel-panel.on { opacity: 1; pointer-events: auto; animation: panelFade 0.6s ease both; }
+.reel-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease; }
+.reel-dot.on { background: var(--c1); transform: scale(1.3); box-shadow: 0 0 10px 2px rgba(0,194,255,0.5); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
-  .pin, .pin::after, .hero-orb {
+  .pin, .pin::after, .hero-orb, .reel-panel {
     animation: none !important;
+  }
+  .reel-panel {
+    transition: none !important;
   }
 }
 `;
