@@ -359,6 +359,15 @@ const CITY_PINS = [
   {x:30,y:35,delay:0.1},  // Saskatoon
 ];
 
+// Drives the ProductReel cycle — one entry per mock screen. `Panel` is the
+// component that renders that screen's mock UI inside the device frame.
+const REEL_SCREENS = [
+  { key: 'operator',  label: 'Operator dashboard',   caption: 'List inventory, set floor prices, track fill rate and earnings — all from one screen.' },
+  { key: 'map',       label: 'Map & browse screens', caption: 'Advertisers browse available screens by location, audience, and price in real time.' },
+  { key: 'analytics', label: 'Campaign analytics',   caption: 'Impressions, reach, and spend — reported live, not weeks after the campaign ends.' },
+  { key: 'display',   label: 'Live display preview', caption: "See exactly what's playing on a screen, right now, from anywhere." },
+];
+
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
 function useReveal(threshold = 0.15) {
@@ -465,6 +474,148 @@ function NetworkMap({ style }) {
     </div>
   );
 }
+
+// ─── Product Reel mock panels ─────────────────────────────────────────────────
+
+function OperatorPanel() {
+  const cards = [
+    { name: 'Queen St & Spadina',  fill: 82, earn: '$1,240' },
+    { name: 'Union Station Concourse', fill: 91, earn: '$2,860' },
+    { name: 'Yonge-Dundas Square', fill: 67, earn: '$1,975' },
+  ];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, height: '100%' }}>
+      <div style={{ fontFamily: 'var(--inter)', fontSize: 13, color: 'var(--sec)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+        Your inventory
+      </div>
+      {cards.map((c) => (
+        <div key={c.name} style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
+          borderRadius: 12, padding: '14px 18px',
+        }}>
+          <div>
+            <div style={{ fontFamily: 'var(--inter)', fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 6 }}>{c.name}</div>
+            <div style={{ width: 140, height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+              <div style={{ width: `${c.fill}%`, height: '100%', background: 'linear-gradient(90deg, var(--c1), var(--c2))', borderRadius: 3 }} />
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontFamily: 'var(--inter)', fontSize: 11, color: 'var(--muted)' }}>fill rate {c.fill}%</div>
+            <div style={{ fontFamily: 'var(--inter)', fontSize: 16, fontWeight: 700, color: 'var(--c1)' }}>{c.earn}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MapPanel() {
+  const pins = [
+    { x: 28, y: 35 }, { x: 52, y: 22 }, { x: 68, y: 48 }, { x: 40, y: 64 }, { x: 78, y: 30 },
+  ];
+  return (
+    <div style={{ position: 'relative', height: '100%', borderRadius: 12, overflow: 'hidden', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)' }}>
+      <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0 }}>
+        <line x1="0" y1="20" x2="100" y2="20" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+        <line x1="0" y1="50" x2="100" y2="50" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+        <line x1="0" y1="80" x2="100" y2="80" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+        <line x1="25" y1="0" x2="25" y2="100" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+        <line x1="60" y1="0" x2="60" y2="100" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+      </svg>
+      {pins.map((p, i) => (
+        <div key={i} style={{
+          position: 'absolute', left: `${p.x}%`, top: `${p.y}%`,
+          width: 10, height: 10, borderRadius: '50%',
+          background: 'var(--c1)', boxShadow: '0 0 12px 2px rgba(0,194,255,0.55)',
+          transform: 'translate(-50%, -50%)',
+        }} />
+      ))}
+      <div style={{
+        position: 'absolute', left: '52%', top: '22%', transform: 'translate(12px, -130%)',
+        background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8,
+        padding: '8px 12px', whiteSpace: 'nowrap',
+      }}>
+        <div style={{ fontFamily: 'var(--inter)', fontSize: 12, fontWeight: 600, color: '#fff' }}>Bloor & Bathurst</div>
+        <div style={{ fontFamily: 'var(--inter)', fontSize: 12, color: 'var(--c1)' }}>$18 / hr</div>
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsPanel() {
+  const bars = [38, 62, 51, 74, 88, 69, 95];
+  const stats = [
+    { label: 'Impressions', value: '482K' },
+    { label: 'Reach',       value: '96K' },
+    { label: 'Spend',       value: '$3,140' },
+  ];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, height: '100%' }}>
+      <div style={{ display: 'flex', gap: 16 }}>
+        {stats.map((s) => (
+          <div key={s.label} style={{
+            flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
+            borderRadius: 12, padding: '14px 16px',
+          }}>
+            <div style={{ fontFamily: 'var(--inter)', fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{s.label}</div>
+            <div style={{ fontFamily: 'var(--inter)', fontSize: 22, fontWeight: 700, color: '#fff' }}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{
+        flex: 1, display: 'flex', alignItems: 'flex-end', gap: 10,
+        background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
+        borderRadius: 12, padding: '20px 24px',
+      }}>
+        {bars.map((h, i) => (
+          <div key={i} style={{
+            flex: 1, height: `${h}%`, borderRadius: '4px 4px 0 0',
+            background: 'linear-gradient(180deg, var(--c1), var(--c2))',
+            opacity: 0.85,
+          }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DisplayPanel() {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      height: '100%', borderRadius: 12, overflow: 'hidden',
+      background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)',
+    }}>
+      <div style={{
+        width: '70%', aspectRatio: '16 / 9', borderRadius: 10, overflow: 'hidden',
+        border: '1px solid var(--border)', position: 'relative',
+        background: 'linear-gradient(135deg, rgba(0,194,255,0.18), rgba(123,47,255,0.22))',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{
+          position: 'absolute', top: 10, left: 12,
+          display: 'flex', alignItems: 'center', gap: 6,
+          fontFamily: 'var(--inter)', fontSize: 11, color: '#fff',
+          background: 'rgba(0,0,0,0.35)', borderRadius: 999, padding: '4px 10px',
+        }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3DDC73' }} />
+          LIVE — Union Station Concourse
+        </div>
+        <div style={{ fontFamily: 'var(--inter)', fontSize: 24, fontWeight: 700, color: '#fff', letterSpacing: '-0.01em' }}>
+          Now playing: Local Coffee Co.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const REEL_PANELS = {
+  operator: OperatorPanel,
+  map: MapPanel,
+  analytics: AnalyticsPanel,
+  display: DisplayPanel,
+};
 
 // ─── Nav ──────────────────────────────────────────────────────────────────────
 
