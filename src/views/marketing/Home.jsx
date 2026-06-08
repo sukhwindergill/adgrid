@@ -620,16 +620,24 @@ const REEL_PANELS = {
 function ProductReel() {
   const [ref, on] = useReveal(0.25);
   const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    if (!on) return;
+    if (!on || paused) return;
     const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (reduceMotion) return;
     const id = setInterval(() => {
       setActive((i) => (i + 1) % REEL_SCREENS.length);
     }, 4000);
     return () => clearInterval(id);
-  }, [on]);
+  }, [on, paused]);
+
+  const goTo = (i) => {
+    setActive(i);
+    setPaused(true);
+  };
+  const prev = () => goTo((active - 1 + REEL_SCREENS.length) % REEL_SCREENS.length);
+  const next = () => goTo((active + 1) % REEL_SCREENS.length);
 
   return (
     <section id="product" ref={ref} style={{
@@ -665,6 +673,30 @@ function ProductReel() {
                 </div>
               );
             })}
+            <button
+              type="button"
+              aria-label="Previous screen"
+              onClick={prev}
+              style={{
+                position: 'absolute', top: '50%', left: 14, transform: 'translateY(-50%)',
+                width: 36, height: 36, borderRadius: '50%', border: '1px solid var(--border)',
+                background: 'rgba(10,10,15,0.6)', color: '#fff', fontSize: 18, lineHeight: 1,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                zIndex: 2,
+              }}
+            >‹</button>
+            <button
+              type="button"
+              aria-label="Next screen"
+              onClick={next}
+              style={{
+                position: 'absolute', top: '50%', right: 14, transform: 'translateY(-50%)',
+                width: 36, height: 36, borderRadius: '50%', border: '1px solid var(--border)',
+                background: 'rgba(10,10,15,0.6)', color: '#fff', fontSize: 18, lineHeight: 1,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                zIndex: 2,
+              }}
+            >›</button>
           </div>
         </div>
 
@@ -675,7 +707,14 @@ function ProductReel() {
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 20 }}>
             {REEL_SCREENS.map((screen, i) => (
-              <span key={screen.key} className={`reel-dot ${i === active ? 'on' : ''}`} />
+              <button
+                key={screen.key}
+                type="button"
+                aria-label={`Show ${screen.label}`}
+                onClick={() => goTo(i)}
+                className={`reel-dot ${i === active ? 'on' : ''}`}
+                style={{ border: 'none', padding: 0, cursor: 'pointer' }}
+              />
             ))}
           </div>
         </div>
