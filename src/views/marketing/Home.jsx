@@ -617,6 +617,73 @@ const REEL_PANELS = {
   display: DisplayPanel,
 };
 
+function ProductReel() {
+  const [ref, on] = useReveal(0.25);
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    if (!on) return;
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return;
+    const id = setInterval(() => {
+      setActive((i) => (i + 1) % REEL_SCREENS.length);
+    }, 4000);
+    return () => clearInterval(id);
+  }, [on]);
+
+  return (
+    <section id="product" ref={ref} style={{
+      background: 'var(--bg)',
+      padding: 'clamp(64px,10vw,100px) clamp(20px,5vw,80px)',
+    }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <div className={`rv ${on ? 'on' : ''}`} style={{ textAlign: 'center', marginBottom: 48 }}>
+          <div className="tag" style={{ marginBottom: 20 }}>See It In Action</div>
+          <h2 className="sec-h" style={{
+            fontFamily: 'var(--inter)', fontSize: 48, fontWeight: 700,
+            color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1,
+          }}>
+            From listing to live.<br />In minutes, not weeks.
+          </h2>
+        </div>
+
+        <div className={`rv d1 ${on ? 'on' : ''} reel-frame`}>
+          <div className="reel-frame-bar">
+            <span className="reel-frame-dot" style={{ background: '#FF5F57' }} />
+            <span className="reel-frame-dot" style={{ background: '#FEBC2E' }} />
+            <span className="reel-frame-dot" style={{ background: '#28C840' }} />
+            <span style={{ fontFamily: 'var(--inter)', fontSize: 12, color: 'var(--muted)', marginLeft: 12 }}>
+              app.adgrid.ca
+            </span>
+          </div>
+          <div className="reel-stage">
+            {REEL_SCREENS.map((screen, i) => {
+              const Panel = REEL_PANELS[screen.key];
+              return (
+                <div key={screen.key} className={`reel-panel ${i === active ? 'on' : ''}`}>
+                  <Panel />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className={`rv d2 ${on ? 'on' : ''}`} style={{ textAlign: 'center', marginTop: 28 }}>
+          <p style={{ fontFamily: 'var(--inter)', fontSize: 16, color: 'var(--sec)', minHeight: 24 }}>
+            <strong style={{ color: '#fff', fontWeight: 600 }}>{REEL_SCREENS[active].label}.</strong>{' '}
+            {REEL_SCREENS[active].caption}
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 20 }}>
+            {REEL_SCREENS.map((screen, i) => (
+              <span key={screen.key} className={`reel-dot ${i === active ? 'on' : ''}`} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── Nav ──────────────────────────────────────────────────────────────────────
 
 function Nav({ onScrollTo, onLogin }) {
