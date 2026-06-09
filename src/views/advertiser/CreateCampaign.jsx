@@ -19,7 +19,7 @@ import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-const STEP_LABELS = ['Area', 'Filters', 'Screens', 'Creative', 'Budget', 'Launch', 'Review'];
+const STEP_LABELS = ['Area', 'Screens', 'Creative', 'Budget & Schedule', 'Review'];
 
 const CITY_CENTERS = {
   'Toronto':      [43.6532,  -79.3832],
@@ -367,6 +367,8 @@ function ScreenPickerCard({ screen, selected, onToggle }) {
 }
 
 function StepScreens({ form, setForm, matchedScreens }) {
+  const [showFilters, setShowFilters] = useState(false);
+
   const toggleScreen = (id) => setForm(s => ({
     ...s,
     selected_screen_ids: s.selected_screen_ids.includes(id)
@@ -383,6 +385,40 @@ function StepScreens({ form, setForm, matchedScreens }) {
   return (
     <div style={{ maxWidth: 700, margin: '0 auto' }}>
       <Card style={{ padding: 28 }}>
+        <button
+          onClick={() => setShowFilters(f => !f)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '6px 12px', borderRadius: 8, border: `1px solid ${C.border}`,
+            background: showFilters ? C.purpleSoft : C.surface,
+            color: showFilters ? C.purple : C.textSub,
+            fontSize: 12, fontWeight: 500, fontFamily: F.sans,
+            cursor: 'pointer', transition: 'all 0.15s', marginBottom: 12,
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          Filters {showFilters ? '▲' : '▼'}
+        </button>
+
+        {showFilters && (
+          <div style={{ marginBottom: 16, padding: 16, background: C.surfaceAlt, borderRadius: 10, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>Environment</div>
+              <PillGroup
+                options={[{ value: 'any', label: 'Any' }, { value: 'indoor', label: 'Indoor' }, { value: 'outdoor', label: 'Outdoor' }]}
+                value={form.env_filter}
+                onChange={v => setForm(s => ({ ...s, env_filter: v }))}
+              />
+            </div>
+            <SelInput label="Venue Category" value={form.venue_filter} onChange={e => setForm(s => ({ ...s, venue_filter: e.target.value }))}>
+              <option value="">Any venue type</option>
+              {Object.entries(VENUE_TAXONOMY).map(([key, { label }]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </SelInput>
+          </div>
+        )}
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: 0 }}>Select screens</h2>
@@ -560,6 +596,26 @@ function StepBudget({ form, setForm, matchedScreens }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Inp label="From" type="time" value={form.time_start} onChange={e => setField('time_start', e.target.value)} />
             <Inp label="Until" type="time" value={form.time_end} onChange={e => setField('time_end', e.target.value)} />
+          </div>
+
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Launch mode</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { value: 'partial', title: 'Go live as screens approve', desc: "Your campaign starts running on each screen as soon as that screen's owner approves." },
+                { value: 'all', title: 'Wait for all screens', desc: 'Campaign stays pending until every targeted screen owner has approved.' },
+              ].map(opt => (
+                <button key={opt.value} type="button" onClick={() => setField('start_when', opt.value)} style={{
+                  padding: '14px 16px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+                  border: `2px solid ${form.start_when === opt.value ? C.purple : C.border}`,
+                  background: form.start_when === opt.value ? C.purpleSoft : C.surface,
+                  transition: 'all 0.15s',
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{opt.title}</div>
+                  <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, lineHeight: 1.4 }}>{opt.desc}</div>
+                </button>
+              ))}
+            </div>
           </div>
 
         </div>
@@ -876,7 +932,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         spent: 0, impressions: 0, scans: 0,
         status: hasAutoApproved && form.start_when === 'partial' ? 'scheduled' : 'pending_review',
       });
-      setStep(7);
+      setStep(5);
     } catch (e) {
       setSubmitErr(e.message || 'Failed to submit campaign');
       setSubmitting(false);
@@ -917,7 +973,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
   return (
     <div>
       <PageHeader title="New Campaign" back="Overview" onBack={onCancel} />
-      {step < 7 && <Stepper step={step} onCancel={onCancel} />}
+      {step < 5 && <Stepper step={step} onCancel={onCancel} />}
 
       {showDupModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
@@ -944,24 +1000,22 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       )}
 
       {step === 0 && <StepArea form={form} setForm={setForm} reachSummary={reachSummary} allScreens={dbScreens} onPrevCampaigns={campaigns.length > 0 ? () => setShowDupModal(true) : null} />}
-      {step === 1 && <StepFilters form={form} setForm={setForm} reachSummary={reachSummary} />}
-      {step === 2 && <StepScreens form={form} setForm={setForm} matchedScreens={matchedScreens} />}
-      {step === 3 && <StepCreative form={form} setForm={setForm} />}
-      {step === 4 && <StepBudget form={form} setForm={setForm} matchedScreens={selectedScreens} />}
-      {step === 5 && <StepLaunch form={form} setForm={setForm} />}
-      {step === 6 && <StepReview form={form} matchedScreens={selectedScreens} onSubmit={handleSubmit} submitting={submitting} err={submitErr} />}
-      {step === 7 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} />}
+      {step === 1 && <StepScreens form={form} setForm={setForm} matchedScreens={matchedScreens} />}
+      {step === 2 && <StepCreative form={form} setForm={setForm} />}
+      {step === 3 && <StepBudget form={form} setForm={setForm} matchedScreens={selectedScreens} />}
+      {step === 4 && <StepReview form={form} matchedScreens={selectedScreens} onSubmit={handleSubmit} submitting={submitting} err={submitErr} />}
+      {step === 5 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} />}
 
-      {step < 6 && (
+      {step < 4 && (
         <div style={{ maxWidth: 620, margin: '20px auto 0', display: 'flex', gap: 10 }}>
           {step > 0 && <Btn variant="secondary" onClick={back} style={{ flex: 1 }}>← Back</Btn>}
           <Btn onClick={next} style={{ flex: 1 }}
             disabled={
               (step === 0 && form.area_type === 'radius' && !form.radius_center_lat) ||
-              (step === 2 && form.selected_screen_ids.length === 0)
+              (step === 1 && form.selected_screen_ids.length === 0)
             }
           >
-            {step === 1 ? 'See screens →' : step === 5 ? 'Review →' : 'Next →'}
+            {step === 3 ? 'Review →' : 'Next →'}
           </Btn>
         </div>
       )}
