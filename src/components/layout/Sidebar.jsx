@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { C, F } from '../../design/tokens.js';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -235,7 +236,9 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
-export function Sidebar({ active, setActive, activeMode, onModeSwitch, user, onSignOut, pendingCount = 0 }) {
+export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pendingCount = 0 }) {
+  const navigate = useNavigate();
+  const setActive = id => navigate('/app/' + id);
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem('sidebar_collapsed') === 'true';

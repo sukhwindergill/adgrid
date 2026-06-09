@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // ─── Design System — Canada OOH Marketplace ───────────────────────────────────
 // Colors: #0A0A0F · #00C2FF → #7B2FFF · Inter 700/800 · one message per section
@@ -1860,7 +1861,9 @@ function TrustBar() {
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
-export function MarketingHome({ onSignup, onLogin }) {
+export function MarketingHome({ onSignup, onLogin: onLoginProp }) {
+  const navigateRouter = useNavigate();
+  const onLogin = onLoginProp ?? (() => navigateRouter('/login'));
   // Inject CSS
   useEffect(() => {
     const existing = document.getElementById('adgrid-mktg-css');

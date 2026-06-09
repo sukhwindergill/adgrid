@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import { supabase } from './lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from './lib/constants.js';
@@ -9,6 +10,7 @@ import { GlobalHeader } from './components/layout/GlobalHeader.jsx';
 import { AppShell } from './components/layout/AppShell.jsx';
 import { Sidebar } from './components/layout/Sidebar.jsx';
 import { ErrorBoundary } from './components/primitives/ErrorBoundary.jsx';
+import { RequireAuth } from './components/auth/RequireAuth.jsx';
 
 // Operator views
 import { Dashboard }      from './views/operator/Dashboard.jsx';
@@ -40,7 +42,6 @@ import { NotificationPrefsView } from './views/shared/NotificationPrefsView.jsx'
 import { SignalsView }      from './views/shared/SignalsView.jsx';
 import { IntegrationsView } from './views/shared/IntegrationsView.jsx';
 import { DisplayView }      from './views/shared/DisplayView.jsx';
-import { Placeholder }      from './views/shared/Placeholder.jsx';
 
 // Public views (no auth required)
 import { DisplayPlayer } from './views/display/DisplayPlayer.jsx';
@@ -64,13 +65,14 @@ async function callNotification(userId, type, data = {}) {
   }).catch(e => console.error('Notification error:', e));
 }
 
-// ─── App ─────────────────────────────────────────────────────────────────────
+// ─── AppInner (auth-gated shell) ─────────────────────────────────────────────
 
-export default function App() {
+function AppInner() {
   const { user, profile, activeMode, setActiveMode, loading, signOut } = useAuth();
   const toast = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const [active,           setActive]        = useState('overview');
   const [impersonating,    setImpersonating] = useState(null); // { id, name }
   const impersonationLogId = useRef(null);
   const [campaigns,        setCampaigns]     = useState([]);
@@ -79,6 +81,9 @@ export default function App() {
   const [dataLoading,      setDataLoading]   = useState(false);
   const [loadError,        setLoadError]     = useState(null);
   const [selectedScreenId, setSelectedScreenId] = useState(null);
+
+  // Derive active from current URL path
+  const active = location.pathname.replace(/^\/app\/?/, '') || 'overview';
 
   // ── Impersonation audit trail ─────────────────────────────────────────────
   useEffect(() => {
@@ -101,11 +106,11 @@ export default function App() {
   // ── Impersonation ──────────────────────────────────────────────────────────
   function startImpersonation(adv) {
     setImpersonating({ id: adv.id, name: adv.name });
-    setActive('adv-overview');
+    navTo('adv-overview');
   }
   function stopImpersonation() {
     setImpersonating(null);
-    setActive('advertisers');
+    navTo('advertisers');
   }
 
   // ── Data loading ───────────────────────────────────────────────────────────
@@ -173,8 +178,9 @@ export default function App() {
   // Update nav when mode changes
   useEffect(() => {
     if (user && activeMode) {
-      setActive(activeMode === 'advertiser' ? 'adv-overview' : 'overview');
+      navTo(activeMode === 'advertiser' ? 'adv-overview' : 'overview');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, activeMode]);
 
   // ── Stripe Connect redirect ────────────────────────────────────────────────
@@ -201,7 +207,6 @@ export default function App() {
     }
   }, [user]);
 
-  // ── Loading / auth gates ───────────────────────────────────────────────────
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: C.bg, padding: '40px 28px' }}>
@@ -220,20 +225,17 @@ export default function App() {
     );
   }
 
-  if (!user) {
-    const path = window.location.pathname;
-    // Show login page directly on /login, otherwise show marketing home
-    if (path === '/login') return <LoginPage />;
-    return <MarketingHome onSignup={() => window.location.href = '/login'} onLogin={() => window.location.href = '/login'} />;
-  }
-
   const isAdv = impersonating ? true : activeMode === 'advertiser';
   const displayUser = { name: profile?.name || user.email?.split('@')[0] || 'User', email: user.email };
   const pendingCount = campaigns.filter(c => c.status === 'pending_review').length;
 
-  // ── Mutation helpers ───────────────────────────────────────────────────────
-  const navigate = v => { setActive(v); setDetail(null); };
+  // ── Navigation helper ──────────────────────────────────────────────────────
+  const navTo = v => {
+    navigate('/app/' + v);
+    setDetail(null);
+  };
 
+  // ── Mutation helpers ───────────────────────────────────────────────────────
   const updateCampaign = async updated => {
     const prevCampaign = campaigns.find(c => c.id === updated.id);
     const becomingActive = updated.status === 'active' && prevCampaign?.status !== 'active';
@@ -284,29 +286,29 @@ export default function App() {
     }
 
     if (isAdv) {
-      if (active === 'adv-overview')     return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navigate} advertiserId={impersonating?.id ?? user.id} />;
+      if (active === 'adv-overview')     return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navTo} advertiserId={impersonating?.id ?? user.id} />;
       if (active === 'adv-create')       return (
         <CreateCampaign
           dbScreens={dbScreens}
           campaigns={campaigns}
           onSave={c => {
             setCampaigns(p => [c, ...p]);
-            navigate('adv-campaigns');
+            navTo('adv-campaigns');
           }}
-          onCancel={() => navigate('adv-overview')}
+          onCancel={() => navTo('adv-overview')}
         />
       );
-      if (active === 'adv-campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navigate('adv-create')} />;
+      if (active === 'adv-campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} />;
       if (active === 'adv-analytics')    return <Analytics campaigns={campaigns} loading={dataLoading} />;
       if (active === 'adv-audience')     return <ScansView impersonatingId={impersonating?.id ?? null} />;
       if (active === 'adv-billing')      return <AdvertiserBillingView />;
       if (active === 'adv-integrations') return <AdvIntegrationsView />;
       if (active === 'adv-settings')     return <SettingsView />;
       if (active === 'notif-prefs')      return <NotificationPrefsView />;
-      return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navigate} advertiserId={impersonating?.id ?? user.id} />;
+      return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navTo} advertiserId={impersonating?.id ?? user.id} />;
     }
 
-    if (active === 'overview')     return <Dashboard campaigns={campaigns} dbScreens={dbScreens} setNav={navigate} loading={dataLoading} />;
+    if (active === 'overview')     return <Dashboard campaigns={campaigns} dbScreens={dbScreens} setNav={navTo} loading={dataLoading} />;
     if (active === 'screen-onboard') return (
       <ScreenOnboardView
         onComplete={(newScreen) => {
@@ -321,9 +323,9 @@ export default function App() {
           }]);
           setSelectedScreenId(newScreen.id);
           setActiveMode('operator');
-          navigate('screen-detail');
+          navTo('screen-detail');
         }}
-        onCancel={() => navigate('screens')}
+        onCancel={() => navTo('screens')}
       />
     );
     if (active === 'screens')      return (
@@ -331,17 +333,17 @@ export default function App() {
         dbScreens={dbScreens}
         setDbScreens={setDbScreens}
         loading={dataLoading}
-        onSelectScreen={id => { setSelectedScreenId(id); navigate('screen-detail'); }}
-        onStartOnboard={() => navigate('screen-onboard')}
+        onSelectScreen={id => { setSelectedScreenId(id); navTo('screen-detail'); }}
+        onStartOnboard={() => navTo('screen-onboard')}
       />
     );
     if (active === 'approval')      return <ApprovalQueue campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} dbScreens={dbScreens} />;
     if (active === 'screen-detail') {
-      if (!selectedScreenId) { navigate('screens'); return null; }
-      return <ScreenDetailView screenId={selectedScreenId} onBack={() => navigate('screens')} profile={profile} onScreenUpdated={updated => setDbScreens(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s))} />;
+      if (!selectedScreenId) { navTo('screens'); return null; }
+      return <ScreenDetailView screenId={selectedScreenId} onBack={() => navTo('screens')} profile={profile} onScreenUpdated={updated => setDbScreens(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s))} />;
     }
     if (active === 'notif-prefs')   return <NotificationPrefsView />;
-    if (active === 'campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navigate('adv-create')} />;
+    if (active === 'campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} />;
     if (active === 'analytics')    return <Analytics campaigns={campaigns} loading={dataLoading} />;
     if (active === 'audience')     return <Audience campaigns={campaigns} />;
     if (active === 'revenue')      return <Revenue campaigns={campaigns} loading={dataLoading} />;
@@ -351,7 +353,7 @@ export default function App() {
     if (active === 'integrations') return <IntegrationsView />;
     if (active === 'display')      return <DisplayView campaigns={campaigns} />;
     if (active === 'op-settings')  return <OperatorSettingsView />;
-    return <Dashboard campaigns={campaigns} setNav={navigate} loading={dataLoading} />;
+    return <Dashboard campaigns={campaigns} setNav={navTo} loading={dataLoading} />;
   };
 
   return (
@@ -361,11 +363,10 @@ export default function App() {
       sidebar={
         <Sidebar
           active={active}
-          setActive={navigate}
           activeMode={impersonating ? 'advertiser' : activeMode}
           onModeSwitch={impersonating ? undefined : mode => {
             setActiveMode(mode);
-            navigate(mode === 'advertiser' ? 'adv-overview' : 'overview');
+            navTo(mode === 'advertiser' ? 'adv-overview' : 'overview');
           }}
           user={displayUser}
           onSignOut={signOut}
@@ -402,4 +403,30 @@ export default function App() {
       </ErrorBoundary>
     </AppShell>
   );
+}
+
+// ─── App ─────────────────────────────────────────────────────────────────────
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<MarketingHome />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/display/:token" element={<DisplayPlayerRoute />} />
+      <Route
+        path="/app/*"
+        element={
+          <RequireAuth>
+            <AppInner />
+          </RequireAuth>
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+function DisplayPlayerRoute() {
+  const { token } = useParams();
+  return <DisplayPlayer screenToken={token} />;
 }
