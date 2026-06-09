@@ -32,7 +32,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("stripe_customer_id, email, full_name")
+    .select("stripe_customer_id, email, full_name, preferred_currency")
     .eq("id", user.id)
     .single();
 
@@ -55,7 +55,7 @@ Deno.serve(async (req: Request) => {
   const session = await stripe.checkout.sessions.create({
     mode: "setup",
     customer: customerId,
-    currency: "gbp",
+    currency: profile?.preferred_currency ?? "cad",
     success_url: `${origin}/billing?setup=success`,
     cancel_url: `${origin}/billing?setup=cancelled`,
   });
