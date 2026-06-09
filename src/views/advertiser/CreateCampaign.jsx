@@ -22,12 +22,16 @@ const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const STEP_LABELS = ['Area', 'Filters', 'Screens', 'Creative', 'Budget', 'Launch', 'Review'];
 
 const CITY_CENTERS = {
-  'Toronto':    [43.6532, -79.3832],
-  'London':     [51.5074, -0.1278],
-  'Manchester': [53.4808, -2.2426],
-  'Birmingham': [52.4862, -1.8904],
-  'Vancouver':  [49.2827, -123.1207],
-  'Edinburgh':  [55.9533, -3.1883],
+  'Toronto':      [43.6532,  -79.3832],
+  'Vancouver':    [49.2827, -123.1207],
+  'Montreal':     [45.5017,  -73.5673],
+  'Calgary':      [51.0447, -114.0719],
+  'Ottawa':       [45.4215,  -75.6972],
+  'Edmonton':     [53.5461, -113.4938],
+  'Winnipeg':     [49.8951,  -97.1384],
+  'Quebec City':  [46.8139,  -71.2080],
+  'Hamilton':     [43.2557,  -79.8711],
+  'Kitchener':    [43.4516,  -80.4925],
 };
 
 function haversine(lat1, lon1, lat2, lon2) {
