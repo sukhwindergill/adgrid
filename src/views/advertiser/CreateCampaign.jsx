@@ -161,18 +161,28 @@ function StepArea({ form, setForm, reachSummary, allScreens, onPrevCampaigns }) 
 
   const geocodeCenter = async (query) => {
     if (!query.trim()) return;
+    // Fast path: known city
     if (CITY_CENTERS[query]) {
       setForm(s => ({ ...s, radius_center_lat: CITY_CENTERS[query][0], radius_center_lon: CITY_CENTERS[query][1] }));
       return;
     }
     setGeocoding(true);
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`);
+      const token = import.meta.env.VITE_MAPBOX_TOKEN;
+      if (!token) throw new Error('VITE_MAPBOX_TOKEN not set');
+      const res = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?country=ca&limit=1&access_token=${token}`
+      );
       const data = await res.json();
-      if (data[0]) {
-        setForm(s => ({ ...s, radius_center_lat: parseFloat(data[0].lat), radius_center_lon: parseFloat(data[0].lon) }));
+      const feature = data.features?.[0];
+      if (feature) {
+        // Mapbox returns [longitude, latitude] — reversed vs Nominatim
+        const [lon, lat] = feature.center;
+        setForm(s => ({ ...s, radius_center_lat: lat, radius_center_lon: lon }));
       }
-    } catch (_) {}
+    } catch (_) {
+      // leave center unchanged — CITY_CENTERS fast path already handles known cities
+    }
     setGeocoding(false);
   };
 
