@@ -336,6 +336,41 @@ body::after {
     transition: none !important;
   }
 }
+
+/* ── TrustBar ── */
+.trust-bar { padding: 48px clamp(20px,5vw,80px); position: relative; z-index: 1; }
+.trust-bar .inner { max-width: 1100px; margin: 0 auto; }
+.trust-bar .stat-line {
+  text-align: center; margin-bottom: 40px;
+  font-family: var(--inter); font-size: 13px; color: var(--sec);
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.trust-bar .stat-line strong {
+  color: var(--c1); font-size: 28px; font-weight: 800;
+  display: block; margin-bottom: 4px; letter-spacing: -0.01em;
+}
+.trust-bar .quotes {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;
+}
+.trust-quote {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 24px; position: relative; overflow: hidden; transition: border-color 0.2s;
+}
+.trust-quote:hover { border-color: var(--c1); }
+.trust-quote .text {
+  font-family: var(--inter); font-size: 15px; color: var(--white);
+  line-height: 1.6; margin-bottom: 16px; font-style: italic;
+}
+.trust-quote .meta { display: flex; align-items: center; gap: 12px; }
+.trust-quote .avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px; color: #fff;
+  font-family: var(--inter); flex-shrink: 0;
+}
+.trust-quote .name { font-family: var(--inter); font-size: 13px; font-weight: 600; color: var(--white); }
+.trust-quote .role { font-family: var(--inter); font-size: 12px; color: var(--sec); margin-top: 1px; }
 `;
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -1724,6 +1759,76 @@ function Footer({ onLogin }) {
   );
 }
 
+// ─── TrustBar ─────────────────────────────────────────────────────────────────
+
+const TRUST_QUOTES = [
+  {
+    text: "We were leaving money on the table with static rates. AdGrid's dynamic pricing filled our off-peak slots we never thought would sell.",
+    name: 'Marcus T.',
+    role: 'Screen Operator · Toronto, ON · 6 screens',
+    initial: 'M',
+  },
+  {
+    text: "Set up in under an hour. Had our first campaign approved by end of day. The approval queue is clean and the payout came through automatically.",
+    name: 'Priya K.',
+    role: 'Network Owner · Vancouver, BC · 12 screens',
+    initial: 'P',
+  },
+  {
+    text: "Finally — a platform built for Canadian operators. The geo-targeting actually works for our neighbourhoods, not just US zip codes.",
+    name: 'Julien L.',
+    role: 'Venue Manager · Montréal, QC · 3 screens',
+    initial: 'J',
+  },
+];
+
+function TrustBar() {
+  const [ref, on] = useReveal(0.15);
+  const [liveCount, setLiveCount] = useState(null);
+
+  useEffect(() => {
+    import('../../lib/supabase.js').then(({ supabase }) => {
+      supabase
+        .from('screens')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'live')
+        .then(({ count }) => { if (count != null) setLiveCount(count); });
+    }).catch(() => {});
+  }, []);
+
+  return (
+    <section className="trust-bar" ref={ref}>
+      <div className="inner">
+        <div
+          className="stat-line"
+          style={{ animation: on ? 'fadeUp 0.5s ease both' : 'none' }}
+        >
+          <strong>{liveCount != null ? `${liveCount}+` : '—'}</strong>
+          screens live on AdGrid right now
+        </div>
+        <div className="quotes">
+          {TRUST_QUOTES.map((q, i) => (
+            <div
+              key={i}
+              className="trust-quote"
+              style={{ animation: on ? `fadeUp 0.5s ease ${0.1 + i * 0.1}s both` : 'none' }}
+            >
+              <div className="text">"{q.text}"</div>
+              <div className="meta">
+                <div className="avatar">{q.initial}</div>
+                <div>
+                  <div className="name">{q.name}</div>
+                  <div className="role">{q.role}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 export function MarketingHome({ onSignup, onLogin }) {
@@ -1809,6 +1914,7 @@ export function MarketingHome({ onSignup, onLogin }) {
       <div ref={glowRef} className="cursor-glow" />
       <Nav onScrollTo={scrollTo} onLogin={onLogin} />
       <Hero onScrollTo={scrollTo} />
+      <TrustBar />
       <ProductReel />
       <ProblemSection />
       <HowItWorks />
