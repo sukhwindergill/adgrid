@@ -8,7 +8,7 @@ export const ProgressBar = ({ value, max, color = C.purple, height = 6, showLabe
       {showLabel && (
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontFamily: F.sans }}>
           <span style={{ fontSize: 11, color: C.textSub }}>{pct}% used</span>
-          <span style={{ fontSize: 11, color: C.textSub }}>£{value.toLocaleString()} / £{max.toLocaleString()}</span>
+          <span style={{ fontSize: 11, color: C.textSub }}>${value.toLocaleString()} / ${max.toLocaleString()}</span>
         </div>
       )}
       <div style={{ height, borderRadius: height / 2, background: C.surfaceAlt, overflow: 'hidden' }}>

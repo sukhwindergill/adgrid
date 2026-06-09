@@ -89,10 +89,10 @@ export function Billing() {
         actions={<a href="https://dashboard.stripe.com" target="_blank" rel="noreferrer"><Btn variant="secondary" size="sm">Stripe Dashboard ↗</Btn></a>} />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
-        <KPI label="Total Ad Spend"   value={`£${totalCharged.toLocaleString()}`}  sub="charged campaigns" trend={14} icon="💰" />
-        <KPI label="Platform Net"     value={`£${platformNet.toLocaleString()}`}   sub="12% platform fee"  color={C.blue} icon="$" />
-        <KPI label="Available Balance" value={balance ? `£${availableOut.toLocaleString()}` : '—'} sub={connectStatus === 'active' ? 'ready to pay out' : 'connect Stripe'} color={C.green} icon="✓" />
-        <KPI label="Pending Balance"  value={balance ? `£${pendingIn.toLocaleString()}` : '—'} sub="in transit" color={C.amber} icon="⏳" />
+        <KPI label="Total Ad Spend"   value={`$${totalCharged.toLocaleString()}`}  sub="charged campaigns" trend={14} icon="💰" />
+        <KPI label="Platform Net"     value={`$${platformNet.toLocaleString()}`}   sub="12% platform fee"  color={C.blue} icon="$" />
+        <KPI label="Available Balance" value={balance ? `$${availableOut.toLocaleString()}` : '—'} sub={connectStatus === 'active' ? 'ready to pay out' : 'connect Stripe'} color={C.green} icon="✓" />
+        <KPI label="Pending Balance"  value={balance ? `$${pendingIn.toLocaleString()}` : '—'} sub="in transit" color={C.amber} icon="⏳" />
       </div>
 
       <Tabs tabs={[{ id: 'overview', label: 'Overview' }, { id: 'charges', label: 'Charges' }, { id: 'payouts', label: 'Payouts' }]} active={tab} onChange={setTab} />
@@ -107,9 +107,9 @@ export function Billing() {
               <div style={{ flex: 1, background: C.surfaceAlt }} />
             </div>
             {[
-              ['Platform (12%)', `£${platformNet.toLocaleString()}`, C.blue],
-              ['Screen Owners (40%)', `£${ownerShare.toLocaleString()}`, C.green],
-              ['Network Pool (48%)', `£${(totalCharged - platformNet - ownerShare).toLocaleString()}`, C.textSub],
+              ['Platform (12%)', `$${platformNet.toLocaleString()}`, C.blue],
+              ['Screen Owners (40%)', `$${ownerShare.toLocaleString()}`, C.green],
+              ['Network Pool (48%)', `$${(totalCharged - platformNet - ownerShare).toLocaleString()}`, C.textSub],
             ].map(([l, v, c]) => (
               <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
                 <span style={{ fontSize: 13, color: C.textMid }}>{l}</span>
@@ -127,7 +127,7 @@ export function Billing() {
             ) : (
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 16 }}>
-                  {[['Available', `£${availableOut.toLocaleString()}`, C.green], ['Pending', `£${pendingIn.toLocaleString()}`, C.amber]].map(([l, v, c]) => (
+                  {[['Available', `$${availableOut.toLocaleString()}`, C.green], ['Pending', `$${pendingIn.toLocaleString()}`, C.amber]].map(([l, v, c]) => (
                     <div key={l} style={{ padding: 14, background: C.surfaceAlt, borderRadius: 8 }}>
                       <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 4 }}>{l}</div>
                       <div style={{ fontSize: 22, fontWeight: 700, color: c, fontFamily: F.mono }}>{v}</div>
@@ -135,7 +135,7 @@ export function Billing() {
                   ))}
                 </div>
                 <Btn variant="success" size="sm" onClick={doPayoutAll} disabled={payingOut || availableOut <= 0}>
-                  {payingOut ? 'Initiating…' : `Pay Out £${availableOut.toLocaleString()} to Bank`}
+                  {payingOut ? 'Initiating…' : `Pay Out $${availableOut.toLocaleString()} to Bank`}
                 </Btn>
               </>
             )}
@@ -157,8 +157,8 @@ export function Billing() {
               { key: 'advertiser', label: 'Advertiser' },
               { key: 'screen',     label: 'Screen' },
               { key: 'date',       label: 'Date',        render: v => <span style={{ fontFamily: F.mono, fontSize: 11 }}>{v}</span> },
-              { key: 'amount',     label: 'Gross',       render: v => <span style={{ fontWeight: 600, fontFamily: F.mono }}>£{Number(v).toLocaleString()}</span> },
-              { key: 'amount',     label: 'Platform (12%)', render: v => <span style={{ color: C.blue, fontFamily: F.mono }}>£{Math.round(v * 0.12).toLocaleString()}</span> },
+              { key: 'amount',     label: 'Gross',       render: v => <span style={{ fontWeight: 600, fontFamily: F.mono }}>${Number(v).toLocaleString()}</span> },
+              { key: 'amount',     label: 'Platform (12%)', render: v => <span style={{ color: C.blue, fontFamily: F.mono }}>${Math.round(v * 0.12).toLocaleString()}</span> },
               { key: 'status',     label: 'Status',      render: v => <Badge status={v} /> },
             ]}
             rows={charges} />
@@ -182,7 +182,7 @@ export function Billing() {
           <Table
             columns={[
               { key: 'id',           label: 'Payout ID',    render: v => <span style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub }}>{v}</span> },
-              { key: 'amount',       label: 'Amount',       render: v => <span style={{ fontWeight: 600, color: C.green, fontFamily: F.mono }}>£{Number(v).toLocaleString()}</span> },
+              { key: 'amount',       label: 'Amount',       render: v => <span style={{ fontWeight: 600, color: C.green, fontFamily: F.mono }}>${Number(v).toLocaleString()}</span> },
               { key: 'status',       label: 'Status',       render: v => <Badge status={v} /> },
               { key: 'arrival_date', label: 'Arrival Date', render: v => <span style={{ fontFamily: F.mono, fontSize: 11 }}>{v}</span> },
             ]}

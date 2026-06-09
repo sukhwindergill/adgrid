@@ -1,0 +1,40 @@
+<h2>One Login — Dual Role: Which approach?</h2>
+<p class="subtitle">Screen owners who also want to advertise. Pick the model that feels right.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Sidebar Role Switcher</h3>
+      <p>A small toggle at the top of the sidebar — "Screen Owner" / "Advertiser" — that swaps the entire nav + views. Same single-page app, same session. Think of it like switching workspaces.</p>
+      <div class="pros-cons" style="margin-top:12px">
+        <div class="pros"><h4>Pros</h4><ul><li>Clean separation of context</li><li>Familiar pattern (Slack workspaces, Notion teams)</li><li>Easy to build on existing code</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Context switch feels heavy if you hop between roles often</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Unified Dashboard with Both Sections</h3>
+      <p>One sidebar with all sections — Screens, Approval Queue (owner stuff) and Campaigns, Create Ad (advertiser stuff) — visible together. Role is additive, not a switch.</p>
+      <div class="pros-cons" style="margin-top:12px">
+        <div class="pros"><h4>Pros</h4><ul><li>No switching needed — everything at once</li><li>Good for power users who context-switch constantly</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Sidebar gets cluttered for new users</li><li>Mental model confusion — "am I looking at my screen or my ad?"</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Role at Signup → Add Role Later</h3>
+      <p>Advertiser or Screen Owner at signup. Later, from Settings, you can "add" the other role to your account. Once both roles are active, a header dropdown lets you switch. Role-specific nav loads per selection.</p>
+      <div class="pros-cons" style="margin-top:12px">
+        <div class="pros"><h4>Pros</h4><ul><li>Simple for new users (one role at a time)</li><li>Opt-in — only power users see the switcher</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>More DB/profile changes needed</li><li>Onboarding for "add role" flow needs designing</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

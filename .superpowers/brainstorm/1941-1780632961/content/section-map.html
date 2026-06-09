@@ -1,0 +1,127 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=DM+Mono:wght@400;500&display=swap');
+* { font-family: 'DM Sans', sans-serif; box-sizing: border-box; }
+.row { display: flex; gap: 10px; margin-bottom: 8px; }
+.block { border-radius: 8px; padding: 10px 14px; flex: 1; }
+.shared { background: #f9fafb; border: 1.5px solid #e5e7eb; }
+.operator { background: #eef2ff; border: 1.5px solid #c7d2fe; }
+.advertiser { background: #ecfdf5; border: 1.5px solid #a7f3d0; }
+.cta { background: #fef3c7; border: 1.5px solid #fcd34d; }
+.label { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 3px; }
+.title { font-size: 12px; font-weight: 700; color: #111827; }
+.sub { font-size: 10px; color: #6b7280; margin-top: 2px; line-height: 1.4; }
+.legend { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.leg { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #374151; }
+.dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+</style>
+
+<h2>Page section map — scroll order</h2>
+<p class="subtitle">Validate the structure before we write copy. Drag to reorder in your head — tell me what feels wrong.</p>
+
+<div class="legend">
+  <div class="leg"><div class="dot" style="background:#f9fafb;border:1.5px solid #e5e7eb;"></div>Shared / both audiences</div>
+  <div class="leg"><div class="dot" style="background:#eef2ff;border:1.5px solid #c7d2fe;"></div>Operator-focused</div>
+  <div class="leg"><div class="dot" style="background:#ecfdf5;border:1.5px solid #a7f3d0;"></div>Advertiser-focused</div>
+  <div class="leg"><div class="dot" style="background:#fef3c7;border:1.5px solid #fcd34d;"></div>CTA / conversion</div>
+</div>
+
+<div class="row">
+  <div class="block shared">
+    <div class="label" style="color:#9ca3af;">01 — Nav</div>
+    <div class="title">ADGRID &nbsp;·&nbsp; How it works &nbsp;·&nbsp; For Advertisers &nbsp;·&nbsp; Sign In</div>
+    <div class="sub">Sticky. Two anchor links + sign in. No pricing link.</div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="block shared">
+    <div class="label" style="color:#9ca3af;">02 — Hero</div>
+    <div class="title">"The ad industry runs on estimated numbers. We don't."</div>
+    <div class="sub">Subhead: Adgrid connects physical screens with advertisers using computer vision — verified impressions, not guesses.<br>Two CTAs: <strong>I have screens →</strong> (scrolls to operator section) &nbsp;|&nbsp; <strong>I want to advertise →</strong> (scrolls to advertiser section)<br>Below: 3 real-ish data points in DM Mono — e.g. "4.2s avg dwell · 78% attention · &lt;30 min setup"</div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="block shared">
+    <div class="label" style="color:#9ca3af;">03 — Trust bar</div>
+    <div class="title">Social proof / credibility strip</div>
+    <div class="sub">Short sentence + 2–3 stats or a single bold claim. E.g. "Computer vision running on real screens across the UK. Zero image data ever transmitted." — even if early, this grounds the tech claim.</div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="block operator">
+    <div class="label" style="color:#4f46e5;">04 — Operator: How it works</div>
+    <div class="title">4 steps — Register · Camera · Approve · Earn</div>
+    <div class="sub">Hardware requirements upfront. Explicit cost context ("kit under £80"). Revenue split clearly stated. "You stay in control — you approve every campaign."</div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="block operator">
+    <div class="label" style="color:#4f46e5;">05 — Operator: Revenue + control</div>
+    <div class="title">What operators actually get</div>
+    <div class="sub">Passive income angle. Approval flow = full control. Stripe payouts. Privacy-compliant (no data leaves device). No lock-in. FAQ teaser: "What if no advertisers target my area?" answered inline.</div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="block shared">
+    <div class="label" style="color:#9ca3af;">06 — The Adgrid difference (shared)</div>
+    <div class="title">Verified impressions vs. estimated CPM — side by side</div>
+    <div class="sub">Traditional DOOH: foot traffic surveys, estimated reach, no proof. Adgrid: face count, dwell time, attention score, demographic split — all local, all verified. Mock live-data card stays here.</div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="block advertiser">
+    <div class="label" style="color:#059669;">07 — Advertiser section</div>
+    <div class="title" id="advertisers">What advertisers get</div>
+    <div class="sub">Target by location, time, demographic. Know exactly what ran and who saw it. Verified impression certificate per campaign. Ad formats: static + video. Approval-based — quality screens only. CTA: "Apply to advertise →"</div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="block shared">
+    <div class="label" style="color:#9ca3af;">08 — Privacy + compliance</div>
+    <div class="title">GDPR-compliant by design</div>
+    <div class="sub">All CV processing on-device. No facial images stored or transmitted. System counts and classifies — does not identify. Link to full privacy architecture page. 2–3 sentences, not a wall of text.</div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="block shared">
+    <div class="label" style="color:#9ca3af;">09 — FAQ (accordion)</div>
+    <div class="title">Operator questions / Advertiser questions — tabbed</div>
+    <div class="sub">
+      <strong>Operators:</strong> What hardware? Revenue split? Legal to run? What if no advertisers? What if camera breaks?<br>
+      <strong>Advertisers:</strong> How many screens? Where? What formats? How is data verified? Min spend? GDPR?
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="block cta">
+    <div class="label" style="color:#92400e;">10 — Early access CTA</div>
+    <div class="title">Join the early access programme — email capture</div>
+    <div class="sub">No pricing shown. "We're onboarding our first cohort of operators and advertisers. Early partners lock in founder terms." Email field + dropdown: "I have screens / I want to advertise / Both". Single submit. No fake countdown timers.</div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="block shared">
+    <div class="label" style="color:#9ca3af;">11 — Footer</div>
+    <div class="title">Privacy · Terms · Contact · Sign In</div>
+    <div class="sub">Actual working links. Company info. © 2026 Adgrid.</div>
+  </div>
+</div>
+
+<div style="margin-top:20px; padding:14px 16px; background:#f0fdf4; border:1.5px solid #86efac; border-radius:8px;">
+  <div style="font-size:11px; font-weight:700; color:#15803d; margin-bottom:4px;">What's intentionally excluded</div>
+  <div style="font-size:10px; color:#166534; line-height:1.6;">
+    ✗ Pricing section (no prices yet — replaced by early access CTA)<br>
+    ✗ "Most Popular" badges or fake urgency<br>
+    ✗ Unsubstantiated stat claims in the hero<br>
+    ✗ Separate pages (upgrade path, not launch path)
+  </div>
+</div>

@@ -54,8 +54,8 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
       />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
-        <KPI label="Total Budget"  value={`£${totalSpend.toLocaleString()}`}        sub="across all campaigns" />
-        <KPI label="Spent to Date" value={`£${totalSpent.toLocaleString()}`}         sub={`${totalSpend > 0 ? Math.round((totalSpent / totalSpend) * 100) : 0}% of budget`} color={C.blue} />
+        <KPI label="Total Budget"  value={`$${totalSpend.toLocaleString()}`}        sub="across all campaigns" />
+        <KPI label="Spent to Date" value={`$${totalSpent.toLocaleString()}`}         sub={`${totalSpend > 0 ? Math.round((totalSpent / totalSpend) * 100) : 0}% of budget`} color={C.blue} />
         <KPI label="Impressions"   value={`${(totalImpr / 1000).toFixed(1)}K`}       sub="verified plays" color={C.purple} />
         <KPI label="QR Scans"      value={totalScans}                                 sub="leads captured" color={C.green} icon="📲" />
       </div>
@@ -98,7 +98,7 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                           <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>Budget</span>
                         </div>
-                        <div style={{ fontSize: 11, fontWeight: 500, color: C.text, fontFamily: F.mono }}>£{c.spent.toLocaleString()} / £{c.budget.toLocaleString()}</div>
+                        <div style={{ fontSize: 11, fontWeight: 500, color: C.text, fontFamily: F.mono }}>${c.spent.toLocaleString()} / ${c.budget.toLocaleString()}</div>
                       </div>
                       <div style={{ textAlign: 'center' }}>
                         <div style={{ fontSize: 10, color: C.textSub, fontFamily: F.sans, marginBottom: 4 }}>Impressions</div>
@@ -128,7 +128,7 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                         <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>Spend</span>
-                        <span style={{ fontSize: 11, fontWeight: 500, color: C.text, fontFamily: F.mono }}>£{c.spent.toLocaleString()} / £{c.budget.toLocaleString()}</span>
+                        <span style={{ fontSize: 11, fontWeight: 500, color: C.text, fontFamily: F.mono }}>${c.spent.toLocaleString()} / ${c.budget.toLocaleString()}</span>
                       </div>
                       <ProgressBar value={c.spent} max={c.budget} height={4} />
                     </div>

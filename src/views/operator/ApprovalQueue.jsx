@@ -110,7 +110,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
 
   const totalScreens = (campaign.campaign_screens || []).length;
   const earned = campaign.budget
-    ? `~£${Math.round(campaign.budget * SCREEN_OWNER_SHARE / Math.max(1, totalScreens)).toLocaleString()}`
+    ? `~$${Math.round(campaign.budget * SCREEN_OWNER_SHARE / Math.max(1, totalScreens)).toLocaleString()}`
     : null;
 
   return (
@@ -146,7 +146,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
         <div style={{ padding: 14 }}>
           <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 14 }}>
             {[
-              ['Budget', campaign.budget ? `£${campaign.budget.toLocaleString()} (${campaign.budget_mode || 'total'})` : '—'],
+              ['Budget', campaign.budget ? `$${campaign.budget.toLocaleString()} (${campaign.budget_mode || 'total'})` : '—'],
               ['Dates', [campaign.start_date || campaign.start, campaign.end_date || campaign.end].filter(Boolean).join(' – ') || '—'],
               ['You earn', earned || '—'],
             ].map(([l, v]) => (

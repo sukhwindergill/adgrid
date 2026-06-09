@@ -95,7 +95,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate }) {
         </div>
       )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12, marginBottom: 24 }}>
-        <KPI label="Budget Spent"   value={`£${c.spent.toLocaleString()}`}        sub={`of £${c.budget.toLocaleString()} (${pct}%)`} color={pct > 90 ? C.red : pct > 70 ? C.amber : C.text} />
+        <KPI label="Budget Spent"   value={`$${c.spent.toLocaleString()}`}        sub={`of $${c.budget.toLocaleString()} (${pct}%)`} color={pct > 90 ? C.red : pct > 70 ? C.amber : C.text} />
         <KPI label="Impressions"    value={`${(c.impressions / 1000).toFixed(1)}K`} sub="verified plays" />
         <KPI label="QR Scans"       value={c.scans}                                 sub="total scans" color={C.purple} />
         <KPI label="Scan Rate"      value={`${scanRate}%`}                          sub="scans per impression" />
@@ -109,7 +109,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate }) {
         </div>
         <ProgressBar value={c.spent} max={c.budget} showLabel height={10} />
         <div style={{ display: 'flex', gap: 28, marginTop: 14 }}>
-          {[['CPM', `£${cpm}`], ['Slot Share', c.slots + '%'], ['Ad Duration', c.duration + 's'], ['Schedule', `${c.timeStart}–${c.timeEnd}`], ['Days', (c.days || []).join(', ')]].map(([l, v]) => (
+          {[['CPM', `$${cpm}`], ['Slot Share', c.slots + '%'], ['Ad Duration', c.duration + 's'], ['Schedule', `${c.timeStart}–${c.timeEnd}`], ['Days', (c.days || []).join(', ')]].map(([l, v]) => (
             <div key={l}>
               <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 2 }}>{l}</div>
               <div style={{ fontSize: 13, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{v}</div>
@@ -259,7 +259,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate }) {
           }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 20 }}>Edit Campaign</div>
             {[
-              { label: 'Budget (£)', key: 'budget', type: 'number' },
+              { label: 'Budget ($)', key: 'budget', type: 'number' },
               { label: 'Start Date', key: 'start', type: 'date' },
               { label: 'End Date', key: 'end', type: 'date' },
             ].map(({ label, key, type }) => (

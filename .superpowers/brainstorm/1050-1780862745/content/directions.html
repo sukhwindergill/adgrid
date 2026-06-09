@@ -1,0 +1,51 @@
+<h2>Which animated showcase direction fits AdGrid?</h2>
+<p class="subtitle">Pick the concept — we'll refine layout/motion after</p>
+
+<div class="cards">
+  <div class="card" data-choice="map" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:linear-gradient(135deg,#0A0A0F,#16161F);display:flex;align-items:center;justify-content:center;height:160px;position:relative;overflow:hidden">
+      <svg width="200" height="120" viewBox="0 0 200 120">
+        <path d="M20,80 Q60,30 100,50 T180,40" stroke="#00C2FF" stroke-width="1.5" fill="none" opacity="0.4"/>
+        <circle cx="40" cy="70" r="4" fill="#00C2FF"><animate attributeName="r" values="4;7;4" dur="2s" repeatCount="indefinite"/></circle>
+        <circle cx="100" cy="50" r="4" fill="#7B2FFF"><animate attributeName="r" values="4;7;4" dur="2.4s" repeatCount="indefinite"/></circle>
+        <circle cx="160" cy="55" r="4" fill="#00C2FF"><animate attributeName="r" values="4;7;4" dur="1.8s" repeatCount="indefinite"/></circle>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>Live Network Map</h3>
+      <p>Canada map lights up — pins pulse across cities, connecting lines draw between screens, counters tick ("2,400 screens · 14 cities"). Sells scale & reach.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="reel" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:linear-gradient(135deg,#16161F,#1E1E2E);display:flex;align-items:center;justify-content:center;height:160px;gap:8px">
+      <div style="width:50px;height:90px;border-radius:8px;background:linear-gradient(135deg,#00C2FF,#7B2FFF);opacity:0.5"></div>
+      <div style="width:50px;height:110px;border-radius:8px;background:linear-gradient(135deg,#00C2FF,#7B2FFF)"></div>
+      <div style="width:50px;height:90px;border-radius:8px;background:linear-gradient(135deg,#00C2FF,#7B2FFF);opacity:0.5"></div>
+    </div>
+    <div class="card-body">
+      <h3>Campaign Reel / Product Walkthrough</h3>
+      <p>Cinematic loop cycling through real screen mockups (mall, transit, billboard) with campaign creative on them, captions narrating "Book → Approve → Go live". Sells the product experience.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="data" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:linear-gradient(135deg,#0A0A0F,#111118);display:flex;align-items:center;justify-content:center;height:160px">
+      <div style="display:flex;gap:16px;align-items:flex-end">
+        <div style="width:24px;height:40px;background:#00C2FF;border-radius:4px 4px 0 0"></div>
+        <div style="width:24px;height:80px;background:#7B2FFF;border-radius:4px 4px 0 0"></div>
+        <div style="width:24px;height:60px;background:#00C2FF;border-radius:4px 4px 0 0"></div>
+        <div style="width:24px;height:100px;background:linear-gradient(180deg,#00C2FF,#7B2FFF);border-radius:4px 4px 0 0"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Data-Driven Stats Reel</h3>
+      <p>Animated counters & charts building in sequence — impressions, reach, ROI bars climbing, percentages count up. Sells credibility/results, good for advertiser-facing pages or pitch decks.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <p class="label">Note</p>
+  <p class="subtitle">All three buildable in HyperFrames (matches your existing in-browser GSAP stack — no render-pipeline overhead). Could also combine, e.g. map → reel.</p>
+</div>

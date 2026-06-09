@@ -274,7 +274,7 @@ export function Analytics({ campaigns }) {
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
         <KPI label="Total Impressions" value={hasReal ? totalPeople.toLocaleString() : `${(totalImpr / 1000).toFixed(1)}K`} sub={hasReal ? 'verified by CV' : 'estimated'} trend={8} icon="👁" />
-        <KPI label="Avg Dwell Time"    value={hasReal ? `${avgDwell}s` : `${avgCPM}£ CPM`} sub={hasReal ? 'seconds on screen' : 'cost per 1,000'} color={C.blue} icon={hasReal ? '⏱' : '💲'} />
+        <KPI label="Avg Dwell Time"    value={hasReal ? `${avgDwell}s` : `$${avgCPM} CPM`} sub={hasReal ? 'seconds on screen' : 'cost per 1,000'} color={C.blue} icon={hasReal ? '⏱' : '💲'} />
         <KPI label="QR Scans"          value={totalScans} sub="total scans" color={C.green} icon="📲" />
         <KPI label={hasReal ? 'Avg Attention' : 'Scan Rate'} value={hasReal ? `${avgAttn}%` : `${scanRate}%`} sub={hasReal ? 'frontal attention score' : 'scans / impressions'} icon="📊" />
       </div>
@@ -395,7 +395,7 @@ export function Analytics({ campaigns }) {
           { key: 'impressions',label: 'Impressions', render: v => <span style={{ fontWeight: 600, fontFamily: F.mono }}>{(v / 1000).toFixed(1)}K</span> },
           { key: 'scans',      label: 'Scans', render: v => <span style={{ color: C.purple, fontWeight: 600, fontFamily: F.mono }}>{v}</span> },
           { key: 'scans',      label: 'Scan Rate', render: (v, r) => <span style={{ fontFamily: F.sans }}>{r.impressions > 0 ? ((v / r.impressions) * 100).toFixed(2) : '0.00'}%</span> },
-          { key: 'spent',      label: 'Spend', render: v => <span style={{ fontFamily: F.sans }}>£{(v || 0).toLocaleString()}</span> },
+          { key: 'spent',      label: 'Spend', render: v => <span style={{ fontFamily: F.sans }}>${(v || 0).toLocaleString()}</span> },
           { key: 'status',     label: 'Status', render: v => <Badge status={v} /> },
         ]}
         rows={campaigns}
