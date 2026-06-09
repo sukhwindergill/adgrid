@@ -74,7 +74,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: advertiser } = await supabase
     .from("profiles")
-    .select("stripe_customer_id, email")
+    .select("stripe_customer_id, email, preferred_currency")
     .eq("id", booking.advertiser_id)
     .single();
 
@@ -105,7 +105,7 @@ Deno.serve(async (req: Request) => {
   try {
     paymentIntent = await stripe.paymentIntents.create({
       amount: amountPence,
-      currency: "gbp",
+      currency: advertiser.preferred_currency ?? "cad",
       customer: advertiser.stripe_customer_id,
       payment_method: paymentMethodId,
       confirm: true,
@@ -136,6 +136,7 @@ Deno.serve(async (req: Request) => {
       status: "scheduled",
       payment_intent_id: paymentIntent.id,
       payment_status: "paid",
+      currency: advertiser.preferred_currency ?? "cad",
     })
     .eq("id", campaign_id);
 
