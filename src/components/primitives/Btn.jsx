@@ -7,7 +7,7 @@ export const Btn = ({ children, variant = 'primary', size = 'md', onClick, disab
     lg: { padding: '11px 20px', fontSize: 14 },
   }[size];
   const vr = {
-    primary:   { background: C.purple,    color: '#fff',     border: 'none', boxShadow: '0 1px 2px rgba(124,58,237,0.2)' },
+    primary:   { background: C.grad,      color: '#fff',     border: 'none', boxShadow: '0 1px 8px rgba(0,194,255,0.2)' },
     secondary: { background: C.surface,   color: C.textMid,  border: `1px solid ${C.border}`, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' },
     ghost:     { background: 'transparent', color: C.textSub, border: 'none' },
     danger:    { background: C.redSoft,   color: C.red,      border: `1px solid ${C.redBorder}` },
@@ -28,12 +28,18 @@ export const Btn = ({ children, variant = 'primary', size = 'md', onClick, disab
       }}
       onMouseEnter={e => {
         if (!disabled) {
-          if (variant === 'primary') e.currentTarget.style.background = C.purpleDark;
+          if (variant === 'primary') {
+            e.currentTarget.style.background = C.purpleDark;
+            e.currentTarget.style.boxShadow = '0 2px 16px rgba(0,194,255,0.35)';
+          }
           if (variant === 'secondary') e.currentTarget.style.background = C.surfaceAlt;
         }
       }}
       onMouseLeave={e => {
-        if (variant === 'primary') e.currentTarget.style.background = C.purple;
+        if (variant === 'primary') {
+          e.currentTarget.style.background = C.grad;
+          e.currentTarget.style.boxShadow = '0 1px 8px rgba(0,194,255,0.2)';
+        }
         if (variant === 'secondary') e.currentTarget.style.background = C.surface;
       }}
     >

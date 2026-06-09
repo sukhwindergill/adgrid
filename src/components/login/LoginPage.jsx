@@ -1,9 +1,43 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { C, F } from '../../design/tokens.js';
-import { Card } from '../primitives/Card.jsx';
-import { Btn } from '../primitives/Btn.jsx';
-import { Inp } from '../primitives/Inp.jsx';
+import { F } from '../../design/tokens.js';
+
+const loginCSS = `
+  @keyframes loginOrb1 {
+    0%,100% { transform: translate(0,0); }
+    33% { transform: translate(-40px,30px); }
+    66% { transform: translate(30px,-20px); }
+  }
+  @keyframes loginOrb2 {
+    0%,100% { transform: translate(0,0); }
+    33% { transform: translate(50px,-30px); }
+    66% { transform: translate(-20px,40px); }
+  }
+`;
+
+function DarkInp({ label, type, placeholder, value, onChange, onKeyDown }) {
+  return (
+    <div>
+      <div style={{ fontSize: 12, fontWeight: 500, color: '#8A8A9A', fontFamily: F.sans, marginBottom: 6 }}>{label}</div>
+      <input
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        onKeyDown={onKeyDown}
+        style={{
+          width: '100%', padding: '10px 12px', borderRadius: 8,
+          border: '1px solid #1E1E2E', background: 'rgba(255,255,255,0.04)',
+          color: '#fff', fontSize: 13, fontFamily: F.sans,
+          outline: 'none', boxSizing: 'border-box',
+          transition: 'border-color 0.15s',
+        }}
+        onFocus={e => e.target.style.borderColor = '#00C2FF'}
+        onBlur={e => e.target.style.borderColor = '#1E1E2E'}
+      />
+    </div>
+  );
+}
 
 export function LoginPage() {
   const { signIn, signUp, signInWithOAuth } = useAuth();
@@ -12,7 +46,7 @@ export function LoginPage() {
   const [pass, setPass]     = useState('');
   const [name, setName]     = useState('');
   const [err, setErr]       = useState('');
-  const [loading, setLoading]     = useState(false);
+  const [loading, setLoading]         = useState(false);
   const [oauthLoading, setOauthLoading] = useState('');
 
   const handle = async () => {
@@ -39,39 +73,66 @@ export function LoginPage() {
   const isSuccess = err.includes('Check');
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: F.sans }}>
-      <div style={{ width: '100%', maxWidth: 380, padding: '0 20px' }}>
+    <div style={{
+      minHeight: '100vh', background: '#0A0A0F',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: F.sans, position: 'relative', overflow: 'hidden',
+    }}>
+      <style>{loginCSS}</style>
+
+      {/* Gradient orbs */}
+      <div style={{
+        position: 'absolute', width: 500, height: 500, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(0,194,255,0.12) 0%, transparent 70%)',
+        top: '-10%', left: '-10%', animation: 'loginOrb1 12s ease-in-out infinite',
+        pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'absolute', width: 600, height: 600, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(123,47,255,0.10) 0%, transparent 70%)',
+        bottom: '-15%', right: '-10%', animation: 'loginOrb2 15s ease-in-out infinite',
+        pointerEvents: 'none',
+      }} />
+
+      <div style={{ width: '100%', maxWidth: 380, padding: '0 20px', position: 'relative', zIndex: 1 }}>
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32, justifyContent: 'center' }}>
           <div style={{
             width: 36, height: 36, borderRadius: 9,
-            background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+            background: 'linear-gradient(135deg, #00C2FF, #7B2FFF)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontWeight: 800, fontSize: 16, color: '#fff',
           }}>A</div>
-          <span style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans }}>ADGRID</span>
+          <span style={{ fontSize: 20, fontWeight: 700, color: '#fff', fontFamily: F.sans }}>ADGRID</span>
         </div>
 
-        <Card style={{ padding: 28 }}>
-          <h1 style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 4, fontFamily: F.sans }}>
+        {/* Card */}
+        <div style={{
+          background: 'rgba(17,17,24,0.9)', border: '1px solid #1E1E2E',
+          borderRadius: 16, padding: 28,
+          backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+        }}>
+          <h1 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4, fontFamily: F.sans }}>
             {mode === 'signin' ? 'Sign in to ADGRID' : 'Create your account'}
           </h1>
-          <p style={{ fontSize: 13, color: C.textSub, marginBottom: 20, fontFamily: F.sans }}>Access your network dashboard</p>
+          <p style={{ fontSize: 13, color: '#8A8A9A', marginBottom: 20, fontFamily: F.sans }}>
+            Access your network dashboard
+          </p>
 
-          {/* OAuth buttons */}
+          {/* OAuth */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
             <button
               onClick={() => handleOAuth('google')}
               disabled={!!oauthLoading}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                padding: '10px 16px', borderRadius: 8, border: `1px solid ${C.border}`,
-                background: C.surface, cursor: 'pointer', fontSize: 14, fontWeight: 500,
-                color: C.text, fontFamily: F.sans, transition: 'background 0.15s',
+                padding: '10px 16px', borderRadius: 8, border: '1px solid #1E1E2E',
+                background: 'rgba(255,255,255,0.05)', cursor: 'pointer', fontSize: 14, fontWeight: 500,
+                color: '#fff', fontFamily: F.sans, transition: 'background 0.15s',
                 opacity: oauthLoading === 'apple' ? 0.5 : 1,
               }}
-              onMouseEnter={e => e.currentTarget.style.background = C.surfaceAlt}
-              onMouseLeave={e => e.currentTarget.style.background = C.surface}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.10)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
             >
               <svg width="18" height="18" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -87,7 +148,7 @@ export function LoginPage() {
               disabled={!!oauthLoading}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                padding: '10px 16px', borderRadius: 8, border: `1px solid ${C.border}`,
+                padding: '10px 16px', borderRadius: 8, border: '1px solid #1E1E2E',
                 background: '#000', cursor: 'pointer', fontSize: 14, fontWeight: 500,
                 color: '#fff', fontFamily: F.sans, transition: 'opacity 0.15s',
                 opacity: oauthLoading === 'google' ? 0.5 : 1,
@@ -102,40 +163,53 @@ export function LoginPage() {
 
           {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-            <div style={{ flex: 1, height: 1, background: C.border }} />
-            <span style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>or</span>
-            <div style={{ flex: 1, height: 1, background: C.border }} />
+            <div style={{ flex: 1, height: 1, background: '#1E1E2E' }} />
+            <span style={{ fontSize: 12, color: '#4A4A5A', fontFamily: F.sans }}>or</span>
+            <div style={{ flex: 1, height: 1, background: '#1E1E2E' }} />
           </div>
 
           {err && (
             <div style={{
               padding: '9px 12px', borderRadius: 8, fontSize: 12, marginBottom: 14,
-              background: isSuccess ? C.greenSoft : C.redSoft,
-              border: `1px solid ${isSuccess ? C.greenBorder : C.redBorder}`,
-              color: isSuccess ? C.green : C.red,
+              background: isSuccess ? 'rgba(0,229,160,0.1)' : 'rgba(255,71,87,0.1)',
+              border: `1px solid ${isSuccess ? 'rgba(0,229,160,0.3)' : 'rgba(255,71,87,0.3)'}`,
+              color: isSuccess ? '#00E5A0' : '#FF4757',
             }}>{err}</div>
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
             {mode === 'signup' && (
-              <Inp label="Full Name" type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} />
+              <DarkInp label="Full Name" type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} />
             )}
-            <Inp label="Email" type="email" placeholder="you@company.com" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handle()} />
-            <Inp label="Password" type="password" placeholder="••••••••" value={pass} onChange={e => setPass(e.target.value)} onKeyDown={e => e.key === 'Enter' && handle()} />
+            <DarkInp label="Email" type="email" placeholder="you@company.com" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handle()} />
+            <DarkInp label="Password" type="password" placeholder="••••••••" value={pass} onChange={e => setPass(e.target.value)} onKeyDown={e => e.key === 'Enter' && handle()} />
           </div>
 
-          <Btn onClick={handle} style={{ width: '100%', justifyContent: 'center' }} size="lg" disabled={loading}>
+          <button
+            onClick={handle}
+            disabled={loading}
+            style={{
+              width: '100%', padding: '12px 20px', borderRadius: 8,
+              background: loading ? '#2a2a3a' : 'linear-gradient(135deg, #00C2FF, #7B2FFF)',
+              color: '#fff', border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
+              fontSize: 14, fontWeight: 600, fontFamily: F.sans,
+              transition: 'opacity 0.15s', opacity: loading ? 0.6 : 1,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
             {loading ? 'Please wait…' : mode === 'signin' ? 'Sign in →' : 'Create account →'}
-          </Btn>
+          </button>
 
-          <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12, color: C.textSub, fontFamily: F.sans }}>
+          <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12, color: '#8A8A9A', fontFamily: F.sans }}>
             {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
-            <span onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setErr(''); }}
-              style={{ color: C.purple, cursor: 'pointer', fontWeight: 500 }}>
+            <span
+              onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setErr(''); }}
+              style={{ color: '#00C2FF', cursor: 'pointer', fontWeight: 500 }}
+            >
               {mode === 'signin' ? 'Sign up' : 'Sign in'}
             </span>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );

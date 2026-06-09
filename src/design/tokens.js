@@ -10,11 +10,15 @@ export const C = {
   textSub: '#525252',
   textMuted: '#737373',
 
-  purple: '#7c3aed',
-  purpleDark: '#6d28d9',
-  purpleSoft: '#f5f3ff',
-  purpleBorder: '#ddd6fe',
-  purpleLight: '#f5f3ff',
+  // Brand — unified with marketing site
+  cyan:        '#00C2FF',
+  purple:      '#7B2FFF',
+  purpleDark:  '#6B1FEF',
+  purpleSoft:  '#f0ebff',
+  purpleBorder:'#d4b8ff',
+  purpleLight: '#f0ebff',
+  grad:        'linear-gradient(135deg, #00C2FF 0%, #7B2FFF 100%)',
+  gradSoft:    'linear-gradient(135deg, rgba(0,194,255,0.10) 0%, rgba(123,47,255,0.10) 100%)',
 
   green: '#10b981', greenSoft: '#ecfdf5', greenBorder: '#a7f3d0', greenLight: '#ecfdf5',
   amber: '#f59e0b', amberSoft: '#fffbeb', amberBorder: '#fde68a',
