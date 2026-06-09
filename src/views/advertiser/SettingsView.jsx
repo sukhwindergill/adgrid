@@ -64,6 +64,7 @@ function ProfileTab({ profile, onSaved }) {
   const [companyName, setCompanyName] = useState(profile?.company_name ?? "");
   const [companyWebsite, setCompanyWebsite] = useState(profile?.company_website ?? "");
   const [timezone, setTimezone] = useState(profile?.timezone ?? "UTC");
+  const [currency, setCurrency] = useState(profile?.preferred_currency ?? 'cad');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
 
@@ -71,11 +72,11 @@ function ProfileTab({ profile, onSaved }) {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ name, company_name: companyName, company_website: companyWebsite, timezone })
+      .update({ name, company_name: companyName, company_website: companyWebsite, timezone, preferred_currency: currency })
       .eq("id", profile.id);
     setSaving(false);
     setMsg(error ? "Error saving." : "Saved.");
-    if (!error) onSaved({ name, company_name: companyName, company_website: companyWebsite, timezone });
+    if (!error) onSaved({ name, company_name: companyName, company_website: companyWebsite, timezone, preferred_currency: currency });
     setTimeout(() => setMsg(null), 3000);
   }
 
@@ -105,6 +106,22 @@ function ProfileTab({ profile, onSaved }) {
           {TIMEZONES.map((tz) => <option key={tz}>{tz}</option>)}
         </select>
       </Field>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>
+          Billing Currency
+        </div>
+        <select
+          value={currency}
+          onChange={(e) => setCurrency(e.target.value)}
+          style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 13, fontFamily: F.sans, background: C.surface, color: C.text }}
+        >
+          <option value="cad">CAD — Canadian Dollar</option>
+          <option value="usd">USD — US Dollar</option>
+        </select>
+        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 4 }}>
+          Applies to new campaigns only. Existing bookings are not affected.
+        </div>
+      </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <SaveBtn onClick={save} saving={saving} />
         {msg && <span style={{ fontSize: 13, color: msg === "Saved." ? C.green : C.red }}>{msg}</span>}
