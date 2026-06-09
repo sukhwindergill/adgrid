@@ -117,6 +117,50 @@ Deno.serve(async (req: Request) => {
       break;
     }
 
+    case "checkout.session.completed": {
+      const session = event.data.object as Stripe.Checkout.Session;
+      if (session.mode !== "setup") break;
+
+      // Resolve the customer's supabase user id
+      const customerId = typeof session.customer === "string"
+        ? session.customer
+        : session.customer?.id;
+      if (!customerId) break;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, preferred_currency")
+        .eq("stripe_customer_id", customerId)
+        .maybeSingle();
+      if (!profile) break;
+
+      // Only auto-set if still on the default — never overwrite a manual override
+      if (profile.preferred_currency !== "cad") break;
+
+      // Expand the setup intent to get the payment method's card country
+      const setupIntentId = typeof session.setup_intent === "string"
+        ? session.setup_intent
+        : (session.setup_intent as Stripe.SetupIntent | null)?.id;
+      if (!setupIntentId) break;
+
+      const setupIntent = await stripe.setupIntents.retrieve(setupIntentId, {
+        expand: ["payment_method"],
+      });
+
+      const pm = setupIntent.payment_method as Stripe.PaymentMethod | null;
+      const cardCountry = pm?.card?.country ?? null;
+
+      const detectedCurrency = cardCountry === "US" ? "usd" : "cad";
+      if (detectedCurrency === "cad") break; // already default, no write needed
+
+      await supabase
+        .from("profiles")
+        .update({ preferred_currency: detectedCurrency })
+        .eq("id", profile.id);
+
+      break;
+    }
+
     default:
       break;
   }
