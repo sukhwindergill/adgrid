@@ -513,31 +513,40 @@ function NetworkMap({ style }) {
 // ─── Product Reel mock panels ─────────────────────────────────────────────────
 
 function OperatorPanel() {
-  const cards = [
-    { name: 'Queen St & Spadina',  fill: 82, earn: '$1,240' },
+  const kpis = [
+    { label: 'Screens Live', value: '3' },
+    { label: 'Fill Rate',    value: '80%' },
+    { label: 'This Month',   value: '$6,075' },
+  ];
+  const screens = [
+    { name: 'Queen St & Spadina',      fill: 82, earn: '$1,240' },
     { name: 'Union Station Concourse', fill: 91, earn: '$2,860' },
-    { name: 'Yonge-Dundas Square', fill: 67, earn: '$1,975' },
+    { name: 'Yonge-Dundas Square',     fill: 67, earn: '$1,975' },
   ];
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, height: '100%' }}>
-      <div style={{ fontFamily: 'var(--inter)', fontSize: 13, color: 'var(--sec)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-        Your inventory
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+        {kpis.map(k => (
+          <div key={k.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px' }}>
+            <div style={{ fontFamily: 'var(--inter)', fontSize: 9, color: 'var(--sec)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{k.label}</div>
+            <div style={{ fontFamily: 'var(--inter)', fontSize: 16, fontWeight: 700, color: '#fff' }}>{k.value}</div>
+          </div>
+        ))}
       </div>
-      {cards.map((c) => (
-        <div key={c.name} style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
-          borderRadius: 12, padding: '14px 18px',
-        }}>
-          <div>
-            <div style={{ fontFamily: 'var(--inter)', fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 6 }}>{c.name}</div>
-            <div style={{ width: 140, height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-              <div style={{ width: `${c.fill}%`, height: '100%', background: 'linear-gradient(90deg, var(--c1), var(--c2))', borderRadius: 3 }} />
+      {screens.map(s => (
+        <div key={s.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)', flexShrink: 0 }} />
+              <div style={{ fontFamily: 'var(--inter)', fontSize: 12, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</div>
+            </div>
+            <div style={{ width: '100%', height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+              <div style={{ width: `${s.fill}%`, height: '100%', background: 'linear-gradient(90deg, var(--c1), var(--c2))', borderRadius: 2 }} />
             </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: 'var(--inter)', fontSize: 11, color: 'var(--muted)' }}>fill rate {c.fill}%</div>
-            <div style={{ fontFamily: 'var(--inter)', fontSize: 16, fontWeight: 700, color: 'var(--c1)' }}>{c.earn}</div>
+          <div style={{ textAlign: 'right', marginLeft: 14, flexShrink: 0 }}>
+            <div style={{ fontFamily: 'var(--inter)', fontSize: 10, color: 'var(--muted)' }}>{s.fill}% fill</div>
+            <div style={{ fontFamily: 'var(--inter)', fontSize: 15, fontWeight: 700, color: 'var(--c1)' }}>{s.earn}</div>
           </div>
         </div>
       ))}
@@ -579,37 +588,51 @@ function MapPanel() {
 }
 
 function AnalyticsPanel() {
-  const bars = [38, 62, 51, 74, 88, 69, 95];
-  const stats = [
-    { label: 'Impressions', value: '482K' },
-    { label: 'Reach',       value: '96K' },
-    { label: 'Spend',       value: '$3,140' },
-  ];
+  const days = ['M','T','W','T','F','S','S'];
+  const impr = [12400, 15200, 11800, 18600, 21000, 9400, 8200];
+  const max = Math.max(...impr);
+  const W = 200; const H = 60;
+  const pts = impr.map((v, i) => `${(i / (impr.length - 1)) * W},${H - (v / max) * H}`).join(' ');
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, height: '100%' }}>
-      <div style={{ display: 'flex', gap: 16 }}>
-        {stats.map((s) => (
-          <div key={s.label} style={{
-            flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
-            borderRadius: 12, padding: '14px 16px',
-          }}>
-            <div style={{ fontFamily: 'var(--inter)', fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{s.label}</div>
-            <div style={{ fontFamily: 'var(--inter)', fontSize: 22, fontWeight: 700, color: '#fff' }}>{s.value}</div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        {[
+          { label: 'Impressions (7d)', value: '96.6K', delta: '+12%' },
+          { label: 'Avg CPM',          value: '$5.40', delta: '+3%' },
+          { label: 'QR Scans',         value: '1,284', delta: '+28%' },
+          { label: 'Active Campaigns', value: '7',     delta: null },
+        ].map(m => (
+          <div key={m.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px' }}>
+            <div style={{ fontFamily: 'var(--inter)', fontSize: 9, color: 'var(--sec)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{m.label}</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+              <div style={{ fontFamily: 'var(--inter)', fontSize: 16, fontWeight: 700, color: '#fff' }}>{m.value}</div>
+              {m.delta && <div style={{ fontFamily: 'var(--inter)', fontSize: 10, color: 'var(--success)', fontWeight: 600 }}>{m.delta}</div>}
+            </div>
           </div>
         ))}
       </div>
-      <div style={{
-        flex: 1, display: 'flex', alignItems: 'flex-end', gap: 10,
-        background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
-        borderRadius: 12, padding: '20px 24px',
-      }}>
-        {bars.map((h, i) => (
-          <div key={i} style={{
-            flex: 1, height: `${h}%`, borderRadius: '4px 4px 0 0',
-            background: 'linear-gradient(180deg, var(--c1), var(--c2))',
-            opacity: 0.85,
-          }} />
-        ))}
+      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', flex: 1 }}>
+        <div style={{ fontFamily: 'var(--inter)', fontSize: 9, color: 'var(--sec)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Impressions — Last 7 Days</div>
+        <svg width="100%" viewBox={`0 0 ${W} ${H + 10}`} preserveAspectRatio="none" style={{ overflow: 'visible' }}>
+          <defs>
+            <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#00C2FF" stopOpacity="0.25"/>
+              <stop offset="100%" stopColor="#00C2FF" stopOpacity="0"/>
+            </linearGradient>
+            <linearGradient id="sparkLine" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#00C2FF"/>
+              <stop offset="100%" stopColor="#7B2FFF"/>
+            </linearGradient>
+          </defs>
+          <polygon points={`0,${H} ${pts} ${W},${H}`} fill="url(#sparkFill)" />
+          <polyline points={pts} fill="none" stroke="url(#sparkLine)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        </svg>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+          {days.map((d, i) => (
+            <div key={i} style={{ fontFamily: 'var(--inter)', fontSize: 9, color: 'var(--muted)', textAlign: 'center', flex: 1 }}>{d}</div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -617,29 +640,35 @@ function AnalyticsPanel() {
 
 function DisplayPanel() {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      height: '100%', borderRadius: 12, overflow: 'hidden',
-      background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)',
-    }}>
-      <div style={{
-        width: '70%', aspectRatio: '16 / 9', borderRadius: 10, overflow: 'hidden',
-        border: '1px solid var(--border)', position: 'relative',
-        background: 'linear-gradient(135deg, rgba(0,194,255,0.18), rgba(123,47,255,0.22))',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <div style={{
-          position: 'absolute', top: 10, left: 12,
-          display: 'flex', alignItems: 'center', gap: 6,
-          fontFamily: 'var(--inter)', fontSize: 11, color: '#fff',
-          background: 'rgba(0,0,0,0.35)', borderRadius: 999, padding: '4px 10px',
-        }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3DDC73' }} />
-          LIVE — Union Station Concourse
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
+      <div style={{ flex: 1, border: '3px solid rgba(255,255,255,0.12)', borderRadius: 12, overflow: 'hidden', position: 'relative', background: '#000', minHeight: 140 }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #0A0A0F 0%, #1a0a2e 50%, #0d1a2e 100%)' }} />
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ fontFamily: 'var(--inter)', fontSize: 18, fontWeight: 800, color: '#fff', textAlign: 'center', lineHeight: 1.2, marginBottom: 8 }}>
+            Fresh Catch<br/>
+            <span style={{ background: 'linear-gradient(90deg, var(--c1), var(--c2))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Now Open</span>
+          </div>
+          <div style={{ fontFamily: 'var(--inter)', fontSize: 10, color: 'rgba(255,255,255,0.5)', marginBottom: 14 }}>Union Station · Daily 11am–9pm</div>
+          <div style={{ padding: '6px 16px', borderRadius: 20, background: 'linear-gradient(135deg, var(--c1), var(--c2))', fontFamily: 'var(--inter)', fontSize: 11, fontWeight: 700, color: '#fff' }}>
+            See Menu →
+          </div>
         </div>
-        <div style={{ fontFamily: 'var(--inter)', fontSize: 24, fontWeight: 700, color: '#fff', letterSpacing: '-0.01em' }}>
-          Now playing: Local Coffee Co.
+        <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 20, background: 'rgba(0,229,160,0.15)', border: '1px solid rgba(0,229,160,0.3)' }}>
+          <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--success)', animation: 'pinPulse 2s infinite' }} />
+          <div style={{ fontFamily: 'var(--inter)', fontSize: 9, color: 'var(--success)', fontWeight: 600 }}>LIVE</div>
         </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+        {[
+          { label: 'Uptime', value: '99.2%' },
+          { label: 'Today',  value: '4,821' },
+          { label: 'Scans',  value: '47 QR' },
+        ].map(s => (
+          <div key={s.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
+            <div style={{ fontFamily: 'var(--inter)', fontSize: 9, color: 'var(--muted)', marginBottom: 2 }}>{s.label}</div>
+            <div style={{ fontFamily: 'var(--inter)', fontSize: 12, fontWeight: 700, color: '#fff' }}>{s.value}</div>
+          </div>
+        ))}
       </div>
     </div>
   );
