@@ -14,6 +14,7 @@ import { VENUE_TAXONOMY, COUNTRIES } from '../../lib/venueTypes.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
+import { formatCurrency } from '../../lib/formatCurrency.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -664,7 +665,7 @@ function StepLaunch({ form, setForm }) {
   );
 }
 
-function StepReview({ form, matchedScreens, onSubmit, submitting, err }) {
+function StepReview({ form, matchedScreens, onSubmit, submitting, err, profile }) {
   const days = form.start_date && form.end_date
     ? Math.max(1, Math.round((new Date(form.end_date) - new Date(form.start_date)) / (1000 * 60 * 60 * 24)))
     : null;
@@ -674,7 +675,7 @@ function StepReview({ form, matchedScreens, onSubmit, submitting, err }) {
     ['Area', `${form.area_type === 'radius' ? `${form.radius_km}km radius` : form.city || form.state || form.country}`],
     ['Screens', `${form.selected_screen_ids.length} selected · ~${(totalImpr / 1000).toFixed(0)}K impr/mo`],
     ['Headline', form.headline || '—'],
-    ['Budget', `£${form.budget || '—'} (${form.budget_mode === 'daily' ? 'daily' : 'total'})`],
+    ['Budget', `${form.budget ? formatCurrency(form.budget, profile?.preferred_currency) : '—'} (${form.budget_mode === 'daily' ? 'daily' : 'total'})`],
     ['Dates', form.start_date && form.end_date ? `${form.start_date} → ${form.end_date}${days ? ` (${days} days)` : ''}` : '—'],
     ['Time', `${form.time_start} – ${form.time_end}`],
     ['Days', form.schedule_days.join(', ')],
@@ -717,13 +718,13 @@ function StepPay({ campaign, onPay, onSkip, paying, err }) {
       <Card style={{ padding: 32 }}>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 8px' }}>Pay for your campaign</h2>
         <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>
-          Charge £{campaign.budget?.toFixed ? campaign.budget.toFixed(2) : campaign.budget} to your card on file. Screens won't go live until payment is captured.
+          Charge {formatCurrency(campaign.budget, campaign.currency)} to your card on file. Screens won't go live until payment is captured.
         </p>
 
         {err && <ErrorBanner message={err} onDismiss={() => {}} />}
 
         <Btn onClick={onPay} disabled={paying} style={{ width: '100%', fontSize: 15, padding: '14px 24px', marginBottom: 10 }}>
-          {paying ? 'Charging…' : `Pay now — £${campaign.budget?.toFixed ? campaign.budget.toFixed(2) : campaign.budget}`}
+          {paying ? 'Charging…' : `Pay now — ${formatCurrency(campaign.budget, campaign.currency)}`}
         </Btn>
         <Btn variant="secondary" onClick={onSkip} disabled={paying} style={{ width: '100%' }}>
           Pay later
@@ -999,7 +1000,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
                     padding: '12px 16px', cursor: 'pointer', textAlign: 'left',
                   }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans }}>{c.headline || c.advertiser}</div>
-                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{c.city} · £{c.budget}</div>
+                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{c.city} · {formatCurrency(c.budget, c.currency)}</div>
                   </button>
                 ))}
               </div>
@@ -1013,7 +1014,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       {step === 1 && <StepScreens form={form} setForm={setForm} matchedScreens={matchedScreens} />}
       {step === 2 && <StepCreative form={form} setForm={setForm} />}
       {step === 3 && <StepBudget form={form} setForm={setForm} matchedScreens={selectedScreens} />}
-      {step === 4 && <StepReview form={form} matchedScreens={selectedScreens} onSubmit={handleSubmit} submitting={submitting} err={submitErr} />}
+      {step === 4 && <StepReview form={form} matchedScreens={selectedScreens} onSubmit={handleSubmit} submitting={submitting} err={submitErr} profile={profile} />}
       {step === 5 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} />}
 
       {step < 4 && (
