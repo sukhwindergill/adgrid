@@ -13,9 +13,28 @@ import { SectionHeader } from '../../components/primitives/SectionHeader.jsx';
 
 
 function LiveCounter({ base }) {
+  const [val, setVal] = useState(0);
+
+  useEffect(() => {
+    if (!base) return;
+    const start = performance.now();
+    const duration = 1200;
+    let raf;
+    const step = (now) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-out quadratic
+      const eased = 1 - (1 - progress) * (1 - progress);
+      setVal(Math.round(eased * base));
+      if (progress < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [base]);
+
   return (
     <div style={{ fontFamily: F.mono, fontSize: 52, fontWeight: 600, color: C.text, lineHeight: 1 }}>
-      {base.toLocaleString()}
+      {val.toLocaleString()}
     </div>
   );
 }
