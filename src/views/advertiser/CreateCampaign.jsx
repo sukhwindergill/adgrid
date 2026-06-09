@@ -641,6 +641,28 @@ function StepReview({ form, matchedScreens, onSubmit, submitting, err }) {
   );
 }
 
+function StepPay({ campaign, onPay, onSkip, paying, err }) {
+  return (
+    <div style={{ maxWidth: 580, margin: '0 auto' }}>
+      <Card style={{ padding: 32 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 8px' }}>Pay for your campaign</h2>
+        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>
+          Charge £{campaign.budget?.toFixed ? campaign.budget.toFixed(2) : campaign.budget} to your card on file. Screens won't go live until payment is captured.
+        </p>
+
+        {err && <ErrorBanner message={err} onDismiss={() => {}} />}
+
+        <Btn onClick={onPay} disabled={paying} style={{ width: '100%', fontSize: 15, padding: '14px 24px', marginBottom: 10 }}>
+          {paying ? 'Charging…' : `Pay now — £${campaign.budget?.toFixed ? campaign.budget.toFixed(2) : campaign.budget}`}
+        </Btn>
+        <Btn variant="secondary" onClick={onSkip} disabled={paying} style={{ width: '100%' }}>
+          Pay later
+        </Btn>
+      </Card>
+    </div>
+  );
+}
+
 // ─── Main Wizard ─────────────────────────────────────────────────────────────
 
 export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [] }) {
@@ -649,6 +671,9 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState(null);
   const [showDupModal, setShowDupModal] = useState(false);
+  const [created, setCreated] = useState(null);
+  const [paying, setPaying] = useState(false);
+  const [payErr, setPayErr] = useState(null);
 
   const [form, setForm] = useState({
     name: '',
@@ -826,7 +851,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       }
 
       setSubmitting(false);
-      onSave({
+      setCreated({
         id: campaignId,
         advertiser: profile?.name || user.email?.split('@')[0] || 'Advertiser',
         advertiser_id: user.id,
@@ -847,16 +872,48 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         spent: 0, impressions: 0, scans: 0,
         status: hasAutoApproved && form.start_when === 'partial' ? 'scheduled' : 'pending_review',
       });
+      setStep(7);
     } catch (e) {
       setSubmitErr(e.message || 'Failed to submit campaign');
       setSubmitting(false);
     }
   };
 
+  const handlePay = async () => {
+    if (!created) return;
+    setPaying(true);
+    setPayErr(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/charge-campaign`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ campaign_id: created.id }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'Charge failed');
+      }
+      setPaying(false);
+      onSave({ ...created, status: 'scheduled' });
+    } catch (e) {
+      setPayErr(e.message || 'Charge failed');
+      setPaying(false);
+    }
+  };
+
+  const skipPay = () => {
+    if (!created) return;
+    onSave(created);
+  };
+
   return (
     <div>
       <PageHeader title="New Campaign" back="Overview" onBack={onCancel} />
-      <Stepper step={step} onCancel={onCancel} />
+      {step < 7 && <Stepper step={step} onCancel={onCancel} />}
 
       {showDupModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
@@ -889,6 +946,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       {step === 4 && <StepBudget form={form} setForm={setForm} matchedScreens={selectedScreens} />}
       {step === 5 && <StepLaunch form={form} setForm={setForm} />}
       {step === 6 && <StepReview form={form} matchedScreens={selectedScreens} onSubmit={handleSubmit} submitting={submitting} err={submitErr} />}
+      {step === 7 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} />}
 
       {step < 6 && (
         <div style={{ maxWidth: 620, margin: '20px auto 0', display: 'flex', gap: 10 }}>

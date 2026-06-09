@@ -124,6 +124,43 @@ Deno.serve(async (_req: Request) => {
     }
   }
 
+  // ── Stale heartbeat alerts (screens silent > 30 min) ────────
+  const staleThreshold = new Date(today.getTime() - 30 * 60 * 1000);
+
+  const { data: screens } = await supabase
+    .from("screens")
+    .select("id, name, operator_id");
+
+  for (const screen of screens ?? []) {
+    const { data: lastBeat } = await supabase
+      .from("display_heartbeats")
+      .select("created_at")
+      .eq("screen_id", screen.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!lastBeat || new Date(lastBeat.created_at) >= staleThreshold) continue;
+
+    const minutesSilent = Math.round((today.getTime() - new Date(lastBeat.created_at).getTime()) / 60000);
+    const todayStr = today.toISOString().slice(0, 10);
+    const { data: existing } = await supabase
+      .from("notifications")
+      .select("id")
+      .eq("user_id", screen.operator_id)
+      .eq("type", "screen_offline")
+      .gte("created_at", `${todayStr}T00:00:00Z`)
+      .maybeSingle();
+
+    if (!existing) {
+      await sendNotification(screen.operator_id, "screen_offline", {
+        screenName: screen.name ?? "",
+        minutes: String(minutesSilent),
+        appUrl: "",
+      });
+    }
+  }
+
   return new Response(JSON.stringify({ ok: true }), {
     headers: { "Content-Type": "application/json" },
   });

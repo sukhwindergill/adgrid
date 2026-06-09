@@ -80,6 +80,11 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
     body: "Your AdGrid account has been suspended. Contact support for assistance.",
     html: emailHtml("Account Suspended", "Your AdGrid account has been suspended by an operator. Please contact support for assistance.", "Contact Support", "mailto:support@adgrid.io"),
   }),
+  screen_offline: (d) => ({
+    title: "Screen appears offline",
+    body: `"${d.screenName}" hasn't reported a heartbeat in over ${d.minutes} minutes.`,
+    html: emailHtml("Screen Offline", `Your screen <strong>${d.screenName}</strong> hasn't sent a heartbeat in over <strong>${d.minutes} minutes</strong>. Check that the display player is running.`, "View Screen", d.appUrl ?? ""),
+  }),
 };
 
 function emailHtml(title: string, body: string, ctaLabel: string, ctaUrl: string): string {

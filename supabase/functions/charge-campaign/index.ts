@@ -38,10 +38,6 @@ Deno.serve(async (req: Request) => {
     .eq("id", user.id)
     .single();
 
-  if (callerProfile?.role !== "operator") {
-    return new Response("Forbidden — operators only", { status: 403 });
-  }
-
   const { campaign_id } = await req.json();
   if (!campaign_id) {
     return new Response(JSON.stringify({ error: "campaign_id required" }), {
@@ -61,6 +57,12 @@ Deno.serve(async (req: Request) => {
       status: 404,
       headers: { "Content-Type": "application/json" },
     });
+  }
+
+  // Either the operator approving the campaign, or the advertiser who owns it, may trigger the charge
+  const isOwner = booking.advertiser_id === user.id;
+  if (callerProfile?.role !== "operator" && !isOwner) {
+    return new Response("Forbidden", { status: 403 });
   }
 
   if (booking.payment_status === "paid") {
@@ -110,6 +112,8 @@ Deno.serve(async (req: Request) => {
       off_session: true,
       description: `AdGrid: ${booking.advertiser_name} — ${booking.screen_name}`,
       metadata: { campaign_id: booking.id, advertiser_id: booking.advertiser_id },
+    }, {
+      idempotencyKey: `charge-campaign:${booking.id}`,
     });
   } catch (stripeErr: unknown) {
     const msg = stripeErr instanceof Error ? stripeErr.message : "Payment failed";
