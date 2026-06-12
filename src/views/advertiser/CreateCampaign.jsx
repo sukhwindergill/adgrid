@@ -859,6 +859,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         accent_color:          form.accent_color,
         category:              form.category,
         budget:                parseFloat(form.budget) || 0,
+        currency:              profile?.preferred_currency || 'cad',
         budget_mode:           form.budget_mode,
         start_when:            form.start_when,
         start_date:            form.start_date || null,
@@ -891,10 +892,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       const { error: screenErr } = await supabase.from('campaign_screens').insert(screenRows);
       if (screenErr) throw new Error(screenErr.message);
 
-      const hasAutoApproved = screenRows.some(r => r.status === 'auto_approved');
-      if (hasAutoApproved && form.start_when === 'partial') {
-        await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaignId);
-      }
+      // Booking status moves to 'scheduled' server-side (charge-campaign) once
+      // payment succeeds — clients cannot write status, by design.
 
       // Notify each unique operator whose screens were targeted
       const { data: { session } } = await supabase.auth.getSession();
@@ -941,7 +940,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         timeStart: form.time_start,
         timeEnd: form.time_end,
         spent: 0, impressions: 0, scans: 0,
-        status: hasAutoApproved && form.start_when === 'partial' ? 'scheduled' : 'pending_review',
+        status: 'pending_review',
       });
       setStep(5);
     } catch (e) {

@@ -55,6 +55,7 @@ Deno.serve(async (req: Request) => {
       .select("id, advertiser_name, headline, cta_text, accent_color, destination_url, category, slots, duration, schedule_days, time_start, time_end")
       .in("id", campaignIds)
       .in("status", ["scheduled", "active"])
+      .eq("payment_status", "paid")
       .lte("start_date", today)
       .gte("end_date", today);
 

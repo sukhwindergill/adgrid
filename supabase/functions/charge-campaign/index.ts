@@ -48,7 +48,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
-    .select("id, budget, advertiser_id, advertiser_name, screen_name, payment_status")
+    .select("id, budget, currency, advertiser_id, advertiser_name, screen_name, payment_status")
     .eq("id", campaign_id)
     .single();
 
@@ -74,7 +74,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: advertiser } = await supabase
     .from("profiles")
-    .select("stripe_customer_id, email, preferred_currency")
+    .select("stripe_customer_id, email")
     .eq("id", booking.advertiser_id)
     .single();
 
@@ -105,7 +105,7 @@ Deno.serve(async (req: Request) => {
   try {
     paymentIntent = await stripe.paymentIntents.create({
       amount: amountPence,
-      currency: advertiser.preferred_currency ?? "cad",
+      currency: booking.currency ?? "cad",
       customer: advertiser.stripe_customer_id,
       payment_method: paymentMethodId,
       confirm: true,
@@ -113,7 +113,7 @@ Deno.serve(async (req: Request) => {
       description: `AdGrid: ${booking.advertiser_name} — ${booking.screen_name}`,
       metadata: { campaign_id: booking.id, advertiser_id: booking.advertiser_id },
     }, {
-      idempotencyKey: `charge-campaign:${booking.id}`,
+      idempotencyKey: `charge-campaign:${booking.id}:${paymentMethodId}`,
     });
   } catch (stripeErr: unknown) {
     const msg = stripeErr instanceof Error ? stripeErr.message : "Payment failed";
@@ -136,16 +136,14 @@ Deno.serve(async (req: Request) => {
       status: "scheduled",
       payment_intent_id: paymentIntent.id,
       payment_status: "paid",
-      currency: advertiser.preferred_currency ?? "cad",
+      currency: booking.currency ?? "cad",
     })
     .eq("id", campaign_id);
 
-  // Approve any pending campaign_screens rows so display-feed can serve the campaign
-  await supabase
-    .from("campaign_screens")
-    .update({ status: "approved", approved_at: new Date().toISOString() })
-    .eq("campaign_id", campaign_id)
-    .eq("status", "pending");
+  // Payment only marks the booking paid. Screen approval stays with the
+  // operator (or a screen's auto_approve flag at booking creation) —
+  // display-feed requires both payment_status='paid' and an approved
+  // campaign_screens row before the campaign airs.
 
   return new Response(
     JSON.stringify({ success: true, payment_intent_id: paymentIntent.id }),
