@@ -110,16 +110,27 @@ Deno.serve(async (req: Request) => {
   const internalHeader = req.headers.get("x-internal-secret");
   const isInternal = INTERNAL_SECRET && internalHeader === INTERNAL_SECRET;
 
+  let callerUserId: string | null = null;
+  let callerRole: string | null = null;
+
   if (!isInternal) {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return new Response("Unauthorized", { status: 401 });
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) return new Response("Unauthorized", { status: 401 });
+    callerUserId = user.id;
+    const { data: prof } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+    callerRole = prof?.role ?? null;
   }
 
   const { userId, type, data: notifData = {} } = await req.json();
   if (!userId || !type) return new Response("Missing userId or type", { status: 400 });
+
+  // Non-internal callers can only send to themselves unless they are an operator
+  if (!isInternal && callerRole !== "operator" && callerUserId !== userId) {
+    return new Response("Forbidden", { status: 403 });
+  }
 
   const template = TEMPLATES[type];
   if (!template) return new Response("Unknown notification type", { status: 400 });
