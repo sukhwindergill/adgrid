@@ -121,7 +121,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const { amount, currency = "gbp" } = await req.json();
+    const { amount, currency = "cad" } = await req.json();
     if (!amount || amount <= 0) {
       return new Response(JSON.stringify({ error: "amount required" }), { status: 400, headers: CORS });
     }
