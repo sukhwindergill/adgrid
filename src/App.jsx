@@ -46,6 +46,8 @@ import { DisplayView }      from './views/shared/DisplayView.jsx';
 // Public views (no auth required)
 import { DisplayPlayer } from './views/display/DisplayPlayer.jsx';
 import { MarketingHome } from './views/marketing/Home.jsx';
+import { PrivacyPolicy } from './views/legal/PrivacyPolicy.jsx';
+import { TermsOfService } from './views/legal/TermsOfService.jsx';
 
 import { C, F } from './design/tokens.js';
 import { Skeleton } from './components/ui/Skeleton.jsx';
@@ -412,6 +414,8 @@ export default function App() {
     <Routes>
       <Route path="/" element={<MarketingHome />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<TermsOfService />} />
       <Route path="/display/:token" element={<DisplayPlayerRoute />} />
       <Route
         path="/app/*"

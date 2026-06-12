@@ -287,7 +287,9 @@ export function DisplayPlayer({ screenToken }) {
         backdropFilter: 'blur(4px)',
       }}>
         <span style={{ fontSize: 'clamp(9px, 0.9vw, 12px)', color: 'rgba(255,255,255,0.35)', fontFamily: "'Inter', sans-serif" }}>
-          This screen uses computer vision to count viewers. No personal data is stored.
+          {/* TODO(legal): sign off on notice wording. Must stay accurate to actual
+              data collection — no cameras/computer vision on screens today. */}
+          This screen does not use cameras or collect viewer data. Scanning an ad's QR code records the scan.
         </span>
         <a href="/privacy" style={{ fontSize: 'clamp(9px, 0.9vw, 12px)', color: 'rgba(255,255,255,0.25)', fontFamily: "'Inter', sans-serif", textDecoration: 'underline' }}>
           Privacy Policy ↗
