@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { C, F, SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
+import { AccessSettingsView } from '../accounts/AccessSettingsView.jsx'
 import { supabase } from "../../lib/supabase.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 
@@ -400,6 +401,7 @@ export default function SettingsView() {
           { id: "security", label: "Security" },
           { id: "notifications", label: "Notifications" },
           { id: "team", label: "Team" },
+          { id: "access", label: "Access" },
         ].map((t) => (
           <TabBtn key={t.id} label={t.label} active={tab === t.id} onClick={() => setTab(t.id)} />
         ))}
@@ -409,6 +411,7 @@ export default function SettingsView() {
       {tab === "security" && <SecurityTab />}
       {tab === "notifications" && <NotificationsTab profile={profile} />}
       {tab === "team" && <TeamTab profile={profile} />}
+      {tab === "access" && <AccessSettingsView />}
     </div>
   );
 }
