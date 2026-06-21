@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { TeamClientRoles } from '../accounts/TeamClientRoles.jsx';
 
 const TIMEZONES = [
   'UTC', 'America/New_York', 'America/Chicago', 'America/Denver',
@@ -429,6 +430,7 @@ export function OperatorSettingsView() {
     { id: 'notifications', label: 'Notifications' },
     { id: 'team',          label: 'Team' },
     { id: 'payouts',       label: 'Payouts' },
+    { id: 'client-access', label: 'Client Access' },
   ];
 
   return (
@@ -448,6 +450,7 @@ export function OperatorSettingsView() {
       {tab === 'notifications' && <NotificationsTab profile={profile} />}
       {tab === 'team'          && <TeamTab profile={profile} />}
       {tab === 'payouts'       && <PayoutsTab profile={profile} />}
+      {tab === 'client-access' && <TeamClientRoles />}
     </div>
   );
 }
