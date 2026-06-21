@@ -39,7 +39,8 @@ export function AcceptGrantView() {
   }
 
   async function decline() {
-    await supabase.from('account_grants').update({ status: 'revoked' }).eq('id', grantId)
+    const { error: e } = await supabase.from('account_grants').update({ status: 'revoked' }).eq('id', grantId)
+    if (e) { setError(e.message); return }
     navigate('/')
   }
 
@@ -86,7 +87,7 @@ export function AcceptGrantView() {
               <div style={{ marginBottom: 20 }}>
                 <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>Sign in to accept:</p>
                 <button
-                  onClick={() => signInWithOAuth('google')}
+                  onClick={() => { sessionStorage.setItem('pending_grant', grantId); signInWithOAuth('google') }}
                   style={{ width: '100%', padding: '10px', borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 14, cursor: 'pointer', color: C.text, marginBottom: 8 }}
                 >
                   Continue with Google
