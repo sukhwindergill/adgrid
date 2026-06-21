@@ -85,6 +85,16 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
     body: `"${d.screenName}" hasn't reported a heartbeat in over ${d.minutes} minutes.`,
     html: emailHtml("Screen Offline", `Your screen <strong>${d.screenName}</strong> hasn't sent a heartbeat in over <strong>${d.minutes} minutes</strong>. Check that the display player is running.`, "View Screen", d.appUrl ?? ""),
   }),
+  grant_invite: (d) => ({
+    title: `${d.grantorName} invited you to access their AdGrid account`,
+    body: `${d.grantorName} has given you ${d.role} access to their AdGrid account. Accept to get started.`,
+    html: emailHtml(
+      "You've been invited",
+      `<strong>${d.grantorName}</strong> has invited you to access their AdGrid account as a <strong>${d.role}</strong>.<br><br>Click below to accept the invitation and get started.`,
+      "Accept Invitation",
+      d.acceptUrl,
+    ),
+  }),
 };
 
 function emailHtml(title: string, body: string, ctaLabel: string, ctaUrl: string): string {
