@@ -28,17 +28,19 @@ const mockAuth = {
   })),
 };
 
+const mockClient = {
+  auth: mockAuth,
+  from: jest.fn(() => mockQuery),
+  channel: jest.fn(() => mockChannel),
+  removeChannel: jest.fn(),
+  storage: {
+    from: jest.fn(() => ({
+      upload: jest.fn().mockResolvedValue({ error: null }),
+      getPublicUrl: jest.fn(() => ({ data: { publicUrl: 'https://example.com/photo.jpg' } })),
+    })),
+  },
+};
+
 module.exports = {
-  createClient: jest.fn(() => ({
-    auth: mockAuth,
-    from: jest.fn(() => mockQuery),
-    channel: jest.fn(() => mockChannel),
-    removeChannel: jest.fn(),
-    storage: {
-      from: jest.fn(() => ({
-        upload: jest.fn().mockResolvedValue({ error: null }),
-        getPublicUrl: jest.fn(() => ({ data: { publicUrl: 'https://example.com/photo.jpg' } })),
-      })),
-    },
-  })),
+  createClient: jest.fn(() => mockClient),
 };
