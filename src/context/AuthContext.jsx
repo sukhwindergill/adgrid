@@ -168,19 +168,19 @@ export function AuthProvider({ children }) {
       .from('account_grants')
       .update({ status: 'active' })
       .eq('id', grantId)
-    if (!error) await fetchGrants(user.id)
+    if (!error && user) await fetchGrants(user.id)
     return { error }
   }
 
   async function revokeGrant(grantId) {
+    const revokedAccountId = grants.find(g => g.id === grantId)?.account_id
     const { error } = await supabase
       .from('account_grants')
       .update({ status: 'revoked' })
       .eq('id', grantId)
     if (!error) {
       setGrants(prev => prev.filter(g => g.id !== grantId))
-      // If currently acting in this account, switch back to own
-      if (activeAccount?.id && grants.find(g => g.id === grantId)?.account_id === activeAccount.id) {
+      if (activeAccount?.id && revokedAccountId === activeAccount.id) {
         setActiveAccount(null)
       }
     }
