@@ -1,13 +1,15 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext({})
 
 export function AuthProvider({ children }) {
-  const [user, setUser]             = useState(null)
-  const [profile, setProfile]       = useState(null)
-  const [activeMode, setActiveModeState] = useState(null) // 'operator' | 'advertiser'
-  const [loading, setLoading]       = useState(true)
+  const [user, setUser]                     = useState(null)
+  const [profile, setProfile]               = useState(null)
+  const [activeMode, setActiveModeState]    = useState(null)
+  const [activeAccount, setActiveAccountState] = useState(null) // { id, name, role, isOwn }
+  const [grants, setGrants]                 = useState([])      // active account_grants[]
+  const [loading, setLoading]               = useState(true)
 
   async function fetchProfile(userId) {
     const { data } = await supabase
@@ -20,6 +22,36 @@ export function AuthProvider({ children }) {
     return data
   }
 
+  const fetchGrants = useCallback(async (userId) => {
+    // Grants where this user's profile is the grantee (direct) OR
+    // the user is a member of the grantee org — we fetch both.
+    const [directRes, orgRes] = await Promise.all([
+      supabase
+        .from('account_grants')
+        .select('*, account:account_id(id, name, company_name, logo_url)')
+        .eq('grantee_id', userId)
+        .eq('status', 'active'),
+      supabase
+        .from('team_members')
+        .select('org_profile_id, account_grants(*, account:account_id(id, name, company_name, logo_url))')
+        .eq('user_profile_id', userId),
+    ])
+
+    const direct = directRes.data ?? []
+    const viaOrg = (orgRes.data ?? [])
+      .flatMap(tm => (tm.account_grants ?? []).filter(g => g.status === 'active'))
+
+    // Dedupe by account_id
+    const seen = new Set()
+    const all = [...direct, ...viaOrg].filter(g => {
+      if (seen.has(g.account_id)) return false
+      seen.add(g.account_id)
+      return true
+    })
+    setGrants(all)
+    return all
+  }, [])
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const code   = params.get('code')
@@ -31,18 +63,47 @@ export function AuthProvider({ children }) {
       }
       const { data: { session } } = await supabase.auth.getSession()
       setUser(session?.user ?? null)
-      if (session?.user) await fetchProfile(session.user.id)
+      if (session?.user) {
+        await fetchProfile(session.user.id)
+        await fetchGrants(session.user.id)
+      }
       setLoading(false)
     }
     init()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
-      else { setProfile(null); setActiveModeState(null) }
+      if (session?.user) {
+        fetchProfile(session.user.id)
+        fetchGrants(session.user.id)
+
+        // Auto-accept a pending grant invite (set before OAuth redirect)
+        const pending = sessionStorage.getItem('pending_grant')
+        if (pending) {
+          sessionStorage.removeItem('pending_grant')
+          supabase
+            .from('account_grants')
+            .update({ status: 'active' })
+            .eq('id', pending)
+            .then(() => fetchGrants(session.user.id))
+        }
+      } else {
+        setProfile(null)
+        setActiveModeState(null)
+        setActiveAccountState(null)
+        setGrants([])
+      }
     })
 
     return () => subscription.unsubscribe()
+  }, [fetchGrants])
+
+  // Restore activeAccount from sessionStorage on mount
+  useEffect(() => {
+    const stored = sessionStorage.getItem('adgrid_active_account')
+    if (stored) {
+      try { setActiveAccountState(JSON.parse(stored)) } catch {}
+    }
   }, [])
 
   async function signUp(email, password, name) {
@@ -64,6 +125,9 @@ export function AuthProvider({ children }) {
     setUser(null)
     setProfile(null)
     setActiveModeState(null)
+    setActiveAccountState(null)
+    setGrants([])
+    sessionStorage.removeItem('adgrid_active_account')
   }
 
   async function signInWithOAuth(provider) {
@@ -82,8 +146,48 @@ export function AuthProvider({ children }) {
     }
   }
 
+  function setActiveAccount(account) {
+    // account: { id, name, role, isOwn } | null
+    setActiveAccountState(account)
+    if (account) {
+      sessionStorage.setItem('adgrid_active_account', JSON.stringify(account))
+    } else {
+      sessionStorage.removeItem('adgrid_active_account')
+    }
+  }
+
+  async function acceptGrant(grantId) {
+    const { error } = await supabase
+      .from('account_grants')
+      .update({ status: 'active' })
+      .eq('id', grantId)
+    if (!error) await fetchGrants(user.id)
+    return { error }
+  }
+
+  async function revokeGrant(grantId) {
+    const { error } = await supabase
+      .from('account_grants')
+      .update({ status: 'revoked' })
+      .eq('id', grantId)
+    if (!error) {
+      setGrants(prev => prev.filter(g => g.id !== grantId))
+      // If currently acting in this account, switch back to own
+      if (activeAccount?.id && grants.find(g => g.id === grantId)?.account_id === activeAccount.id) {
+        setActiveAccount(null)
+      }
+    }
+    return { error }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, profile, activeMode, loading, signUp, signIn, signOut, signInWithOAuth, setActiveMode }}>
+    <AuthContext.Provider value={{
+      user, profile, activeMode, loading,
+      activeAccount, grants,
+      signUp, signIn, signOut, signInWithOAuth,
+      setActiveMode, setActiveAccount, acceptGrant, revokeGrant,
+      refreshGrants: () => user ? fetchGrants(user.id) : Promise.resolve(),
+    }}>
       {children}
     </AuthContext.Provider>
   )
