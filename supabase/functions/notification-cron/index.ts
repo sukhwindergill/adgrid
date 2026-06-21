@@ -7,6 +7,35 @@ const supabase = createClient(
 
 const FUNCTIONS_URL = `${Deno.env.get("SUPABASE_URL")!}/functions/v1`;
 
+async function sendExpoPushToOperator(
+  supabaseClient: ReturnType<typeof createClient>,
+  operatorId: string,
+  title: string,
+  body: string,
+  data: Record<string, string> = {}
+): Promise<void> {
+  const { data: tokens } = await supabaseClient
+    .from("push_tokens")
+    .select("expo_token")
+    .eq("operator_id", operatorId);
+
+  if (!tokens || tokens.length === 0) return;
+
+  const messages = tokens.map(({ expo_token }: { expo_token: string }) => ({
+    to: expo_token,
+    sound: "default",
+    title,
+    body,
+    data,
+  }));
+
+  await fetch("https://exp.host/--/api/v2/push/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    body: JSON.stringify(messages),
+  });
+}
+
 async function sendNotification(userId: string, type: string, data: Record<string, string>) {
   await fetch(`${FUNCTIONS_URL}/send-notification`, {
     method: "POST",
@@ -65,19 +94,22 @@ Deno.serve(async (_req: Request) => {
         .eq("advertiser_id", adv.id)
         .eq("status", "active");
 
+      // Skip advertisers with no active campaigns — nothing useful to report
+      if (!advCampaigns || advCampaigns.length === 0) continue;
+
       const { data: scans } = await supabase
         .from("scans")
         .select("id")
         .eq("advertiser_id", adv.id)
         .gte("scanned_at", new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
-      const totalSpend = (advCampaigns ?? []).reduce(
+      const totalSpend = advCampaigns.reduce(
         (s: number, c: { budget: number }) => s + (c.budget ?? 0), 0
       );
 
       await sendNotification(adv.id, "weekly_report", {
         totalScans: String((scans ?? []).length),
-        activeCampaigns: String((advCampaigns ?? []).length),
+        activeCampaigns: String(advCampaigns.length),
         totalSpend: totalSpend.toFixed(2),
         appUrl: "",
       });
@@ -124,12 +156,46 @@ Deno.serve(async (_req: Request) => {
     }
   }
 
+  // ── Pending approval push notifications ─────────────────────
+  // Find campaign_screens that became pending in the last 2 minutes
+  // (cron runs every minute; 2-minute window avoids missing rows on slow runs)
+  const twoMinutesAgo = new Date(today.getTime() - 2 * 60 * 1000).toISOString();
+
+  const { data: pendingScreens } = await supabase
+    .from("campaign_screens")
+    .select("screen_id")
+    .eq("status", "pending")
+    .gte("updated_at", twoMinutesAgo);
+
+  for (const ps of pendingScreens ?? []) {
+    try {
+      const { data: screenData } = await supabase
+        .from("screens")
+        .select("operator_id, name")
+        .eq("id", ps.screen_id)
+        .single();
+
+      if (screenData) {
+        await sendExpoPushToOperator(
+          supabase,
+          screenData.operator_id,
+          "New ad awaiting approval",
+          `An ad is waiting for your review on ${screenData.name}`,
+          { screen: "approvals" }
+        );
+      }
+    } catch (_err) {
+      // Non-blocking: push failure should not stop the cron job
+    }
+  }
+
   // ── Stale heartbeat alerts (screens silent > 30 min) ────────
   const staleThreshold = new Date(today.getTime() - 30 * 60 * 1000);
 
   const { data: screens } = await supabase
     .from("screens")
-    .select("id, name, operator_id");
+    .select("id, name, operator_id")
+    .neq("status", "pending");
 
   for (const screen of screens ?? []) {
     const { data: lastBeat } = await supabase
