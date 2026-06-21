@@ -31,15 +31,22 @@ CREATE POLICY "ag_owner_insert" ON account_grants
 
 -- Account owner can update (change role, revoke)
 CREATE POLICY "ag_owner_update" ON account_grants
-  FOR UPDATE USING (account_id = auth.uid());
+  FOR UPDATE
+  USING (account_id = auth.uid())
+  WITH CHECK (account_id = auth.uid());
 
 -- Grantee can flip status to 'active' or 'revoked' (accept/decline)
 CREATE POLICY "ag_grantee_update" ON account_grants
-  FOR UPDATE USING (grantee_id = auth.uid());
+  FOR UPDATE
+  USING (grantee_id = auth.uid())
+  WITH CHECK (grantee_id = auth.uid());
 
 CREATE INDEX account_grants_account_id_idx ON account_grants(account_id);
 CREATE INDEX account_grants_grantee_id_idx ON account_grants(grantee_id);
-CREATE INDEX account_grants_status_idx     ON account_grants(status);
+-- Composite partial index for RLS performance (replaces low-cardinality standalone status index)
+CREATE INDEX account_grants_account_status_idx
+  ON account_grants(account_id, status)
+  WHERE status = 'active';
 
 -- ── team_member_client_roles ───────────────────────────────────────────────────
 CREATE TABLE team_member_client_roles (
@@ -87,6 +94,7 @@ CREATE OR REPLACE FUNCTION has_account_grant(
 RETURNS boolean
 LANGUAGE sql
 SECURITY DEFINER
+SET search_path = public
 STABLE
 AS $$
   SELECT EXISTS (
