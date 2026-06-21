@@ -43,6 +43,9 @@ import { SignalsView }      from './views/shared/SignalsView.jsx';
 import { IntegrationsView } from './views/shared/IntegrationsView.jsx';
 import { DisplayView }      from './views/shared/DisplayView.jsx';
 
+import { AccountHub }      from './views/accounts/AccountHub.jsx'
+import { AcceptGrantView } from './views/accounts/AcceptGrantView.jsx'
+
 // Public views (no auth required)
 import { DisplayPlayer } from './views/display/DisplayPlayer.jsx';
 import { MarketingHome } from './views/marketing/Home.jsx';
@@ -70,7 +73,7 @@ async function callNotification(userId, type, data = {}) {
 // ─── AppInner (auth-gated shell) ─────────────────────────────────────────────
 
 function AppInner() {
-  const { user, profile, activeMode, setActiveMode, loading, signOut } = useAuth();
+  const { user, profile, activeMode, setActiveMode, loading, signOut, activeAccount, setActiveAccount, grants } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -117,26 +120,39 @@ function AppInner() {
 
   // ── Data loading ───────────────────────────────────────────────────────────
   const loadData = useCallback(async () => {
-    setDataLoading(true);
-    setLoadError(null);
+    setDataLoading(true)
+    setLoadError(null)
+
+    const bookingsQuery = supabase
+      .from('bookings')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    // When acting as delegate, scope bookings to that account's data
+    if (activeAccount && !activeAccount.isOwn) {
+      bookingsQuery.eq('advertiser_id', activeAccount.id)
+    }
+
     const [bookingsRes, screensRes] = await Promise.all([
-      supabase.from('bookings').select('*').order('created_at', { ascending: false }),
+      bookingsQuery,
       supabase.from('screens').select('*').order('name'),
-    ]);
+    ])
+
     if (bookingsRes.error) {
-      console.error('Failed to load campaigns:', bookingsRes.error.message);
-      setLoadError('Failed to load data. Please refresh.');
-      setDataLoading(false);
-      return;
+      console.error('Failed to load campaigns:', bookingsRes.error.message)
+      setLoadError('Failed to load data. Please refresh.')
+      setDataLoading(false)
+      return
     }
     if (screensRes.error) {
-      console.error('Failed to load screens:', screensRes.error.message);
-      setLoadError('Failed to load data. Please refresh.');
-      setDataLoading(false);
-      return;
+      console.error('Failed to load screens:', screensRes.error.message)
+      setLoadError('Failed to load data. Please refresh.')
+      setDataLoading(false)
+      return
     }
-    const bookings = bookingsRes.data;
-    const screens = screensRes.data;
+
+    const bookings = bookingsRes.data
+    const screens = screensRes.data
     if (bookings && bookings.length > 0) {
       setCampaigns(bookings.map(b => ({
         ...b,
@@ -152,9 +168,9 @@ function AppInner() {
         color: b.accent_color,
         destination: b.destination_url,
         cta: b.cta_text,
-      })));
+      })))
     } else {
-      setCampaigns([]);
+      setCampaigns([])
     }
     if (screens && screens.length > 0) {
       setDbScreens(screens.map(s => ({
@@ -165,17 +181,17 @@ function AppInner() {
         maxDuration: s.max_ad_duration,
         revenue: s.monthly_revenue ?? 0,
         campaigns: 0,
-      })));
+      })))
     } else {
-      setDbScreens([]);
+      setDbScreens([])
     }
-    setDataLoading(false);
-  }, []);
+    setDataLoading(false)
+  }, [activeAccount, user])
 
-  // Load data only when user changes (login/logout)
+  // Load data when user or activeAccount changes
   useEffect(() => {
-    if (user) loadData();
-  }, [user, loadData]);
+    if (user) loadData()
+  }, [user, activeAccount, loadData])
 
   // Update nav when mode changes
   useEffect(() => {
@@ -184,6 +200,17 @@ function AppInner() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, activeMode]);
+
+  // Redirect to account hub when user has grants and no active account chosen
+  useEffect(() => {
+    if (!user || !profile || !grants) return
+    if (grants.length > 0 && !activeAccount && !sessionStorage.getItem('adgrid_active_account')) {
+      const currentPath = location.pathname
+      if (currentPath !== '/app/accounts' && !currentPath.startsWith('/app/accept-grant')) {
+        navigate('/app/accounts')
+      }
+    }
+  }, [user, profile, grants, activeAccount, navigate, location.pathname])
 
   // ── Stripe Connect redirect ────────────────────────────────────────────────
   useEffect(() => {
@@ -417,6 +444,8 @@ export default function App() {
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<TermsOfService />} />
       <Route path="/display/:token" element={<DisplayPlayerRoute />} />
+      <Route path="/app/accounts" element={<RequireAuth><AccountHubRoute /></RequireAuth>} />
+      <Route path="/app/accept-grant" element={<AcceptGrantView />} />
       <Route
         path="/app/*"
         element={
@@ -428,6 +457,32 @@ export default function App() {
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
+}
+
+function AccountHubRoute() {
+  const { setActiveAccount, setActiveMode, profile, user, signOut } = useAuth()
+  const navigate = useNavigate()
+
+  const displayUser = { name: profile?.name || user?.email?.split('@')[0] || 'User', email: user?.email }
+
+  function handleSelect(account) {
+    if (account.isOwn) {
+      setActiveAccount(null)
+    } else {
+      setActiveAccount(account)
+      setActiveMode('advertiser')
+    }
+    navigate('/app/overview')
+  }
+
+  return (
+    <AppShell
+      sidebar={null}
+      header={<GlobalHeader user={displayUser} onSignOut={signOut} />}
+    >
+      <AccountHub onSelectAccount={handleSelect} />
+    </AppShell>
+  )
 }
 
 function DisplayPlayerRoute() {
