@@ -92,7 +92,7 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
       "You've been invited",
       `<strong>${d.grantorName}</strong> has invited you to access their AdGrid account as a <strong>${d.role}</strong>.<br><br>Click below to accept the invitation and get started.`,
       "Accept Invitation",
-      d.acceptUrl,
+      d.acceptUrl ?? "",
     ),
   }),
 };
