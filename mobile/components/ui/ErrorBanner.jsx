@@ -6,7 +6,7 @@ export function ErrorBanner({ message }) {
   if (!message) return null;
   return (
     <View style={styles.banner}>
-      <Text style={[styles.text, { fontFamily: F.sans }]}>⚠ {message}</Text>
+      <Text style={[styles.text, { fontFamily: F.sans }]}>⚠ <Text>{message}</Text></Text>
     </View>
   );
 }
