@@ -55,23 +55,25 @@ export function GrantAccessModal({ onClose, onGranted }) {
 
     // Send invite notification + email
     const { data: { session } } = await supabase.auth.getSession()
-    fetch(`${SUPABASE_FUNCTIONS_URL}/send-notification`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        userId: grantee.id,
-        type: 'grant_invite',
-        data: {
-          grantorName: profile?.company_name || profile?.name || user.email,
-          role,
-          acceptUrl: acceptUrl + grant.id,
-          appUrl,
+    if (session) {
+      fetch(`${SUPABASE_FUNCTIONS_URL}/send-notification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
         },
-      }),
-    }).catch(e => console.error('Notification error:', e))
+        body: JSON.stringify({
+          userId: grantee.id,
+          type: 'grant_invite',
+          data: {
+            grantorName: profile?.company_name || profile?.name || user.email,
+            role,
+            acceptUrl: acceptUrl + grant.id,
+            appUrl,
+          },
+        }),
+      }).catch(e => console.error('Notification error:', e))
+    }
 
     setSuccess(true)
     setSaving(false)
