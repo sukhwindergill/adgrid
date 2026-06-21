@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "AdGrid Operator",
+    "slug": "adgrid-operator",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "adgrid",
+    "splash": {
+      "backgroundColor": "#7B2FFF"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.adgrid.operator",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Used to scan QR codes when connecting a new screen.",
+        "NSPhotoLibraryUsageDescription": "Used to upload photos of your screen location."
+      }
+    },
+    "android": {
+      "adaptiveIcon": { "backgroundColor": "#7B2FFF" },
+      "package": "com.adgrid.operator",
+      "permissions": ["android.permission.CAMERA"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-camera",
+        { "cameraPermission": "Used to scan QR codes when connecting a new screen." }
+      ],
+      [
+        "expo-image-picker",
+        { "photosPermission": "Used to upload photos of your screen location." }
+      ],
+      [
+        "expo-notifications",
+        { "icon": "./assets/notification-icon.png", "color": "#7B2FFF" }
+      ]
+    ],
+    "extra": {
+      "supabaseUrl": "EXPO_PUBLIC_SUPABASE_URL",
+      "supabaseAnonKey": "EXPO_PUBLIC_SUPABASE_ANON_KEY",
+      "router": { "origin": false }
+    }
+  }
+}
