@@ -665,7 +665,7 @@ function StepLaunch({ form, setForm }) {
   );
 }
 
-function StepReview({ form, matchedScreens, onSubmit, submitting, err, profile }) {
+function StepReview({ form, matchedScreens, onSubmit, submitting, err, profile, canChooseBilling, billedTo, setBilledTo }) {
   const days = form.start_date && form.end_date
     ? Math.max(1, Math.round((new Date(form.end_date) - new Date(form.start_date)) / (1000 * 60 * 60 * 24)))
     : null;
@@ -702,6 +702,32 @@ function StepReview({ form, matchedScreens, onSubmit, submitting, err, profile }
           </div>
         </div>
 
+        {canChooseBilling && (
+          <div style={{ marginBottom: 20, padding: '16px', background: C.bg, borderRadius: 10, border: `1px solid ${C.border}` }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
+              Bill to
+            </div>
+            {[
+              { value: 'client', label: 'Client account', desc: "Uses client's payment method" },
+              { value: 'agency', label: 'Agency account', desc: 'Uses your payment method' },
+            ].map(opt => (
+              <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="billedTo"
+                  value={opt.value}
+                  checked={billedTo === opt.value}
+                  onChange={() => setBilledTo(opt.value)}
+                />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{opt.label}</div>
+                  <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans }}>{opt.desc}</div>
+                </div>
+              </label>
+            ))}
+          </div>
+        )}
+
         {err && <ErrorBanner message={err} onDismiss={() => {}} />}
 
         <Btn onClick={onSubmit} disabled={submitting} style={{ width: '100%', fontSize: 15, padding: '14px 24px' }}>
@@ -737,7 +763,10 @@ function StepPay({ campaign, onPay, onSkip, paying, err }) {
 // ─── Main Wizard ─────────────────────────────────────────────────────────────
 
 export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [] }) {
-  const { user, profile } = useAuth();
+  const { user, profile, activeAccount } = useAuth();
+  const isDelegate = activeAccount && !activeAccount.isOwn;
+  const canChooseBilling = isDelegate && ['admin', 'manager'].includes(activeAccount?.role);
+  const [billedTo, setBilledTo] = useState('client'); // 'client' | 'agency'
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState(null);
@@ -868,6 +897,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         time_start:            form.time_start,
         time_end:              form.time_end,
 
+        billed_to_profile_id:  canChooseBilling && billedTo === 'agency' ? user.id : null,
         status:                'pending_review',
         payment_status:        'unpaid',
         impressions:           0,
@@ -1013,7 +1043,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       {step === 1 && <StepScreens form={form} setForm={setForm} matchedScreens={matchedScreens} />}
       {step === 2 && <StepCreative form={form} setForm={setForm} />}
       {step === 3 && <StepBudget form={form} setForm={setForm} matchedScreens={selectedScreens} />}
-      {step === 4 && <StepReview form={form} matchedScreens={selectedScreens} onSubmit={handleSubmit} submitting={submitting} err={submitErr} profile={profile} />}
+      {step === 4 && <StepReview form={form} matchedScreens={selectedScreens} onSubmit={handleSubmit} submitting={submitting} err={submitErr} profile={profile} canChooseBilling={canChooseBilling} billedTo={billedTo} setBilledTo={setBilledTo} />}
       {step === 5 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} />}
 
       {step < 4 && (
