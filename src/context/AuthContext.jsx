@@ -23,27 +23,34 @@ export function AuthProvider({ children }) {
   }
 
   const fetchGrants = useCallback(async (userId) => {
-    // Grants where this user's profile is the grantee (direct) OR
-    // the user is a member of the grantee org — we fetch both.
-    const [directRes, orgRes] = await Promise.all([
-      supabase
+    // Fetch direct grants to this user's profile
+    const { data: direct } = await supabase
+      .from('account_grants')
+      .select('*, account:account_id(id, name, company_name, logo_url)')
+      .eq('grantee_id', userId)
+      .eq('status', 'active')
+
+    // Fetch org memberships, then fetch grants for those orgs
+    const { data: memberships } = await supabase
+      .from('team_members')
+      .select('org_profile_id')
+      .eq('user_profile_id', userId)
+
+    const orgIds = (memberships ?? []).map(m => m.org_profile_id).filter(Boolean)
+
+    let viaOrg = []
+    if (orgIds.length > 0) {
+      const { data: orgGrants } = await supabase
         .from('account_grants')
         .select('*, account:account_id(id, name, company_name, logo_url)')
-        .eq('grantee_id', userId)
-        .eq('status', 'active'),
-      supabase
-        .from('team_members')
-        .select('org_profile_id, account_grants(*, account:account_id(id, name, company_name, logo_url))')
-        .eq('user_profile_id', userId),
-    ])
+        .in('grantee_id', orgIds)
+        .eq('status', 'active')
+      viaOrg = orgGrants ?? []
+    }
 
-    const direct = directRes.data ?? []
-    const viaOrg = (orgRes.data ?? [])
-      .flatMap(tm => (tm.account_grants ?? []).filter(g => g.status === 'active'))
-
-    // Dedupe by account_id
+    // Dedupe by account_id (direct takes precedence)
     const seen = new Set()
-    const all = [...direct, ...viaOrg].filter(g => {
+    const all = [...(direct ?? []), ...viaOrg].filter(g => {
       if (seen.has(g.account_id)) return false
       seen.add(g.account_id)
       return true
