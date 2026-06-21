@@ -1,6 +1,10 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
 import { C, F } from '../../lib/tokens';
+import { useAuth } from '../../context/AuthContext';
+import { useScreens } from '../../hooks/useScreens';
+import { useApprovals } from '../../hooks/useApprovals';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
 
 function TabIcon({ icon, focused, badgeCount }) {
   return (
@@ -16,6 +20,13 @@ function TabIcon({ icon, focused, badgeCount }) {
 }
 
 export default function TabsLayout() {
+  const router = useRouter();
+  const { profile } = useAuth();
+  const { screens } = useScreens(profile?.id);
+  const screenIds = screens.map(s => s.id);
+  const { pendingCount } = useApprovals(profile?.id, screenIds);
+  usePushNotifications(profile?.id, () => router.push('/(tabs)/approvals'));
+
   return (
     <Tabs
       screenOptions={{
@@ -44,7 +55,7 @@ export default function TabsLayout() {
         name="approvals"
         options={{
           title: 'Approvals',
-          tabBarIcon: ({ focused }) => <TabIcon icon="✅" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon icon="✅" focused={focused} badgeCount={pendingCount} />,
         }}
       />
       <Tabs.Screen
