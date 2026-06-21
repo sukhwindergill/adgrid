@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { C, F, glass } from '../../design/tokens.js';
 import NotificationBell from '../NotificationBell.jsx';
+import { AccountSwitcher } from './AccountSwitcher.jsx';
 
 export function GlobalHeader({ user, onSignOut }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -20,6 +21,7 @@ export function GlobalHeader({ user, onSignOut }) {
       borderBottom: '1px solid rgba(0,0,0,0.07)',
       gap: 12,
     }}>
+      <AccountSwitcher />
       <NotificationBell />
 
       {/* Avatar + dropdown */}
