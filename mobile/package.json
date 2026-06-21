@@ -38,7 +38,7 @@
   },
   "jest": {
     "preset": "jest-expo",
-    "setupFilesAfterFramework": ["<rootDir>/jest.setup.js"],
+    "setupFilesAfterEnv": ["<rootDir>/jest.setup.js"],
     "moduleNameMapper": {
       "^@adgrid/core(.*)$": "<rootDir>/../packages/core$1"
     },
