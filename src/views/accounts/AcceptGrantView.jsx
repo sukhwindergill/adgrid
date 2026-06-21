@@ -16,6 +16,12 @@ export function AcceptGrantView() {
 
   useEffect(() => {
     if (!grantId) { setError('Invalid invite link.'); setLoading(false); return }
+    if (!user) {
+      // Can't fetch grant details without auth (RLS blocks anon access)
+      // Show login prompt; grant details load after sign-in
+      setLoading(false)
+      return
+    }
     supabase
       .from('account_grants')
       .select('*, account:account_id(name, company_name), grantor:granted_by(name, email)')
@@ -28,7 +34,7 @@ export function AcceptGrantView() {
         else setGrant(data)
         setLoading(false)
       })
-  }, [grantId])
+  }, [grantId, user])
 
   async function accept() {
     if (!user) { sessionStorage.setItem('pending_grant', grantId); navigate('/login'); return }
@@ -74,6 +80,20 @@ export function AcceptGrantView() {
             <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 8px' }}>Invite Accepted</h2>
             <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans }}>Redirecting to your accounts…</p>
           </>
+        ) : !user ? (
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 32, marginBottom: 16 }}>📬</div>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 8px' }}>You've been invited</h2>
+            <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans, margin: '0 0 20px' }}>Sign in to see your invitation and accept it.</p>
+            <button
+              onClick={() => { sessionStorage.setItem('pending_grant', grantId); signInWithOAuth('google') }}
+              style={{ width: '100%', padding: '10px', borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 14, cursor: 'pointer', color: C.text, marginBottom: 8 }}
+            >Continue with Google</button>
+            <button
+              onClick={() => { sessionStorage.setItem('pending_grant', grantId); navigate('/login') }}
+              style={{ width: '100%', padding: '10px', borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 14, cursor: 'pointer', color: C.text }}
+            >Sign in with email</button>
+          </div>
         ) : (
           <>
             <div style={{ fontSize: 32, marginBottom: 16 }}>📬</div>
@@ -83,24 +103,6 @@ export function AcceptGrantView() {
             </p>
             <p style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: F.sans, margin: '0 0 28px' }}>{accountName}</p>
 
-            {!user && (
-              <div style={{ marginBottom: 20 }}>
-                <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>Sign in to accept:</p>
-                <button
-                  onClick={() => { sessionStorage.setItem('pending_grant', grantId); signInWithOAuth('google') }}
-                  style={{ width: '100%', padding: '10px', borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 14, cursor: 'pointer', color: C.text, marginBottom: 8 }}
-                >
-                  Continue with Google
-                </button>
-                <button
-                  onClick={() => { sessionStorage.setItem('pending_grant', grantId); navigate('/login') }}
-                  style={{ width: '100%', padding: '10px', borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 14, cursor: 'pointer', color: C.text }}
-                >
-                  Sign in with email
-                </button>
-              </div>
-            )}
-
             <div style={{ display: 'flex', gap: 10 }}>
               <button
                 onClick={decline}
@@ -108,14 +110,12 @@ export function AcceptGrantView() {
               >
                 Decline
               </button>
-              {user && (
-                <button
-                  onClick={accept}
-                  style={{ flex: 1, padding: '10px', borderRadius: 10, background: C.blue, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-                >
-                  Accept Invite
-                </button>
-              )}
+              <button
+                onClick={accept}
+                style={{ flex: 1, padding: '10px', borderRadius: 10, background: C.blue, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Accept Invite
+              </button>
             </div>
           </>
         )}

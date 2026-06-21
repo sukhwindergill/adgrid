@@ -77,7 +77,6 @@ export function GrantAccessModal({ onClose, onGranted }) {
 
     setSuccess(true)
     setSaving(false)
-    onGranted?.()
   }
 
   return (
@@ -100,7 +99,7 @@ export function GrantAccessModal({ onClose, onGranted }) {
             <p style={{ fontSize: 14, color: C.green, fontFamily: F.sans, margin: '0 0 20px' }}>
               ✓ Invite sent to {email}
             </p>
-            <button onClick={onClose} style={{ padding: '9px 22px', borderRadius: 8, background: C.blue, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 13, cursor: 'pointer' }}>
+            <button onClick={() => { onClose(); onGranted?.() }} style={{ padding: '9px 22px', borderRadius: 8, background: C.blue, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 13, cursor: 'pointer' }}>
               Done
             </button>
           </>

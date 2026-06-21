@@ -204,7 +204,7 @@ function AppInner() {
   // Redirect to account hub when user has grants and no active account chosen
   useEffect(() => {
     if (!user || !profile || !grants) return
-    if (grants.length > 0 && !activeAccount && !sessionStorage.getItem('adgrid_active_account')) {
+    if (grants.length > 0 && !activeAccount && !sessionStorage.getItem('adgrid_active_account') && !sessionStorage.getItem('adgrid_hub_visited')) {
       const currentPath = location.pathname
       if (currentPath !== '/app/accounts' && !currentPath.startsWith('/app/accept-grant')) {
         navigate('/app/accounts')
@@ -466,13 +466,14 @@ function AccountHubRoute() {
   const displayUser = { name: profile?.name || user?.email?.split('@')[0] || 'User', email: user?.email }
 
   function handleSelect(account) {
+    sessionStorage.setItem('adgrid_hub_visited', '1')
     if (account.isOwn) {
       setActiveAccount(null)
     } else {
       setActiveAccount(account)
       setActiveMode('advertiser')
     }
-    navigate('/app/overview')
+    navigate(account.isOwn ? '/app/overview' : '/app/adv-overview')
   }
 
   return (

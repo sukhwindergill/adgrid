@@ -135,6 +135,7 @@ export function AuthProvider({ children }) {
     setActiveAccountState(null)
     setGrants([])
     sessionStorage.removeItem('adgrid_active_account')
+    sessionStorage.removeItem('adgrid_hub_visited')
   }
 
   async function signInWithOAuth(provider) {
