@@ -135,7 +135,7 @@ function AppInner() {
 
     const [bookingsRes, screensRes] = await Promise.all([
       bookingsQuery,
-      supabase.from('screens').select('*').order('name'),
+      supabase.from('screens').select('id,name,owner_name,owner_type,city,state,country,location,status,lat,lon,venue_category,venue_subtype,environment,screen_position,display_size,monthly_traffic_estimate,cpm_floor,operating_hours_start,operating_hours_end,auto_approve,screen_photos,content_categories_blocked,timezone,max_ad_duration,monthly_revenue,operator_id,last_seen,health_status').order('name'),
     ])
 
     if (bookingsRes.error) {
@@ -289,15 +289,9 @@ function AppInner() {
       updated = { ...updated, status: 'scheduled', payment_status: 'paid' };
     }
 
-    const { error } = await supabase
-      .from('bookings')
-      .update({ status: updated.status })
-      .eq('id', updated.id);
-    if (error) {
-      console.error('Failed to update campaign:', error.message);
-      toast.error(`Failed to update campaign: ${error.message}`);
-      return;
-    }
+    // status is set by charge-campaign (service role) on payment, or by edge
+    // functions for other transitions. The authenticated role does not have a
+    // column-level UPDATE grant on status, so we skip the redundant client write.
     setCampaigns(prev => prev.map(c => c.id === updated.id ? updated : c));
     setDetail(updated);
     if (becomingActive && updated.advertiser_id) {

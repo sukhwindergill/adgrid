@@ -403,7 +403,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
         <KPI
           label="Total Ad Revenue"
-          value={`£${totalCampRevenue.toLocaleString()}`}
+          value={`$${totalCampRevenue.toLocaleString()}`}
           sub="all campaigns"
           color={C.green}
         />
@@ -421,7 +421,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         />
         <KPI
           label="CPM"
-          value={`£${(screen.cpm_floor ?? screen.cpm ?? 3.00).toFixed(2)}`}
+          value={`$${(screen.cpm_floor ?? screen.cpm ?? 3.00).toFixed(2)}`}
           sub="floor price"
         />
       </div>
@@ -450,7 +450,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
             ['Neighbourhood', screen.neighbourhood || screen.location || '—'],
             ['Display Size', screen.display_size || '—'],
             ['Max Ad Duration', (screen.maxDuration || screen.max_ad_duration || 30) + 's'],
-            ['CPM Floor', `£${(screen.cpm_floor ?? screen.cpm ?? 3.00).toFixed(2)}`],
+            ['CPM Floor', `$${(screen.cpm_floor ?? screen.cpm ?? 3.00).toFixed(2)}`],
           ].map(([l, v]) => (
             <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
               <span style={{ fontSize: 12, color: C.textSub }}>{l}</span>
@@ -470,9 +470,9 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
             <div style={{ flex: 1, background: C.surfaceAlt }} />
           </div>
           {[
-            ['Platform (12%)', `£${Math.round(totalCampRevenue * 0.12).toLocaleString()}`, C.blue],
-            ['Owner (40%)', `£${Math.round(totalCampRevenue * 0.88 * 0.40).toLocaleString()}`, C.green],
-            ['Network pool', `£${Math.round(totalCampRevenue * 0.88 * 0.60).toLocaleString()}`, C.textSub],
+            ['Platform (12%)', `$${Math.round(totalCampRevenue * 0.12).toLocaleString()}`, C.blue],
+            ['Owner (40%)', `$${Math.round(totalCampRevenue * 0.88 * 0.40).toLocaleString()}`, C.green],
+            ['Network pool', `$${Math.round(totalCampRevenue * 0.88 * 0.60).toLocaleString()}`, C.textSub],
           ].map(([l, v, c]) => (
             <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
               <span style={{ fontSize: 12, color: C.textSub }}>{l}</span>
@@ -517,7 +517,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
             columns={[
               { key: 'advertiser_name', label: 'Advertiser', render: v => <span style={{ fontWeight: 500, color: C.text, fontFamily: F.sans }}>{v}</span> },
               { key: 'status', label: 'Status', render: v => <Badge status={v} /> },
-              { key: 'budget', label: 'Budget', render: v => <span style={{ fontFamily: F.mono, fontWeight: 600 }}>£{(v || 0).toLocaleString()}</span> },
+              { key: 'budget', label: 'Budget', render: v => <span style={{ fontFamily: F.mono, fontWeight: 600 }}>${(v || 0).toLocaleString()}</span> },
               { key: 'impressions', label: 'Impressions', render: v => <span style={{ fontFamily: F.mono }}>{v ? `${(v/1000).toFixed(1)}K` : '—'}</span> },
               { key: 'scans', label: 'Scans', render: v => <span style={{ fontFamily: F.mono, color: C.purple }}>{v ?? '—'}</span> },
               { key: 'start_date', label: 'Dates', render: (v, r) => <span style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub }}>{v} → {r.end_date}</span> },
@@ -692,26 +692,25 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
     {(hwType === 'rpi' || hwType === 'minipc') && (
       <Card style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
-          {hwType === 'rpi' ? 'Raspberry Pi 5' : 'Mini PC'} — Screen Agent Setup
+          {hwType === 'rpi' ? 'Raspberry Pi 5' : 'Mini PC'} — Kiosk Setup
         </div>
         <ol style={{ paddingLeft: 20, fontFamily: F.sans, fontSize: 13, color: C.textSub, lineHeight: 2 }}>
-          <li>Connect a USB camera to <strong>/dev/video0</strong>.</li>
-          <li>Install Docker: <code style={{ background: C.surfaceAlt, padding: '1px 5px', borderRadius: 3, fontFamily: F.mono, fontSize: 12 }}>curl -fsSL https://get.docker.com | sh</code></li>
-          <li>Create <code style={{ background: C.surfaceAlt, padding: '1px 5px', borderRadius: 3, fontFamily: F.mono, fontSize: 12 }}>docker-compose.yml</code> with the snippet below.</li>
-          <li>Run: <code style={{ background: C.surfaceAlt, padding: '1px 5px', borderRadius: 3, fontFamily: F.mono, fontSize: 12 }}>docker-compose up -d</code></li>
+          <li>Install Chromium: <code style={{ background: C.surfaceAlt, padding: '1px 5px', borderRadius: 3, fontFamily: F.mono, fontSize: 12 }}>sudo apt install chromium-browser</code></li>
+          <li>Test: run the command below in a terminal.</li>
+          <li>For autostart on boot, add the autostart snippet to <code style={{ background: C.surfaceAlt, padding: '1px 5px', borderRadius: 3, fontFamily: F.mono, fontSize: 12 }}>/etc/xdg/lxsession/LXDE-pi/autostart</code>.</li>
         </ol>
         <div style={{ background: '#0a0a0a', borderRadius: 8, padding: '12px 14px', fontFamily: F.mono, fontSize: 11, color: '#a3e635', whiteSpace: 'pre', overflowX: 'auto', marginTop: 12 }}>
-{`version: "3"
-services:
-  display:
-    image: adgrid/screen-agent:latest
-    environment:
-      SCREEN_TOKEN: "${screen.screen_token}"
-      SUPABASE_URL: "${import.meta.env.VITE_SUPABASE_URL}"
-      SUPABASE_ANON_KEY: "${import.meta.env.VITE_SUPABASE_ANON_KEY}"
-    devices:
-      - /dev/video0:/dev/video0
-    restart: unless-stopped`}
+{`chromium-browser --noerrdialogs --kiosk \\
+  --disable-infobars --disable-restore-session-state \\
+  "${window.location.origin}/display/${screen.screen_token}"`}
+        </div>
+        <div style={{ background: '#0a0a0a', borderRadius: 8, padding: '12px 14px', fontFamily: F.mono, fontSize: 11, color: '#a3e635', whiteSpace: 'pre', overflowX: 'auto', marginTop: 8 }}>
+{`# /etc/xdg/lxsession/LXDE-pi/autostart
+@xset s off
+@xset -dpms
+@xset s noblank
+@chromium-browser --noerrdialogs --kiosk --disable-infobars \\
+  "${window.location.origin}/display/${screen.screen_token}"`}
         </div>
       </Card>
     )}

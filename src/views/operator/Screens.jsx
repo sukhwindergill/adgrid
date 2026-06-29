@@ -94,7 +94,7 @@ function ScreenCard({ screen, onClick }) {
           </div>
           <div>
             <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>CPM</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono, marginTop: 2 }}>£{screen.cpm?.toFixed(2) || '4.20'}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono, marginTop: 2 }}>${screen.cpm?.toFixed(2) || '4.20'}</div>
           </div>
           <div>
             <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>Uptime</div>
@@ -107,7 +107,7 @@ function ScreenCard({ screen, onClick }) {
             {screen.campaigns} active campaign{screen.campaigns !== 1 ? 's' : ''}
           </div>
           <div style={{ fontSize: 12, fontWeight: 600, color: C.green, fontFamily: F.mono }}>
-            {screen.revenue > 0 ? `£${screen.revenue.toLocaleString()}/mo` : ''}
+            {screen.revenue > 0 ? `$${screen.revenue.toLocaleString()}/mo` : ''}
           </div>
         </div>
       </div>

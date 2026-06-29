@@ -205,7 +205,7 @@ export function DisplayPlayer({ screenToken }) {
   }, [campaigns.length]);
 
   // Reset index when campaigns list changes
-  useEffect(() => { setCurrentIdx(0); setFadeIn(true); }, [campaigns]);
+  useEffect(() => { setCurrentIdx(0); currentIdxRef.current = 0; setFadeIn(true); }, [campaigns]);
 
   if (status === 'loading') {
     return (

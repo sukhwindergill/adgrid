@@ -142,7 +142,7 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
         <KPI label="Total Campaigns" value={campaigns.length} />
         <KPI label="Active Now"      value={campaigns.filter(c => c.status === 'active').length} color={C.green} />
-        <KPI label="Total Booked"    value={`£${campaigns.reduce((a, c) => a + c.budget, 0).toLocaleString()}`} />
+        <KPI label="Total Booked"    value={`$${campaigns.reduce((a, c) => a + c.budget, 0).toLocaleString()}`} />
         <KPI label="Total Scans"     value={campaigns.reduce((a, c) => a + c.scans, 0)} color={C.purple} />
       </div>
 
@@ -236,8 +236,8 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
                   </div>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.mono }}>£{c.spent.toLocaleString()}</span>
-                      <span style={{ fontSize: 12, color: C.textMuted, fontFamily: F.mono }}>£{c.budget.toLocaleString()}</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.mono }}>${c.spent.toLocaleString()}</span>
+                      <span style={{ fontSize: 12, color: C.textMuted, fontFamily: F.mono }}>${c.budget.toLocaleString()}</span>
                     </div>
                     <ProgressBar value={c.spent} max={c.budget} height={4} />
                     <div style={{ fontSize: 10, color: pct > 90 ? C.red : pct > 70 ? C.amber : C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{pct}% used</div>

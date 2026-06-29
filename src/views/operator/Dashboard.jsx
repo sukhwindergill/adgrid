@@ -88,7 +88,7 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
   const totalSpent  = campaigns.reduce((a, c) => a + c.spent, 0);
   const liveScreens = dbScreens.filter(s => s.status === 'live');
   const allImpr     = campaigns.reduce((a, c) => a + (c.impressions || 0), 0);
-  const avgCPM      = allImpr > 0 ? `£${((totalSpend / allImpr) * 1000).toFixed(2)}` : '—';
+  const avgCPM      = allImpr > 0 ? `$${((totalSpend / allImpr) * 1000).toFixed(2)}` : '—';
 
   const kpiCols = isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)';
 
@@ -141,9 +141,9 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
 
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: kpiCols, gap: 14, marginBottom: 24 }}>
-        <KPI label="Network Revenue"  value={`£${totalRev.toLocaleString()}`}               sub="this month" trend={12} icon="💰" />
+        <KPI label="Network Revenue"  value={`$${totalRev.toLocaleString()}`}               sub="this month" trend={12} icon="💰" />
         <KPI label="Active Campaigns" value={active.length}                                  sub="running now" icon="▶" />
-        <KPI label="Total Booked"     value={`£${totalSpend.toLocaleString()}`}              sub="campaign budgets" />
+        <KPI label="Total Booked"     value={`$${totalSpend.toLocaleString()}`}              sub="campaign budgets" />
         <KPI label="QR Scans"         value={totalScans}                                     sub="consented leads" color={C.green} icon="📲" />
       </div>
 
@@ -151,7 +151,7 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
       <Card style={{ marginBottom: 24, padding: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans }}>Network Budget Utilisation</div>
-          <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>£{totalSpent.toLocaleString()} spent of £{totalSpend.toLocaleString()}</div>
+          <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>${totalSpent.toLocaleString()} spent of ${totalSpend.toLocaleString()}</div>
         </div>
         <ProgressBar value={totalSpent} max={totalSpend} height={8} />
       </Card>
@@ -176,7 +176,7 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
                     <Badge status={c.status} />
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 10 }}>
-                    {[['Budget', `£${c.budget.toLocaleString()}`], ['Spent', `£${c.spent.toLocaleString()}`], ['Impressions', `${(c.impressions / 1000).toFixed(1)}K`], ['Scans', c.scans]].map(([l, v]) => (
+                    {[['Budget', `$${c.budget.toLocaleString()}`], ['Spent', `$${c.spent.toLocaleString()}`], ['Impressions', `${(c.impressions / 1000).toFixed(1)}K`], ['Scans', c.scans]].map(([l, v]) => (
                       <div key={l}>
                         <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>{l}</div>
                         <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.mono, marginTop: 2 }}>{v}</div>
@@ -240,7 +240,7 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
                   <Badge status={s.status} />
                 </div>
                 <div style={{ display: 'flex', gap: 16 }}>
-                  {[['Revenue', `£${s.revenue.toLocaleString()}`], ['Impr.', `${(s.impressions / 1000).toFixed(0)}K`], ['Campaigns', s.campaigns]].map(([l, v]) => (
+                  {[['Revenue', `$${s.revenue.toLocaleString()}`], ['Impr.', `${(s.impressions / 1000).toFixed(0)}K`], ['Campaigns', s.campaigns]].map(([l, v]) => (
                     <div key={l}>
                       <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>{l}</div>
                       <div style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.mono }}>{v}</div>
