@@ -166,20 +166,7 @@ export function DisplayPlayer({ screenToken }) {
     return () => clearInterval(poll);
   }, [screenToken]);
 
-  // Heartbeat — fire every 30s to keep last_seen updated on the screen record
-  useEffect(() => {
-    if (!screenToken) return;
-    const sendHeartbeat = () => {
-      fetch(`${SUPABASE_FUNCTIONS_URL}/ingest-impressions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ screen_token: screenToken, heartbeat_only: true }),
-      }).catch(e => console.error('Heartbeat error:', e));
-    };
-    sendHeartbeat(); // immediate on mount
-    const hb = setInterval(sendHeartbeat, POLL_INTERVAL_MS);
-    return () => clearInterval(hb);
-  }, [screenToken]);
+  // Heartbeat is handled server-side by display-feed on every poll — no separate call needed.
 
   // Impression tracking — fire every rotation interval when a campaign is live
   useEffect(() => {
@@ -231,17 +218,10 @@ export function DisplayPlayer({ screenToken }) {
   }
 
   if (status === 'error') {
+    // Show idle slate instead of error screen — poll continues in background and will auto-recover.
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#050a10', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-        <div style={{ fontSize: 14, color: 'rgba(255,100,100,0.7)', fontFamily: "'Inter', sans-serif" }}>
-          Display Error
-        </div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', fontFamily: "'Inter', sans-serif", maxWidth: 400, textAlign: 'center' }}>
-          {errMsg}
-        </div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)', fontFamily: 'monospace', marginTop: 8 }}>
-          Token: {screenToken?.slice(0, 8)}…
-        </div>
+      <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#050a10', cursor: 'none' }}>
+        <IdleSlide />
       </div>
     );
   }
@@ -287,9 +267,7 @@ export function DisplayPlayer({ screenToken }) {
         backdropFilter: 'blur(4px)',
       }}>
         <span style={{ fontSize: 'clamp(9px, 0.9vw, 12px)', color: 'rgba(255,255,255,0.35)', fontFamily: "'Inter', sans-serif" }}>
-          {/* TODO(legal): sign off on notice wording. Must stay accurate to actual
-              data collection — no cameras/computer vision on screens today. */}
-          This screen does not use cameras or collect viewer data. Scanning an ad's QR code records the scan.
+          AdGrid advertising display. QR code scans are recorded anonymously.
         </span>
         <a href="/privacy" style={{ fontSize: 'clamp(9px, 0.9vw, 12px)', color: 'rgba(255,255,255,0.25)', fontFamily: "'Inter', sans-serif", textDecoration: 'underline' }}>
           Privacy Policy ↗

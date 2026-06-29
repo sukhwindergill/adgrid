@@ -11,6 +11,19 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
+const FUNCTIONS_URL = `${Deno.env.get("SUPABASE_URL")!}/functions/v1`;
+
+async function notifyAdvertiser(userId: string, type: string, data: Record<string, string>) {
+  await fetch(`${FUNCTIONS_URL}/send-notification`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-internal-secret": Deno.env.get("INTERNAL_NOTIFICATION_SECRET") ?? "",
+    },
+    body: JSON.stringify({ userId, type, data }),
+  }).catch(() => {});
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -59,17 +72,49 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // Either the operator approving the campaign, or the advertiser who owns it, may trigger the charge
+  // The advertiser who owns the campaign may trigger the charge.
+  // Operators may also trigger it, but only if they own at least one screen
+  // in this campaign — prevents any operator charging any advertiser's card.
   const isOwner = booking.advertiser_id === user.id;
-  if (callerProfile?.role !== "operator" && !isOwner) {
-    return new Response("Forbidden", { status: 403 });
+  if (!isOwner) {
+    if (callerProfile?.role !== "operator") {
+      return new Response("Forbidden", { status: 403 });
+    }
+    const { data: opScreens } = await supabase
+      .from("screens")
+      .select("id")
+      .eq("operator_id", user.id);
+    const opScreenIds = (opScreens ?? []).map((s) => s.id);
+    const { data: operatorLink } = opScreenIds.length > 0
+      ? await supabase
+          .from("campaign_screens")
+          .select("id")
+          .eq("campaign_id", campaign_id)
+          .in("screen_id", opScreenIds)
+          .limit(1)
+          .maybeSingle()
+      : { data: null };
+    if (!operatorLink) {
+      return new Response("Forbidden", { status: 403 });
+    }
   }
 
-  if (booking.payment_status === "paid") {
-    return new Response(JSON.stringify({ error: "Campaign already paid" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+  // Atomic lock: flip payment_status to 'charging' only if currently not paid/charging.
+  // Concurrent requests both reading 'unpaid' would race; only one UPDATE wins.
+  const { data: locked } = await supabase
+    .from("bookings")
+    .update({ payment_status: "charging" })
+    .eq("id", campaign_id)
+    .not("payment_status", "in", '("paid","charging")')
+    .select("id")
+    .maybeSingle();
+
+  if (!locked) {
+    // Either already paid or another request is mid-flight
+    return new Response(
+      JSON.stringify({ error: "Campaign is already paid or a payment is in progress." }),
+      { status: 409, headers: { "Content-Type": "application/json" } },
+    );
   }
 
   const { data: advertiser } = await supabase
@@ -79,6 +124,8 @@ Deno.serve(async (req: Request) => {
     .single();
 
   if (!advertiser?.stripe_customer_id) {
+    // Revert lock so the charge can be retried after billing setup
+    await supabase.from("bookings").update({ payment_status: booking.payment_status }).eq("id", campaign_id);
     return new Response(
       JSON.stringify({ error: "Advertiser has no payment account. Ask them to set up billing first." }),
       { status: 400, headers: { "Content-Type": "application/json" } },
@@ -92,6 +139,7 @@ Deno.serve(async (req: Request) => {
   });
 
   if (paymentMethods.data.length === 0) {
+    await supabase.from("bookings").update({ payment_status: booking.payment_status }).eq("id", campaign_id);
     return new Response(
       JSON.stringify({ error: "Advertiser has no card on file. Ask them to add a payment method in billing settings." }),
       { status: 400, headers: { "Content-Type": "application/json" } },
@@ -99,13 +147,14 @@ Deno.serve(async (req: Request) => {
   }
 
   const paymentMethodId = paymentMethods.data[0].id;
-  const amountPence = Math.round(booking.budget * 100);
+  const amountCents = Math.round(booking.budget * 100);
+  const currency = booking.currency ?? "cad";
 
   let paymentIntent;
   try {
     paymentIntent = await stripe.paymentIntents.create({
-      amount: amountPence,
-      currency: booking.currency ?? "cad",
+      amount: amountCents,
+      currency,
       customer: advertiser.stripe_customer_id,
       payment_method: paymentMethodId,
       confirm: true,
@@ -117,13 +166,46 @@ Deno.serve(async (req: Request) => {
     });
   } catch (stripeErr: unknown) {
     const msg = stripeErr instanceof Error ? stripeErr.message : "Payment failed";
+    await supabase
+      .from("bookings")
+      .update({ payment_status: "failed", status: "paused" })
+      .eq("id", campaign_id);
+    await notifyAdvertiser(booking.advertiser_id, "payment_failed", {
+      amount: booking.budget.toFixed(2),
+      currency,
+      appUrl: Deno.env.get("PUBLIC_APP_URL") ?? "",
+    });
     return new Response(JSON.stringify({ error: msg }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
   }
 
+  // 3DS / requires_action: card needs authentication — send advertiser to billing to re-attempt
+  if (paymentIntent.status === "requires_action" || paymentIntent.status === "requires_payment_method") {
+    await supabase
+      .from("bookings")
+      .update({ payment_status: "failed", status: "paused", payment_intent_id: paymentIntent.id })
+      .eq("id", campaign_id);
+    await notifyAdvertiser(booking.advertiser_id, "payment_authentication_required", {
+      amount: booking.budget.toFixed(2),
+      currency,
+      appUrl: Deno.env.get("PUBLIC_APP_URL") ?? "",
+    });
+    return new Response(
+      JSON.stringify({
+        error: "Your card requires additional authentication. Please update your payment method in billing settings and try again.",
+        requires_action: true,
+      }),
+      { status: 402, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
   if (paymentIntent.status !== "succeeded") {
+    await supabase
+      .from("bookings")
+      .update({ payment_status: "failed", status: "paused" })
+      .eq("id", campaign_id);
     return new Response(
       JSON.stringify({ error: `Payment not completed (status: ${paymentIntent.status})` }),
       { status: 400, headers: { "Content-Type": "application/json" } },
@@ -136,7 +218,7 @@ Deno.serve(async (req: Request) => {
       status: "scheduled",
       payment_intent_id: paymentIntent.id,
       payment_status: "paid",
-      currency: booking.currency ?? "cad",
+      currency,
     })
     .eq("id", campaign_id);
 

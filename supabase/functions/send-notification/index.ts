@@ -9,6 +9,20 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
 const FROM_EMAIL = "noreply@adgrid.io";
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_NOTIFICATION_SECRET") ?? "";
 
+function currencySymbol(currency?: string): string {
+  if (!currency) return "$";
+  const c = currency.toLowerCase();
+  if (c === "gbp") return "£";
+  if (c === "eur") return "€";
+  return "$"; // cad, usd, and anything else
+}
+
+function fmtMoney(amount: string, currency?: string): string {
+  const sym = currencySymbol(currency);
+  const code = currency ? ` ${currency.toUpperCase()}` : "";
+  return `${sym}${amount}${code}`;
+}
+
 const TEMPLATES: Record<string, (data: Record<string, string>) => { title: string; body: string; html: string }> = {
   campaign_approved: (d) => ({
     title: "Your campaign is approved",
@@ -43,12 +57,17 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
   weekly_report: (d) => ({
     title: "Your weekly performance report",
     body: `${d.totalScans} scans across ${d.activeCampaigns} campaigns this week.`,
-    html: emailHtml("Weekly Performance Report", `This week: <strong>${d.totalScans} scans</strong> across <strong>${d.activeCampaigns} active campaigns</strong>.<br><br>Total spend: <strong>£${d.totalSpend}</strong>`, "View Analytics", d.appUrl ?? ""),
+    html: emailHtml("Weekly Performance Report", `This week: <strong>${d.totalScans} scans</strong> across <strong>${d.activeCampaigns} active campaigns</strong>.<br><br>Total spend: <strong>${fmtMoney(d.totalSpend, d.currency)}</strong>`, "View Analytics", d.appUrl ?? ""),
   }),
   payment_failed: (d) => ({
     title: "Payment failed",
-    body: `A payment of £${d.amount} failed. Please update your payment method.`,
-    html: emailHtml("Payment Failed", `A payment of <strong>£${d.amount}</strong> for your AdGrid account failed. Please update your payment method to avoid service interruption.`, "Update Payment", d.appUrl ?? ""),
+    body: `A payment of ${fmtMoney(d.amount, d.currency)} failed. Please update your payment method.`,
+    html: emailHtml("Payment Failed", `A payment of <strong>${fmtMoney(d.amount, d.currency)}</strong> for your AdGrid account failed. Please update your payment method to avoid service interruption.`, "Update Payment", d.appUrl ?? ""),
+  }),
+  payment_authentication_required: (d) => ({
+    title: "Action required: complete payment authentication",
+    body: `Your card requires authentication for a payment of ${fmtMoney(d.amount, d.currency)}. Please update your payment method.`,
+    html: emailHtml("Payment Authentication Required", `Your card requires additional authentication for a payment of <strong>${fmtMoney(d.amount, d.currency)}</strong>. Please go to your billing settings, add a card, and re-submit your campaign.`, "Go to Billing", d.appUrl ?? ""),
   }),
   new_advertiser: (d) => ({
     title: "New advertiser signed up",
@@ -61,14 +80,14 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
     html: emailHtml("Campaign Submitted", `<strong>${d.advertiserName}</strong> submitted a new campaign. Review and approve it to get it live.`, "Review Campaign", d.appUrl ?? ""),
   }),
   payout_completed: (d) => ({
-    title: `Payout of £${d.amount} sent`,
-    body: `Your payout of £${d.amount} has been transferred to your bank.`,
-    html: emailHtml("Payout Sent", `Your payout of <strong>£${d.amount}</strong> has been transferred to your connected bank account via Stripe.`, "View Payouts", d.appUrl ?? ""),
+    title: `Payout of ${fmtMoney(d.amount, d.currency)} sent`,
+    body: `Your payout of ${fmtMoney(d.amount, d.currency)} has been transferred to your bank.`,
+    html: emailHtml("Payout Sent", `Your payout of <strong>${fmtMoney(d.amount, d.currency)}</strong> has been transferred to your connected bank account via Stripe.`, "View Payouts", d.appUrl ?? ""),
   }),
   weekly_revenue: (d) => ({
     title: "Weekly revenue summary",
-    body: `£${d.revenue} in revenue across ${d.screenCount} screens this week.`,
-    html: emailHtml("Weekly Revenue Summary", `This week your network earned <strong>£${d.revenue}</strong> across <strong>${d.screenCount} screens</strong>.`, "View Revenue", d.appUrl ?? ""),
+    body: `${fmtMoney(d.revenue, d.currency)} in revenue across ${d.screenCount} screens this week.`,
+    html: emailHtml("Weekly Revenue Summary", `This week your network earned <strong>${fmtMoney(d.revenue, d.currency)}</strong> across <strong>${d.screenCount} screens</strong>.`, "View Revenue", d.appUrl ?? ""),
   }),
   team_member_joined: (d) => ({
     title: "Team member joined",
@@ -109,7 +128,7 @@ function emailHtml(title: string, body: string, ctaLabel: string, ctaUrl: string
     ${ctaUrl ? `<a href="${ctaUrl}" style="display:inline-block;padding:10px 22px;background:#2563eb;color:#fff;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;">${ctaLabel}</a>` : ""}
   </div>
   <div style="padding:16px 28px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;">
-    AdGrid · You're receiving this because you have notifications enabled. <a href="#" style="color:#6b7280;">Unsubscribe</a>
+    AdGrid · You're receiving this because you have notifications enabled. <a href="${Deno.env.get("PUBLIC_APP_URL") ?? ""}/app/notification-prefs" style="color:#6b7280;">Unsubscribe</a>
   </div>
 </div>
 </body></html>`;
