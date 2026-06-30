@@ -534,7 +534,12 @@ function StepConnect({ screen, onDone, onSkip, onBack }) {
         .gte('created_at', since)
         .limit(1);
       if (error) throw error;
-      setStatus(data && data.length > 0 ? 'connected' : 'none');
+      if (data && data.length > 0) {
+        await supabase.from('screens').update({ status: 'live' }).eq('id', screen.id);
+        setStatus('connected');
+      } else {
+        setStatus('none');
+      }
     } catch {
       setStatus('none');
     }

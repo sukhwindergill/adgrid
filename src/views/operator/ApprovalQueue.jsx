@@ -1,6 +1,7 @@
 // src/views/operator/ApprovalQueue.jsx
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
+import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
@@ -17,6 +18,18 @@ const REJECT_REASONS = [
   'Not relevant to my venue',
   'Other',
 ];
+
+function notifyCampaignApproved(advertiserId, campaignName) {
+  fetch(`${SUPABASE_FUNCTIONS_URL}/send-notification`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      userId: advertiserId,
+      type: 'campaign_approved',
+      data: { campaignName, appUrl: window.location.origin },
+    }),
+  }).catch(() => {});
+}
 
 function timeAgo(isoString) {
   if (!isoString) return '';
@@ -58,11 +71,13 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
       .eq('screen_id', screenId);
     if (campaign.start_when === 'partial') {
       await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
+      notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
     } else {
       const { data: remaining } = await supabase
         .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
       if (!remaining || remaining.length === 0) {
         await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
+        notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
       }
     }
     setActing(false);
@@ -87,11 +102,13 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
     // Promote campaign
     if (campaign.start_when === 'partial') {
       await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
+      notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
     } else {
       const { data: remaining } = await supabase
         .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
       if (!remaining || remaining.length === 0) {
         await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
+        notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
       }
     }
     setActing(false);
@@ -290,11 +307,13 @@ export function ApprovalQueue({ campaigns, setCampaigns, setDetail, dbScreens = 
       if (rows.length > 0) {
         if (campaign.start_when === 'partial') {
           await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
+          notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
         } else {
           const { data: remaining } = await supabase
             .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
           if (!remaining || remaining.length === 0) {
             await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
+            notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
           }
         }
       }
