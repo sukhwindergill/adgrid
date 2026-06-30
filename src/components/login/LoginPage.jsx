@@ -45,6 +45,7 @@ export function LoginPage() {
   const [email, setEmail]   = useState('');
   const [pass, setPass]     = useState('');
   const [name, setName]     = useState('');
+  const [tosChecked, setTosChecked] = useState(false);
   const [err, setErr]       = useState('');
   const [loading, setLoading]         = useState(false);
   const [oauthLoading, setOauthLoading] = useState('');
@@ -52,12 +53,13 @@ export function LoginPage() {
   const handle = async () => {
     if (!email.includes('@')) { setErr('Enter a valid email address.'); return; }
     if (pass.length < 6)      { setErr('Password must be at least 6 characters.'); return; }
+    if (mode === 'signup' && !tosChecked) { setErr('Please accept the Terms of Service and Privacy Policy to continue.'); return; }
     setErr(''); setLoading(true);
     if (mode === 'signin') {
       const { error } = await signIn(email, pass);
       if (error) setErr(error.message);
     } else {
-      const { error } = await signUp(email, pass, name);
+      const { error } = await signUp(email, pass, name, new Date().toISOString());
       if (error) setErr(error.message);
       else setErr('Check your email to confirm your account.');
     }
@@ -200,10 +202,30 @@ export function LoginPage() {
             {loading ? 'Please wait…' : mode === 'signin' ? 'Sign in →' : 'Create account →'}
           </button>
 
+          {mode === 'signup' && (
+            <label style={{
+              display: 'flex', alignItems: 'flex-start', gap: 10,
+              marginTop: 12, cursor: 'pointer',
+            }}>
+              <input
+                type="checkbox"
+                checked={tosChecked}
+                onChange={e => setTosChecked(e.target.checked)}
+                style={{ marginTop: 2, accentColor: '#00C2FF', flexShrink: 0 }}
+              />
+              <span style={{ fontSize: 12, color: '#8A8A9A', fontFamily: F.sans, lineHeight: 1.5 }}>
+                I agree to the{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#00C2FF' }}>Terms of Service</a>
+                {' '}and{' '}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#00C2FF' }}>Privacy Policy</a>
+              </span>
+            </label>
+          )}
+
           <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12, color: '#8A8A9A', fontFamily: F.sans }}>
             {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
             <span
-              onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setErr(''); }}
+              onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setErr(''); setTosChecked(false); }}
               style={{ color: '#00C2FF', cursor: 'pointer', fontWeight: 500 }}
             >
               {mode === 'signin' ? 'Sign up' : 'Sign in'}

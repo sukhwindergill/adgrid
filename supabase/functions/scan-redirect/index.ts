@@ -84,6 +84,9 @@ Deno.serve(async (req: Request) => {
   } catch {
     return new Response("Invalid destination URL", { status: 400 });
   }
+  if (dest.protocol !== "https:" && dest.protocol !== "http:") {
+    return new Response("Invalid destination URL", { status: 400 });
+  }
   if (!dest.searchParams.has("utm_source")) {
     dest.searchParams.set("utm_source", "adgrid");
     dest.searchParams.set("utm_medium", "ooh");

@@ -1,5 +1,6 @@
 // src/views/advertiser/CreateCampaign.jsx
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase.js';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
@@ -738,7 +739,7 @@ function StepReview({ form, matchedScreens, onSubmit, submitting, err, profile, 
   );
 }
 
-function StepPay({ campaign, onPay, onSkip, paying, err }) {
+function StepPay({ campaign, onPay, onSkip, paying, err, requiresAction, onGoToBilling }) {
   return (
     <div style={{ maxWidth: 580, margin: '0 auto' }}>
       <Card style={{ padding: 32 }}>
@@ -747,9 +748,26 @@ function StepPay({ campaign, onPay, onSkip, paying, err }) {
           Charge {formatCurrency(campaign.budget, campaign.currency)} to your card on file. Screens won't go live until payment is captured.
         </p>
 
-        {err && <ErrorBanner message={err} onDismiss={() => {}} />}
+        {requiresAction ? (
+          <div style={{
+            padding: '14px 16px', borderRadius: 10, marginBottom: 16,
+            background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.3)',
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#fbbf24', fontFamily: F.sans, marginBottom: 4 }}>
+              Card authentication required
+            </div>
+            <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>
+              Your card requires additional verification. Update your payment method and try again.
+            </div>
+            <Btn onClick={onGoToBilling} style={{ fontSize: 13, padding: '8px 16px' }}>
+              Go to Billing →
+            </Btn>
+          </div>
+        ) : (
+          err && <ErrorBanner message={err} onDismiss={() => {}} />
+        )}
 
-        <Btn onClick={onPay} disabled={paying} style={{ width: '100%', fontSize: 15, padding: '14px 24px', marginBottom: 10 }}>
+        <Btn onClick={onPay} disabled={paying || requiresAction} style={{ width: '100%', fontSize: 15, padding: '14px 24px', marginBottom: 10 }}>
           {paying ? 'Charging…' : `Pay now — ${formatCurrency(campaign.budget, campaign.currency)}`}
         </Btn>
         <Btn variant="secondary" onClick={onSkip} disabled={paying} style={{ width: '100%' }}>
@@ -764,6 +782,7 @@ function StepPay({ campaign, onPay, onSkip, paying, err }) {
 
 export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [] }) {
   const { user, profile, activeAccount } = useAuth();
+  const navigate = useNavigate();
   const isDelegate = activeAccount && !activeAccount.isOwn;
   const canChooseBilling = isDelegate && ['admin', 'manager'].includes(activeAccount?.role);
   const [billedTo, setBilledTo] = useState('client'); // 'client' | 'agency'
@@ -774,6 +793,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
   const [created, setCreated] = useState(null);
   const [paying, setPaying] = useState(false);
   const [payErr, setPayErr] = useState(null);
+  const [requiresAction, setRequiresAction] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
@@ -999,6 +1019,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
+        if (body.requires_action) setRequiresAction(true);
         throw new Error(body.error || 'Charge failed');
       }
       setPaying(false);
@@ -1066,7 +1087,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       {step === 2 && <StepCreative form={form} setForm={setForm} />}
       {step === 3 && <StepBudget form={form} setForm={setForm} matchedScreens={selectedScreens} />}
       {step === 4 && <StepReview form={form} matchedScreens={selectedScreens} onSubmit={handleSubmit} submitting={submitting} err={submitErr} profile={profile} canChooseBilling={canChooseBilling} billedTo={billedTo} setBilledTo={setBilledTo} />}
-      {step === 5 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} />}
+      {step === 5 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} requiresAction={requiresAction} onGoToBilling={() => navigate('/app/adv-billing')} />}
 
       {step < 4 && (
         <div style={{ maxWidth: 620, margin: '20px auto 0', display: 'flex', gap: 10 }}>

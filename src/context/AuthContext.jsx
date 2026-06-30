@@ -113,11 +113,11 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  async function signUp(email, password, name) {
+  async function signUp(email, password, name, tosAcceptedAt) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name } },
+      options: { data: { name, tos_accepted_at: tosAcceptedAt ?? new Date().toISOString() } },
     })
     return { data, error }
   }

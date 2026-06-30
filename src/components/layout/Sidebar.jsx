@@ -457,6 +457,23 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
           </button>
         )}
 
+        {/* Legal links */}
+        {!collapsed && (
+          <div style={{
+            display: 'flex', gap: 10, padding: '2px 12px 4px',
+            fontSize: 10, fontFamily: F.sans, color: C.textMuted,
+          }}>
+            <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: C.textMuted, textDecoration: 'none' }}
+              onMouseEnter={e => e.currentTarget.style.color = C.purple}
+              onMouseLeave={e => e.currentTarget.style.color = C.textMuted}
+            >Terms</a>
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: C.textMuted, textDecoration: 'none' }}
+              onMouseEnter={e => e.currentTarget.style.color = C.purple}
+              onMouseLeave={e => e.currentTarget.style.color = C.textMuted}
+            >Privacy</a>
+          </div>
+        )}
+
         {/* Collapse toggle */}
         <button
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
