@@ -47,10 +47,14 @@ async function sendNotification(userId: string, type: string, data: Record<strin
   });
 }
 
-Deno.serve(async (_req: Request) => {
+Deno.serve(async (req: Request) => {
+  const body = await req.json().catch(() => ({}));
+  const pendingOnly = body?.mode === "pending_only";
+
   const today = new Date();
   const isMonday = today.getDay() === 1;
 
+  if (!pendingOnly) {
   // ── Low budget alerts (daily) ────────────────────────────────
   const { data: campaigns } = await supabase
     .from("bookings")
@@ -155,6 +159,7 @@ Deno.serve(async (_req: Request) => {
       });
     }
   }
+  } // end !pendingOnly
 
   // ── Pending approval push notifications ─────────────────────
   // Find campaign_screens that became pending in the last 2 minutes
@@ -190,6 +195,7 @@ Deno.serve(async (_req: Request) => {
   }
 
   // ── Stale heartbeat alerts (screens silent > 30 min) ────────
+  if (!pendingOnly) {
   const staleThreshold = new Date(today.getTime() - 30 * 60 * 1000);
 
   const { data: screens } = await supabase
@@ -226,6 +232,7 @@ Deno.serve(async (_req: Request) => {
       });
     }
   }
+  } // end !pendingOnly
 
   return new Response(JSON.stringify({ ok: true }), {
     headers: { "Content-Type": "application/json" },

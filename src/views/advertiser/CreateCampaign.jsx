@@ -577,10 +577,10 @@ function StepBudget({ form, setForm, matchedScreens }) {
           </div>
 
           <Inp
-            label={form.budget_mode === 'daily' ? 'Daily limit (£)' : 'Total budget (£)'}
+            label={form.budget_mode === 'daily' ? `Daily limit (${(profile?.preferred_currency || 'cad').toUpperCase()})` : `Total budget (${(profile?.preferred_currency || 'cad').toUpperCase()})`}
             type="number" step="1" placeholder="e.g. 200"
             value={form.budget} onChange={e => setField('budget', e.target.value)}
-            hint={totalImpr > 0 && days > 0 ? `Suggested for ${matchedScreens.length} screens over ${days} days: £${budgetMin}–£${budgetMax}` : undefined}
+            hint={totalImpr > 0 && days > 0 ? `Suggested for ${matchedScreens.length} screens over ${days} days: ${formatCurrency(budgetMin, profile?.preferred_currency)}–${formatCurrency(budgetMax, profile?.preferred_currency)}` : undefined}
           />
 
           {tooLow && (
@@ -870,6 +870,10 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
   };
 
   const handleSubmit = async () => {
+    if (!form.budget || parseFloat(form.budget) <= 0) {
+      setSubmitErr('Enter a budget greater than 0 before submitting.');
+      return;
+    }
     setSubmitting(true);
     setSubmitErr(null);
     try {
@@ -1010,9 +1014,27 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     onSave(created);
   };
 
+  const noBilling = !profile?.stripe_customer_id;
+
   return (
     <div>
       <PageHeader title="New Campaign" back="Overview" onBack={onCancel} />
+      {noBilling && (
+        <div style={{
+          maxWidth: 620, margin: '0 auto 16px',
+          background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.35)',
+          borderRadius: 10, padding: '12px 16px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        }}>
+          <span style={{ fontSize: 13, color: '#fbbf24', fontFamily: F.sans }}>
+            Add a payment method before submitting — your campaign won't go live without one.
+          </span>
+          <a href="#" onClick={e => { e.preventDefault(); onCancel(); }} style={{
+            fontSize: 12, fontWeight: 600, color: '#fbbf24', fontFamily: F.sans,
+            textDecoration: 'underline', whiteSpace: 'nowrap',
+          }}>Set up billing →</a>
+        </div>
+      )}
       {step < 5 && <Stepper step={step} onCancel={onCancel} />}
 
       {showDupModal && (

@@ -7,7 +7,7 @@ import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { ErrorBanner } from '../../components/primitives/ErrorBanner.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS } from '../../lib/venueTypes.js';
+import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS, STATE_TIMEZONE } from '../../lib/venueTypes.js';
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
@@ -141,6 +141,9 @@ function StepRegister({ onBack, onScreenCreated }) {
     if (!valid) return;
     setSaving(true);
     setErr(null);
+    const tzMap = STATE_TIMEZONE[form.country] ?? {};
+    const timezone = tzMap[form.state.trim()] ?? tzMap['default'] ?? 'America/Toronto';
+
     const { data, error } = await supabase.from('screens').insert({
       id:              crypto.randomUUID(),
       name:            form.name.trim(),
@@ -160,6 +163,7 @@ function StepRegister({ onBack, onScreenCreated }) {
       max_ad_duration: 30,
       lat:             form.lat ? parseFloat(form.lat) : null,
       lon:             form.lng ? parseFloat(form.lng) : null,
+      timezone,
     }).select('id, name, screen_token').single();
 
     if (error) { setErr(error.message); setSaving(false); return; }
@@ -339,17 +343,16 @@ function CodeBox({ label, value }) {
 
 function HardwareInstructions({ hardware, screen }) {
   const playerUrl = `${window.location.origin}/display/${screen.screen_token}`;
-  const composeSnippet = `version: "3"
-services:
-  display:
-    image: adgrid/screen-agent:latest
-    environment:
-      SCREEN_TOKEN: "${screen.screen_token}"
-      SUPABASE_URL: "${import.meta.env.VITE_SUPABASE_URL || ''}"
-      SUPABASE_ANON_KEY: "${import.meta.env.VITE_SUPABASE_ANON_KEY || ''}"
-    devices:
-      - /dev/video0:/dev/video0
-    restart: unless-stopped`;
+  const kioskCommand = `chromium-browser --noerrdialogs --kiosk \\
+  --disable-infobars --disable-restore-session-state \\
+  --disable-session-crashed-bubble \\
+  "${playerUrl}"`;
+  const autostartSnippet = `# /etc/xdg/lxsession/LXDE-pi/autostart
+@xset s off
+@xset -dpms
+@xset s noblank
+@chromium-browser --noerrdialogs --kiosk --disable-infobars \\
+  --disable-restore-session-state "${playerUrl}"`;
 
   if (hardware === 'Browser Kiosk') return (
     <div>
@@ -364,25 +367,26 @@ services:
 
   if (hardware === 'Raspberry Pi 5' || hardware === 'Mini PC') return (
     <div>
-      <CodeBox label="docker-compose.yml" value={composeSnippet} />
+      <CopyBox label="Player URL" value={playerUrl} />
+      <CodeBox label="Run once (test)" value={kioskCommand} />
+      <CodeBox label="Autostart on boot (Raspberry Pi OS)" value={autostartSnippet} />
       <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.8 }}>
-        1. Install Docker on your device.<br />
-        2. Save the above as <code style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>docker-compose.yml</code>.<br />
-        3. Run: <code style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>docker-compose up -d</code><br />
-        4. Connect a USB camera to /dev/video0 for CV impression tracking.
+        1. Install Chromium: <code style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>sudo apt install chromium-browser</code><br />
+        2. Test with the "Run once" command above.<br />
+        3. For autostart on boot, add the autostart snippet to your LXDE config.<br />
+        4. Disable screen blanking via <code style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>xset s off</code>.
       </div>
     </div>
   );
 
-  // Android TV
+  // Android TV — no native app yet; use a kiosk browser app from the Play Store
   return (
     <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.8 }}>
-      1. Enable Developer Options on your Android TV.<br />
-      2. Install the ADGRID APK via sideloading.<br />
-      3. Enter your screen token when prompted.
-      <div style={{ marginTop: 12 }}>
-        <CopyBox label="Screen Token" value={screen.screen_token} />
-      </div>
+      <CopyBox label="Player URL" value={playerUrl} />
+      1. Install <strong>Fully Kiosk Browser</strong> from the Google Play Store on your Android TV.<br />
+      2. Open it, go to Settings → Web Content → Start URL, and paste the Player URL above.<br />
+      3. Enable Settings → Other → Kiosk Mode and "Start on boot" so it auto-launches.<br />
+      4. Restart the device to confirm it boots straight into the display.
     </div>
   );
 }
