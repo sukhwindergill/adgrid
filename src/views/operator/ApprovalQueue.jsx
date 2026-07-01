@@ -19,10 +19,12 @@ const REJECT_REASONS = [
   'Other',
 ];
 
-function notifyCampaignApproved(advertiserId, campaignName) {
+async function notifyCampaignApproved(advertiserId, campaignName) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
   fetch(`${SUPABASE_FUNCTIONS_URL}/send-notification`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
     body: JSON.stringify({
       userId: advertiserId,
       type: 'campaign_approved',
@@ -92,13 +94,13 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
     });
     if (!ok) return;
     setActing(true);
-    for (const row of myRows) {
-      await supabase.from('campaign_screens')
+    await Promise.all(myRows.map(row =>
+      supabase.from('campaign_screens')
         .update({ status: 'approved', approved_at: new Date().toISOString() })
         .eq('campaign_id', campaign.id)
-        .eq('screen_id', row.screen_id);
-      onApproved(campaign.id, row.screen_id);
-    }
+        .eq('screen_id', row.screen_id)
+    ));
+    myRows.forEach(row => onApproved(campaign.id, row.screen_id));
     // Promote campaign
     if (campaign.start_when === 'partial') {
       await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
@@ -294,30 +296,29 @@ export function ApprovalQueue({ campaigns, setCampaigns, setDetail, dbScreens = 
       confirmLabel: 'Approve all',
     });
     if (!ok) return;
-    for (const campaign of enriched) {
+    await Promise.all(enriched.map(async (campaign) => {
       const rows = campaign.campaign_screens.filter(r => myScreens.some(s => s.id === r.screen_id) && r.status === 'pending');
-      for (const row of rows) {
-        await supabase.from('campaign_screens')
+      if (rows.length === 0) return;
+      await Promise.all(rows.map(row =>
+        supabase.from('campaign_screens')
           .update({ status: 'approved', approved_at: new Date().toISOString() })
           .eq('campaign_id', campaign.id)
-          .eq('screen_id', row.screen_id);
-        handleApproved(campaign.id, row.screen_id);
-      }
+          .eq('screen_id', row.screen_id)
+      ));
+      rows.forEach(row => handleApproved(campaign.id, row.screen_id));
       // Promote campaign to scheduled after approving all my rows
-      if (rows.length > 0) {
-        if (campaign.start_when === 'partial') {
+      if (campaign.start_when === 'partial') {
+        await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
+        notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
+      } else {
+        const { data: remaining } = await supabase
+          .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
+        if (!remaining || remaining.length === 0) {
           await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
           notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
-        } else {
-          const { data: remaining } = await supabase
-            .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
-          if (!remaining || remaining.length === 0) {
-            await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
-            notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
-          }
         }
       }
-    }
+    }));
   };
 
   const toggleAutoApprove = async () => {
