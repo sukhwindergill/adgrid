@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { C, F } from '../../design/tokens.js';
+import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -239,20 +240,26 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
 export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pendingCount = 0 }) {
   const navigate = useNavigate();
   const setActive = id => navigate('/app/' + id);
-  const [collapsed, setCollapsed] = useState(() => {
+  const { isMobile } = useBreakpoint();
+  const [collapsedPref, setCollapsedPref] = useState(() => {
     try {
       return localStorage.getItem('sidebar_collapsed') === 'true';
     } catch {
       return false;
     }
   });
+  // Always icon-rail on mobile — a 220px expanded sidebar would eat most of
+  // a phone viewport. The user's manual preference is preserved for when
+  // they're back on a wider screen.
+  const collapsed = isMobile ? true : collapsedPref;
 
   const [signOutHovered, setSignOutHovered] = useState(false);
   const [collapseHovered, setCollapseHovered] = useState(false);
 
   const toggle = () => {
-    const next = !collapsed;
-    setCollapsed(next);
+    if (isMobile) return;
+    const next = !collapsedPref;
+    setCollapsedPref(next);
     try {
       localStorage.setItem('sidebar_collapsed', String(next));
     } catch {
@@ -474,8 +481,8 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
           </div>
         )}
 
-        {/* Collapse toggle */}
-        <button
+        {/* Collapse toggle — hidden on mobile, where the sidebar is always icon-rail */}
+        {!isMobile && <button
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           onClick={toggle}
           onMouseEnter={() => setCollapseHovered(true)}
@@ -499,7 +506,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
             <span style={{ fontFamily: F.sans, fontSize: 11, color: C.textMuted }}>Collapse</span>
           )}
           {collapsed ? ICONS.chevronRight : ICONS.chevronLeft}
-        </button>
+        </button>}
       </div>
     </aside>
   );
