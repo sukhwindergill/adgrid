@@ -1,0 +1,39 @@
+# AdGrid Display Player — systemd unit
+#
+# Autostart AdGrid display player in kiosk mode on boot.
+#
+# Install:
+#   sudo cp adgrid-display.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable adgrid-display
+#   sudo systemctl start adgrid-display
+#
+# Configure display URL before starting:
+#   sudo cp adgrid-display.env.example /etc/adgrid-display.env
+#   sudo nano /etc/adgrid-display.env
+
+[Unit]
+Description=AdGrid Display Player
+After=network-online.target graphical.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+EnvironmentFile=-/etc/adgrid-display.env
+Environment=DISPLAY=:0
+ExecStartPre=/bin/sleep 5
+ExecStart=/usr/bin/chromium-browser \
+  --kiosk \
+  --noerrdialogs \
+  --disable-infobars \
+  --no-first-run \
+  --disable-session-crashed-bubble \
+  --disable-translate \
+  --check-for-update-interval=604800 \
+  --app=${DISPLAY_URL}
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=graphical.target
