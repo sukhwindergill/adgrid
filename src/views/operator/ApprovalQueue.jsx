@@ -71,14 +71,15 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
       .update({ status: 'approved', approved_at: new Date().toISOString() })
       .eq('campaign_id', campaign.id)
       .eq('screen_id', screenId);
+    // Booking status moves to 'scheduled' server-side (charge-campaign) once
+    // payment succeeds — clients cannot write status, by design. We only
+    // notify the advertiser here once their content is fully cleared.
     if (campaign.start_when === 'partial') {
-      await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
       notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
     } else {
       const { data: remaining } = await supabase
         .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
       if (!remaining || remaining.length === 0) {
-        await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
         notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
       }
     }
@@ -101,15 +102,14 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
         .eq('screen_id', row.screen_id)
     ));
     myRows.forEach(row => onApproved(campaign.id, row.screen_id));
-    // Promote campaign
+    // Booking status moves to 'scheduled' server-side (charge-campaign) once
+    // payment succeeds — clients cannot write status, by design.
     if (campaign.start_when === 'partial') {
-      await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
       notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
     } else {
       const { data: remaining } = await supabase
         .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
       if (!remaining || remaining.length === 0) {
-        await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
         notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
       }
     }
@@ -306,15 +306,14 @@ export function ApprovalQueue({ campaigns, setCampaigns, setDetail, dbScreens = 
           .eq('screen_id', row.screen_id)
       ));
       rows.forEach(row => handleApproved(campaign.id, row.screen_id));
-      // Promote campaign to scheduled after approving all my rows
+      // Booking status moves to 'scheduled' server-side (charge-campaign) once
+      // payment succeeds — clients cannot write status, by design.
       if (campaign.start_when === 'partial') {
-        await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
         notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
       } else {
         const { data: remaining } = await supabase
           .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
         if (!remaining || remaining.length === 0) {
-          await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
           notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
         }
       }
