@@ -55,6 +55,42 @@ Deno.serve(async (req: Request) => {
   const isMonday = today.getDay() === 1;
 
   if (!pendingOnly) {
+  const todayDate = today.toISOString().slice(0, 10);
+  const appUrl = Deno.env.get("PUBLIC_APP_URL") ?? "";
+
+  // ── Campaign lifecycle transitions ──────────────────────────
+  // scheduled → active: start_date has arrived, paid
+  const { data: goingLive } = await supabase
+    .from("bookings")
+    .select("id, advertiser_id, advertiser_name")
+    .eq("status", "scheduled")
+    .eq("payment_status", "paid")
+    .lte("start_date", todayDate);
+
+  for (const c of goingLive ?? []) {
+    await supabase.from("bookings").update({ status: "active" }).eq("id", c.id);
+    await sendNotification(c.advertiser_id, "campaign_live", {
+      campaignName: c.advertiser_name ?? "",
+      screenName: "your screens",
+      appUrl,
+    });
+  }
+
+  // active → completed: end_date has passed
+  const { data: ending } = await supabase
+    .from("bookings")
+    .select("id, advertiser_id, advertiser_name")
+    .eq("status", "active")
+    .lt("end_date", todayDate);
+
+  for (const c of ending ?? []) {
+    await supabase.from("bookings").update({ status: "completed" }).eq("id", c.id);
+    await sendNotification(c.advertiser_id, "campaign_ended", {
+      campaignName: c.advertiser_name ?? "",
+      appUrl,
+    });
+  }
+
   // ── Low budget alerts (daily) ────────────────────────────────
   const { data: campaigns } = await supabase
     .from("bookings")
@@ -67,7 +103,7 @@ Deno.serve(async (req: Request) => {
   });
 
   for (const c of lowBudgetCampaigns) {
-    const todayStr = today.toISOString().slice(0, 10);
+    const todayStr = todayDate;
     const { data: existing } = await supabase
       .from("notifications")
       .select("id")
@@ -215,7 +251,7 @@ Deno.serve(async (req: Request) => {
     if (!lastBeat || new Date(lastBeat.created_at) >= staleThreshold) continue;
 
     const minutesSilent = Math.round((today.getTime() - new Date(lastBeat.created_at).getTime()) / 60000);
-    const todayStr = today.toISOString().slice(0, 10);
+    const todayStr = todayDate;
     const { data: existing } = await supabase
       .from("notifications")
       .select("id")

@@ -169,6 +169,10 @@ function StepRegister({ onBack, onScreenCreated }) {
 
     if (error) { setErr(error.message); setSaving(false); return; }
 
+    // Promote this user to operator role so they can send cross-user notifications
+    // (e.g. campaign approval emails to advertisers). Safe: only upgrades, never downgrades.
+    supabase.from('profiles').update({ role: 'operator' }).eq('id', user.id).then(() => {});
+
     // Fire confirmation email — fire and forget
     const { data: { session } } = await supabase.auth.getSession();
     if (session && SUPABASE_FUNCTIONS_URL) {

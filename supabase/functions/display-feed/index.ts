@@ -101,14 +101,16 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  // Log heartbeat (fire and forget).
-  // campaign_id is only set when exactly one campaign is active — with multiple
-  // campaigns the screen rotates client-side so we can't know which is showing.
+  // Log heartbeat + keep last_seen fresh (fire and forget).
+  // last_seen update ensures idle screens (no active campaigns) still show as
+  // online in the operator dashboard — impression ingest only fires when playing.
+  const now_iso = new Date().toISOString();
   supabase.from("display_heartbeats").insert({
     screen_id: screen.id,
     campaign_id: activeCampaigns.length === 1 ? (activeCampaigns[0].id as string) : null,
     status: activeCampaigns.length > 0 ? "playing" : "idle",
   }).then(() => {});
+  supabase.from("screens").update({ last_seen: now_iso }).eq("id", screen.id).then(() => {});
 
   return new Response(
     JSON.stringify({
