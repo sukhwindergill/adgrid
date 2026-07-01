@@ -59,6 +59,24 @@ Deno.serve(async (req: Request) => {
     utm_campaign: campaignId,
   }).select("id").single();
 
+  // Check scan milestones non-blocking
+  if (scanRow?.id) {
+    (async () => {
+      const { count } = await supabase.from("scans").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId);
+      const total = count ?? 0;
+      const MILESTONES = [100, 500, 1000, 5000];
+      const hit = MILESTONES.find(m => total === m);
+      if (hit) {
+        const { data: bk } = await supabase.from("bookings").select("advertiser_name").eq("id", campaignId).single();
+        fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-notification`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-internal-secret": Deno.env.get("INTERNAL_NOTIFICATION_SECRET") ?? "" },
+          body: JSON.stringify({ userId: advertiser_id, type: "scan_milestone", data: { campaignName: bk?.advertiser_name ?? "", count: String(hit), appUrl: Deno.env.get("PUBLIC_APP_URL") ?? "" } }),
+        }).catch(() => {});
+      }
+    })();
+  }
+
   // Fire integrations non-blocking — must not delay redirect
   if (scanRow?.id) {
     fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/fire-integration`, {

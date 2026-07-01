@@ -321,7 +321,7 @@ function AppInner() {
           onCancel={() => navTo('adv-overview')}
         />
       );
-      if (active === 'adv-campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} />;
+      if (active === 'adv-campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} allowCancel />;
       if (active === 'adv-analytics')    return <Analytics campaigns={campaigns} loading={dataLoading} />;
       if (active === 'adv-audience')     return <ScansView impersonatingId={impersonating?.id ?? null} />;
       if (active === 'adv-billing')      return <AdvertiserBillingView />;

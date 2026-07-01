@@ -11,7 +11,7 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
 
-export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, loadError, loading = false, onNewCampaign }) {
+export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, loadError, loading = false, onNewCampaign, allowCancel = false }) {
   const [filter, setFilter] = useState('all');
   const [city, setCity]     = useState('All');
   const [campaignScreens, setCampaignScreens] = useState({});
@@ -255,6 +255,16 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }} onClick={e => e.preventDefault()}>
                       <ApproveBtn campaign={c} setCampaigns={setCampaigns} />
                       <Btn variant="danger"  size="sm" onClick={e => { e.preventDefault(); e.stopPropagation(); setDetail(c); }}>✗ Reject…</Btn>
+                    </div>
+                  ) : allowCancel && (c.status === 'scheduled' || c.status === 'active') ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }} onClick={e => e.preventDefault()}>
+                      <Badge status={badgeStatus} />
+                      <Btn variant="danger" size="sm" onClick={async e => {
+                        e.preventDefault(); e.stopPropagation();
+                        if (!window.confirm(`Cancel campaign "${c.advertiser}"? This cannot be undone.`)) return;
+                        const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', c.id);
+                        if (!error) setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: 'cancelled' } : x));
+                      }}>✕ Cancel</Btn>
                     </div>
                   ) : (
                     <Badge status={badgeStatus} />

@@ -10,6 +10,7 @@ export function AuthProvider({ children }) {
   const [activeAccount, setActiveAccountState] = useState(null) // { id, name, role, isOwn }
   const [grants, setGrants]                 = useState([])      // active account_grants[]
   const [loading, setLoading]               = useState(true)
+  const [passwordRecovery, setPasswordRecovery] = useState(false)
 
   async function fetchProfile(userId) {
     const { data } = await supabase
@@ -78,7 +79,8 @@ export function AuthProvider({ children }) {
     }
     init()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') { setPasswordRecovery(true); return; }
       setUser(session?.user ?? null)
       if (session?.user) {
         fetchProfile(session.user.id)
@@ -147,6 +149,16 @@ export function AuthProvider({ children }) {
     return { data, error }
   }
 
+  async function resetPasswordForEmail(email) {
+    return supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin })
+  }
+
+  async function updatePassword(password) {
+    const result = await supabase.auth.updateUser({ password })
+    if (!result.error) setPasswordRecovery(false)
+    return result
+  }
+
   async function setActiveMode(mode) {
     setActiveModeState(mode)
     if (user) {
@@ -191,8 +203,9 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={{
       user, profile, activeMode, loading,
-      activeAccount, grants,
+      activeAccount, grants, passwordRecovery,
       signUp, signIn, signOut, signInWithOAuth,
+      resetPasswordForEmail, updatePassword,
       setActiveMode, setActiveAccount, acceptGrant, revokeGrant,
       refreshGrants: () => user ? fetchGrants(user.id) : Promise.resolve(),
     }}>

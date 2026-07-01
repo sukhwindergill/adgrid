@@ -371,6 +371,19 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
           <>
             <Badge status={screen.status} />
             <Btn variant="secondary" size="sm" onClick={() => setShowEdit(true)}>✏ Edit</Btn>
+            {(screen.status === 'live' || screen.status === 'inactive') && (
+              <Btn
+                variant={screen.status === 'live' ? 'danger' : 'primary'}
+                size="sm"
+                onClick={async () => {
+                  const newStatus = screen.status === 'live' ? 'inactive' : 'live';
+                  const { error } = await supabase.from('screens').update({ status: newStatus }).eq('id', screen.id);
+                  if (!error) { setScreen(s => ({ ...s, status: newStatus })); onScreenUpdated?.({ ...screen, status: newStatus }); }
+                }}
+              >
+                {screen.status === 'live' ? '⏸ Deactivate' : '▶ Reactivate'}
+              </Btn>
+            )}
           </>
         }
       />
