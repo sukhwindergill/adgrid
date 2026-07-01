@@ -17,14 +17,13 @@ export function GrantAccessModal({ onClose, onGranted }) {
     setSaving(true)
     setError(null)
 
-    // Look up grantee by email
-    const { data: grantee, error: lookupErr } = await supabase
-      .from('profiles')
-      .select('id, name, email')
-      .eq('email', email.trim().toLowerCase())
-      .maybeSingle()
+    // Look up grantee by email via a scoped RPC — clients can't SELECT
+    // arbitrary profile rows directly (RLS restricts profiles to your own row).
+    const { data: granteeRows, error: lookupErr } = await supabase
+      .rpc('lookup_profile_by_email', { lookup_email: email.trim().toLowerCase() })
 
     if (lookupErr) { setError(lookupErr.message); setSaving(false); return }
+    const grantee = granteeRows?.[0]
     if (!grantee) { setError('No AdGrid account found with that email.'); setSaving(false); return }
     if (grantee.id === user.id) { setError("You can't grant access to yourself."); setSaving(false); return }
 
