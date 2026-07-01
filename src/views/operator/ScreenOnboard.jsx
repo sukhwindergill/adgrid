@@ -363,7 +363,7 @@ function CodeBox({ label, value }) {
 
 function HardwareInstructions({ hardware, screen }) {
   const playerUrl = `${window.location.origin}/display/${screen.screen_token}`;
-  const kioskCommand = `chromium-browser --noerrdialogs --kiosk \\
+  const kioskCommand = `chromium-browser --no-sandbox --noerrdialogs --kiosk \\
   --disable-infobars --disable-restore-session-state \\
   --disable-session-crashed-bubble \\
   "${playerUrl}"`;
@@ -371,7 +371,7 @@ function HardwareInstructions({ hardware, screen }) {
 @xset s off
 @xset -dpms
 @xset s noblank
-@chromium-browser --noerrdialogs --kiosk --disable-infobars \\
+@chromium-browser --no-sandbox --noerrdialogs --kiosk --disable-infobars \\
   --disable-restore-session-state "${playerUrl}"`;
 
   if (hardware === 'Browser Kiosk') return (
@@ -394,7 +394,8 @@ function HardwareInstructions({ hardware, screen }) {
         1. Install Chromium: <code style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>sudo apt install chromium-browser</code><br />
         2. Test with the "Run once" command above.<br />
         3. For autostart on boot, add the autostart snippet to your LXDE config.<br />
-        4. Disable screen blanking via <code style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>xset s off</code>.
+        4. Disable screen blanking via <code style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>xset s off</code>.<br />
+        5. <strong>Recommended:</strong> the snippet above doesn't restart Chromium if it crashes. For unattended production screens, use the <code style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>screen-agent/display/</code> systemd service in the AdGrid repo instead — it auto-restarts on crash and survives reboots.
       </div>
     </div>
   );
