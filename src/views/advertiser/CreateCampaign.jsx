@@ -828,7 +828,12 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
 
   // Screen matching
   const matchedScreens = (() => {
-    let screens = dbScreens.filter(s => s.status !== 'inactive');
+    // Exclude inactive and screens not seen in the last 7 days (stale-live)
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    let screens = dbScreens.filter(s =>
+      s.status !== 'inactive' &&
+      (s.last_seen == null || s.last_seen >= sevenDaysAgo || s.status === 'pending')
+    );
     if (form.area_type === 'country') {
       screens = screens.filter(s => s.country === form.country);
     } else if (form.area_type === 'state') {

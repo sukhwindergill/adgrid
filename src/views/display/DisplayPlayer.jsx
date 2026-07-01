@@ -136,17 +136,25 @@ export function DisplayPlayer({ screenToken }) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const currentIdxRef = useRef(0);
   const [fadeIn, setFadeIn]         = useState(true);
-  const [status, setStatus]         = useState('loading'); // 'loading' | 'ok' | 'error'
+  const [status, setStatus]         = useState('loading'); // 'loading' | 'ok' | 'error' | 'invalid'
   const [errMsg, setErrMsg]         = useState('');
   const rotateRef = useRef(null);
+  const stopPollingRef = useRef(false);
 
   const fetchFeed = async () => {
+    if (stopPollingRef.current) return;
     try {
       const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/display-feed?token=${screenToken}`);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        setErrMsg(body.error ?? `HTTP ${res.status}`);
-        setStatus('error');
+        if (res.status === 404) {
+          // Token is invalid or revoked — stop polling, show setup screen
+          stopPollingRef.current = true;
+          setStatus('invalid');
+        } else {
+          setErrMsg(body.error ?? `HTTP ${res.status}`);
+          setStatus('error');
+        }
         return;
       }
       const data = await res.json();
@@ -161,6 +169,7 @@ export function DisplayPlayer({ screenToken }) {
 
   // Initial fetch + poll every 30s
   useEffect(() => {
+    stopPollingRef.current = false;
     fetchFeed();
     const poll = setInterval(fetchFeed, POLL_INTERVAL_MS);
     return () => clearInterval(poll);
@@ -217,8 +226,21 @@ export function DisplayPlayer({ screenToken }) {
     );
   }
 
+  if (status === 'invalid') {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#050a10', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: "'Inter', sans-serif", letterSpacing: 1 }}>
+          SCREEN TOKEN NOT RECOGNISED
+        </div>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', fontFamily: "'Inter', sans-serif" }}>
+          Check the URL and reconnect from your AdGrid dashboard.
+        </div>
+      </div>
+    );
+  }
+
   if (status === 'error') {
-    // Show idle slate instead of error screen — poll continues in background and will auto-recover.
+    // Transient error — poll continues in background and will auto-recover.
     return (
       <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#050a10', cursor: 'none' }}>
         <IdleSlide />

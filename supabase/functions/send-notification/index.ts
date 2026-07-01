@@ -104,6 +104,16 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
     body: `"${d.screenName}" hasn't reported a heartbeat in over ${d.minutes} minutes.`,
     html: emailHtml("Screen Offline", `Your screen <strong>${d.screenName}</strong> hasn't sent a heartbeat in over <strong>${d.minutes} minutes</strong>. Check that the display player is running.`, "View Screen", d.appUrl ?? ""),
   }),
+  screen_registered: (d) => ({
+    title: "Your screen has been registered",
+    body: `"${d.screenName}" is registered. Open the player URL on your display to go live.`,
+    html: emailHtml(
+      "Screen registered — you're nearly live",
+      `Your screen <strong>${d.screenName}</strong> has been registered on AdGrid.<br><br>Open the player URL on your display device to connect and start receiving campaigns.<br><br><strong>Player URL:</strong><br><code style="background:#f3f4f6;padding:4px 8px;border-radius:4px;font-size:12px;">${d.playerUrl}</code><br><br>Keep your screen token private — it authenticates your display.`,
+      "Go to My Screen",
+      d.appUrl ?? "",
+    ),
+  }),
   grant_invite: (d) => ({
     title: `${d.grantorName} invited you to access their AdGrid account`,
     body: `${d.grantorName} has given you ${d.role} access to their AdGrid account. Accept to get started.`,

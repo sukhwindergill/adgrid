@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
+import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
@@ -167,6 +168,22 @@ function StepRegister({ onBack, onScreenCreated }) {
     }).select('id, name, screen_token').single();
 
     if (error) { setErr(error.message); setSaving(false); return; }
+
+    // Fire confirmation email — fire and forget
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session && SUPABASE_FUNCTIONS_URL) {
+      const playerUrl = `${window.location.origin}/display/${data.screen_token}`;
+      fetch(`${SUPABASE_FUNCTIONS_URL}/send-notification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({
+          userId: user.id,
+          type: 'screen_registered',
+          data: { screenName: data.name, playerUrl, appUrl: `${window.location.origin}/app/screens` },
+        }),
+      }).catch(() => {});
+    }
+
     setSaving(false);
     onScreenCreated({ id: data.id, name: data.name, screen_token: data.screen_token });
   };
