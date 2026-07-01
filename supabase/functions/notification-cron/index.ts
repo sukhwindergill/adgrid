@@ -115,43 +115,47 @@ Deno.serve(async (req: Request) => {
     if (!existing) {
       await sendNotification(c.advertiser_id, "low_budget", {
         campaignName: c.advertiser_name ?? "",
-        appUrl: "",
+        appUrl,
       });
     }
   }
 
   // ── Weekly reports (Mondays only) ───────────────────────────
   if (isMonday) {
-    const { data: advertisers } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("role", "advertiser");
+    // Query by bookings.advertiser_id — catches all campaign runners regardless
+    // of profile.role (operators who also run ads have role='operator' after
+    // registering a screen, so filtering by role='advertiser' would miss them).
+    const { data: activeCampaignRows } = await supabase
+      .from("bookings")
+      .select("advertiser_id")
+      .eq("status", "active");
 
-    for (const adv of advertisers ?? []) {
+    const advertiserIds = [...new Set((activeCampaignRows ?? []).map((r: { advertiser_id: string }) => r.advertiser_id))];
+
+    for (const advId of advertiserIds) {
       const { data: advCampaigns } = await supabase
         .from("bookings")
         .select("id, status, budget")
-        .eq("advertiser_id", adv.id)
+        .eq("advertiser_id", advId)
         .eq("status", "active");
 
-      // Skip advertisers with no active campaigns — nothing useful to report
       if (!advCampaigns || advCampaigns.length === 0) continue;
 
       const { data: scans } = await supabase
         .from("scans")
         .select("id")
-        .eq("advertiser_id", adv.id)
+        .eq("advertiser_id", advId)
         .gte("scanned_at", new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
       const totalSpend = advCampaigns.reduce(
         (s: number, c: { budget: number }) => s + (c.budget ?? 0), 0
       );
 
-      await sendNotification(adv.id, "weekly_report", {
+      await sendNotification(advId, "weekly_report", {
         totalScans: String((scans ?? []).length),
         activeCampaigns: String(advCampaigns.length),
         totalSpend: totalSpend.toFixed(2),
-        appUrl: "",
+        appUrl,
       });
     }
 
@@ -191,7 +195,7 @@ Deno.serve(async (req: Request) => {
       await sendNotification(op.id, "weekly_revenue", {
         revenue: revenue.toFixed(2),
         screenCount: String((opScreens ?? []).length),
-        appUrl: "",
+        appUrl,
       });
     }
   }
@@ -264,7 +268,7 @@ Deno.serve(async (req: Request) => {
       await sendNotification(screen.operator_id, "screen_offline", {
         screenName: screen.name ?? "",
         minutes: String(minutesSilent),
-        appUrl: "",
+        appUrl,
       });
     }
   }
