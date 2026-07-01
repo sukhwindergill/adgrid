@@ -9,6 +9,27 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
 const FROM_EMAIL = "noreply@adgrid.io";
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_NOTIFICATION_SECRET") ?? "";
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Only http(s) URLs are safe to render as an href — reject javascript:/data:
+// URIs an attacker-controlled data payload could otherwise smuggle in.
+function safeUrl(value: string): string {
+  try {
+    const u = new URL(value);
+    if (u.protocol === "http:" || u.protocol === "https:" || u.protocol === "mailto:") return value;
+  } catch {
+    // fall through
+  }
+  return "";
+}
+
 function currencySymbol(currency?: string): string {
   if (!currency) return "$";
   const c = currency.toLowerCase();
@@ -174,7 +195,19 @@ Deno.serve(async (req: Request) => {
   const template = TEMPLATES[type];
   if (!template) return new Response("Unknown notification type", { status: 400 });
 
-  const { title, body, html } = template(notifData);
+  // Sanitize every field before it reaches a template — templates interpolate
+  // these values directly into outgoing HTML email with no escaping of their
+  // own, and any operator can trigger a notification to any user (see the
+  // authorization check above), so unescaped input here is a stored HTML/
+  // phishing-link injection vector sent from AdGrid's own domain.
+  const URL_FIELDS = new Set(["appUrl", "acceptUrl", "playerUrl"]);
+  const sanitizedData: Record<string, string> = {};
+  for (const [key, value] of Object.entries(notifData as Record<string, unknown>)) {
+    const str = String(value ?? "");
+    sanitizedData[key] = URL_FIELDS.has(key) ? safeUrl(str) : escapeHtml(str);
+  }
+
+  const { title, body, html } = template(sanitizedData);
 
   // Always insert in-app notification
   await supabase.from("notifications").insert({ user_id: userId, type, title, body });
