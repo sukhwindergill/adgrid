@@ -82,10 +82,11 @@ Deno.serve(async (req: Request) => {
   const { data: campaigns } = campaignIds.length > 0
     ? await supabase
         .from("bookings")
-        .select("budget")
+        .select("budget, currency")
         .in("id", campaignIds)
         .gte("start_date", periodStart)
         .lte("end_date", periodEnd)
+        .eq("payment_status", "paid")
     : { data: [] };
 
   const totalBudget = (campaigns ?? []).reduce(
@@ -93,8 +94,14 @@ Deno.serve(async (req: Request) => {
     0
   );
 
+  // Derive currency from first paid booking (all should match for one operator)
+  const payoutCurrency = (campaigns as { currency?: string }[])[0]?.currency ?? "cad";
+
+  const PLATFORM_FEE_RATE = 0.12;
+
   const revenueShare = profile.owner_revenue_share ?? 0.40;
-  const payoutAmount = Math.round(totalBudget * revenueShare * 100); // cents
+  // Match charge-campaign math: budget × (1 - platformFee) × revenueShare
+  const payoutAmount = Math.round(totalBudget * (1 - PLATFORM_FEE_RATE) * revenueShare * 100); // cents
 
   if (payoutAmount <= 0) {
     return new Response(
@@ -106,7 +113,7 @@ Deno.serve(async (req: Request) => {
   // Create Stripe Transfer
   const transfer = await stripe.transfers.create({
     amount: payoutAmount,
-    currency: "gbp",
+    currency: payoutCurrency,
     destination: profile.stripe_connect_account_id,
     metadata: { operator_id: user.id, period_start: periodStart, period_end: periodEnd },
   });
@@ -115,7 +122,7 @@ Deno.serve(async (req: Request) => {
   await supabase.from("payouts").insert({
     operator_id: user.id,
     amount: payoutAmount / 100,
-    currency: "gbp",
+    currency: payoutCurrency,
     stripe_transfer_id: transfer.id,
     status: "transferred",
     period_start: periodStart,
