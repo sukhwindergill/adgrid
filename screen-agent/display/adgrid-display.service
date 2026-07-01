@@ -19,11 +19,13 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+# Change 'pi' to your actual username (run: whoami)
 User=pi
 EnvironmentFile=-/etc/adgrid-display.env
 Environment=DISPLAY=:0
 ExecStartPre=/bin/sleep 5
 ExecStart=/usr/bin/chromium-browser \
+  --no-sandbox \
   --kiosk \
   --noerrdialogs \
   --disable-infobars \
@@ -34,6 +36,8 @@ ExecStart=/usr/bin/chromium-browser \
   --app=${DISPLAY_URL}
 Restart=always
 RestartSec=10
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Install]
 WantedBy=graphical.target

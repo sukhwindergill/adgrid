@@ -47,11 +47,20 @@ sudo apt-get install -y chromium-browser
 ```bash
 # Copy the service and env files from this directory
 sudo cp display/adgrid-display.service /etc/systemd/system/
+
+> **Note:** The service file defaults to `User=pi`. If your username is different, edit the file after copying:
+> ```bash
+> sudo nano /etc/systemd/system/adgrid-display.service
+> # Change: User=pi  →  User=your-username
+> ```
+
 sudo cp display/adgrid-display.env.example /etc/adgrid-display.env
 
 # Fill in your screen token
 sudo nano /etc/adgrid-display.env
 # Set: DISPLAY_URL=https://app.adgrid.io/display/YOUR_SCREEN_TOKEN
+# Secure the token file
+sudo chmod 600 /etc/adgrid-display.env
 
 # Enable and start
 sudo systemctl daemon-reload
@@ -62,6 +71,11 @@ sudo systemctl start adgrid-display
 **4. Verify:**
 ```bash
 sudo systemctl status adgrid-display
+```
+
+If it fails to start, check logs:
+```bash
+journalctl -u adgrid-display -n 50
 ```
 
 The screen will show ads on boot, auto-recover if Chromium crashes, and refresh content every 30 seconds automatically.
