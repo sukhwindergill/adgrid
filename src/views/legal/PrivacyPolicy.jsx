@@ -1,7 +1,3 @@
-// DRAFT legal page — placeholder structure pending counsel-supplied copy.
-// TODO(legal): replace all section copy with reviewed language before removing
-// the draft banner.
-
 const page = {
   minHeight: '100vh',
   background: '#0b0d12',
@@ -13,56 +9,94 @@ const inner = { maxWidth: 760, margin: '0 auto' };
 const h1 = { fontSize: 32, fontWeight: 700, color: '#fff', margin: '0 0 8px' };
 const h2 = { fontSize: 20, fontWeight: 600, color: '#fff', margin: '32px 0 8px' };
 const p = { fontSize: 15, lineHeight: 1.7, margin: '0 0 12px' };
-const banner = {
-  background: 'rgba(255,180,0,0.12)',
-  border: '1px solid rgba(255,180,0,0.5)',
-  borderRadius: 8,
-  padding: '12px 16px',
-  margin: '0 0 32px',
-  color: '#ffb400',
-  fontSize: 14,
-  fontWeight: 600,
-};
 
 export function PrivacyPolicy() {
   return (
     <div style={page}>
       <div style={inner}>
         <h1 style={h1}>Privacy Policy</h1>
-        <p style={{ ...p, color: 'rgba(255,255,255,0.5)' }}>Last updated: June 11, 2026</p>
+        <p style={{ ...p, color: 'rgba(255,255,255,0.5)' }}>Last updated: June 29, 2026</p>
 
-        <div style={banner}>
-          DRAFT — pending legal review. This is placeholder text and not a final policy.
-        </div>
+        <h2 style={h2}>Who we are</h2>
+        <p style={p}>
+          AdGrid Inc. ("AdGrid", "we", "us") operates a digital out-of-home advertising
+          platform that connects advertisers with screen owners. Our registered address is
+          available at legal@adgrid.io.
+        </p>
 
         <h2 style={h2}>Data we collect</h2>
-        {/* TODO(legal): confirm this list stays in sync with actual collection. */}
         <p style={p}>
-          AdGrid operates digital advertising screens. The screens themselves do not
-          use cameras, sensors, or computer vision, and do not identify or count
-          individual viewers. Data we process today:
+          <strong>Account holders (advertisers and screen operators):</strong> name, email
+          address, business name, and billing information. Payment details are processed
+          and stored by Stripe — AdGrid never stores raw card numbers.
         </p>
         <p style={p}>
-          • Account data for advertisers and screen operators (name, email, billing
-          details processed by Stripe).<br />
-          • Screen telemetry (screen online/offline heartbeats and which campaign was
-          playing) — no viewer data.<br />
-          • QR-code scans: when you scan an ad's QR code, we record the scan event
-          (timestamp, campaign, screen) to count engagement before redirecting you to
-          the advertiser's site.
+          <strong>Screen telemetry:</strong> whether a screen is online or offline, which
+          campaign was playing at a given time, and periodic heartbeat timestamps. No
+          camera, sensor, or computer-vision data is collected. Screens do not identify,
+          count, or track individual viewers.
+        </p>
+        <p style={p}>
+          <strong>QR-code scans:</strong> when a viewer scans an ad's QR code we record
+          a scan event containing the timestamp, the campaign ID, and the screen ID, then
+          redirect the viewer to the advertiser's destination URL. We do not set tracking
+          cookies on the destination site and do not receive any data about what the viewer
+          does after the redirect.
+        </p>
+        <p style={p}>
+          <strong>Usage data:</strong> standard server logs (IP address, browser type,
+          pages visited) retained for up to 90 days for security and debugging purposes.
         </p>
 
-        <h2 style={h2}>Retention</h2>
-        {/* TODO(legal): set concrete retention periods. */}
+        <h2 style={h2}>How we use your data</h2>
         <p style={p}>
-          Placeholder: retention periods for account data, telemetry, and scan events
-          to be confirmed by counsel.
+          We use account data to provide the AdGrid service, process payments, send
+          transactional emails (campaign approvals, payment receipts, payout notifications),
+          and respond to support requests. We do not sell personal data to third parties or
+          use it for behavioural advertising.
+        </p>
+
+        <h2 style={h2}>Data retention</h2>
+        <p style={p}>
+          Account data is retained for the life of your account and for 90 days following
+          account deletion, after which it is permanently deleted. Screen telemetry and
+          heartbeat records are retained for 12 months. QR scan events are retained for
+          24 months to support campaign analytics. Stripe retains payment records
+          independently per their own privacy policy.
+        </p>
+
+        <h2 style={h2}>Your rights</h2>
+        <p style={p}>
+          If you are located in Canada, the EU, or the UK you have the right to access,
+          correct, or delete your personal data, and to withdraw consent where processing
+          is consent-based. To exercise any of these rights, email us at
+          {' '}<a href="mailto:privacy@adgrid.io" style={{ color: '#7c3aed' }}>privacy@adgrid.io</a>.
+          We will respond within 30 days.
+        </p>
+
+        <h2 style={h2}>Cookies</h2>
+        <p style={p}>
+          AdGrid uses strictly necessary session cookies for authentication. We do not use
+          third-party analytics or advertising cookies.
+        </p>
+
+        <h2 style={h2}>Third-party services</h2>
+        <p style={p}>
+          We use Stripe for payment processing, Supabase for database and authentication,
+          and Resend for transactional email. Each service operates under its own privacy
+          policy and data processing agreement.
+        </p>
+
+        <h2 style={h2}>Changes to this policy</h2>
+        <p style={p}>
+          We may update this policy from time to time. Material changes will be notified
+          by email to account holders at least 14 days before taking effect.
         </p>
 
         <h2 style={h2}>Contact</h2>
-        {/* TODO(legal): confirm contact address / DPO details. */}
         <p style={p}>
-          Placeholder: privacy contact email and postal address to be supplied.
+          For privacy questions or data requests:{' '}
+          <a href="mailto:privacy@adgrid.io" style={{ color: '#7c3aed' }}>privacy@adgrid.io</a>
         </p>
       </div>
     </div>

@@ -23,7 +23,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: screen, error: screenError } = await supabase
     .from("screens")
-    .select("id, name, operator_id, status, operating_hours_start, operating_hours_end")
+    .select("id, name, operator_id, status, operating_hours_start, operating_hours_end, timezone")
     .eq("screen_token", screenToken)
     .single();
 
@@ -31,11 +31,32 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "Invalid screen token" }), { status: 404, headers: CORS });
   }
 
+  const tz = (screen.timezone as string | null) ?? "America/Toronto";
   const now = new Date();
-  const today = now.toISOString().split("T")[0];
-  const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const currentDay = dayNames[now.getDay()];
+
+  // Derive local date/time/day in the screen's own timezone
+  const localParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+    weekday: "short",
+  }).formatToParts(now);
+
+  const get = (type: string) => localParts.find((p) => p.type === type)?.value ?? "";
+  const today = `${get("year")}-${get("month")}-${get("day")}`;
+  const currentTime = `${get("hour").padStart(2, "0")}:${get("minute").padStart(2, "0")}`;
+  const dayNames: Record<string, string> = { Sun: "Sun", Mon: "Mon", Tue: "Tue", Wed: "Wed", Thu: "Thu", Fri: "Fri", Sat: "Sat" };
+  const currentDay = dayNames[get("weekday")] ?? get("weekday");
+
+  // Enforce operating hours — return empty feed outside configured window
+  const opStart = screen.operating_hours_start as string | null;
+  const opEnd   = screen.operating_hours_end   as string | null;
+  if (opStart && opEnd && (currentTime < opStart || currentTime > opEnd)) {
+    return new Response(
+      JSON.stringify({ screen_id: screen.id, screen_name: screen.name, current_time: currentTime, campaigns: [] }),
+      { headers: CORS },
+    );
+  }
 
   // Step 1: find approved campaign_screens for this screen (includes per-screen creative overrides)
   const { data: csRows } = await supabase

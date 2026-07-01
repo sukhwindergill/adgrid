@@ -29,13 +29,13 @@ async function notifyAdvertiser(userId: string, type: string, data: Record<strin
 async function bookingForPaymentIntent(paymentIntentId: string) {
   const { data } = await supabase
     .from("bookings")
-    .select("id, advertiser_id, advertiser_name, budget, payment_status, status")
+    .select("id, advertiser_id, advertiser_name, budget, currency, payment_status, status")
     .eq("payment_intent_id", paymentIntentId)
     .maybeSingle();
   return data;
 }
 
-async function pauseAndAlert(paymentIntentId: string, amount: number) {
+async function pauseAndAlert(paymentIntentId: string, amount: number, currency?: string) {
   const booking = await bookingForPaymentIntent(paymentIntentId);
   if (!booking) return;
 
@@ -46,6 +46,7 @@ async function pauseAndAlert(paymentIntentId: string, amount: number) {
 
   await notifyAdvertiser(booking.advertiser_id, "payment_failed", {
     amount: amount.toFixed(2),
+    currency: currency ?? (booking as { currency?: string }).currency ?? "cad",
     appUrl: Deno.env.get("PUBLIC_APP_URL") ?? "",
   });
 }
@@ -78,18 +79,17 @@ Deno.serve(async (req: Request) => {
           .update({ payment_status: "paid", status: "scheduled" })
           .eq("id", booking.id);
 
-        await supabase
-          .from("campaign_screens")
-          .update({ status: "approved", approved_at: new Date().toISOString() })
-          .eq("campaign_id", booking.id)
-          .eq("status", "pending");
+        // campaign_screens status is intentionally left as-is.
+        // At booking creation, CreateCampaign sets each row to 'auto_approved'
+        // (if the screen's auto_approve flag is on) or 'pending' (manual review).
+        // Overriding 'pending' → 'approved' here would bypass operator content review.
       }
       break;
     }
 
     case "payment_intent.payment_failed": {
       const pi = event.data.object as Stripe.PaymentIntent;
-      await pauseAndAlert(pi.id, pi.amount / 100);
+      await pauseAndAlert(pi.id, pi.amount / 100, pi.currency);
       break;
     }
 
@@ -112,7 +112,7 @@ Deno.serve(async (req: Request) => {
       const dispute = event.data.object as Stripe.Dispute;
       const paymentIntentId = typeof dispute.payment_intent === "string" ? dispute.payment_intent : dispute.payment_intent?.id;
       if (paymentIntentId) {
-        await pauseAndAlert(paymentIntentId, dispute.amount / 100);
+        await pauseAndAlert(paymentIntentId, dispute.amount / 100, dispute.currency);
       }
       break;
     }
