@@ -13,6 +13,129 @@ const supabase = createClient(
 
 const FUNCTIONS_URL = `${Deno.env.get("SUPABASE_URL")!}/functions/v1`;
 
+const PLATFORM_FEE_RATE = 0.12;
+
+async function distributeOperatorCuts(
+  bookingId: string,
+  budget: number,
+  currency: string,
+): Promise<void> {
+  // 1. Find all screens for this campaign
+  const { data: csRows } = await supabase
+    .from("campaign_screens")
+    .select("screen_id")
+    .eq("campaign_id", bookingId);
+
+  if (!csRows || csRows.length === 0) return;
+
+  const screenIds = csRows.map((r: { screen_id: string }) => r.screen_id);
+  const totalScreens = screenIds.length;
+
+  // 2. Fetch operator info for each screen
+  const { data: screenRows } = await supabase
+    .from("screens")
+    .select("id, operator_id")
+    .in("id", screenIds);
+
+  if (!screenRows || screenRows.length === 0) return;
+
+  // 3. Group screens by operator
+  const byOperator = new Map<string, number>();
+  for (const s of screenRows as { id: string; operator_id: string }[]) {
+    if (!s.operator_id) continue;
+    byOperator.set(s.operator_id, (byOperator.get(s.operator_id) ?? 0) + 1);
+  }
+
+  if (byOperator.size === 0) return;
+
+  // 4. Fetch operator profiles (Connect account + revenue share)
+  const operatorIds = [...byOperator.keys()];
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, stripe_connect_account_id, connect_status, owner_revenue_share")
+    .in("id", operatorIds);
+
+  if (!profiles) return;
+
+  // 5. For each operator, compute their cut and create a Stripe Transfer
+  const netBudget = budget * (1 - PLATFORM_FEE_RATE);
+
+  for (const profile of profiles as {
+    id: string;
+    stripe_connect_account_id: string | null;
+    connect_status: string | null;
+    owner_revenue_share: number | null;
+  }[]) {
+    if (!profile.stripe_connect_account_id || profile.connect_status !== "active") {
+      console.warn(`[charge-campaign] operator ${profile.id} has no active Connect account — skipping transfer`);
+      continue;
+    }
+
+    const operatorScreenCount = byOperator.get(profile.id) ?? 0;
+    if (operatorScreenCount === 0) continue;
+
+    const revenueShare = profile.owner_revenue_share ?? 0.40;
+    const operatorCut = netBudget * revenueShare * (operatorScreenCount / totalScreens);
+    const amountCents = Math.round(operatorCut * 100);
+
+    if (amountCents <= 0) continue;
+
+    // Idempotency key prevents double-transfer if this runs twice
+    const idempotencyKey = `operator-transfer:${bookingId}:${profile.id}`;
+
+    try {
+      const transfer = await stripe.transfers.create(
+        {
+          amount: amountCents,
+          currency,
+          destination: profile.stripe_connect_account_id,
+          metadata: {
+            booking_id: bookingId,
+            operator_id: profile.id,
+            screen_count: String(operatorScreenCount),
+            total_screens: String(totalScreens),
+          },
+        },
+        { idempotencyKey },
+      );
+
+      // Log the transfer — upsert so re-runs don't duplicate rows
+      await supabase.from("operator_transfers").upsert(
+        {
+          booking_id: bookingId,
+          operator_id: profile.id,
+          amount: amountCents / 100,
+          currency,
+          stripe_transfer_id: transfer.id,
+          status: "transferred",
+          screen_count: operatorScreenCount,
+          total_screens: totalScreens,
+        },
+        { onConflict: "booking_id,operator_id" },
+      );
+    } catch (e) {
+      console.error(
+        `[charge-campaign] transfer failed for operator ${profile.id}:`,
+        e instanceof Error ? e.message : e,
+      );
+      // Log the failure so it can be retried via admin flow
+      await supabase.from("operator_transfers").upsert(
+        {
+          booking_id: bookingId,
+          operator_id: profile.id,
+          amount: amountCents / 100,
+          currency,
+          stripe_transfer_id: null,
+          status: "failed",
+          screen_count: operatorScreenCount,
+          total_screens: totalScreens,
+        },
+        { onConflict: "booking_id,operator_id" },
+      );
+    }
+  }
+}
+
 async function notifyAdvertiser(userId: string, type: string, data: Record<string, string>) {
   await fetch(`${FUNCTIONS_URL}/send-notification`, {
     method: "POST",
@@ -222,10 +345,11 @@ Deno.serve(async (req: Request) => {
     })
     .eq("id", campaign_id);
 
-  // Payment only marks the booking paid. Screen approval stays with the
-  // operator (or a screen's auto_approve flag at booking creation) —
-  // display-feed requires both payment_status='paid' and an approved
-  // campaign_screens row before the campaign airs.
+  // Distribute operator cuts — fire and forget so a transfer hiccup
+  // doesn't block the advertiser's success response.
+  distributeOperatorCuts(campaign_id, booking.budget, currency).catch((e) =>
+    console.error("[charge-campaign] operator transfer error:", e)
+  );
 
   return new Response(
     JSON.stringify({ success: true, payment_intent_id: paymentIntent.id }),
