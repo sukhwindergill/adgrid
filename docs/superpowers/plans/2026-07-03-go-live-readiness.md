@@ -87,25 +87,28 @@ per-screen media override UI (columns already exist).
   `impression_events`).
 - **S5 — Search-path-mutable functions.** ✅ **Applied** (`…000001`): `SET search_path` on the
   five helpers + client `EXECUTE` revoked on the trigger/internal functions.
-- **S6 — `ingest-impressions` has no rate-limit or bounds validation.** With B1/token fixed
-  the blast radius shrinks, but a valid screen token can still spam arbitrary
-  `people_count`. Add basic clamping (e.g. 0–2000) and a per-token rate cap.
-- **S7 — Backend source drift (NEW).** ~10 edge functions are **deployed and active but have
-  no source in the repo**: `stripe-create-intent`, `stripe-capture-payment`, `stripe-refund`,
-  `create-checkout-session`, `get-stripe-charges`, `invite-operator`, `create-identity-session`,
-  `stripe-identity-webhook`, `manual-review-operator`, `screen-health-cron`. You can't review,
-  audit, or safely redeploy them, and there are two coexisting payment paths
-  (`charge-campaign` vs the `stripe-create-intent`/`capture` set) plus an entire operator
-  identity-verification flow (Stripe Identity) that isn't in source control. Pull each deployed
-  function's source into `supabase/functions/` (via `get_edge_function`) and reconcile before
-  launch. **S3 note:** ✅ the always-true INSERT policies were fixed in `…000001`.
+- **S6 — `ingest-impressions` input clamping.** ✅ **Done** (deployed v6): every numeric field
+  is clamped (people/demographics 0–5000, attention 0–1, dwell 0–86400) so a leaked token can't
+  poison analytics. Verified 999999→5000. A per-token *rate* cap is still a future add.
+- **S7 — Backend source drift.** ✅ **Recovered** (`44b7af6`): all 10 deployed-but-untracked
+  functions pulled into `supabase/functions/`. Follow-ups surfaced:
+  - **Legacy GBP payment path** — `stripe-create-intent`, `stripe-capture-payment`,
+    `stripe-refund`, `create-checkout-session` hardcode `currency: 'gbp'` and predate the live
+    `charge-campaign` flow; `create-checkout-session` also updates a non-existent
+    `bookings.campaign_id` (no-op). Confirm no client calls them, then delete to remove the
+    wrong-currency footgun.
+  - **Operator identity verification (Stripe Identity)** — `create-identity-session`,
+    `stripe-identity-webhook`, `manual-review-operator` are a whole KYC flow that was live but
+    undocumented; fold into the operator onboarding story and confirm the webhook secret is set.
 
 ## Nice-to-have
 
-- **N1 — `screen-health-cron` is NOT phantom (correction).** The function *is* deployed and
-  active (`verify_jwt=false`); it just isn't in the repo (see S7). Offline detection works via
-  both this job and `last_seen` in `notification-cron`. Action: recover its source; if it does
-  write `screens.health_status`, the dashboard "Degraded" badge is live — otherwise wire it.
+- **N1 — `screen-health-cron` value mismatch (confirmed via recovered source).** It writes
+  `screens.health_status` as `online`/`idle`/`offline`, but the dashboards
+  (`ApprovalQueue.jsx`, `Screens.jsx`) branch on `health_status === 'degraded'`, which is never
+  written — so that badge path is dead (offline detection still works via `last_seen`). Reconcile
+  the value (`offline`→`degraded`, or update the UI check). It also sends `screen_offline`
+  without the internal-secret header and duplicates `notification-cron`'s offline alert.
 - **N2 — `notification-cron` stale check is N+1** (one heartbeat query per screen). Fine for
   dozens; rewrite as a single grouped query before hundreds of screens.
 - **N3 — Bundle size** ~888 kB JS in one chunk. Code-split (Leaflet, marketing home, display
