@@ -60,8 +60,21 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ ok: true }), { headers: CORS });
   }
 
+  // Clamp untrusted values — the screen token is a shared secret sent from the
+  // field agent, so bound every numeric field to a sane range to stop a leaked
+  // token from poisoning analytics with absurd counts.
+  const clampInt = (v: unknown, max: number) => {
+    const n = Math.floor(Number(v) || 0);
+    return Math.min(Math.max(n, 0), max);
+  };
+  const clampFloat = (v: unknown, max: number) => {
+    const n = Number(v) || 0;
+    return Math.min(Math.max(n, 0), max);
+  };
+  const MAX_PEOPLE = 5000;
+
   // Derive window timestamps if not provided (browser player sends dwell_seconds)
-  const dwellSecs = Number(dwell_seconds) || Number(avg_dwell_seconds) || 10;
+  const dwellSecs = clampFloat(Number(dwell_seconds) || Number(avg_dwell_seconds) || 10, 86400);
   const winEnd = window_end ? new Date(window_end as string) : new Date();
   const winStart = window_start ? new Date(window_start as string) : new Date(winEnd.getTime() - dwellSecs * 1000);
 
@@ -70,17 +83,17 @@ Deno.serve(async (req: Request) => {
     campaign_id: campaign_id ?? null,
     window_start: winStart.toISOString(),
     window_end: winEnd.toISOString(),
-    people_count: Number(people_count) || 0,
+    people_count: clampInt(people_count, MAX_PEOPLE),
     avg_dwell_seconds: dwellSecs,
-    avg_attention_score: Number(attention_score) || Number(avg_attention_score) || 0,
-    age_18_24: Number(age_18_24) || 0,
-    age_25_34: Number(age_25_34) || 0,
-    age_35_44: Number(age_35_44) || 0,
-    age_45_54: Number(age_45_54) || 0,
-    age_55_plus: Number(age_55_plus) || 0,
-    gender_male: Number(gender_male) || 0,
-    gender_female: Number(gender_female) || 0,
-    gender_unknown: Number(gender_unknown) || 0,
+    avg_attention_score: clampFloat(Number(attention_score) || Number(avg_attention_score) || 0, 1),
+    age_18_24: clampInt(age_18_24, MAX_PEOPLE),
+    age_25_34: clampInt(age_25_34, MAX_PEOPLE),
+    age_35_44: clampInt(age_35_44, MAX_PEOPLE),
+    age_45_54: clampInt(age_45_54, MAX_PEOPLE),
+    age_55_plus: clampInt(age_55_plus, MAX_PEOPLE),
+    gender_male: clampInt(gender_male, MAX_PEOPLE),
+    gender_female: clampInt(gender_female, MAX_PEOPLE),
+    gender_unknown: clampInt(gender_unknown, MAX_PEOPLE),
   });
 
   if (insertError) {
