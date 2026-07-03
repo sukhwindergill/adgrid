@@ -9,12 +9,17 @@ committed in this session (see "Fixed this session").
 
 ## Verdict
 
-**Conditional NO-GO for a wide public launch; GO for a controlled pilot** (a handful of
-hand-held operators + invited advertisers) once the two remaining blockers below are
-closed. The payment pipeline, RLS model, moderation queue, notifications, cron, and the
-kiosk/agent stack are genuinely in good shape and recently hardened. The gaps that stop a
-*public* launch are (1) advertisers cannot upload their own creative, and (2) a few
-trust/compliance essentials. The critical `screen_token` leak found this pass is **fixed**.
+**Both go-live blockers are now closed** (creative upload + honest impressions, shipped this
+session). The remaining items are should-fix trust/compliance/ops work, not launch blockers.
+Recommended path: **GO for a controlled pilot now** (invited advertisers + hand-held
+operators); clear S1/S2/S7 before a **wide public launch**. The payment pipeline, RLS model
+(the critical `screen_token` leak is fixed), moderation queue, notifications, cron, and the
+kiosk/agent stack are in good shape.
+
+> **Update — session 2 (2026-07-03):** Blockers B1 and B2 implemented and committed
+> (`acca238`, `e3435b8`); should-fixes S3/S5 applied (`e3435b8`). See "Fixed this session."
+> The `screen-health-cron` item (was N1) was **wrong** — that function is deployed and active;
+> the real issue is repo source-drift (new S7).
 
 ---
 
@@ -27,37 +32,34 @@ trust/compliance essentials. The critical `screen_token` leak found this pass is
 | `campaign_stats` / `presence_current` views set `security_invoker` (advisor ERROR) | Should-fix | migration |
 | Dropped broad public-listing policies on `creatives` / `screen-photos` buckets | Should-fix | migration |
 | DisplayPlayer keeps last-approved ads during transient feed error (was blanking to idle) | Should-fix | `DisplayPlayer.jsx` |
+| **B1** — advertiser image/video creative upload (builder → bucket → feed → player/preview) | **Blocker** | `CreateCampaign.jsx`, `CreativePreview.jsx`, `DisplayPlayer.jsx`, `display-feed` v8, migration `…000002` |
+| **B2** — stop fabricated `people_count:1` from browser; real audience only from CV agent | **Blocker** | `DisplayPlayer.jsx`, `Dashboard.jsx` |
+| **S3** — scope `service_insert_*` INSERT policies to `service_role` | Should-fix | migration `…000001` |
+| **S5** — pin `search_path`; revoke client EXECUTE on trigger/internal functions | Should-fix | migration `…000001` |
 
-Verified: build passes; RPC returns the token for the owning operator and `null` for anyone
-else; `screen_token` column SELECT grant removed for `anon`/`authenticated`.
+Verified: build passes; token RPC returns the token for the owning operator and `null` for
+anyone else; deployed `display-feed` returns `media_url`/`media_type` through the new columns;
+advisor no longer reports the security-definer-view ERROR, always-true INSERT, trigger-exec,
+or search_path warnings.
 
 ---
 
-## Remaining blockers (must fix before public go-live)
+## Blockers — DONE this session
 
-### B1 — Advertisers can't upload their own creative
-The campaign builder collects only a headline, CTA text, destination URL, category, and an
-accent colour. The display renders a **generated gradient slide** — never an uploaded image
-or video. The `creatives` storage bucket and its RLS policies exist but **nothing in the app
-writes to them**. No real advertiser, and certainly no agency or corporation, will run a
-campaign that can't show their designed ad.
-- **Impact:** the product's core promise ("run *your* advertisement") isn't met.
-- **Work:** add an image/video upload step to `CreateCampaign` → store in `creatives/<uid>/…`
-  → persist `creative_url` on `bookings` + per-screen override on `campaign_screens` →
-  render it in `DisplayPlayer` (`<img>`/`<video>` layer) and `CreativePreview`. Keep the
-  generated slide as a fallback when no asset is uploaded. Enforce type/size limits and
-  aspect-ratio guidance (landscape 16:9, portrait 9:16 for `screen_position`).
+Both launch blockers are implemented and committed (`acca238`, `e3435b8`):
 
-### B2 — Stub impressions are fabricated on camera-less screens
-`DisplayPlayer` posts `people_count: 1, attention_score: 1.0` every rotation regardless of
-whether a camera/CV agent is attached. Screens running display-only (the majority at launch)
-will report a steady stream of fake "1 person watched" impressions to advertisers.
-- **Impact:** advertisers are billed against / shown fabricated audience numbers — a
-  material-misrepresentation and trust problem.
-- **Work:** stop sending synthetic `people_count` from the browser. Either (a) send a
-  *playback* event (ad was on screen) distinct from a *measured impression*, and only count
-  real audience from the CV agent; or (b) clearly label browser-only numbers as "plays," not
-  "impressions/people." Advertiser analytics must distinguish measured vs estimated.
+- **B1 (creative upload).** `CreateCampaign` has an image/video upload step (own-folder RLS,
+  validation matching the bucket: images ≤15 MB, video ≤100 MB, JPG/PNG/GIF/WEBP/MP4/WEBM/MOV).
+  Media persists to `bookings.media_url/media_type` with per-screen override columns on
+  `campaign_screens`; `display-feed` (v8) serves it with override precedence; `DisplayPlayer` +
+  `CreativePreview` render it full-bleed with a legibility scrim and fall back to the generated
+  card when absent. Operators now moderate the *actual* creative in the approval queue.
+- **B2 (honest impressions).** The browser player no longer posts synthetic `people_count:1`;
+  measured audience comes only from the CV screen-agent, online/proof-of-play via
+  `display_heartbeats`. Removed the `|| 1` people fallback in the operator dashboard.
+
+Follow-up (not blocking): a "plays vs measured impressions" split in advertiser analytics, and
+per-screen media override UI (columns already exist).
 
 ---
 
@@ -83,20 +85,27 @@ will report a steady stream of fake "1 person watched" impressions to advertiser
   would leak cross-tenant if ever populated. Plan a reviewed `DROP` migration (they're not
   referenced by the live app, which uses `bookings`/`campaign_screens`/`scans`/
   `impression_events`).
-- **S5 — Search-path-mutable functions** (`is_operator`, `is_advertiser`,
-  `current_advertiser_id`, `current_role`, `set_updated_at`). Add `SET search_path` to each
-  (advisor WARN, privilege-escalation hardening).
+- **S5 — Search-path-mutable functions.** ✅ **Applied** (`…000001`): `SET search_path` on the
+  five helpers + client `EXECUTE` revoked on the trigger/internal functions.
 - **S6 — `ingest-impressions` has no rate-limit or bounds validation.** With B1/token fixed
   the blast radius shrinks, but a valid screen token can still spam arbitrary
   `people_count`. Add basic clamping (e.g. 0–2000) and a per-token rate cap.
+- **S7 — Backend source drift (NEW).** ~10 edge functions are **deployed and active but have
+  no source in the repo**: `stripe-create-intent`, `stripe-capture-payment`, `stripe-refund`,
+  `create-checkout-session`, `get-stripe-charges`, `invite-operator`, `create-identity-session`,
+  `stripe-identity-webhook`, `manual-review-operator`, `screen-health-cron`. You can't review,
+  audit, or safely redeploy them, and there are two coexisting payment paths
+  (`charge-campaign` vs the `stripe-create-intent`/`capture` set) plus an entire operator
+  identity-verification flow (Stripe Identity) that isn't in source control. Pull each deployed
+  function's source into `supabase/functions/` (via `get_edge_function`) and reconcile before
+  launch. **S3 note:** ✅ the always-true INSERT policies were fixed in `…000001`.
 
 ## Nice-to-have
 
-- **N1 — Phantom `screen-health-cron`.** Cron job #2 (every 5 min) POSTs to a
-  `screen-health-cron` edge function that **does not exist in the repo** → 404 each run, and
-  `screens.health_status` is never written (so the "Degraded" badge in the dashboards is dead
-  code; offline detection still works via `last_seen` in `notification-cron`). Either build
-  the function or drop the cron job + the `health_status` UI path.
+- **N1 — `screen-health-cron` is NOT phantom (correction).** The function *is* deployed and
+  active (`verify_jwt=false`); it just isn't in the repo (see S7). Offline detection works via
+  both this job and `last_seen` in `notification-cron`. Action: recover its source; if it does
+  write `screens.health_status`, the dashboard "Degraded" badge is live — otherwise wire it.
 - **N2 — `notification-cron` stale check is N+1** (one heartbeat query per screen). Fine for
   dozens; rewrite as a single grouped query before hundreds of screens.
 - **N3 — Bundle size** ~888 kB JS in one chunk. Code-split (Leaflet, marketing home, display
@@ -111,11 +120,11 @@ will report a steady stream of fake "1 person watched" impressions to advertiser
 
 | Area | Status | Note |
 |------|--------|------|
-| 1. Onboarding (advertiser + operator) | 🟡 GO w/ B1 | Wizards are solid; blocked only by missing creative upload |
-| 2. Payments (Stripe) | 🟢 GO | Charge lock, 3DS handling, refund/dispute webhooks, operator transfers all present & recently fixed |
-| 3. Approval / moderation queue | 🟢 GO | End-to-end, bulk approve, per-screen reject reasons, auto-approve w/ liability notice |
-| 4. Screen agent / display player | 🟡 GO w/ B2 | Kiosk service + Docker CV agent solid; fix fabricated impressions |
-| 5. Security (RLS / auth / secrets) | 🟢 GO | Token leak fixed this pass; remaining items are S2/S3/S5 hardening |
+| 1. Onboarding (advertiser + operator) | 🟢 GO | Wizards solid; creative upload (B1) now shipped |
+| 2. Payments (Stripe) | 🟢 GO | Charge lock, 3DS handling, refund/dispute webhooks, operator transfers all present & recently fixed. See S7 (two payment code paths, drift) |
+| 3. Approval / moderation queue | 🟢 GO | End-to-end, bulk approve, per-screen reject reasons, auto-approve w/ liability notice; now shows real uploaded creative |
+| 4. Screen agent / display player | 🟢 GO | Kiosk service + Docker CV agent solid; fabricated impressions (B2) fixed |
+| 5. Security (RLS / auth / secrets) | 🟢 GO | Token leak + RLS/function hardening done; remaining: S2 toggle, S7 drift |
 | 6. Notifications | 🟢 GO | Cron scheduled & active (daily/health/pending push); email + Expo push wired |
 | 7. Mobile / responsive | 🟡 | Mobile app exists; public marketing/site responsive recently patched — re-verify next pass |
 | 8. Error / empty states | 🟢 GO | Login, wizards, queue, display all handle empty/error paths |
