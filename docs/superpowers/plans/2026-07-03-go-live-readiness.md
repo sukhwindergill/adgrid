@@ -69,8 +69,10 @@ per-screen media override UI (columns already exist).
   scanners / link prefetchers (Outlook SafeLinks, Gmail, etc.) will fetch the URL and
   silently consume the single-use token, auto-approving or auto-rejecting a campaign the
   operator never clicked. Change to a landing page with an explicit POST confirm button.
-  (The `approval_tokens` table is currently empty, so this path may be dormant — verify it's
-  either wired safely or disabled before launch.)
+  **Confirmed dormant this session:** nothing in the app or edge functions issues
+  `approval_tokens` or emails a `handle-approval-token` link, so it is not currently
+  exploitable — but fix the GET→POST design *before* wiring it up (all approvals today go
+  through the in-app queue + `campaign_approved` notification).
 - **S2 — Leaked-password protection disabled** (Supabase Auth). Enable HaveIBeenPwned check
   (Auth → Providers/Policies). One toggle; can't be set from SQL.
 - **S3 — `service_insert_*` RLS policies use `WITH CHECK (true)`** on `operator_transfers`,
