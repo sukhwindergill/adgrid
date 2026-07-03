@@ -25,6 +25,8 @@ function buildQrUrl(destinationUrl, screenId, campaignId) {
 function CreativeSlide({ campaign, screenId }) {
   const bg = campaign.accent_color || '#7c3aed';
   const qrUrl = buildQrUrl(campaign.destination_url || 'https://adgrid.io', screenId, campaign.id);
+  const mediaUrl = campaign.media_url || null;
+  const isVideo = campaign.media_type === 'video';
 
   return (
     <div style={{
@@ -35,13 +37,25 @@ function CreativeSlide({ campaign, screenId }) {
       padding: 'clamp(32px, 5vw, 80px)',
       overflow: 'hidden',
     }}>
-      {/* Background accent glow */}
-      <div style={{
+      {/* Uploaded creative fills the screen behind the overlays */}
+      {mediaUrl && (isVideo ? (
+        <video src={mediaUrl} muted loop autoPlay playsInline
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+      ) : (
+        <img src={mediaUrl} alt=""
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+      ))}
+      {/* Scrim so the headline/CTA/QR stay legible over any media */}
+      {mediaUrl && (
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.15) 45%, transparent 70%)', pointerEvents: 'none' }} />
+      )}
+      {/* Background accent glow (only without media) */}
+      {!mediaUrl && <div style={{
         position: 'absolute', top: '-10%', right: '-5%',
         width: '50%', height: '60%',
         background: `radial-gradient(ellipse, ${bg}33 0%, transparent 70%)`,
         pointerEvents: 'none',
-      }} />
+      }} />}
 
       {/* Bottom accent line */}
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 4, background: bg }} />

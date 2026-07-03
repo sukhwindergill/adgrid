@@ -61,7 +61,7 @@ Deno.serve(async (req: Request) => {
   // Step 1: find approved campaign_screens for this screen (includes per-screen creative overrides)
   const { data: csRows } = await supabase
     .from("campaign_screens")
-    .select("campaign_id, status, headline, cta_text, accent_color, destination_url")
+    .select("campaign_id, status, headline, cta_text, accent_color, destination_url, media_url, media_type")
     .eq("screen_id", screen.id)
     .in("status", ["approved", "auto_approved"]);
 
@@ -73,7 +73,7 @@ Deno.serve(async (req: Request) => {
     // Step 2: fetch bookings for those campaigns filtered by date and live status
     const { data: bookings } = await supabase
       .from("bookings")
-      .select("id, advertiser_name, headline, cta_text, accent_color, destination_url, category, slots, duration, schedule_days, time_start, time_end")
+      .select("id, advertiser_name, headline, cta_text, accent_color, destination_url, category, media_url, media_type, slots, duration, schedule_days, time_start, time_end")
       .in("id", campaignIds)
       .in("status", ["scheduled", "active"])
       .eq("payment_status", "paid")
@@ -96,6 +96,8 @@ Deno.serve(async (req: Request) => {
           headline: cs?.headline || b.headline,
           accent_color: cs?.accent_color || b.accent_color,
           destination_url: cs?.destination_url || b.destination_url,
+          media_url: cs?.media_url || b.media_url,
+          media_type: cs?.media_type || b.media_type,
         });
       }
     }
