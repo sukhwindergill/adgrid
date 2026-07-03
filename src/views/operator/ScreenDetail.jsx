@@ -233,20 +233,26 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   const [cvLoading, setCvLoading] = useState(false);
   const [hwType, setHwType] = useState('kiosk');
   const [connStatus, setConnStatus] = useState(null); // null | 'checking' | 'ok' | 'none'
+  const [screenToken, setScreenToken] = useState('');
 
-  // Fetch screen record
+  // Fetch screen record. screen_token is no longer column-readable (it is a
+  // bearer secret); fetch it via the owner-scoped get_screen_token RPC.
+  const SCREEN_COLS = 'id, name, owner_id, owner_name, owner_type, city_id, city, location, status, lat, lon, monthly_revenue, impressions, own_slots, blocked_categories, max_ad_duration, min_dwell_time, allow_competitors, created_at, updated_at, operator_id, cpm_floor, display_size, monthly_traffic_estimate, content_categories_blocked, operating_hours_start, operating_hours_end, lng, last_seen, health_status, venue_category, venue_subtype, environment, screen_position, state, country, screen_photos, auto_approve, timezone';
   useEffect(() => {
     if (!screenId) return;
     setLoading(true);
     supabase
       .from('screens')
-      .select('*')
+      .select(SCREEN_COLS)
       .eq('id', screenId)
       .single()
       .then(({ data, error }) => {
         if (!error && data) setScreen(data);
         setLoading(false);
       });
+    supabase
+      .rpc('get_screen_token', { p_screen_id: screenId })
+      .then(({ data }) => { if (data) setScreenToken(data); });
   }, [screenId]);
 
   // Fetch heartbeats + campaigns once screen is loaded
@@ -651,17 +657,17 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
     <Card style={{ marginBottom: 16 }}>
       <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Screen Token</div>
       <div style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: 13, color: C.text, wordBreak: 'break-all', letterSpacing: '0.5px', marginBottom: 8 }}>
-        {screen.screen_token}
+        {screenToken}
       </div>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         <button
-          onClick={() => navigator.clipboard.writeText(screen.screen_token)}
+          onClick={() => navigator.clipboard.writeText(screenToken)}
           style={{ padding: '5px 14px', borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface, color: C.textSub, fontSize: 12, fontFamily: F.sans, cursor: 'pointer' }}
         >
           Copy Token
         </button>
         <button
-          onClick={() => navigator.clipboard.writeText(`${window.location.origin}/display/${screen.screen_token}`)}
+          onClick={() => navigator.clipboard.writeText(`${window.location.origin}/display/${screenToken}`)}
           style={{ padding: '5px 14px', borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface, color: C.textSub, fontSize: 12, fontFamily: F.sans, cursor: 'pointer' }}
         >
           Copy Player URL
@@ -697,7 +703,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
           <li>Enable auto-start in browser settings to launch on boot.</li>
         </ol>
         <div style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: 11, color: C.purple, wordBreak: 'break-all', marginTop: 12 }}>
-          {`${window.location.origin}/display/${screen.screen_token}`}
+          {`${window.location.origin}/display/${screenToken}`}
         </div>
       </Card>
     )}
@@ -715,7 +721,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         <div style={{ background: '#0a0a0a', borderRadius: 8, padding: '12px 14px', fontFamily: F.mono, fontSize: 11, color: '#a3e635', whiteSpace: 'pre', overflowX: 'auto', marginTop: 12 }}>
 {`chromium-browser --noerrdialogs --kiosk \\
   --disable-infobars --disable-restore-session-state \\
-  "${window.location.origin}/display/${screen.screen_token}"`}
+  "${window.location.origin}/display/${screenToken}"`}
         </div>
         <div style={{ background: '#0a0a0a', borderRadius: 8, padding: '12px 14px', fontFamily: F.mono, fontSize: 11, color: '#a3e635', whiteSpace: 'pre', overflowX: 'auto', marginTop: 8 }}>
 {`# /etc/xdg/lxsession/LXDE-pi/autostart
@@ -723,7 +729,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
 @xset -dpms
 @xset s noblank
 @chromium-browser --noerrdialogs --kiosk --disable-infobars \\
-  "${window.location.origin}/display/${screen.screen_token}"`}
+  "${window.location.origin}/display/${screenToken}"`}
         </div>
       </Card>
     )}
@@ -736,7 +742,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
           <li>Enable <strong>Install unknown apps</strong> in Developer Options.</li>
           <li>Download the Adgrid APK to a USB drive or sideload via ADB.</li>
           <li>Install and launch. Enter your screen token when prompted.</li>
-          <li>Token: <strong style={{ fontFamily: F.mono }}>{screen.screen_token}</strong></li>
+          <li>Token: <strong style={{ fontFamily: F.mono }}>{screenToken}</strong></li>
         </ol>
         <div style={{ marginTop: 12, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder ?? '#fde68a'}`, borderRadius: 8, fontSize: 12, color: '#92400e', fontFamily: F.sans }}>
           Note: Android TV app is in beta. Contact support for the APK download link.

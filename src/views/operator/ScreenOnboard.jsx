@@ -165,9 +165,13 @@ function StepRegister({ onBack, onScreenCreated }) {
       lat:             form.lat ? parseFloat(form.lat) : null,
       lon:             form.lng ? parseFloat(form.lng) : null,
       timezone,
-    }).select('id, name, screen_token').single();
+    }).select('id, name').single();
 
     if (error) { setErr(error.message); setSaving(false); return; }
+
+    // screen_token is a bearer secret and is not column-readable. Fetch it via
+    // the owner-scoped RPC so the operator can wire up their display.
+    const { data: token } = await supabase.rpc('get_screen_token', { p_screen_id: data.id });
 
     // Role promotion (advertiser → operator) is handled by the
     // trg_promote_operator_role DB trigger on screens INSERT.
@@ -175,7 +179,7 @@ function StepRegister({ onBack, onScreenCreated }) {
     // Fire confirmation email — fire and forget
     const { data: { session } } = await supabase.auth.getSession();
     if (session && SUPABASE_FUNCTIONS_URL) {
-      const playerUrl = `${window.location.origin}/display/${data.screen_token}`;
+      const playerUrl = `${window.location.origin}/display/${token}`;
       fetch(`${SUPABASE_FUNCTIONS_URL}/send-notification`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
@@ -188,7 +192,7 @@ function StepRegister({ onBack, onScreenCreated }) {
     }
 
     setSaving(false);
-    onScreenCreated({ id: data.id, name: data.name, screen_token: data.screen_token });
+    onScreenCreated({ id: data.id, name: data.name, screen_token: token });
   };
 
   return (

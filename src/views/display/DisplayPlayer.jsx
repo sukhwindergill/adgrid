@@ -239,14 +239,10 @@ export function DisplayPlayer({ screenToken }) {
     );
   }
 
-  if (status === 'error') {
-    // Transient error — poll continues in background and will auto-recover.
-    return (
-      <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#050a10', cursor: 'none' }}>
-        <IdleSlide />
-      </div>
-    );
-  }
+  // On a transient fetch error we intentionally fall through to the normal
+  // render below. `campaigns` still holds the last successful feed, so a brief
+  // network blip keeps the last-approved ads on screen (a paid impression)
+  // instead of blanking to the idle slide. Polling continues and self-recovers.
 
   const current = campaigns[currentIdx];
 
