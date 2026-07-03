@@ -75,7 +75,7 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
         const hours = Array(24).fill(0);
         data.forEach(row => {
           const h = new Date(row.window_start).getHours();
-          hours[h] += (row.people_count || 1);
+          hours[h] += (row.people_count || 0);
         });
         setHourlyData(hours);
       });

@@ -175,26 +175,15 @@ export function DisplayPlayer({ screenToken }) {
     return () => clearInterval(poll);
   }, [screenToken]);
 
-  // Heartbeat is handled server-side by display-feed on every poll — no separate call needed.
-
-  // Impression tracking — fire every rotation interval when a campaign is live
-  useEffect(() => {
-    if (!screenId || campaigns.length === 0) return;
-    const iv = setInterval(() => {
-      fetch(`${SUPABASE_FUNCTIONS_URL}/ingest-impressions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          screen_token: screenToken,
-          campaign_id: campaigns[currentIdxRef.current]?.id ?? null,
-          people_count: 1,
-          dwell_seconds: ROTATE_INTERVAL_MS / 1000,
-          attention_score: 1.0,
-        }),
-      }).catch(e => console.error('Impression ingest error:', e));
-    }, ROTATE_INTERVAL_MS);
-    return () => clearInterval(iv);
-  }, [screenId, campaigns.length, screenToken]);
+  // Heartbeat + proof-of-play are handled server-side by display-feed on every
+  // poll (it writes a display_heartbeats row with status 'playing'/'idle').
+  //
+  // The browser player has NO camera, so it must NOT post audience impressions —
+  // doing so would fabricate "1 person watched" numbers for advertisers on every
+  // rotation. Real, measured impressions (people_count, dwell, demographics) are
+  // sent only by the CV screen-agent (screen-agent/pusher) when a camera is
+  // attached. Screens without a camera legitimately report zero measured
+  // audience until one is added.
 
   // Rotate campaigns
   useEffect(() => {
