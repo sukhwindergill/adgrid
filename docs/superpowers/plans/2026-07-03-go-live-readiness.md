@@ -106,18 +106,26 @@ per-screen media override UI (columns already exist).
 
 ## Nice-to-have
 
-- **N1 — `screen-health-cron` value mismatch.** ✅ **Fixed** (`f622f0a`): `Screens.jsx` +
-  `ApprovalQueue.jsx` now map `health_status` `offline`→Offline and `idle`→Stale (with the
-  `last_seen` fallback), matching what the cron actually writes. Remaining minor: the cron sends
-  `screen_offline` without the internal-secret header and overlaps `notification-cron`'s offline
-  alert — dedupe when convenient.
-- **N2 — `notification-cron` stale check is N+1** (one heartbeat query per screen). Fine for
-  dozens; rewrite as a single grouped query before hundreds of screens.
-- **N3 — Bundle size** ~888 kB JS in one chunk. Code-split (Leaflet, marketing home, display
-  player) for faster first paint, especially on operator mobile.
-- **N4 — ToS wording vs. reality:** ToS says budgets are "charged in full at the time the
-  Operator approves" but the code charges when the advertiser clicks Pay (advertiser-driven,
-  can precede approval). Align the copy or the flow.
+- **N1 — `screen-health-cron` value mismatch.** ✅ **Fixed** (`f622f0a`): dashboards map
+  `offline`→Offline, `idle`→Stale (with `last_seen` fallback). **Plus a real bug found & fixed**
+  (`4b39e48`): the cron called `send-notification` with no auth header, so every near-real-time
+  `screen_offline` alert silently 401'd — offline alerts only went out in the daily batch. Added
+  the `x-internal-secret` header + `minutes`/`appUrl` data (deployed v3).
+- **N2 — `notification-cron` N+1 offline scan.** ✅ **Removed** (`4b39e48`): offline alerting now
+  lives solely in `screen-health-cron` (transition-based, deduped). Killed the per-screen
+  heartbeat query and the double-alert. Deployed notification-cron v12.
+- **N3 — Bundle size.** ✅ **Split** (`a9073c6`): public routes (MarketingHome, DisplayPlayer,
+  Privacy, Terms) are `React.lazy` chunks. Main chunk 888 kB → 812 kB; marketing home (63 kB) +
+  display + legal load on demand instead of with the dashboard.
+- **N4 — ToS payment wording.** ✅ **Fixed** (`a9073c6`): §5 now states the charge is
+  advertiser-initiated at payment submission and a screen only airs once payment is captured AND
+  the operator approves — matching the real flow.
+- **N5 — Operator identity KYC has no UI (NEW, optional).** The recovered `create-identity-session`
+  / `stripe-identity-webhook` / `manual-review-operator` (Stripe Identity) flow + the
+  `identity_verifications` table are fully deployed but **zero frontend references them**. Not
+  launch-blocking — Stripe **Connect** already runs KYC during payout onboarding
+  (`create-connect-account`). Wire a "Verify identity" button + status badge into operator
+  settings only if you want stronger KYC than Connect provides.
 
 ---
 
