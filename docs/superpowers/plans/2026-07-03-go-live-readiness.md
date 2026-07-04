@@ -120,12 +120,14 @@ per-screen media override UI (columns already exist).
 - **N4 — ToS payment wording.** ✅ **Fixed** (`a9073c6`): §5 now states the charge is
   advertiser-initiated at payment submission and a screen only airs once payment is captured AND
   the operator approves — matching the real flow.
-- **N5 — Operator identity KYC has no UI (NEW, optional).** The recovered `create-identity-session`
-  / `stripe-identity-webhook` / `manual-review-operator` (Stripe Identity) flow + the
-  `identity_verifications` table are fully deployed but **zero frontend references them**. Not
-  launch-blocking — Stripe **Connect** already runs KYC during payout onboarding
-  (`create-connect-account`). Wire a "Verify identity" button + status badge into operator
-  settings only if you want stronger KYC than Connect provides.
+- **N5 — Operator identity KYC has no UI.** ✅ **Built** (`6555f56`): new Verification tab in
+  `OperatorSettingsView` — status card driven by `profiles.verification_status`
+  (unverified/pending_stripe/pending_manual/verified/rejected, with rejection reason + retry),
+  "Verify Identity" calls `create-identity-session` and redirects to Stripe's hosted flow, handles
+  the `?identity=complete` return param. Verified all 4 render states via a disposable test
+  operator account (cleaned up after). Did not trigger the actual Stripe Identity call itself —
+  that creates a real, live verification session, out of scope for UI-only testing. Still
+  optional/non-blocking: Connect already runs payout KYC.
 
 ---
 
