@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import { supabase } from './lib/supabase.js';
@@ -46,11 +46,12 @@ import { DisplayView }      from './views/shared/DisplayView.jsx';
 import { AccountHub }      from './views/accounts/AccountHub.jsx'
 import { AcceptGrantView } from './views/accounts/AcceptGrantView.jsx'
 
-// Public views (no auth required)
-import { DisplayPlayer } from './views/display/DisplayPlayer.jsx';
-import { MarketingHome } from './views/marketing/Home.jsx';
-import { PrivacyPolicy } from './views/legal/PrivacyPolicy.jsx';
-import { TermsOfService } from './views/legal/TermsOfService.jsx';
+// Public views (no auth required) — lazy-loaded so the heavy marketing/display
+// bundles don't ship with the authenticated dashboard's first paint.
+const DisplayPlayer  = lazy(() => import('./views/display/DisplayPlayer.jsx').then(m => ({ default: m.DisplayPlayer })));
+const MarketingHome  = lazy(() => import('./views/marketing/Home.jsx').then(m => ({ default: m.MarketingHome })));
+const PrivacyPolicy  = lazy(() => import('./views/legal/PrivacyPolicy.jsx').then(m => ({ default: m.PrivacyPolicy })));
+const TermsOfService = lazy(() => import('./views/legal/TermsOfService.jsx').then(m => ({ default: m.TermsOfService })));
 
 import { C, F } from './design/tokens.js';
 import { Skeleton } from './components/ui/Skeleton.jsx';
@@ -432,24 +433,26 @@ function AppInner() {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<MarketingHome />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/privacy" element={<PrivacyPolicy />} />
-      <Route path="/terms" element={<TermsOfService />} />
-      <Route path="/display/:token" element={<DisplayPlayerRoute />} />
-      <Route path="/app/accounts" element={<RequireAuth><AccountHubRoute /></RequireAuth>} />
-      <Route path="/app/accept-grant" element={<AcceptGrantView />} />
-      <Route
-        path="/app/*"
-        element={
-          <RequireAuth>
-            <AppInner />
-          </RequireAuth>
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <Suspense fallback={null}>
+      <Routes>
+        <Route path="/" element={<MarketingHome />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/display/:token" element={<DisplayPlayerRoute />} />
+        <Route path="/app/accounts" element={<RequireAuth><AccountHubRoute /></RequireAuth>} />
+        <Route path="/app/accept-grant" element={<AcceptGrantView />} />
+        <Route
+          path="/app/*"
+          element={
+            <RequireAuth>
+              <AppInner />
+            </RequireAuth>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }
 

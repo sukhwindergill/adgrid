@@ -60,11 +60,14 @@ export function TermsOfService() {
 
         <h2 style={h2}>5. Payments and refunds</h2>
         <p style={p}>
-          Campaign budgets are charged in full at the time the Operator approves the
-          campaign. All charges are processed by Stripe and are non-refundable except
-          where a campaign is cancelled before any impressions are served, in which case a
-          full refund will be issued within 5–10 business days. AdGrid charges a platform
-          fee on each transaction as disclosed at checkout.
+          You authorise AdGrid to charge your selected payment method the full campaign
+          budget when you submit the campaign for payment. A campaign only goes live on a
+          given screen once both (a) payment has been captured and (b) the Operator (or the
+          screen's auto-approval setting) has approved your content; until both occur, no
+          impressions are served. All charges are processed by Stripe and are non-refundable
+          except where a campaign is cancelled before any impressions are served, in which
+          case a full refund will be issued within 5–10 business days. AdGrid deducts a
+          platform fee from Operator payouts as described in the Operator terms.
         </p>
 
         <h2 style={h2}>6. Operator responsibilities</h2>
