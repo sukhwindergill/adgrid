@@ -415,6 +415,118 @@ function PayoutsTab({ profile }) {
   );
 }
 
+const VERIFICATION_META = {
+  unverified:      { label: 'Not verified',      color: C.textMuted, dot: C.border },
+  pending_stripe:  { label: 'Verification in progress', color: C.amber, dot: C.amber },
+  pending_manual:  { label: 'Under manual review',      color: C.amber, dot: C.amber },
+  verified:        { label: 'Verified',          color: C.green, dot: C.green },
+  rejected:        { label: 'Verification rejected',    color: C.red,  dot: C.red },
+};
+
+function VerificationTab({ profile }) {
+  const [starting, setStarting] = useState(false);
+  const [msg, setMsg] = useState(null);
+  const status = profile?.verification_status ?? 'unverified';
+  const meta = VERIFICATION_META[status] ?? VERIFICATION_META.unverified;
+
+  // Stripe Identity redirects back with ?identity=complete — the actual status
+  // update happens async via the stripe-identity-webhook, so just acknowledge.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('identity') === 'complete') {
+      setMsg({ text: "Verification submitted. We'll update your status shortly — refresh in a minute if it doesn't change.", ok: true });
+      params.delete('identity');
+      const rest = params.toString();
+      window.history.replaceState({}, '', window.location.pathname + (rest ? `?${rest}` : ''));
+    }
+  }, []);
+
+  async function startVerification() {
+    setStarting(true);
+    setMsg(null);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setMsg({ text: 'Session expired. Please log in again.', ok: false }); setStarting(false); return; }
+    const returnUrl = window.location.origin + window.location.pathname;
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-identity-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ returnUrl }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.url) {
+      setMsg({ text: json.error ?? 'Failed to start verification.', ok: false });
+      setStarting(false);
+      return;
+    }
+    window.location.href = json.url;
+  }
+
+  return (
+    <div style={{ maxWidth: 480 }}>
+      <div style={{ fontSize: 15, fontWeight: 600, color: C.text, marginBottom: 8 }}>Identity Verification</div>
+      <div style={{ fontSize: 13, color: C.textSub, marginBottom: 24, lineHeight: 1.6 }}>
+        Verifying your identity builds trust with advertisers and speeds up support requests.
+        Powered by Stripe Identity — a government ID photo and a live selfie.
+      </div>
+
+      <Card style={{ padding: 20, marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: meta.dot }} />
+          <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{meta.label}</div>
+        </div>
+
+        {status === 'verified' && (
+          <div style={{ fontSize: 13, color: C.textSub }}>
+            Your identity is verified{profile?.verified_at ? ` as of ${new Date(profile.verified_at).toLocaleDateString()}` : ''}.
+          </div>
+        )}
+
+        {(status === 'pending_stripe' || status === 'pending_manual') && (
+          <div style={{ fontSize: 13, color: C.textSub }}>
+            {status === 'pending_manual'
+              ? "Your submission needs a closer look. We'll email you once it's reviewed."
+              : "We're processing your verification. This usually takes a few minutes."}
+          </div>
+        )}
+
+        {status === 'rejected' && (
+          <>
+            <div style={{ fontSize: 13, color: C.textSub, marginBottom: profile?.verification_rejection_reason ? 8 : 16 }}>
+              Your last verification attempt was rejected.
+            </div>
+            {profile?.verification_rejection_reason && (
+              <div style={{ fontSize: 12, color: C.red, marginBottom: 16 }}>Reason: {profile.verification_rejection_reason}</div>
+            )}
+            <Btn onClick={startVerification} disabled={starting}>
+              {starting ? 'Redirecting…' : 'Try again'}
+            </Btn>
+          </>
+        )}
+
+        {status === 'unverified' && (
+          <>
+            <div style={{ fontSize: 13, color: C.textSub, marginBottom: 16 }}>
+              Start verification — takes about 2 minutes.
+            </div>
+            <Btn onClick={startVerification} disabled={starting}>
+              {starting ? 'Redirecting…' : 'Verify Identity'}
+            </Btn>
+          </>
+        )}
+
+        {msg && (
+          <div style={{ fontSize: 12, color: msg.ok ? C.green : C.red, marginTop: 12 }}>{msg.text}</div>
+        )}
+      </Card>
+
+      <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>
+        Identity verification is separate from Stripe Connect payout onboarding. Both are optional
+        but recommended for operators running screens at scale.
+      </div>
+    </div>
+  );
+}
+
 export function OperatorSettingsView() {
   const { profile: authProfile } = useAuth();
   const [profile, setProfile] = useState(authProfile);
@@ -430,6 +542,7 @@ export function OperatorSettingsView() {
     { id: 'notifications', label: 'Notifications' },
     { id: 'team',          label: 'Team' },
     { id: 'payouts',       label: 'Payouts' },
+    { id: 'verification',  label: 'Verification' },
     { id: 'client-access', label: 'Client Access' },
   ];
 
@@ -450,6 +563,7 @@ export function OperatorSettingsView() {
       {tab === 'notifications' && <NotificationsTab profile={profile} />}
       {tab === 'team'          && <TeamTab profile={profile} />}
       {tab === 'payouts'       && <PayoutsTab profile={profile} />}
+      {tab === 'verification'  && <VerificationTab profile={profile} />}
       {tab === 'client-access' && <TeamClientRoles />}
     </div>
   );
