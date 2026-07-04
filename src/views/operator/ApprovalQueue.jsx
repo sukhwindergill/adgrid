@@ -46,7 +46,10 @@ function timeAgo(isoString) {
 
 function healthLabel(screen) {
   if (!screen) return null;
-  if (screen.health_status === 'degraded') return { label: 'Degraded', color: C.amber };
+  // screen-health-cron writes health_status online/idle/offline ('degraded' kept
+  // for back-compat); fall back to last_seen freshness.
+  if (screen.health_status === 'offline') return { label: 'Offline', color: C.red };
+  if (screen.health_status === 'idle' || screen.health_status === 'degraded') return { label: 'Stale', color: C.amber };
   if (!screen.last_seen) return { label: 'Offline', color: C.red };
   const minsAgo = (Date.now() - new Date(screen.last_seen).getTime()) / 60000;
   if (minsAgo <= 5) return null;

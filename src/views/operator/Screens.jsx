@@ -14,8 +14,13 @@ import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { VENUE_TAXONOMY } from '../../lib/venueTypes.js';
 
 function healthSignal(screen) {
-  if (screen.health_status === 'degraded') {
-    return { dot: C.amber, label: 'Degraded', pulse: false };
+  // screen-health-cron writes health_status online/idle/offline; prefer it, then
+  // fall back to last_seen freshness. ('degraded' kept for back-compat.)
+  if (screen.health_status === 'offline') {
+    return { dot: C.red, label: 'Offline', pulse: false };
+  }
+  if (screen.health_status === 'idle' || screen.health_status === 'degraded') {
+    return { dot: C.amber, label: 'Stale', pulse: false };
   }
   if (!screen.last_seen) {
     return { dot: C.red, label: 'Offline', pulse: false };
