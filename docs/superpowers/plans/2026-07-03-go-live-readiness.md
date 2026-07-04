@@ -9,17 +9,16 @@ committed in this session (see "Fixed this session").
 
 ## Verdict
 
-**Both go-live blockers are now closed** (creative upload + honest impressions, shipped this
-session). The remaining items are should-fix trust/compliance/ops work, not launch blockers.
-Recommended path: **GO for a controlled pilot now** (invited advertisers + hand-held
-operators); clear S1/S2/S7 before a **wide public launch**. The payment pipeline, RLS model
-(the critical `screen_token` leak is fixed), moderation queue, notifications, cron, and the
-kiosk/agent stack are in good shape.
+**Both go-live blockers are closed and every actionable should-fix is done.** The **only
+remaining action is S2** — a one-toggle Auth setting that can't be changed from code/SQL/MCP
+(exact steps below). Recommended path: **GO for a controlled pilot now**; flip S2 before a
+**wide public launch**. The payment pipeline, RLS model (critical `screen_token` leak fixed),
+moderation queue, notifications, cron, and kiosk/agent stack are in good shape.
 
-> **Update — session 2 (2026-07-03):** Blockers B1 and B2 implemented and committed
-> (`acca238`, `e3435b8`); should-fixes S3/S5 applied (`e3435b8`). See "Fixed this session."
-> The `screen-health-cron` item (was N1) was **wrong** — that function is deployed and active;
-> the real issue is repo source-drift (new S7).
+> **Update — session 2 (2026-07-03):** Shipped B1, B2, S3, S4, S5, S6, S7, N1, and retired the
+> legacy GBP payment path. Final security-advisor state: all ERROR + all fixable WARNs cleared;
+> what remains is intentional-by-design (7 SECURITY-DEFINER helpers that RLS policies must call),
+> 2 harmless INFO (deny-all `approval_tokens`/`cities`), and S2. Commits `5fcb192`→`f622f0a`.
 
 ---
 
@@ -73,20 +72,22 @@ per-screen media override UI (columns already exist).
   `approval_tokens` or emails a `handle-approval-token` link, so it is not currently
   exploitable — but fix the GET→POST design *before* wiring it up (all approvals today go
   through the in-app queue + `campaign_approved` notification).
-- **S2 — Leaked-password protection disabled** (Supabase Auth). Enable HaveIBeenPwned check
-  (Auth → Providers/Policies). One toggle; can't be set from SQL.
+- **S2 — Leaked-password protection disabled** (Supabase Auth). ⚠️ **Only remaining manual
+  action** — cannot be set via SQL or the MCP tools. In the Supabase Dashboard:
+  **Authentication → Sign In / Providers → Password → enable "Leaked password protection"**
+  (or Authentication → Policies on older UI). Verifies passwords against HaveIBeenPwned on
+  signup/change. ~30 seconds; no code impact.
 - **S3 — `service_insert_*` RLS policies use `WITH CHECK (true)`** on `operator_transfers`,
   `payouts`, `pixel_events`, `presence_logs`, `scan_events`. These are inserted by the
   service role (which bypasses RLS anyway), so scope the policies to
   `auth.role() = 'service_role'` to satisfy the linter and prevent an authenticated client
   from inserting forged rows.
-- **S4 — Legacy dead schema.** `advertisers`, `campaigns`, `campaign_placements`,
-  `scan_events`, `impression_logs`, `pixel_events`, `presence_logs`, `revenue_ledger`,
-  `transactions`, `campaign_analytics`, `screen_host_revenue` are all empty, from the old
-  `screens.owner_id` data model, and several carry broad `is_operator()` `ALL` policies that
-  would leak cross-tenant if ever populated. Plan a reviewed `DROP` migration (they're not
-  referenced by the live app, which uses `bookings`/`campaign_screens`/`scans`/
-  `impression_events`).
+- **S4 — Legacy dead schema.** ✅ **Dropped** (`…000003`): the 10 empty legacy tables
+  (`campaigns`, `campaign_placements`, `campaign_analytics`, `scan_events`, `impression_logs`,
+  `pixel_events`, `presence_logs`, `revenue_ledger`, `transactions`, `screen_host_revenue`) +
+  the 2 unused views (`campaign_stats`, `presence_current`). Verified 0 rows, no live
+  references, no FKs. `advertisers` (4 rows of old data) kept — not load-bearing
+  (`current_advertiser_id()` is `SELECT auth.uid()`), retire separately if desired.
 - **S5 — Search-path-mutable functions.** ✅ **Applied** (`…000001`): `SET search_path` on the
   five helpers + client `EXECUTE` revoked on the trigger/internal functions.
 - **S6 — `ingest-impressions` input clamping.** ✅ **Done** (deployed v6): every numeric field
@@ -94,23 +95,22 @@ per-screen media override UI (columns already exist).
   poison analytics. Verified 999999→5000. A per-token *rate* cap is still a future add.
 - **S7 — Backend source drift.** ✅ **Recovered** (`44b7af6`): all 10 deployed-but-untracked
   functions pulled into `supabase/functions/`. Follow-ups surfaced:
-  - **Legacy GBP payment path** — `stripe-create-intent`, `stripe-capture-payment`,
-    `stripe-refund`, `create-checkout-session` hardcode `currency: 'gbp'` and predate the live
-    `charge-campaign` flow; `create-checkout-session` also updates a non-existent
-    `bookings.campaign_id` (no-op). Confirm no client calls them, then delete to remove the
-    wrong-currency footgun.
+  - **Legacy GBP payment path** — ✅ **Retired** (`f622f0a`): confirmed no client calls, then
+    redeployed `stripe-create-intent`, `stripe-capture-payment`, `stripe-refund`,
+    `create-checkout-session` as `410 Gone` stubs (v12). No delete API is exposed here, so full
+    removal from the project is a one-line CLI follow-up (`supabase functions delete <slug>`).
   - **Operator identity verification (Stripe Identity)** — `create-identity-session`,
     `stripe-identity-webhook`, `manual-review-operator` are a whole KYC flow that was live but
-    undocumented; fold into the operator onboarding story and confirm the webhook secret is set.
+    undocumented; now in source control. Follow-up: fold into the operator onboarding story and
+    confirm `STRIPE_IDENTITY_WEBHOOK_SECRET` is set.
 
 ## Nice-to-have
 
-- **N1 — `screen-health-cron` value mismatch (confirmed via recovered source).** It writes
-  `screens.health_status` as `online`/`idle`/`offline`, but the dashboards
-  (`ApprovalQueue.jsx`, `Screens.jsx`) branch on `health_status === 'degraded'`, which is never
-  written — so that badge path is dead (offline detection still works via `last_seen`). Reconcile
-  the value (`offline`→`degraded`, or update the UI check). It also sends `screen_offline`
-  without the internal-secret header and duplicates `notification-cron`'s offline alert.
+- **N1 — `screen-health-cron` value mismatch.** ✅ **Fixed** (`f622f0a`): `Screens.jsx` +
+  `ApprovalQueue.jsx` now map `health_status` `offline`→Offline and `idle`→Stale (with the
+  `last_seen` fallback), matching what the cron actually writes. Remaining minor: the cron sends
+  `screen_offline` without the internal-secret header and overlaps `notification-cron`'s offline
+  alert — dedupe when convenient.
 - **N2 — `notification-cron` stale check is N+1** (one heartbeat query per screen). Fine for
   dozens; rewrite as a single grouped query before hundreds of screens.
 - **N3 — Bundle size** ~888 kB JS in one chunk. Code-split (Leaflet, marketing home, display
