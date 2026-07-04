@@ -6,6 +6,8 @@ const supabase = createClient(
 );
 
 const FUNCTIONS_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1`;
+const INTERNAL_SECRET = Deno.env.get("INTERNAL_NOTIFICATION_SECRET") ?? "";
+const APP_URL = Deno.env.get("PUBLIC_APP_URL") ?? "";
 const OFFLINE_MINUTES = 60;
 const IDLE_MINUTES = 5;
 
@@ -49,13 +51,21 @@ Deno.serve(async (_req: Request) => {
     if (u.health_status === "offline" && u.wasOnline) {
       const screen = screens.find(s => s.id === u.id);
       if (!screen?.operator_id) continue;
+      const minutesSilent = screen.last_seen
+        ? Math.round((now.getTime() - new Date(screen.last_seen as string).getTime()) / 60000)
+        : OFFLINE_MINUTES;
+      // send-notification requires the internal secret header (or a user JWT);
+      // without it the call 401s and the alert is silently dropped.
       await fetch(`${FUNCTIONS_URL}/send-notification`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-internal-secret": INTERNAL_SECRET,
+        },
         body: JSON.stringify({
           userId: screen.operator_id,
           type: "screen_offline",
-          data: { screenName: screen.name },
+          data: { screenName: screen.name, minutes: String(minutesSilent), appUrl: APP_URL },
         }),
       }).catch(e => console.error("Notification error:", e));
     }
