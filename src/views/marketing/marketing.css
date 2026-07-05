@@ -141,10 +141,15 @@
 .f-card p { font-size: 14.5px; line-height: 1.6; color: var(--lsub); }
 @media (max-width: 768px) { .card-grid { grid-template-columns: 1fr; } }
 
-/* ── Split feature (image + content) ── */
-.split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
-.split img { width: 100%; height: auto; border-radius: 16px; border: 1px solid var(--lborder); display: block; }
-@media (max-width: 900px) { .split { grid-template-columns: 1fr; gap: 32px; } }
+/* ── Sticky split (Operators / Advertisers) ── */
+.sticky-split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; }
+.sticky-col { align-self: start; position: sticky; top: 96px; }
+.sticky-col img { width: 100%; height: auto; border-radius: 16px; border: 1px solid var(--lborder); display: block; }
+@media (min-width: 901px) { .scroll-col { min-height: 620px; } }
+@media (max-width: 900px) {
+  .sticky-split { grid-template-columns: 1fr; gap: 32px; }
+  .sticky-col { position: static; }
+}
 
 /* ── How it works ── */
 .tracks { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 44px; }
