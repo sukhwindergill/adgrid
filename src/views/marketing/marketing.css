@@ -82,7 +82,9 @@
 .hero-h { font-weight: 800; font-size: clamp(38px, 4.6vw, 58px); line-height: 1.06; letter-spacing: -0.03em; color: #fff; }
 .hero-h .accent { background: linear-gradient(120deg, var(--cyan), var(--purple)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .hero-sub { font-size: 17px; line-height: 1.65; color: var(--sec); max-width: 480px; margin: 20px 0 32px; }
-.hero-img { border-radius: 16px; border: 1px solid var(--border); width: 100%; height: auto; display: block; box-shadow: 0 24px 64px rgba(0,0,0,.5); }
+.hero-img-wrap { border-radius: 16px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 24px 64px rgba(0,0,0,.5); will-change: transform; }
+.hero-img { width: 100%; height: auto; display: block; animation: heroZoom 20s ease-in-out infinite alternate; }
+@keyframes heroZoom { from { transform: scale(1); } to { transform: scale(1.06); } }
 .hero-stats { display: flex; gap: 32px; margin-top: 36px; flex-wrap: wrap; }
 .hero-stat .num { font: 700 22px/1.2 var(--inter); color: #fff; letter-spacing: -0.01em; }
 .hero-stat .lbl { font-size: 13px; color: var(--sec); margin-top: 3px; }

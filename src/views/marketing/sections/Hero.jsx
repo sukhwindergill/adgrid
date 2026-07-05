@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useParallax } from './useParallax.js';
 
 export function Hero({ onScrollTo }) {
   const [liveCount, setLiveCount] = useState(null);
   const [mounted, setMounted] = useState(false);
+  const parallaxRef = useParallax(0.15);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setMounted(true));
@@ -46,8 +48,10 @@ export function Hero({ onScrollTo }) {
             </div>
           </div>
         </div>
-        <img className="hero-img" src="/marketing/hero-gym.jpg"
-          alt="Digital ad screen mounted in a gym" width="1600" height="1073" fetchPriority="high" />
+        <div className="hero-img-wrap" ref={parallaxRef}>
+          <img className="hero-img" src="/marketing/hero-gym.jpg"
+            alt="Digital ad screen mounted in a gym" width="1600" height="1073" fetchPriority="high" />
+        </div>
       </div>
     </section>
   );
