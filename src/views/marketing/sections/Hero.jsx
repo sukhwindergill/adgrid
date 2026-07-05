@@ -46,8 +46,8 @@ export function Hero({ onScrollTo }) {
             </div>
           </div>
         </div>
-        {/* TODO(design): swap for photoreal hero-gym.jpg once Nano Banana generation is available */}
-        <div className="creative-ph">Digital ad screen in a gym — creative pending</div>
+        <img className="hero-img" src="/marketing/hero-gym.jpg"
+          alt="Digital ad screen mounted in a gym" width="1600" height="1073" fetchPriority="high" />
       </div>
     </section>
   );

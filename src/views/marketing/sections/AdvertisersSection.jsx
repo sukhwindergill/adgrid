@@ -19,8 +19,8 @@ export function AdvertisersSection() {
             <h2 className="sec-h">Local reach you can actually measure</h2>
             <p className="sec-sub">Put your brand on real screens in the neighbourhoods your customers live in — and see exactly what it did.</p>
           </div>
-          {/* TODO(design): swap for photoreal venue-cafe.jpg once Nano Banana generation is available */}
-          <div className="creative-ph">Café window screen with QR code — creative pending</div>
+          <img src="/marketing/venue-cafe.jpg" alt="Café window screen showing an ad with a QR code"
+            loading="lazy" width="1600" height="1073" />
         </div>
         <div className={`card-grid rv d1 ${on ? 'on' : ''}`}>
           {CARDS.map(card => {

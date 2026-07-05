@@ -85,15 +85,6 @@
 .hero-stat .lbl { font-size: 13px; color: var(--sec); margin-top: 3px; }
 @media (max-width: 900px) { .hero .inner { grid-template-columns: 1fr; gap: 40px; } .hero { padding-top: 120px; } }
 
-/* ── Placeholder creative blocks (temporary — swapped for photoreal images) ── */
-.creative-ph {
-  border-radius: 16px; border: 1px solid var(--lborder); width: 100%; aspect-ratio: 3 / 2;
-  display: flex; align-items: center; justify-content: center; text-align: center;
-  background: linear-gradient(135deg, rgba(0,194,255,0.12), rgba(123,47,255,0.16));
-  color: var(--lsub); font: 500 13px/1.5 var(--inter); padding: 20px;
-}
-.hero .creative-ph { border-color: var(--border); box-shadow: 0 24px 64px rgba(0,0,0,.5); color: var(--sec); }
-
 /* ── Proof strip ── */
 .venue-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 28px; }
 .venue-chip {

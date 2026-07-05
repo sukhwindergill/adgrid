@@ -14,8 +14,8 @@ export function OperatorsSection({ onScrollTo }) {
     <section className="sec lcard-bg" id="operators" ref={ref}>
       <div className="inner">
         <div className={`split rv ${on ? 'on' : ''}`}>
-          {/* TODO(design): swap for photoreal venue-barbershop.jpg once Nano Banana generation is available */}
-          <div className="creative-ph">Digital ad screen on a barbershop counter — creative pending</div>
+          <img src="/marketing/venue-barbershop.jpg" alt="Digital ad screen on a barbershop counter"
+            loading="lazy" width="1600" height="1073" />
           <div>
             <div className="eyebrow">For operators</div>
             <h2 className="sec-h">Your screens. Your rules. New revenue.</h2>
