@@ -182,7 +182,11 @@
 .mock-row .dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; flex-shrink: 0; }
 .mock-row .name { font: 500 14px/1.3 var(--inter); color: var(--ltext); flex: 1; }
 .mock-row .bar { flex: 2; height: 6px; border-radius: 3px; background: var(--lborder); overflow: hidden; }
-.mock-row .bar i { display: block; height: 100%; background: var(--purple); border-radius: 3px; }
+.mock-row .bar i {
+  display: block; height: 100%; background: var(--purple); border-radius: 3px;
+  transform-origin: left; transform: scaleX(0); transition: transform .6s ease;
+}
+.mock-row .bar i.on { transform: scaleX(1); }
 .mock-row .val { font: 600 14px/1 var(--inter); color: var(--ltext); min-width: 64px; text-align: right; }
 @media (max-width: 600px) { .mock-kpis { grid-template-columns: 1fr; } .mock-row .bar { display: none; } }
 

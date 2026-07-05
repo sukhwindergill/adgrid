@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useReveal } from './useReveal.js';
+import { useCountUp } from './useCountUp.js';
 
 const TABS = {
   operators: {
@@ -22,6 +23,46 @@ const TABS = {
   },
 };
 
+function parseKpi(str) {
+  const m = str.match(/^([^\d]*)([\d,]+)(.*)$/);
+  if (!m) return { prefix: '', target: 0, suffix: str, hasComma: false };
+  const [, prefix, digits, suffix] = m;
+  return { prefix, target: parseInt(digits.replace(/,/g, ''), 10), suffix, hasComma: digits.includes(',') };
+}
+
+function formatKpi(parsed, value) {
+  const rounded = Math.round(value);
+  const numStr = parsed.hasComma ? rounded.toLocaleString('en-US') : String(rounded);
+  return `${parsed.prefix}${numStr}${parsed.suffix}`;
+}
+
+function Kpi({ label, value, active }) {
+  const parsed = parseKpi(value);
+  const animated = useCountUp(parsed.target, active);
+  return (
+    <div className="mock-kpi">
+      <div className="k">{label}</div>
+      <div className="v">{formatKpi(parsed, animated)}</div>
+    </div>
+  );
+}
+
+function MockRow({ name, pct, val, delay }) {
+  const [entered, setEntered] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setEntered(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+  return (
+    <div className={`mock-row rv ${entered ? 'on' : ''}`} style={{ transitionDelay: `${delay}ms` }}>
+      <span className="dot" />
+      <span className="name">{name}</span>
+      <span className="bar"><i className={entered ? 'on' : ''} style={{ width: `${pct}%` }} /></span>
+      <span className="val">{val}</span>
+    </div>
+  );
+}
+
 export function ProductShowcase() {
   const [ref, on] = useReveal();
   const [tab, setTab] = useState('operators');
@@ -40,16 +81,11 @@ export function ProductShowcase() {
           <div className="shot-stage" style={{ textAlign: 'left' }}>
             <div className="mock-kpis">
               {t.kpis.map(([k, v]) => (
-                <div className="mock-kpi" key={k}><div className="k">{k}</div><div className="v">{v}</div></div>
+                <Kpi key={`${tab}-${k}`} label={k} value={v} active={on} />
               ))}
             </div>
-            {t.rows.map(([name, pct, val]) => (
-              <div className="mock-row" key={name}>
-                <span className="dot" />
-                <span className="name">{name}</span>
-                <span className="bar"><i style={{ width: `${pct}%` }} /></span>
-                <span className="val">{val}</span>
-              </div>
+            {t.rows.map(([name, pct, val], i) => (
+              <MockRow key={`${tab}-${name}`} name={name} pct={pct} val={val} delay={i * 80} />
             ))}
           </div>
         </div>
