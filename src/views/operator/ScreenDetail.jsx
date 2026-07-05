@@ -740,7 +740,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         <ol style={{ paddingLeft: 20, fontFamily: F.sans, fontSize: 13, color: C.textSub, lineHeight: 2 }}>
           <li>Enable <strong>Developer Options</strong> on your Android TV device (Settings → About → click Build Number 7×).</li>
           <li>Enable <strong>Install unknown apps</strong> in Developer Options.</li>
-          <li>Download the Adgrid APK to a USB drive or sideload via ADB.</li>
+          <li>Download the AdGrid APK to a USB drive or sideload via ADB.</li>
           <li>Install and launch. Enter your screen token when prompted.</li>
           <li>Token: <strong style={{ fontFamily: F.mono }}>{screenToken}</strong></li>
         </ol>
