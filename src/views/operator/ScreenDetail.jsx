@@ -734,6 +734,28 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       </Card>
     )}
 
+    {(hwType === 'rpi' || hwType === 'minipc') && (
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
+          Audience Measurement Camera (optional)
+        </div>
+        <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.7, marginBottom: 12 }}>
+          Plug in a USB camera and run the screen-agent Docker stack to get real audience
+          counts instead of estimated reach. All face detection runs on the device — no
+          images or video ever leave it, only anonymous aggregate stats (person count,
+          dwell time, attention, age/gender brackets) every 30 seconds. See{' '}
+          <code style={{ background: C.surfaceAlt, padding: '1px 5px', borderRadius: 3, fontFamily: F.mono, fontSize: 12 }}>
+            screen-agent/README.md
+          </code>{' '}for the Docker Compose setup steps.
+        </div>
+        <div style={{ padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder ?? '#fde68a'}`, borderRadius: 8, fontSize: 12, color: '#92400e', fontFamily: F.sans, lineHeight: 1.6 }}>
+          <strong>Required if you enable this:</strong> post a visible notice at the venue
+          disclosing that anonymous audience-analytics camera is in use. This is a condition
+          of enabling the feature, not optional signage.
+        </div>
+      </Card>
+    )}
+
     {hwType === 'atv' && (
       <Card style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Android TV Setup</div>
