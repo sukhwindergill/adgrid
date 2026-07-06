@@ -32,9 +32,20 @@ export function PrivacyPolicy() {
         </p>
         <p style={p}>
           <strong>Screen telemetry:</strong> whether a screen is online or offline, which
-          campaign was playing at a given time, and periodic heartbeat timestamps. No
-          camera, sensor, or computer-vision data is collected. Screens do not identify,
-          count, or track individual viewers.
+          campaign was playing at a given time, and periodic heartbeat timestamps.
+        </p>
+        <p style={p}>
+          <strong>Optional audience-measurement camera:</strong> some Operators enable an
+          add-on camera at their venue to estimate anonymous aggregate audience size and
+          composition. All face detection and age/gender estimation runs on-device at the
+          screen; raw camera frames are never stored or transmitted anywhere. Only
+          aggregate, anonymized statistics for each ~30-second window — approximate
+          person count, dwell time, attention score, and age/gender bracket counts — are
+          sent to AdGrid. We never receive images, video, biometric templates, or any data
+          that identifies an individual, and screens do not track the same person across
+          visits. Operators who enable this feature are contractually required to post a
+          visible notice at the venue disclosing that anonymous audience analytics are in
+          use.
         </p>
         <p style={p}>
           <strong>QR-code scans:</strong> when a viewer scans an ad's QR code we record
