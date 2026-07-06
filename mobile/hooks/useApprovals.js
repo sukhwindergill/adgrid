@@ -4,10 +4,9 @@ import { supabase } from '../lib/supabase';
 const SELECT = `
   id, status, screen_id, campaign_id, approved_at,
   screen:screens(id, name, operator_id),
-  campaign:campaigns(
-    id, name, budget, start_when, start_date, end_date,
-    advertiser:profiles(full_name),
-    creatives(id, type, url, headline)
+  campaign:bookings(
+    id, name:campaign_name, advertiser_name, budget, start_when,
+    start_date, end_date, headline, media_url, media_type
   )
 `;
 

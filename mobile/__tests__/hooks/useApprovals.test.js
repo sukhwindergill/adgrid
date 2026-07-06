@@ -7,7 +7,11 @@ const mockSupabase = createClient('', '');
 const pendingRow = {
   id: 'cs-1', status: 'pending', screen_id: 's-1', campaign_id: 'c-1',
   screen: { id: 's-1', name: 'Lobby', operator_id: 'op-1' },
-  campaign: { id: 'c-1', name: 'Test Campaign', budget: 1000, start_when: 'all', advertiser: { full_name: 'Acme Inc' }, creatives: [] },
+  campaign: {
+    id: 'c-1', name: 'Test Campaign', advertiser_name: 'Acme Inc',
+    budget: 1000, start_when: 'all', headline: 'Save 20%',
+    media_url: 'https://example.com/img.jpg', media_type: 'image',
+  },
 };
 
 beforeEach(() => {
