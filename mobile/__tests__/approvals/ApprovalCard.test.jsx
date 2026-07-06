@@ -6,9 +6,8 @@ const mockRow = {
   id: 'cs-1', screen_id: 's-1', campaign_id: 'c-1',
   screen: { name: 'Lobby Screen' },
   campaign: {
-    name: 'Spring Sale', budget: 500, start_when: 'all',
-    advertiser: { full_name: 'Acme Inc' },
-    creatives: [{ id: 'cr-1', type: 'image', url: 'https://example.com/img.jpg', headline: 'Save 20%' }],
+    name: 'Spring Sale', advertiser_name: 'Acme Inc', budget: 500, start_when: 'all',
+    headline: 'Save 20%', media_url: 'https://example.com/img.jpg', media_type: 'image',
   },
 };
 

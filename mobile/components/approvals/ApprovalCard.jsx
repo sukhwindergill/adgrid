@@ -19,7 +19,9 @@ export function ApprovalCard({ row, onApprove, onReject }) {
   const [reason, setReason] = useState(REJECT_REASONS[0]);
   const [acting, setActing] = useState(false);
 
-  const creative = row.campaign?.creatives?.[0];
+  const creative = row.campaign?.media_url
+    ? { url: row.campaign.media_url, headline: row.campaign.headline }
+    : null;
   const estimatedRevenue = ((row.campaign?.budget || 0) * SCREEN_SHARE).toFixed(2);
 
   async function handleApprove() {
@@ -47,7 +49,7 @@ export function ApprovalCard({ row, onApprove, onReject }) {
               {row.campaign?.name}
             </Text>
             <Text style={[styles.advertiser, { fontFamily: F.sans }]}>
-              {row.campaign?.advertiser?.full_name}
+              {row.campaign?.advertiser_name}
             </Text>
           </View>
           <Badge label={`~$${estimatedRevenue}`} variant="green" />
