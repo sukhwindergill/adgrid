@@ -49,7 +49,7 @@ export default function RevenueScreen() {
                 +{formatCurrency((item.campaign?.budget || 0) * 0.70, 'cad')}
               </Text>
             </View>
-            <Text style={[{ fontFamily: F.sans, color: C.textSub, fontSize: 12 }]}>{item.campaign?.advertiser?.full_name}</Text>
+            <Text style={[{ fontFamily: F.sans, color: C.textSub, fontSize: 12 }]}>{item.campaign?.advertiser_name}</Text>
           </Card>
         )}
         ListEmptyComponent={() =>

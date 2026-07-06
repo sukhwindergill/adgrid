@@ -13,7 +13,7 @@ export function useRevenue(operatorId, screenIds, periodDays) {
       setLoading(true);
       let query = supabase
         .from('campaign_screens')
-        .select('id, status, approved_at, campaign:campaigns(id, name, budget, start_date, advertiser:profiles(full_name))')
+        .select('id, status, approved_at, campaign:bookings(id, name:campaign_name, advertiser_name, budget, start_date)')
         .in('screen_id', screenIds)
         .eq('status', 'approved');
       if (periodDays) {
