@@ -2,6 +2,7 @@ import { C, F } from '../../design/tokens.js';
 
 export const Table = ({ columns, rows, empty = 'No data', emptyTitle, emptyDescription, onRowClick }) => (
   <div style={{ border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden' }}>
+    <div style={{ overflowX: 'auto' }}>
     <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: F.sans }}>
       <thead>
         <tr style={{ background: C.surfaceAlt, borderBottom: `1px solid ${C.border}` }}>
@@ -50,5 +51,6 @@ export const Table = ({ columns, rows, empty = 'No data', emptyTitle, emptyDescr
         )}
       </tbody>
     </table>
+    </div>
   </div>
 );
