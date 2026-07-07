@@ -20,6 +20,48 @@ moderation queue, notifications, cron, and kiosk/agent stack are in good shape.
 > what remains is intentional-by-design (7 SECURITY-DEFINER helpers that RLS policies must call),
 > 2 harmless INFO (deny-all `approval_tokens`/`cities`), and S2. Commits `5fcb192`→`f622f0a`.
 
+> **Update — session 3 (2026-07-06/07-07):** Two more go-live passes, both went deeper on areas
+> already marked GO and found real problems static review alone missed.
+>
+> - **B3 (blocker, found + fixed) — camera collection misdescribed.** Privacy Policy flatly denied
+>   any camera/CV data collection; the shipped screen-agent pipeline actually estimates and
+>   transmits aggregate age/gender/dwell/attention stats. Corrected the policy copy and added an
+>   operator-facing disclosure + venue-signage requirement to the Setup Guide (`607f34e`, `7611a6f`).
+> - **B4 (blocker, found + fixed) — operator mobile app never worked.** `useApprovals`/`useRevenue`
+>   embedded a `campaigns` table dropped in S4 and a `creatives` table that never existed;
+>   `useScreens` explicitly selected the now-revoked `screen_token` column, hard-erroring the
+>   entire Screens tab and cascading into Approvals. Fixed all three plus `useDashboard`'s
+>   nonexistent `bookings.screen_id` filter (`ac23e53`→`7c03289`). Full mobile suite passes
+>   (10/10 suites) but never verified on a real device/simulator.
+> - **B5 (blocker, found + fixed) — mobile screen-registration wizard was a dead end.** Step 5/5
+>   told operators to scan a pairing QR that `DisplayPlayer.jsx` never renders (its only QR is the
+>   viewer-facing per-ad destination code). Replaced with the same `get_screen_token` RPC handoff
+>   the web Setup Guide already uses, no camera/QR involved (`ca3e181`).
+> - **S8 (should-fix, found + fixed) — `Table.jsx` clipped columns on mobile.** Shared primitive
+>   used by 8 dashboard views had no horizontal scroll; wide tables (e.g. Billing's 7-column
+>   Charges table) silently cut off data on narrow viewports, no way to reveal it (`9ef5294`).
+> - **B6 (blocker, found live, fixed) — nobody could log in.** `RequireAuth` redirected
+>   unauthenticated users to `/login`, but nothing redirected the other way. A successful
+>   password sign-in updated `AuthContext`'s `user` state but the mounted `/login` route never
+>   re-checked auth and never navigated anywhere — the login form just sat there forever after a
+>   genuinely successful auth. Confirmed via live Supabase auth logs: 15+ successful password
+>   grants in under a minute from a real user re-submitting a form that looked broken. Same gap
+>   affected the OAuth callback and password-recovery links (both land on `/` post-auth). Fixed
+>   with a `PublicOnlyRoute` wrapper that redirects an authenticated user away from `/` and
+>   `/login` to `/app` (`f4aa58f`). **This is the one that actually mattered** — everything else
+>   this session was found by reading code; this one was only found by trying to log in for real.
+> - **9 local commits had never been pushed** (`05ff4a1`→`f4aa58f`) — Vercel production
+>   (`adgrid-mu.vercel.app`) was serving a build from mid-June, predating the entire landing
+>   redesign. Pushed + redeployed via `vercel deploy --prod`.
+> - **New open item — Google OAuth is broken in production.** Every "Continue with Google"
+>   attempt 500s with `oauth2: "invalid_client" "The provided client secret is invalid."`
+>   Confirmed via live Supabase auth logs, not a code bug — the configured Google OAuth client
+>   secret in Supabase Auth → Providers → Google is wrong/expired. Needs a fresh secret from
+>   Google Cloud Console. Password login is unaffected and works.
+> - **S1 and S2 re-verified, both unchanged.** S1 (`handle-approval-token` GET) still dormant —
+>   nothing issues `approval_tokens` or emails that link. S2 (leaked-password protection) still
+>   disabled per live Supabase advisor pull — still the one remaining manual dashboard toggle.
+
 ---
 
 ## Fixed this session (committed `5fcb192`)
@@ -135,15 +177,15 @@ per-screen media override UI (columns already exist).
 
 | Area | Status | Note |
 |------|--------|------|
-| 1. Onboarding (advertiser + operator) | 🟢 GO | Wizards solid; creative upload (B1) now shipped |
+| 1. Onboarding (advertiser + operator) | 🟢 GO | Wizards solid; creative upload (B1) shipped; mobile screen-registration dead end fixed (B5); **the `/login` no-redirect bug (B6) lived here and is now fixed** |
 | 2. Payments (Stripe) | 🟢 GO | Charge lock, 3DS handling, refund/dispute webhooks, operator transfers all present & recently fixed. See S7 (two payment code paths, drift) |
-| 3. Approval / moderation queue | 🟢 GO | End-to-end, bulk approve, per-screen reject reasons, auto-approve w/ liability notice; now shows real uploaded creative |
-| 4. Screen agent / display player | 🟢 GO | Kiosk service + Docker CV agent solid; fabricated impressions (B2) fixed |
-| 5. Security (RLS / auth / secrets) | 🟢 GO | Token leak + RLS/function hardening done; remaining: S2 toggle, S7 drift |
-| 6. Notifications | 🟢 GO | Cron scheduled & active (daily/health/pending push); email + Expo push wired |
-| 7. Mobile / responsive | 🟡 | Mobile app exists; public marketing/site responsive recently patched — re-verify next pass |
-| 8. Error / empty states | 🟢 GO | Login, wizards, queue, display all handle empty/error paths |
-| 9. Legal / compliance | 🟡 GO w/ S1 | ToS + Privacy present; add cookie/consent posture + fix GET-approve |
+| 3. Approval / moderation queue | 🟢 GO | End-to-end, bulk approve, per-screen reject reasons, auto-approve w/ liability notice; shows real uploaded creative on web and now on mobile too (B4) |
+| 4. Screen agent / display player | 🟢 GO | Kiosk service + Docker CV agent solid; fabricated impressions (B2) fixed; re-confirmed 2026-07-06 (graceful network-error fallback, clear invalid-token state) |
+| 5. Security (RLS / auth / secrets) | 🟡 | Token leak + RLS/function hardening done, S1/S2 unchanged (still open, still low-risk) — **but Google OAuth is broken in production (bad client secret), manual fix needed in Supabase dashboard** |
+| 6. Notifications | 🟢 GO | Cron scheduled & active (daily/health/pending push); email + Expo push wired; re-verified 2026-07-06 — operator push for pending approvals is near-real-time via `notification-cron`, not a gap |
+| 7. Mobile / responsive | 🟢 GO | Marketing site verified at 375px; native operator app's broken data hooks fixed (B4), dead-end onboarding fixed (B5); shared `Table.jsx` mobile overflow fixed (S8). Native app still never run on a real device/simulator |
+| 8. Error / empty states | 🟢 GO | Login, wizards, queue, display all handle empty/error paths; re-verified 2026-07-06 (ErrorBoundary wraps every route, load failures surface as a visible banner) |
+| 9. Legal / compliance | 🟡 GO w/ S1 | ToS + Privacy present; camera/CV data collection now accurately disclosed (B3); still: add cookie/consent posture + fix GET-approve (S1) |
 
 ---
 
@@ -240,13 +282,24 @@ factory-reset / re-pair path if the token is rotated.
 
 ## Next pass — focus areas
 
-Rotate to the areas not deep-dived this pass:
-1. **Mobile / responsive (area 7)** — re-verify the public marketing site + operator dashboard
-   on real phone widths after recent patches; the operator mobile app auth/push paths.
-2. **Creative pipeline (B1) implementation review** — once built, moderate *uploaded media*,
-   not just text.
-3. **Legal/compliance depth (area 9)** — cookie/consent banner, DOOH privacy signage copy,
-   data-retention policy for `scans`/`impression_events`, GDPR/PIPEDA posture.
+All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
+What's actually left, in priority order:
 
-Areas already covered deeply and not worth re-flagging next pass unless code changes:
-payments, moderation queue, RLS/security core, notifications/cron.
+1. **Google OAuth client secret** — manual-only, Supabase Auth → Providers → Google. Blocking
+   for anyone who doesn't use password login.
+2. **S2 — leaked-password protection toggle** — manual-only, Supabase Auth → Providers → Password.
+3. **Real click-through, logged in as a real user** — the `/login` redirect bug (B6) was invisible
+   to code review and only surfaced by actually trying to log in. Now that login works, do a full
+   advertiser + operator run-through (create campaign → approve → check billing on a phone) to
+   catch anything else that only shows up live.
+4. **Operator mobile app on a real device/simulator** — the schema fixes (B4) and onboarding fix
+   (B5) are verified by Jest against a mocked Supabase client, never against Expo Go or a real
+   build.
+5. **S1** — GET-based `handle-approval-token` — still dormant/low-priority, fix before ever
+   wiring it up to real emails.
+6. **Legal/compliance depth (area 9)** — cookie/consent banner, DOOH privacy signage copy,
+   data-retention policy for `scans`/`impression_events`, GDPR/PIPEDA posture. Lower priority
+   than the above; ToS/Privacy are otherwise solid and now accurate about camera data (B3).
+
+Areas that are genuinely solid and not worth re-flagging without a code change: payments,
+moderation queue (web), screen agent/display player, notifications/cron, error/empty states.
