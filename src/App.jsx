@@ -431,12 +431,19 @@ function AppInner() {
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
+function PublicOnlyRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (user) return <Navigate to="/app" replace />;
+  return children;
+}
+
 export default function App() {
   return (
     <Suspense fallback={null}>
       <Routes>
-        <Route path="/" element={<MarketingHome />} />
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/" element={<PublicOnlyRoute><MarketingHome /></PublicOnlyRoute>} />
+        <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/display/:token" element={<DisplayPlayerRoute />} />
