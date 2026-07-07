@@ -17,20 +17,23 @@ export default function ScreenDetailScreen() {
   const router = useRouter();
   const [screen, setScreen] = useState(null);
   const [campaigns, setCampaigns] = useState([]);
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const [{ data: s }, { data: cs }] = await Promise.all([
+      const [{ data: s }, { data: cs }, { data: tok }] = await Promise.all([
         supabase.from('screens').select('*').eq('id', id).single(),
         supabase.from('campaign_screens')
-          .select('id, status, campaign:campaigns(id, name, advertiser:profiles(full_name), budget)')
+          .select('id, status, campaign:bookings(id, name:campaign_name, advertiser_name, budget)')
           .eq('screen_id', id)
           .order('created_at', { ascending: false })
           .limit(10),
+        supabase.rpc('get_screen_token', { p_screen_id: id }),
       ]);
       setScreen(s);
       setCampaigns(cs || []);
+      setToken(tok || null);
       setLoading(false);
     }
     load();
@@ -74,7 +77,7 @@ export default function ScreenDetailScreen() {
             ['Status', screen.status || 'active'],
             ['Hours', `${screen.operating_hours_start || '—'} – ${screen.operating_hours_end || '—'}`],
             ['Timezone', screen.timezone || '—'],
-            ['Token', screen.screen_token || '—'],
+            ['Token', token || '—'],
           ].map(([label, value]) => (
             <View key={label} style={styles.row}>
               <Text style={[styles.rowLabel, { fontFamily: F.sansMed }]}>{label}</Text>
@@ -95,7 +98,7 @@ export default function ScreenDetailScreen() {
                   <Badge label={cs.status} variant={cs.status === 'approved' ? 'green' : cs.status === 'pending' ? 'amber' : 'muted'} />
                 </View>
                 <Text style={{ fontFamily: F.sans, color: C.textSub, fontSize: 12, marginTop: 4 }}>
-                  {cs.campaign?.advertiser?.full_name}
+                  {cs.campaign?.advertiser_name}
                 </Text>
               </Card>
             ))}

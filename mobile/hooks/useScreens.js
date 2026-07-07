@@ -11,7 +11,7 @@ export function useScreens(operatorId) {
     setLoading(true);
     const { data, error: err } = await supabase
       .from('screens')
-      .select('id, name, venue_category, venue_subtype, address_city, health_status, last_seen, screen_token, screen_photos, status, operating_hours_start, operating_hours_end, timezone')
+      .select('id, name, venue_category, venue_subtype, address_city, health_status, last_seen, screen_photos, status, operating_hours_start, operating_hours_end, timezone')
       .eq('operator_id', operatorId);
     if (err) setError(err.message);
     else setScreens(data || []);

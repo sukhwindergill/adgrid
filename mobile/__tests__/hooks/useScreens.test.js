@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 const mockSupabase = createClient('', '');
 
 const mockScreens = [
-  { id: '1', name: 'Lobby Screen', venue_category: 'retail', venue_subtype: 'Clothing', address_city: 'Toronto', health_status: null, last_seen: new Date().toISOString(), screen_photos: [], status: 'active', screen_token: 'tok_abc' },
+  { id: '1', name: 'Lobby Screen', venue_category: 'retail', venue_subtype: 'Clothing', address_city: 'Toronto', health_status: null, last_seen: new Date().toISOString(), screen_photos: [], status: 'active' },
 ];
 
 beforeEach(() => {
