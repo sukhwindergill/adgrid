@@ -116,6 +116,62 @@ moderation queue, notifications, cron, and kiosk/agent stack are in good shape.
 >   acceptable pattern for a young platform and doesn't block launch. Flagging as a future
 >   nice-to-have only if support volume on deletion requests becomes real.
 
+> **Update — session 5 (2026-07-07, later same day):** User logged into the real production app
+> via their own Google-authenticated browser session and asked for a live click-through using
+> claude-in-chrome. Found and fixed **two more real blockers** — both invisible to static review,
+> both only surfaced by actually using the app as a real logged-in user:
+>
+> - **B7 (blocker, found live, fixed) — operator dashboard completely broken: infinite RLS
+>   recursion on `bookings`.** Loading `/app/overview` as an operator threw "Failed to load data.
+>   Please refresh." Console: `Failed to load campaigns: infinite recursion detected in policy for
+>   relation "bookings"`. Root cause: `20260701000000_scope_operator_bookings_rls.sql` (session 3,
+>   a real security fix) replaced an overbroad bookings policy with
+>   `operators_see_own_screen_bookings`, an `EXISTS` subquery reading `campaign_screens` — but
+>   `campaign_screens`'s own SELECT policy (`advertiser_read_own_campaign_screens`, from
+>   `20260607000000`) is itself an `EXISTS` subquery reading `bookings`. Every operator SELECT on
+>   `bookings` since that migration shipped triggered an unbounded policy-evaluation cycle:
+>   bookings → campaign_screens → bookings → ... Postgres detects the cycle and errors out
+>   entirely — the operator dashboard, approval queue, and revenue page have been broken for
+>   every operator since **2026-07-01**. Fixed (`20260707000001_fix_bookings_rls_recursion.sql`):
+>   moved the ownership check into a new `SECURITY DEFINER` helper,
+>   `operator_owns_booking_screen(campaign_id)`, using the same bypass-RLS pattern already
+>   established by `is_operator()`/`current_advertiser_id()` — the helper's internal query runs as
+>   the function owner and never re-triggers `campaign_screens`' policies, breaking the cycle.
+>   **Verified live**: reloaded the real dashboard post-fix — real data appeared (Network Revenue
+>   $15,650, 2 active campaigns, 183 QR scans), Approval Queue showed a real campaign that had
+>   been stuck pending review for **34 days** because the operator could never see it. Approved it
+>   live at the user's instruction; confirmed via SQL that `campaign_screens.status` flipped to
+>   `approved`. (The booking itself stayed `pending_review` because it was unpaid `payment_status:
+>   null` seed/demo data predating the Stripe pipeline — confirmed by design, not a bug: `bookings.status`
+>   only promotes to `scheduled` inside `charge-campaign` once payment actually captures.)
+> - **B8 (blocker, found live, fixed) — advertiser campaign wizard crashed on every attempt.**
+>   Step 4 of 5 ("Budget & Schedule") threw `ReferenceError: profile is not defined`, caught by the
+>   `ErrorBoundary` ("Something went wrong") — **nobody could create a campaign at all.**
+>   `StepBudget` (`src/views/advertiser/CreateCampaign.jsx:618`) referenced `profile` in its JSX
+>   (currency label, suggested-budget hint) but was never passed `profile` as a prop, and the
+>   parent only passed `form`/`setForm`/`matchedScreens`. Fixed by threading `profile` through as a
+>   prop. **Verified live**: rebuilt, pushed, redeployed, reloaded the exact same wizard flow as
+>   the same real advertiser account — Budget & Schedule now renders correctly ("Total budget
+>   (CAD)"), no crash. Did not complete an actual submission: this advertiser account has **no
+>   payment method on file** ("Add a payment method before submitting" banner), and adding one
+>   would require entering real card details, which is off-limits regardless of user request.
+>   Cancelled the test draft afterward; confirmed via SQL no test booking was persisted.
+>
+> Both fixes committed (`ad57193` bookings RLS migration, `5c048f8` StepBudget), pushed, and
+> redeployed to Vercel same as every other fix this session. **These are the two most
+> significant findings across all five sessions** — the operator dashboard and the entire
+> advertiser campaign-creation flow were both completely non-functional in production, and neither
+> was caught by any prior code-reading pass, Jest suite, or advisor pull. Only surfaced by a real
+> user actually clicking through their own live account.
+>
+> Areas re-verified as working live this session: operator Approval Queue (approve action works
+> end-to-end), Revenue/Billing page (accurate real numbers, correct math), advertiser campaign
+> wizard steps 1–4 (Area → Screens → Creative → Budget, including live creative preview
+> rendering). Minor non-blocking observations, not worth separate fixes: sidebar Approval Queue
+> badge doesn't refresh its count after an approve action until reload; SPA routing resets to
+> `/app/overview` on a hard browser navigation/reload rather than preserving the current tab
+> (client-side-only routing, not URL-driven) — both cosmetic, not correctness bugs.
+
 ---
 
 ## Fixed this session (committed `5fcb192`)
@@ -229,11 +285,11 @@ per-screen media override UI (columns already exist).
 
 | Area | Status | Note |
 |------|--------|------|
-| 1. Onboarding (advertiser + operator) | 🟢 GO | Wizards solid; creative upload (B1) shipped; mobile screen-registration dead end fixed (B5); **the `/login` no-redirect bug (B6) lived here and is now fixed** |
+| 1. Onboarding (advertiser + operator) | 🟢 GO | Wizards solid; creative upload (B1) shipped; mobile screen-registration dead end fixed (B5); `/login` no-redirect bug (B6) fixed; **advertiser wizard crash (B8, `profile is not defined`) fixed session 5 — was blocking every campaign creation** |
 | 2. Payments (Stripe) | 🟢 GO | Charge lock, 3DS handling, refund/dispute webhooks, operator transfers all present & recently fixed. See S7 (two payment code paths, drift) |
 | 3. Approval / moderation queue | 🟢 GO | End-to-end, bulk approve, per-screen reject reasons, auto-approve w/ liability notice; shows real uploaded creative on web and now on mobile too (B4) |
 | 4. Screen agent / display player | 🟢 GO | Kiosk service + Docker CV agent solid; fabricated impressions (B2) fixed; re-confirmed 2026-07-06 (graceful network-error fallback, clear invalid-token state) |
-| 5. Security (RLS / auth / secrets) | 🟡 | Token leak + RLS/function hardening done, S1/S2 unchanged (still open, still low-risk) — **but Google OAuth is broken in production (bad client secret), manual fix needed in Supabase dashboard** |
+| 5. Security (RLS / auth / secrets) | 🟡 | Token leak + RLS/function hardening done, S1 fixed session 4, S2 still open (manual toggle, low-risk) — **Google OAuth still broken in production (bad client secret), manual fix needed** — **B7 RLS infinite-recursion on `bookings` fixed session 5 (was breaking the entire operator dashboard since 2026-07-01)** |
 | 6. Notifications | 🟢 GO | Cron scheduled & active (daily/health/pending push); email + Expo push wired; re-verified 2026-07-06 — operator push for pending approvals is near-real-time via `notification-cron`, not a gap |
 | 7. Mobile / responsive | 🟢 GO | Marketing site verified at 375px; native operator app's broken data hooks fixed (B4), dead-end onboarding fixed (B5); shared `Table.jsx` mobile overflow fixed (S8). Native app still never run on a real device/simulator |
 | 8. Error / empty states | 🟢 GO | Login, wizards, queue, display all handle empty/error paths; re-verified 2026-07-06 (ErrorBoundary wraps every route, load failures surface as a visible banner) |
