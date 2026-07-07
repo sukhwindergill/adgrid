@@ -19,7 +19,17 @@ beforeEach(() => {
         error: null,
       }),
     };
-    // All other tables return empty
+    if (table === 'campaign_screens') return {
+      select: jest.fn().mockReturnThis(),
+      in: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      gte: jest.fn().mockResolvedValue({ data: [], error: null }),
+    };
+    if (table === 'bookings') return {
+      select: jest.fn().mockReturnThis(),
+      in: jest.fn().mockResolvedValue({ data: [], error: null }),
+    };
+    // Fallback for any other table
     return {
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),

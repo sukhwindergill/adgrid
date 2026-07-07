@@ -26,9 +26,15 @@ export function useDashboard(operatorId) {
         pendingApprovals = pending?.length || 0;
         const startOfMonth = new Date();
         startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0);
-        const { data: bookings } = await supabase
-          .from('bookings').select('budget').in('screen_id', screenIds).gte('created_at', startOfMonth.toISOString());
-        revenueThisMonth = (bookings || []).reduce((sum, b) => sum + (b.budget || 0) * 0.70, 0);
+        const { data: csRows } = await supabase
+          .from('campaign_screens').select('campaign_id').in('screen_id', screenIds)
+          .gte('created_at', startOfMonth.toISOString());
+        const campaignIds = [...new Set((csRows || []).map(r => r.campaign_id))];
+        if (campaignIds.length > 0) {
+          const { data: bookings } = await supabase
+            .from('bookings').select('budget').in('id', campaignIds);
+          revenueThisMonth = (bookings || []).reduce((sum, b) => sum + (b.budget || 0) * 0.70, 0);
+        }
       }
       setData({ totalScreens: screens?.length || 0, liveScreens, pendingApprovals, revenueThisMonth });
       setLoading(false);
