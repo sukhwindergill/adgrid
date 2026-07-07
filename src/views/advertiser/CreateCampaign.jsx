@@ -615,7 +615,7 @@ function StepCreative({ form, setForm }) {
   );
 }
 
-function StepBudget({ form, setForm, matchedScreens }) {
+function StepBudget({ form, setForm, matchedScreens, profile }) {
   const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
 
   const days = form.start_date && form.end_date
@@ -1160,7 +1160,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       {step === 0 && <StepArea form={form} setForm={setForm} reachSummary={reachSummary} allScreens={dbScreens} onPrevCampaigns={campaigns.length > 0 ? () => setShowDupModal(true) : null} />}
       {step === 1 && <StepScreens form={form} setForm={setForm} matchedScreens={matchedScreens} />}
       {step === 2 && <StepCreative form={form} setForm={setForm} />}
-      {step === 3 && <StepBudget form={form} setForm={setForm} matchedScreens={selectedScreens} />}
+      {step === 3 && <StepBudget form={form} setForm={setForm} matchedScreens={selectedScreens} profile={profile} />}
       {step === 4 && <StepReview form={form} matchedScreens={selectedScreens} onSubmit={handleSubmit} submitting={submitting} err={submitErr} profile={profile} canChooseBilling={canChooseBilling} billedTo={billedTo} setBilledTo={setBilledTo} />}
       {step === 5 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} requiresAction={requiresAction} onGoToBilling={() => navigate('/app/adv-billing')} />}
 
