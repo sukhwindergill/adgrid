@@ -62,6 +62,26 @@ moderation queue, notifications, cron, and kiosk/agent stack are in good shape.
 >   nothing issues `approval_tokens` or emails that link. S2 (leaked-password protection) still
 >   disabled per live Supabase advisor pull — still the one remaining manual dashboard toggle.
 
+> **Update — session 4 (2026-07-07):** Checked the two manual-only toggles first — **both still
+> open.** Live Supabase auth logs show the Google OAuth callback still 500ing with
+> `invalid_client "The provided client secret is invalid"` as of 07:43 today; security advisor
+> still reports `auth_leaked_password_protection` WARN. Neither can be fixed from code/SQL/MCP —
+> still need a human in the Supabase/Google dashboards. No login credentials were provided this
+> session, so the real logged-in click-through (Next-pass item 3) and native mobile app run
+> (item 4) are still outstanding — do those next once credentials/a device are available.
+>
+> - **S1 (should-fix, fixed) — `handle-approval-token` GET performed the mutation directly.**
+>   Re-confirmed still dormant (no code path issues `approval_tokens` rows or emails a link — same
+>   as session 3). Fixed the design flaw anyway per the plan: GET now renders an inert confirmation
+>   page (campaign/advertiser/screen name, single-use warning, a POST form) instead of mutating;
+>   the actual approve/reject only runs on POST, triggered by the operator clicking the button.
+>   Deployed `handle-approval-token` v3. **Verified live**: inserted a real disposable
+>   `approval_tokens` row against an existing booking/screen, GET returned the confirmation page
+>   and the token was still `used = false` in the DB afterward (prefetcher-safe); did not POST
+>   against the real row (would mutate a live booking) — the POST branch itself is the prior,
+>   already-verified mutation code, now just gated behind `req.method === 'POST'`. Cleaned up the
+>   test token row after.
+
 ---
 
 ## Fixed this session (committed `5fcb192`)
@@ -106,14 +126,12 @@ per-screen media override UI (columns already exist).
 
 ## Should-fix (will cause support burden / trust issues)
 
-- **S1 — Email one-click approve is a GET** (`handle-approval-token`). Email security
-  scanners / link prefetchers (Outlook SafeLinks, Gmail, etc.) will fetch the URL and
-  silently consume the single-use token, auto-approving or auto-rejecting a campaign the
-  operator never clicked. Change to a landing page with an explicit POST confirm button.
-  **Confirmed dormant this session:** nothing in the app or edge functions issues
-  `approval_tokens` or emails a `handle-approval-token` link, so it is not currently
-  exploitable — but fix the GET→POST design *before* wiring it up (all approvals today go
-  through the in-app queue + `campaign_approved` notification).
+- **S1 — Email one-click approve is a GET** (`handle-approval-token`). ✅ **Fixed session 4**:
+  GET now renders an inert confirmation landing page (campaign/advertiser/screen name, single-use
+  warning); the actual approve/reject only executes on an explicit POST from the confirm button.
+  Deployed v3. Still dormant — nothing issues `approval_tokens` rows or emails a link yet — but
+  the design flaw is closed *before* it's ever wired up (all approvals today go through the
+  in-app queue + `campaign_approved` notification).
 - **S2 — Leaked-password protection disabled** (Supabase Auth). ⚠️ **Only remaining manual
   action** — cannot be set via SQL or the MCP tools. In the Supabase Dashboard:
   **Authentication → Sign In / Providers → Password → enable "Leaked password protection"**
@@ -185,7 +203,7 @@ per-screen media override UI (columns already exist).
 | 6. Notifications | 🟢 GO | Cron scheduled & active (daily/health/pending push); email + Expo push wired; re-verified 2026-07-06 — operator push for pending approvals is near-real-time via `notification-cron`, not a gap |
 | 7. Mobile / responsive | 🟢 GO | Marketing site verified at 375px; native operator app's broken data hooks fixed (B4), dead-end onboarding fixed (B5); shared `Table.jsx` mobile overflow fixed (S8). Native app still never run on a real device/simulator |
 | 8. Error / empty states | 🟢 GO | Login, wizards, queue, display all handle empty/error paths; re-verified 2026-07-06 (ErrorBoundary wraps every route, load failures surface as a visible banner) |
-| 9. Legal / compliance | 🟡 GO w/ S1 | ToS + Privacy present; camera/CV data collection now accurately disclosed (B3); still: add cookie/consent posture + fix GET-approve (S1) |
+| 9. Legal / compliance | 🟢 GO | ToS + Privacy present; camera/CV data collection now accurately disclosed (B3); GET-approve design flaw fixed (S1, session 4); still: add cookie/consent posture, data-retention policy |
 
 ---
 
@@ -295,11 +313,13 @@ What's actually left, in priority order:
 4. **Operator mobile app on a real device/simulator** — the schema fixes (B4) and onboarding fix
    (B5) are verified by Jest against a mocked Supabase client, never against Expo Go or a real
    build.
-5. **S1** — GET-based `handle-approval-token` — still dormant/low-priority, fix before ever
-   wiring it up to real emails.
+5. ~~**S1** — GET-based `handle-approval-token`~~ — ✅ **Fixed session 4**: GET now only renders
+   a confirmation page; approve/reject requires an explicit POST. Deployed v3, verified live.
 6. **Legal/compliance depth (area 9)** — cookie/consent banner, DOOH privacy signage copy,
    data-retention policy for `scans`/`impression_events`, GDPR/PIPEDA posture. Lower priority
    than the above; ToS/Privacy are otherwise solid and now accurate about camera data (B3).
 
 Areas that are genuinely solid and not worth re-flagging without a code change: payments,
 moderation queue (web), screen agent/display player, notifications/cron, error/empty states.
+S1 is now also closed — only the two manual dashboard toggles, the live click-through, the
+mobile device run, and legal/compliance depth remain.
