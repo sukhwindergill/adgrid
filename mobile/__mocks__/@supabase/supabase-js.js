@@ -31,6 +31,7 @@ const mockAuth = {
 const mockClient = {
   auth: mockAuth,
   from: jest.fn(() => mockQuery),
+  rpc: jest.fn().mockResolvedValue({ data: null, error: null }),
   channel: jest.fn(() => mockChannel),
   removeChannel: jest.fn(),
   storage: {

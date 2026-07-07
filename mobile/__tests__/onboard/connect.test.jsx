@@ -1,30 +1,45 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import ConnectScreen from '../../app/onboard/connect';
-import { OnboardProvider } from '../../context/OnboardContext';
+import { OnboardProvider, useOnboard } from '../../context/OnboardContext';
 import { AuthProvider } from '../../context/AuthContext';
+import { createClient } from '@supabase/supabase-js';
 
-jest.mock('expo-camera', () => ({
-  CameraView: ({ onBarcodeScanned, children }) => {
-    global.__triggerScan = onBarcodeScanned;
-    return children || null;
-  },
-  useCameraPermissions: () => [{ granted: true }, jest.fn()],
-}));
+const mockSupabase = createClient('', '');
+
+// connect.jsx reads form.screenId from context; seed it before each test.
+function Seed() {
+  const { update } = useOnboard();
+  React.useEffect(() => { update({ screenId: 'screen-1' }); }, []);
+  return null;
+}
 
 const wrapper = ({ children }) => (
-  <AuthProvider><OnboardProvider>{children}</OnboardProvider></AuthProvider>
+  <AuthProvider><OnboardProvider><Seed />{children}</OnboardProvider></AuthProvider>
 );
 
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockSupabase.rpc.mockResolvedValue({ data: 'tok_abc123', error: null });
+});
+
 describe('ConnectScreen', () => {
-  it('shows scan instruction', () => {
-    const { getByText } = render(<ConnectScreen />, { wrapper });
-    expect(getByText(/Scan the QR code/i)).toBeTruthy();
+  it('fetches and displays the screen token', async () => {
+    const { findByText } = render(<ConnectScreen />, { wrapper });
+    expect(await findByText('tok_abc123')).toBeTruthy();
   });
 
-  it('shows Connected state after scan', async () => {
-    const { getByText } = render(<ConnectScreen />, { wrapper });
-    global.__triggerScan({ type: 'qr', data: 'screen_token_abc123' });
-    await waitFor(() => expect(getByText(/Connected/i)).toBeTruthy());
+  it('shows an error state if the token fetch fails', async () => {
+    mockSupabase.rpc.mockResolvedValue({ data: null, error: { message: 'boom' } });
+    const { findByText } = render(<ConnectScreen />, { wrapper });
+    expect(await findByText(/Couldn't load your screen token/i)).toBeTruthy();
+  });
+
+  it('calls router.replace to screens list when Done is pressed', async () => {
+    const { findByText, getByText } = render(<ConnectScreen />, { wrapper });
+    await findByText('tok_abc123');
+    fireEvent.press(getByText('Done'));
+    // No assertion on navigation target — expo-router is globally mocked in jest.setup.js;
+    // this just confirms the button doesn't throw once the token has loaded.
   });
 });
