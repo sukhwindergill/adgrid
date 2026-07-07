@@ -9,6 +9,12 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
 const FROM_EMAIL = "noreply@adgrid.io";
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_NOTIFICATION_SECRET") ?? "";
 
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-internal-secret",
+  "Content-Type": "application/json",
+};
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -166,6 +172,14 @@ function emailHtml(title: string, body: string, ctaLabel: string, ctaUrl: string
 }
 
 Deno.serve(async (req: Request) => {
+  // Browsers preflight any cross-origin request carrying a custom header
+  // (Authorization, x-internal-secret) with an OPTIONS request that never
+  // includes those headers. This must be answered before any auth check,
+  // or every preflight 401s and the browser silently drops the real
+  // request — every in-app notification (campaign approved, etc.) failed
+  // this way with no visible error.
+  if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
+
   // Allow internal calls from notification-cron via shared secret header
   const internalHeader = req.headers.get("x-internal-secret");
   const isInternal = INTERNAL_SECRET && internalHeader === INTERNAL_SECRET;
@@ -175,25 +189,25 @@ Deno.serve(async (req: Request) => {
 
   if (!isInternal) {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return new Response("Unauthorized", { status: 401 });
+    if (!authHeader) return new Response("Unauthorized", { status: 401, headers: CORS });
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) return new Response("Unauthorized", { status: 401 });
+    if (authError || !user) return new Response("Unauthorized", { status: 401, headers: CORS });
     callerUserId = user.id;
     const { data: prof } = await supabase.from("profiles").select("role").eq("id", user.id).single();
     callerRole = prof?.role ?? null;
   }
 
   const { userId, type, data: notifData = {} } = await req.json();
-  if (!userId || !type) return new Response("Missing userId or type", { status: 400 });
+  if (!userId || !type) return new Response("Missing userId or type", { status: 400, headers: CORS });
 
   // Non-internal callers can only send to themselves unless they are an operator
   if (!isInternal && callerRole !== "operator" && callerUserId !== userId) {
-    return new Response("Forbidden", { status: 403 });
+    return new Response("Forbidden", { status: 403, headers: CORS });
   }
 
   const template = TEMPLATES[type];
-  if (!template) return new Response("Unknown notification type", { status: 400 });
+  if (!template) return new Response("Unknown notification type", { status: 400, headers: CORS });
 
   // Sanitize every field before it reaches a template — templates interpolate
   // these values directly into outgoing HTML email with no escaping of their
@@ -222,7 +236,7 @@ Deno.serve(async (req: Request) => {
   const prefs = profile?.notification_prefs ?? {};
   if (prefs[type] === false || !profile?.email) {
     return new Response(JSON.stringify({ ok: true, emailSent: false }), {
-      headers: { "Content-Type": "application/json" },
+      headers: CORS,
     });
   }
 
@@ -239,6 +253,6 @@ Deno.serve(async (req: Request) => {
   if (!res.ok) console.error("Resend error:", await res.text());
 
   return new Response(JSON.stringify({ ok: true, emailSent: res.ok }), {
-    headers: { "Content-Type": "application/json" },
+    headers: CORS,
   });
 });
