@@ -172,6 +172,48 @@ moderation queue, notifications, cron, and kiosk/agent stack are in good shape.
 > `/app/overview` on a hard browser navigation/reload rather than preserving the current tab
 > (client-side-only routing, not URL-driven) — both cosmetic, not correctness bugs.
 
+> **Update — session 5 continued (2026-07-07, same day):** User flagged "email+password signup
+> doesn't work right" (no confirmation email). Investigation surfaced a bigger problem than the
+> one asked about.
+>
+> - **Root cause of the signup complaint:** Supabase Auth's confirmation emails use Supabase's own
+>   default mailer (`noreply@mail.app.supabase.io`), not Resend — despite Resend already being
+>   wired up for the app's own transactional emails. The default mailer is explicitly test-only and
+>   rate-limited; live evidence backs this up: of 5 users ever created, 1 (`demo@adgrid.io`) never
+>   confirmed. Recommended fix (wiring Resend as Supabase's custom SMTP relay) requires a verified
+>   sending domain — user doesn't own `adgrid.io` yet, so **decision: leave Auth on the default
+>   mailer for now.** Confirmation email delivery stays unreliable until a domain is bought and
+>   verified in Resend; revisit then.
+> - **B9 (blocker, found live, fixed) — `send-notification` had no CORS/OPTIONS handling at all.**
+>   While investigating the email question, live-tested the notification pipeline and found this:
+>   every browser-originated call to `send-notification` (campaign approved, campaign submitted,
+>   etc.) sends a custom `Authorization` header, which forces the browser to CORS-preflight with an
+>   OPTIONS request first. The function had no OPTIONS branch, so the preflight fell into the auth
+>   check, which requires a header no preflight ever carries → 401. The browser then aborts the
+>   real POST entirely, and the frontend's `.catch(() => {})` swallows the resulting network error
+>   silently. **Every in-app-triggered notification has been failing to even reach the function in
+>   production since it was written** — confirmed via edge-function logs showing the exact OPTIONS
+>   401 at the same instant this session's earlier Approval Queue click fired
+>   `notifyCampaignApproved`. Fixed by adding the same `CORS`-const + OPTIONS-short-circuit pattern
+>   already used by the other 13 browser-facing edge functions in this project. Deployed v15.
+>   **Verified live**: OPTIONS preflight now returns 200 (was 401); a full authenticated POST from
+>   the real browser session round-trips successfully — confirmed a real `notifications` row was
+>   inserted (then deleted as test cleanup).
+> - **Separate, more severe finding surfaced by the same test: Resend delivery is completely dead
+>   for every transactional email, not just Auth's.** The test POST took 934ms (vs ~100–600ms for
+>   validation-error paths) and returned `emailSent: false` — meaning it actually called Resend and
+>   Resend rejected the send, not that it was skipped. Root cause is the same unowned-domain issue:
+>   `send-notification`'s `FROM_EMAIL` is hardcoded to `noreply@adgrid.io`
+>   (`supabase/functions/send-notification/index.ts:9`), which isn't a verified Resend sending
+>   domain. **In-app bell notifications still work** (the `notifications` table insert happens
+>   unconditionally, before the email attempt) but the email copy of every notification — campaign
+>   approved, payment failed, payout sent, screen offline, etc. — has been silently failing since
+>   this function was deployed. **User's decision: leave `FROM_EMAIL` as-is for now** (no domain to
+>   point it at yet); revisit once a domain is bought and verified in Resend. Until then, treat
+>   AdGrid's notification system as **in-app only, no email delivery**, for planning purposes.
+
+---
+
 ---
 
 ## Fixed this session (committed `5fcb192`)
@@ -290,7 +332,7 @@ per-screen media override UI (columns already exist).
 | 3. Approval / moderation queue | 🟢 GO | End-to-end, bulk approve, per-screen reject reasons, auto-approve w/ liability notice; shows real uploaded creative on web and now on mobile too (B4) |
 | 4. Screen agent / display player | 🟢 GO | Kiosk service + Docker CV agent solid; fabricated impressions (B2) fixed; re-confirmed 2026-07-06 (graceful network-error fallback, clear invalid-token state) |
 | 5. Security (RLS / auth / secrets) | 🟡 | Token leak + RLS/function hardening done, S1 fixed session 4, S2 still open (manual toggle, low-risk) — **Google OAuth still broken in production (bad client secret), manual fix needed** — **B7 RLS infinite-recursion on `bookings` fixed session 5 (was breaking the entire operator dashboard since 2026-07-01)** |
-| 6. Notifications | 🟢 GO | Cron scheduled & active (daily/health/pending push); email + Expo push wired; re-verified 2026-07-06 — operator push for pending approvals is near-real-time via `notification-cron`, not a gap |
+| 6. Notifications | 🟡 | Cron scheduled & active (daily/health/pending push); in-app + Expo push work. **Email delivery is fully broken** (session 5): CORS/OPTIONS bug fixed (B9), but every email still fails Resend delivery — `FROM_EMAIL` (`noreply@adgrid.io`) isn't a verified sending domain. In-app + push notifications are reliable; email is not, until a domain is bought and verified in Resend |
 | 7. Mobile / responsive | 🟢 GO | Marketing site verified at 375px; native operator app's broken data hooks fixed (B4), dead-end onboarding fixed (B5); shared `Table.jsx` mobile overflow fixed (S8). Native app still never run on a real device/simulator |
 | 8. Error / empty states | 🟢 GO | Login, wizards, queue, display all handle empty/error paths; re-verified 2026-07-06 (ErrorBoundary wraps every route, load failures surface as a visible banner) |
 | 9. Legal / compliance | 🟢 GO | ToS + Privacy present; camera/CV data collection now accurately disclosed (B3); GET-approve design flaw fixed (S1, session 4); cookie policy corrected + data-retention now enforced (session 4) |
@@ -416,6 +458,8 @@ moderation queue (web), screen agent/display player, notifications/cron, error/e
 legal/compliance.
 
 **What's actually left:** the two manual dashboard toggles (Google OAuth secret, Supabase
-leaked-password protection), the real logged-in click-through (needs credentials), and the
-operator mobile app on a real device/simulator (needs a device). All are blocked on something
-this session can't provide — not on further code review.
+leaked-password protection), the operator mobile app on a real device/simulator (needs a device),
+and **buying + verifying a domain in Resend** (fixes both the signup-confirmation email
+reliability issue and all transactional email delivery — currently in-app-only, no email, by
+explicit user decision until a domain exists). All are blocked on something this session can't
+provide — not on further code review.
