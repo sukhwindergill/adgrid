@@ -81,6 +81,40 @@ moderation queue, notifications, cron, and kiosk/agent stack are in good shape.
 >   against the real row (would mutate a live booking) — the POST branch itself is the prior,
 >   already-verified mutation code, now just gated behind `req.method === 'POST'`. Cleaned up the
 >   test token row after.
+> - **Legal/compliance depth pass (Next-pass item 6).** Read Privacy Policy, ToS, and the actual
+>   signup/auth code (not just the policy text). ToS content rules, refund wording, and the
+>   signup Terms/Privacy checkbox + `tos_accepted_at` capture were all already solid — no new
+>   issue there. Two real, previously unflagged problems found and fixed:
+>   - **Cookie policy was factually wrong.** Privacy Policy claimed "strictly necessary session
+>     cookies for authentication." Grepped the entire codebase (`src/`, all edge functions) for
+>     `document.cookie` / `Set-Cookie` / `js-cookie` — zero matches. The Supabase client uses its
+>     default `localStorage` session storage; AdGrid sets **no cookies at all**. Rewrote the
+>     section to state this accurately (`src/views/legal/PrivacyPolicy.jsx`). This also means no
+>     cookie-consent banner is legally required (nothing to consent to) — closing that item outright
+>     rather than needing to build one.
+>   - **Promised data-retention windows were entirely unenforced.** Policy states screen
+>     telemetry/heartbeats are kept 12 months and QR scans 24 months, "after which
+>     automatically deleted" (implied) — but no cron, function, or migration anywhere in the repo
+>     ever deleted a row from `display_heartbeats`, `impression_events`, or `scans`. Making a
+>     written retention promise with no enforcement is itself a compliance gap, independent of
+>     whether the data had actually overstayed yet (project is 2.5 months old, so nothing had —
+>     confirmed via a dry-run count query before touching anything). Built and deployed
+>     `data-retention-cron` (new edge function): daily job deletes `display_heartbeats` /
+>     `impression_events` older than 365 days and `scans` older than 730 days. Scheduled via
+>     `pg_cron` in a new tracked migration (`20260707000000_data_retention_cron_schedule.sql`) —
+>     the existing `notification-cron`/`screen-health-cron` schedules were only ever set up ad hoc
+>     in the Supabase dashboard SQL editor and were never in a migration; this one now is. Also
+>     updated the Privacy Policy's retention paragraph to explicitly cover
+>     `impression_events` (aggregate audience stats), which previously had no stated retention
+>     window at all. **Did not** live-invoke the new cron endpoint directly (auto-mode classifier
+>     correctly blocked it as an unbounded production DELETE) — instead verified via a read-only
+>     SQL count using the identical cutoff predicates (all three returned 0, matching expectation
+>     for a young project), then confirmed the `pg_cron` job is registered and active.
+>
+>   **Account-deletion self-service** was considered and intentionally *not* built this pass — the
+>   existing "email privacy@adgrid.io, we respond within 30 days" manual process is a common,
+>   acceptable pattern for a young platform and doesn't block launch. Flagging as a future
+>   nice-to-have only if support volume on deletion requests becomes real.
 
 ---
 
@@ -203,7 +237,7 @@ per-screen media override UI (columns already exist).
 | 6. Notifications | 🟢 GO | Cron scheduled & active (daily/health/pending push); email + Expo push wired; re-verified 2026-07-06 — operator push for pending approvals is near-real-time via `notification-cron`, not a gap |
 | 7. Mobile / responsive | 🟢 GO | Marketing site verified at 375px; native operator app's broken data hooks fixed (B4), dead-end onboarding fixed (B5); shared `Table.jsx` mobile overflow fixed (S8). Native app still never run on a real device/simulator |
 | 8. Error / empty states | 🟢 GO | Login, wizards, queue, display all handle empty/error paths; re-verified 2026-07-06 (ErrorBoundary wraps every route, load failures surface as a visible banner) |
-| 9. Legal / compliance | 🟢 GO | ToS + Privacy present; camera/CV data collection now accurately disclosed (B3); GET-approve design flaw fixed (S1, session 4); still: add cookie/consent posture, data-retention policy |
+| 9. Legal / compliance | 🟢 GO | ToS + Privacy present; camera/CV data collection now accurately disclosed (B3); GET-approve design flaw fixed (S1, session 4); cookie policy corrected + data-retention now enforced (session 4) |
 
 ---
 
@@ -315,11 +349,17 @@ What's actually left, in priority order:
    build.
 5. ~~**S1** — GET-based `handle-approval-token`~~ — ✅ **Fixed session 4**: GET now only renders
    a confirmation page; approve/reject requires an explicit POST. Deployed v3, verified live.
-6. **Legal/compliance depth (area 9)** — cookie/consent banner, DOOH privacy signage copy,
-   data-retention policy for `scans`/`impression_events`, GDPR/PIPEDA posture. Lower priority
-   than the above; ToS/Privacy are otherwise solid and now accurate about camera data (B3).
+6. ~~**Legal/compliance depth (area 9)**~~ — ✅ **Done session 4**: cookie policy corrected
+   (AdGrid sets no cookies — no consent banner needed), data-retention now enforced via a new
+   `data-retention-cron` (365d telemetry / 730d scans, tracked migration). DOOH venue-signage
+   requirement already covered by B3 (session 3). Account-deletion self-service intentionally
+   deferred — manual email process is acceptable for now.
 
 Areas that are genuinely solid and not worth re-flagging without a code change: payments,
-moderation queue (web), screen agent/display player, notifications/cron, error/empty states.
-S1 is now also closed — only the two manual dashboard toggles, the live click-through, the
-mobile device run, and legal/compliance depth remain.
+moderation queue (web), screen agent/display player, notifications/cron, error/empty states,
+legal/compliance.
+
+**What's actually left:** the two manual dashboard toggles (Google OAuth secret, Supabase
+leaked-password protection), the real logged-in click-through (needs credentials), and the
+operator mobile app on a real device/simulator (needs a device). All are blocked on something
+this session can't provide — not on further code review.

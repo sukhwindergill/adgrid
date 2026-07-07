@@ -70,10 +70,11 @@ export function PrivacyPolicy() {
         <h2 style={h2}>Data retention</h2>
         <p style={p}>
           Account data is retained for the life of your account and for 90 days following
-          account deletion, after which it is permanently deleted. Screen telemetry and
-          heartbeat records are retained for 12 months. QR scan events are retained for
-          24 months to support campaign analytics. Stripe retains payment records
-          independently per their own privacy policy.
+          account deletion, after which it is permanently deleted. Screen telemetry,
+          heartbeat records, and aggregate audience-measurement statistics are retained for
+          12 months, then automatically deleted. QR scan events are retained for 24 months
+          to support campaign analytics, then automatically deleted. Stripe retains payment
+          records independently per their own privacy policy.
         </p>
 
         <h2 style={h2}>Your rights</h2>
@@ -85,10 +86,12 @@ export function PrivacyPolicy() {
           We will respond within 30 days.
         </p>
 
-        <h2 style={h2}>Cookies</h2>
+        <h2 style={h2}>Cookies and similar technologies</h2>
         <p style={p}>
-          AdGrid uses strictly necessary session cookies for authentication. We do not use
-          third-party analytics or advertising cookies.
+          AdGrid does not set any cookies. Your signed-in session is kept in your browser's
+          local storage, used only to keep you logged in — it is never shared with third
+          parties. We do not use third-party analytics, advertising cookies, or trackers of
+          any kind.
         </p>
 
         <h2 style={h2}>Third-party services</h2>
