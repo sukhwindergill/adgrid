@@ -5,13 +5,14 @@ import { useScreens } from '../../hooks/useScreens';
 import { useApprovals } from '../../hooks/useApprovals';
 import { ApprovalCard } from '../../components/approvals/ApprovalCard';
 import { PageHeader } from '../../components/ui/PageHeader';
+import { ErrorBanner } from '../../components/ui/ErrorBanner';
 import { C, F } from '../../lib/tokens';
 
 export default function ApprovalsScreen() {
   const { profile } = useAuth();
   const { screens } = useScreens(profile?.id);
   const screenIds = screens.map(s => s.id);
-  const { pending, loading, approve, reject } = useApprovals(profile?.id, screenIds);
+  const { pending, loading, error, approve, reject } = useApprovals(profile?.id, screenIds);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
@@ -20,6 +21,7 @@ export default function ApprovalsScreen() {
           title="Approvals"
           subtitle={pending.length > 0 ? `${pending.length} ad${pending.length !== 1 ? 's' : ''} awaiting review` : 'All caught up'}
         />
+        <ErrorBanner message={error} />
         {loading ? (
           <ActivityIndicator color={C.purple} style={{ marginTop: 40 }} />
         ) : pending.length === 0 ? (

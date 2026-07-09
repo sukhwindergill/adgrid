@@ -32,9 +32,9 @@ export function ApprovalCard({ row, onApprove, onReject }) {
 
   async function handleReject() {
     setActing(true);
-    await onReject(reason);
+    const result = await onReject(reason);
     setActing(false);
-    setRejecting(false);
+    if (!result?.error) setRejecting(false);
   }
 
   return (

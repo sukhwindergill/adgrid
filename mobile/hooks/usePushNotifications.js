@@ -17,19 +17,24 @@ export function usePushNotifications(operatorId, onNotificationTap) {
     let receivedListener;
 
     async function register() {
-      const { status: existing } = await Notifications.getPermissionsAsync();
-      let finalStatus = existing;
-      if (existing !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
+      try {
+        const { status: existing } = await Notifications.getPermissionsAsync();
+        let finalStatus = existing;
+        if (existing !== 'granted') {
+          const { status } = await Notifications.requestPermissionsAsync();
+          finalStatus = status;
+        }
+        if (finalStatus !== 'granted') return;
+        const { data: token } = await Notifications.getExpoPushTokenAsync();
+        if (!token) return;
+        const { error } = await supabase.from('push_tokens').upsert(
+          { operator_id: operatorId, expo_token: token },
+          { onConflict: 'operator_id,expo_token' }
+        );
+        if (error) console.error('Failed to register push token:', error.message);
+      } catch (err) {
+        console.error('Push notification registration failed:', err);
       }
-      if (finalStatus !== 'granted') return;
-      const { data: token } = await Notifications.getExpoPushTokenAsync();
-      if (!token) return;
-      await supabase.from('push_tokens').upsert(
-        { operator_id: operatorId, expo_token: token },
-        { onConflict: 'operator_id,expo_token' }
-      );
     }
 
     register();
@@ -47,12 +52,16 @@ export function usePushNotifications(operatorId, onNotificationTap) {
   }, [operatorId]);
 
   async function deregister(operatorId) {
-    const result = await Notifications.getExpoPushTokenAsync().catch(() => ({ data: null }));
+    const result = await Notifications.getExpoPushTokenAsync().catch(err => {
+      console.error('Failed to get push token for deregister:', err);
+      return { data: null };
+    });
     const token = result?.data;
     if (token) {
-      await supabase.from('push_tokens').delete()
+      const { error } = await supabase.from('push_tokens').delete()
         .eq('operator_id', operatorId)
         .eq('expo_token', token);
+      if (error) console.error('Failed to deregister push token:', error.message);
     }
   }
 

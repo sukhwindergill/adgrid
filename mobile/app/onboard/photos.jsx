@@ -34,6 +34,7 @@ export default function PhotosScreen() {
     if (form.photos.length === 0) { router.push('/onboard/connect'); return; }
     setUploading(true);
     const uploaded = [];
+    let failedCount = 0;
     for (const uri of form.photos) {
       const ext = uri.split('.').pop() || 'jpg';
       const path = `screens/${form.screenId}/${Date.now()}.${ext}`;
@@ -43,12 +44,22 @@ export default function PhotosScreen() {
       if (!error) {
         const { data: { publicUrl } } = supabase.storage.from('screen-photos').getPublicUrl(path);
         uploaded.push(publicUrl);
+      } else {
+        failedCount += 1;
       }
     }
     if (uploaded.length > 0) {
       await supabase.from('screens').update({ screen_photos: uploaded }).eq('id', form.screenId);
     }
     setUploading(false);
+    if (failedCount > 0) {
+      Alert.alert(
+        'Some photos failed to upload',
+        `${failedCount} of ${form.photos.length} photo${form.photos.length !== 1 ? 's' : ''} could not be uploaded. You can continue and add them later from the screen detail page.`,
+        [{ text: 'Continue anyway', onPress: () => router.push('/onboard/connect') }, { text: 'Cancel', style: 'cancel' }]
+      );
+      return;
+    }
     router.push('/onboard/connect');
   }
 

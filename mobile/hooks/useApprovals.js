@@ -41,20 +41,27 @@ export function useApprovals(operatorId, screenIds) {
   }, [fetchPending]);
 
   async function approve(campaignScreenId, campaignId, startWhen) {
-    await supabase.from('campaign_screens')
+    const { error: err } = await supabase.from('campaign_screens')
       .update({ status: 'approved', approved_at: new Date().toISOString() })
       .eq('id', campaignScreenId);
+    if (err) { setError(err.message); return { error: err }; }
     if (startWhen === 'partial') {
-      await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaignId);
+      const { error: bookingErr } = await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaignId);
+      if (bookingErr) { setError(bookingErr.message); return { error: bookingErr }; }
     }
+    setError(null);
     setPending(prev => prev.filter(p => p.id !== campaignScreenId));
+    return { error: null };
   }
 
   async function reject(campaignScreenId, reason) {
-    await supabase.from('campaign_screens')
+    const { error: err } = await supabase.from('campaign_screens')
       .update({ status: 'rejected', rejection_reason: reason })
       .eq('id', campaignScreenId);
+    if (err) { setError(err.message); return { error: err }; }
+    setError(null);
     setPending(prev => prev.filter(p => p.id !== campaignScreenId));
+    return { error: null };
   }
 
   return { pending, loading, error, pendingCount: pending.length, approve, reject, refetch: fetchPending };

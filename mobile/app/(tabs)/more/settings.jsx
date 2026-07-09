@@ -21,6 +21,7 @@ export default function SettingsScreen() {
 
   async function handleSave() {
     if (!name.trim()) { setError('Name is required'); return; }
+    if (!profile?.id) { setError('Profile not loaded. Pull to refresh and try again.'); return; }
     setError(''); setSaving(true);
     const { error: err } = await supabase.from('profiles').update({ full_name: name.trim() }).eq('id', profile.id);
     setSaving(false);

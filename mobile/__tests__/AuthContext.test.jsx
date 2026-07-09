@@ -35,4 +35,22 @@ describe('AuthContext', () => {
     await act(async () => { await result.current.signOut(); });
     expect(mockSupabase.auth.signOut).toHaveBeenCalled();
   });
+
+  it('exposes profileError and leaves profile null when the profile fetch fails', async () => {
+    mockSupabase.auth.getSession.mockResolvedValueOnce({
+      data: { session: { user: { id: 'u-1' } } },
+      error: null,
+    });
+    mockSupabase.from.mockReturnValueOnce({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: null, error: { message: 'RLS denied' } }),
+    });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.profile).toBeNull();
+    expect(result.current.profileError).toBe('RLS denied');
+  });
 });

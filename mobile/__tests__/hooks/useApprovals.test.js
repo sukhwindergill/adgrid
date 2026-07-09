@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react-native';
+import { renderHook, waitFor, act } from '@testing-library/react-native';
 import { useApprovals } from '../../hooks/useApprovals';
 import { createClient } from '@supabase/supabase-js';
 
@@ -46,5 +46,45 @@ describe('useApprovals', () => {
     const { result } = renderHook(() => useApprovals('op-1', []));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.pending).toHaveLength(0);
+  });
+
+  it('surfaces the error and keeps the row pending when approve fails', async () => {
+    mockSupabase.from.mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      in: jest.fn().mockResolvedValue({ data: [pendingRow], error: null }),
+      update: jest.fn(() => ({
+        eq: jest.fn().mockResolvedValue({ error: { message: 'Update failed' } }),
+      })),
+    });
+    const { result } = renderHook(() => useApprovals('op-1', ['s-1']));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let outcome;
+    await act(async () => { outcome = await result.current.approve('cs-1', 'c-1', 'all'); });
+
+    expect(outcome.error.message).toBe('Update failed');
+    expect(result.current.error).toBe('Update failed');
+    expect(result.current.pending).toHaveLength(1);
+  });
+
+  it('surfaces the error and keeps the row pending when reject fails', async () => {
+    mockSupabase.from.mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      in: jest.fn().mockResolvedValue({ data: [pendingRow], error: null }),
+      update: jest.fn(() => ({
+        eq: jest.fn().mockResolvedValue({ error: { message: 'Update failed' } }),
+      })),
+    });
+    const { result } = renderHook(() => useApprovals('op-1', ['s-1']));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let outcome;
+    await act(async () => { outcome = await result.current.reject('cs-1', 'Other'); });
+
+    expect(outcome.error.message).toBe('Update failed');
+    expect(result.current.error).toBe('Update failed');
+    expect(result.current.pending).toHaveLength(1);
   });
 });
