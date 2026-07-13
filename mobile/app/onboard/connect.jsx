@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard';
 import { useOnboard } from '../../context/OnboardContext';
 import { supabase } from '../../lib/supabase';
 import { WizardProgress } from '../../components/onboard/WizardProgress';
@@ -16,6 +17,7 @@ export default function ConnectScreen() {
   const [error, setError] = useState(false);
   const [checking, setChecking] = useState(false);
   const [connStatus, setConnStatus] = useState('idle'); // 'idle' | 'ok' | 'none'
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function loadToken() {
@@ -26,6 +28,13 @@ export default function ConnectScreen() {
     }
     loadToken();
   }, [form.screenId]);
+
+  async function copyToken() {
+    if (!token) return;
+    await Clipboard.setStringAsync(token);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   async function checkConnection() {
     setChecking(true);
@@ -65,9 +74,9 @@ export default function ConnectScreen() {
             <View style={styles.tokenBox}>
               <Text selectable style={[styles.token, { fontFamily: F.sansMed }]}>{token}</Text>
             </View>
-            <Text style={[styles.hint, { fontFamily: F.sans }]}>
-              Long-press the token above to copy it.
-            </Text>
+            <Btn variant="secondary" onPress={copyToken} style={{ marginTop: 10 }}>
+              {copied ? 'Copied!' : 'Copy Token'}
+            </Btn>
 
             <Btn variant="secondary" onPress={checkConnection} loading={checking} style={{ marginTop: 20 }}>
               Check Connection

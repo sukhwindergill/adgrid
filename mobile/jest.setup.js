@@ -23,3 +23,6 @@ jest.mock('react-native-safe-area-context', () => ({
 jest.mock('expo-linear-gradient', () => ({
   LinearGradient: ({ children }) => children,
 }));
+jest.mock('expo-clipboard', () => ({
+  setStringAsync: jest.fn().mockResolvedValue(true),
+}));

@@ -1,4 +1,5 @@
 import React from 'react';
+import * as Clipboard from 'expo-clipboard';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import ConnectScreen from '../../app/onboard/connect';
 import { OnboardProvider, useOnboard } from '../../context/OnboardContext';
@@ -41,5 +42,13 @@ describe('ConnectScreen', () => {
     fireEvent.press(getByText('Done'));
     // No assertion on navigation target — expo-router is globally mocked in jest.setup.js;
     // this just confirms the button doesn't throw once the token has loaded.
+  });
+
+  it('copies the token to the clipboard and shows confirmation when Copy Token is pressed', async () => {
+    const { findByText, getByText } = render(<ConnectScreen />, { wrapper });
+    await findByText('tok_abc123');
+    fireEvent.press(getByText('Copy Token'));
+    await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalledWith('tok_abc123'));
+    expect(await findByText('Copied!')).toBeTruthy();
   });
 });
