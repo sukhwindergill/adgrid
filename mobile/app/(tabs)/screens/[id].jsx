@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Image, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Image, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard';
 import { supabase } from '../../../lib/supabase';
 import { HealthBadge } from '../../../components/screens/HealthBadge';
 import { Card } from '../../../components/ui/Card';
@@ -19,6 +20,7 @@ export default function ScreenDetailScreen() {
   const [campaigns, setCampaigns] = useState([]);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -48,6 +50,13 @@ export default function ScreenDetailScreen() {
   }
   if (!screen) return null;
 
+  async function copyToken() {
+    if (!token) return;
+    await Clipboard.setStringAsync(token);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   const venueLabel = screen.venue_subtype || VENUE_TAXONOMY[screen.venue_category]?.label || '';
   const activeCampaigns = campaigns.filter(c => c.status === 'approved').length;
   const pendingCampaigns = campaigns.filter(c => c.status === 'pending').length;
@@ -74,15 +83,26 @@ export default function ScreenDetailScreen() {
 
         <Card style={styles.detailCard}>
           {[
-            ['Status', screen.status || 'active'],
-            ['Hours', `${screen.operating_hours_start || '—'} – ${screen.operating_hours_end || '—'}`],
-            ['Timezone', screen.timezone || '—'],
-            ['Token', token || '—'],
-          ].map(([label, value]) => (
-            <View key={label} style={styles.row}>
-              <Text style={[styles.rowLabel, { fontFamily: F.sansMed }]}>{label}</Text>
-              <Text style={[styles.rowValue, { fontFamily: F.sans }]} numberOfLines={1}>{value}</Text>
-            </View>
+            ['Status', screen.status || 'active', false],
+            ['Hours', `${screen.operating_hours_start || '—'} – ${screen.operating_hours_end || '—'}`, false],
+            ['Timezone', screen.timezone || '—', false],
+            ['Token', token || '—', true],
+          ].map(([label, value, copyable]) => (
+            copyable && token ? (
+              <TouchableOpacity key={label} onPress={copyToken} accessibilityLabel="Copy screen token">
+                <View style={styles.row}>
+                  <Text style={[styles.rowLabel, { fontFamily: F.sansMed }]}>{label}</Text>
+                  <Text style={[styles.rowValue, { fontFamily: F.sans }, copied && { color: C.green }]} numberOfLines={1}>
+                    {copied ? 'Copied!' : value}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ) : (
+              <View key={label} style={styles.row}>
+                <Text style={[styles.rowLabel, { fontFamily: F.sansMed }]}>{label}</Text>
+                <Text style={[styles.rowValue, { fontFamily: F.sans }]} numberOfLines={1}>{value}</Text>
+              </View>
+            )
           ))}
         </Card>
 
