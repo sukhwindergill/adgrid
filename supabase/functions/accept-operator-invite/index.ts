@@ -57,10 +57,13 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: roleError.message }), { status: 500, headers: CORS });
   }
 
-  await supabase
+  const { error: acceptError } = await supabase
     .from("operator_invites")
     .update({ status: "accepted", accepted_at: new Date().toISOString() })
     .eq("id", invite.id);
+  if (acceptError) {
+    console.error(`Failed to mark invite ${invite.id} accepted after promoting user ${user.id}:`, acceptError.message);
+  }
 
   return new Response(JSON.stringify({ ok: true }), { headers: CORS });
 });
