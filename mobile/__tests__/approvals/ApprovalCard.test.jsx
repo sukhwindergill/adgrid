@@ -1,4 +1,5 @@
 import React from 'react';
+import { Alert } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { ApprovalCard } from '../../components/approvals/ApprovalCard';
 
@@ -31,11 +32,27 @@ describe('ApprovalCard', () => {
     expect(getByText('Inappropriate content')).toBeTruthy();
   });
 
-  it('calls onReject with reason when confirmed', () => {
+  it('shows a native confirmation before rejecting, and calls onReject when the user confirms', () => {
     const onReject = jest.fn();
+    jest.spyOn(Alert, 'alert').mockImplementation((title, message, buttons) => {
+      buttons.find(b => b.style === 'destructive').onPress();
+    });
     const { getByText } = render(<ApprovalCard row={mockRow} onApprove={jest.fn()} onReject={onReject} />);
     fireEvent.press(getByText('Reject'));
     fireEvent.press(getByText('Confirm Rejection'));
+    expect(Alert.alert).toHaveBeenCalledWith('Reject this ad?', 'This cannot be undone.', expect.any(Array));
     expect(onReject).toHaveBeenCalledWith('Inappropriate content');
+    Alert.alert.mockRestore();
+  });
+
+  it('does not call onReject when the confirmation is cancelled', () => {
+    const onReject = jest.fn();
+    jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const { getByText } = render(<ApprovalCard row={mockRow} onApprove={jest.fn()} onReject={onReject} />);
+    fireEvent.press(getByText('Reject'));
+    fireEvent.press(getByText('Confirm Rejection'));
+    expect(Alert.alert).toHaveBeenCalled();
+    expect(onReject).not.toHaveBeenCalled();
+    Alert.alert.mockRestore();
   });
 });
