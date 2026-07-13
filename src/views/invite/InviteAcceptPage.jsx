@@ -38,6 +38,7 @@ export function InviteAcceptPage() {
     if (pwError) { setSaving(false); setError(pwError.message); return }
 
     const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { setSaving(false); setError('Your session expired — please click the invite link again.'); return }
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/accept-operator-invite`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
@@ -49,6 +50,7 @@ export function InviteAcceptPage() {
       setError(
         body?.error === 'expired' ? 'This invite has expired.'
         : body?.error === 'already_accepted' ? 'This invite was already used.'
+        : body?.error === 'email_mismatch' ? 'This invite was sent to a different email address. Please sign out and use the link from your invite email.'
         : 'Something went wrong finishing setup. Try again.'
       )
       return
