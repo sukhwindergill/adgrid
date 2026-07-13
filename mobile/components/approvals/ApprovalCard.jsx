@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Card } from '../ui/Card';
 import { Btn } from '../ui/Btn';
 import { Badge } from '../ui/Badge';
@@ -35,6 +35,13 @@ export function ApprovalCard({ row, onApprove, onReject }) {
     const result = await onReject(reason);
     setActing(false);
     if (!result?.error) setRejecting(false);
+  }
+
+  function confirmReject() {
+    Alert.alert('Reject this ad?', 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Reject', style: 'destructive', onPress: handleReject },
+    ]);
   }
 
   return (
@@ -78,7 +85,7 @@ export function ApprovalCard({ row, onApprove, onReject }) {
             ))}
             <View style={styles.actions}>
               <Btn variant="secondary" onPress={() => setRejecting(false)} style={{ flex: 1 }}>Cancel</Btn>
-              <Btn variant="danger" onPress={handleReject} loading={acting} style={{ flex: 1 }}>Confirm Rejection</Btn>
+              <Btn variant="danger" onPress={confirmReject} loading={acting} style={{ flex: 1 }}>Confirm Rejection</Btn>
             </View>
           </View>
         )}
