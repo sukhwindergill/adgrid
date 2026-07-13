@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { C, F } from '../../lib/tokens';
 
-export function Inp({ label, value, onChangeText, placeholder, secureTextEntry, keyboardType, autoCapitalize = 'none', error, multiline, numberOfLines, editable }) {
+export function Inp({ label, value, onChangeText, placeholder, secureTextEntry, keyboardType, autoCapitalize = 'none', error, multiline, numberOfLines, editable, maxLength }) {
   const [focused, setFocused] = useState(false);
   return (
     <View style={styles.wrap}>
@@ -19,6 +19,7 @@ export function Inp({ label, value, onChangeText, placeholder, secureTextEntry, 
         multiline={multiline}
         numberOfLines={numberOfLines}
         editable={editable !== false}
+        maxLength={maxLength}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         style={[

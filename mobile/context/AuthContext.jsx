@@ -7,6 +7,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [profileError, setProfileError] = useState(null);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [loading, setLoading] = useState(true);
 
   async function fetchProfile(userId) {
@@ -27,7 +28,8 @@ export function AuthProvider({ children }) {
       else setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') { setPasswordRecovery(true); return; }
       setUser(session?.user ?? null);
       if (session?.user) fetchProfile(session.user.id);
       else setProfile(null);
@@ -47,8 +49,25 @@ export function AuthProvider({ children }) {
     setProfile(null);
   }
 
+  async function resetPasswordForEmail(email) {
+    return supabase.auth.resetPasswordForEmail(email);
+  }
+
+  async function verifyRecoveryCode(email, token) {
+    return supabase.auth.verifyOtp({ email, token, type: 'recovery' });
+  }
+
+  async function updatePassword(password) {
+    const result = await supabase.auth.updateUser({ password });
+    if (!result.error) setPasswordRecovery(false);
+    return result;
+  }
+
   return (
-    <AuthContext.Provider value={{ user, profile, profileError, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{
+      user, profile, profileError, passwordRecovery, loading,
+      signIn, signOut, resetPasswordForEmail, verifyRecoveryCode, updatePassword,
+    }}>
       {children}
     </AuthContext.Provider>
   );
