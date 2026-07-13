@@ -4,6 +4,7 @@ import { Card } from '../ui/Card';
 import { Btn } from '../ui/Btn';
 import { Badge } from '../ui/Badge';
 import { C, F } from '../../lib/tokens';
+import { SCREEN_OWNER_SHARE } from '@adgrid/core';
 
 const REJECT_REASONS = [
   'Inappropriate content',
@@ -11,8 +12,6 @@ const REJECT_REASONS = [
   'Not relevant to my venue',
   'Other',
 ];
-
-const SCREEN_SHARE = 0.70;
 
 export function ApprovalCard({ row, onApprove, onReject }) {
   const [rejecting, setRejecting] = useState(false);
@@ -22,7 +21,7 @@ export function ApprovalCard({ row, onApprove, onReject }) {
   const creative = row.campaign?.media_url
     ? { url: row.campaign.media_url, headline: row.campaign.headline }
     : null;
-  const estimatedRevenue = ((row.campaign?.budget || 0) * SCREEN_SHARE).toFixed(2);
+  const estimatedRevenue = ((row.campaign?.budget || 0) * SCREEN_OWNER_SHARE).toFixed(2);
 
   async function handleApprove() {
     setActing(true);
