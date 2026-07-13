@@ -5,8 +5,11 @@ import { C, F } from '../../lib/tokens';
 export function ErrorBanner({ message }) {
   if (!message) return null;
   return (
-    <View style={styles.banner}>
-      <Text style={[styles.text, { fontFamily: F.sans }]}>⚠ <Text>{message}</Text></Text>
+    <View style={styles.banner} accessibilityRole="alert">
+      <Text style={[styles.text, { fontFamily: F.sans }]}>
+        <Text accessibilityElementsHidden importantForAccessibility="no-hide-descendants">⚠ </Text>
+        <Text>{message}</Text>
+      </Text>
     </View>
   );
 }

@@ -55,4 +55,20 @@ describe('ApprovalCard', () => {
     expect(onReject).not.toHaveBeenCalled();
     Alert.alert.mockRestore();
   });
+
+  it('labels the creative image for screen readers', () => {
+    const { getByLabelText } = render(<ApprovalCard row={mockRow} onApprove={jest.fn()} onReject={jest.fn()} />);
+    expect(getByLabelText('Ad creative for Spring Sale')).toBeTruthy();
+  });
+
+  it('marks the selected reject reason as selected for screen readers', () => {
+    const { getByText } = render(<ApprovalCard row={mockRow} onApprove={jest.fn()} onReject={jest.fn()} />);
+    fireEvent.press(getByText('Reject'));
+    const defaultReason = getByText('Inappropriate content').parent.parent;
+    const otherReason = getByText('Competitor brand').parent.parent;
+    expect(defaultReason.props.accessibilityState).toEqual({ selected: true });
+    expect(otherReason.props.accessibilityState).toEqual({ selected: false });
+    fireEvent.press(getByText('Competitor brand'));
+    expect(otherReason.props.accessibilityState).toEqual({ selected: true });
+  });
 });

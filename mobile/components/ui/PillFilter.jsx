@@ -8,6 +8,7 @@ export function PillFilter({ options, value, onChange }) {
         const active = opt.value === value;
         return (
           <TouchableOpacity key={String(opt.value)} onPress={() => onChange(opt.value)}
+            accessibilityRole="button" accessibilityState={{ selected: active }}
             style={[styles.pill, { borderColor: active ? C.purple : C.border, backgroundColor: active ? C.purpleSoft : C.surface }]}>
             <Text style={[styles.label, { fontFamily: F.sansMed, color: active ? C.purple : C.textSub }]}>{opt.label}</Text>
           </TouchableOpacity>
