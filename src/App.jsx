@@ -46,6 +46,10 @@ import { DisplayView }      from './views/shared/DisplayView.jsx';
 import { AccountHub }      from './views/accounts/AccountHub.jsx'
 import { AcceptGrantView } from './views/accounts/AcceptGrantView.jsx'
 
+import { AdminInvites } from './views/admin/AdminInvites.jsx';
+import { RequirePlatformOwner } from './components/auth/RequirePlatformOwner.jsx';
+import { InviteAcceptPage } from './views/invite/InviteAcceptPage.jsx';
+
 // Public views (no auth required) — lazy-loaded so the heavy marketing/display
 // bundles don't ship with the authenticated dashboard's first paint.
 const DisplayPlayer  = lazy(() => import('./views/display/DisplayPlayer.jsx').then(m => ({ default: m.DisplayPlayer })));
@@ -447,7 +451,12 @@ export default function App() {
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/display/:token" element={<DisplayPlayerRoute />} />
+        <Route path="/invite/:token" element={<InviteAcceptPage />} />
         <Route path="/app/accounts" element={<RequireAuth><AccountHubRoute /></RequireAuth>} />
+        <Route
+          path="/app/admin/invites"
+          element={<RequireAuth><RequirePlatformOwner><AdminInvites /></RequirePlatformOwner></RequireAuth>}
+        />
         <Route path="/app/accept-grant" element={<AcceptGrantView />} />
         <Route
           path="/app/*"
