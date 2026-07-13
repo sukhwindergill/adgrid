@@ -11,7 +11,7 @@ export function ScreenCard({ screen, onPress }) {
 
   return (
     <Card onPress={onPress} style={styles.card}>
-      {photo && <Image source={{ uri: photo }} style={styles.photo} resizeMode="cover" />}
+      {photo && <Image source={{ uri: photo }} style={styles.photo} resizeMode="cover" accessibilityLabel={`Photo of ${screen.name}`} />}
       <View style={styles.body}>
         <View style={styles.row}>
           <Text style={[styles.name, { fontFamily: F.sansSemi }]} numberOfLines={1}>{screen.name}</Text>

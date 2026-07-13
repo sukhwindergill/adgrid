@@ -51,6 +51,7 @@ export default function VenueScreen() {
         <View style={styles.pills}>
           {categories.map(cat => (
             <TouchableOpacity key={cat.value} onPress={() => update({ venue_category: cat.value, venue_subtype: '' })}
+              accessibilityRole="button" accessibilityState={{ selected: form.venue_category === cat.value }}
               style={[styles.pill, { borderColor: form.venue_category === cat.value ? C.purple : C.border, backgroundColor: form.venue_category === cat.value ? C.purpleSoft : C.surface }]}>
               <Text style={[styles.pillText, { fontFamily: F.sansMed, color: form.venue_category === cat.value ? C.purple : C.textSub }]}>{cat.label}</Text>
             </TouchableOpacity>
@@ -62,6 +63,7 @@ export default function VenueScreen() {
             <View style={styles.pills}>
               {subtypes.map(sub => (
                 <TouchableOpacity key={sub} onPress={() => update({ venue_subtype: sub })}
+                  accessibilityRole="button" accessibilityState={{ selected: form.venue_subtype === sub }}
                   style={[styles.pill, { borderColor: form.venue_subtype === sub ? C.purple : C.border, backgroundColor: form.venue_subtype === sub ? C.purpleSoft : C.surface }]}>
                   <Text style={[styles.pillText, { fontFamily: F.sansMed, color: form.venue_subtype === sub ? C.purple : C.textSub }]}>{sub}</Text>
                 </TouchableOpacity>

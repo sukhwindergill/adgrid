@@ -40,7 +40,12 @@ export function ApprovalCard({ row, onApprove, onReject }) {
   return (
     <Card style={styles.card}>
       {creative?.url && (
-        <Image source={{ uri: creative.url }} style={styles.creative} resizeMode="cover" />
+        <Image
+          source={{ uri: creative.url }}
+          style={styles.creative}
+          resizeMode="cover"
+          accessibilityLabel={`Ad creative for ${row.campaign?.name || 'campaign'}`}
+        />
       )}
       <View style={styles.body}>
         <View style={styles.headerRow}>
@@ -72,6 +77,7 @@ export function ApprovalCard({ row, onApprove, onReject }) {
             <Text style={[styles.rejectLabel, { fontFamily: F.sansMed }]}>Reason for rejection</Text>
             {REJECT_REASONS.map(r => (
               <TouchableOpacity key={r} onPress={() => setReason(r)}
+                accessibilityRole="button" accessibilityState={{ selected: reason === r }}
                 style={[styles.reasonOption, { borderColor: reason === r ? C.red : C.border, backgroundColor: reason === r ? C.redSoft : C.surface }]}>
                 <Text style={[styles.reasonText, { fontFamily: F.sans, color: reason === r ? C.red : C.textSub }]}>{r}</Text>
               </TouchableOpacity>

@@ -40,7 +40,12 @@ export default function ScreensScreen() {
           />
         )}
       </View>
-      <TouchableOpacity style={styles.fab} onPress={() => router.push('/onboard/welcome')}>
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => router.push('/onboard/welcome')}
+        accessibilityRole="button"
+        accessibilityLabel="Add a new screen"
+      >
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
     </SafeAreaView>

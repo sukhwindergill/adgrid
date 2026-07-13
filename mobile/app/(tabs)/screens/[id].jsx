@@ -62,7 +62,7 @@ export default function ScreenDetailScreen() {
         {screen.screen_photos?.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photos}>
             {screen.screen_photos.map((uri, i) => (
-              <Image key={i} source={{ uri }} style={styles.photo} resizeMode="cover" />
+              <Image key={i} source={{ uri }} style={styles.photo} resizeMode="cover" accessibilityLabel={`Photo ${i + 1} of ${screen.name}`} />
             ))}
           </ScrollView>
         )}

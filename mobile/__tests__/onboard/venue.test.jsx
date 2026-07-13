@@ -19,4 +19,12 @@ describe('VenueScreen', () => {
     fireEvent.press(getByText('Next'));
     expect(await findByText('Screen name is required')).toBeTruthy();
   });
+
+  it('marks the selected venue category as selected for screen readers', () => {
+    const { getByText } = render(<VenueScreen />, { wrapper });
+    const category = getByText('Retail').parent.parent;
+    expect(category.props.accessibilityState).toEqual({ selected: false });
+    fireEvent.press(getByText('Retail'));
+    expect(category.props.accessibilityState).toEqual({ selected: true });
+  });
 });

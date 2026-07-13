@@ -72,8 +72,13 @@ export default function PhotosScreen() {
         <View style={styles.previews}>
           {form.photos.map((uri, i) => (
             <View key={i} style={styles.previewWrap}>
-              <Image source={{ uri }} style={styles.preview} resizeMode="cover" />
-              <TouchableOpacity onPress={() => update({ photos: form.photos.filter((_, j) => j !== i) })} style={styles.removeBtn}>
+              <Image source={{ uri }} style={styles.preview} resizeMode="cover" accessibilityLabel={`Selected photo ${i + 1}`} />
+              <TouchableOpacity
+                onPress={() => update({ photos: form.photos.filter((_, j) => j !== i) })}
+                style={styles.removeBtn}
+                accessibilityRole="button"
+                accessibilityLabel={`Remove photo ${i + 1}`}
+              >
                 <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>✕</Text>
               </TouchableOpacity>
             </View>
