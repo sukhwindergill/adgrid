@@ -63,6 +63,9 @@ importers:
       '@adgrid/core':
         specifier: workspace:*
         version: link:../packages/core
+      '@babel/runtime':
+        specifier: ^7.25.0
+        version: 7.29.7
       '@expo-google-fonts/jetbrains-mono':
         specifier: ^0.3.0
         version: 0.3.0
