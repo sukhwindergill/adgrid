@@ -5,7 +5,8 @@ import { useAuth } from '../../../context/AuthContext';
 import { useScreens } from '../../../hooks/useScreens';
 import { ScreenCard } from '../../../components/screens/ScreenCard';
 import { PageHeader } from '../../../components/ui/PageHeader';
-import { C, F } from '../../../lib/tokens';
+import { EmptyState } from '../../../components/ui/EmptyState';
+import { C } from '../../../lib/tokens';
 
 export default function ScreensScreen() {
   const router = useRouter();
@@ -22,11 +23,7 @@ export default function ScreensScreen() {
         {loading ? (
           <ActivityIndicator color={C.purple} style={{ marginTop: 40 }} />
         ) : screens.length === 0 ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>📺</Text>
-            <Text style={[styles.emptyTitle, { fontFamily: F.sansBold }]}>No screens yet</Text>
-            <Text style={[styles.emptySub, { fontFamily: F.sans }]}>Tap + to register your first screen</Text>
-          </View>
+          <EmptyState icon="📺" title="No screens yet" subtitle="Tap + to register your first screen" />
         ) : (
           <FlatList
             data={screens}
@@ -54,10 +51,6 @@ export default function ScreensScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
-  emptyIcon: { fontSize: 48, marginBottom: 8 },
-  emptyTitle: { fontSize: 18, color: C.text },
-  emptySub: { fontSize: 14, color: C.textSub },
   fab: {
     position: 'absolute', bottom: 24, right: 24,
     width: 52, height: 52, borderRadius: 26,

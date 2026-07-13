@@ -9,6 +9,7 @@ import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { PageHeader } from '../../../components/ui/PageHeader';
 import { Btn } from '../../../components/ui/Btn';
+import { EmptyState } from '../../../components/ui/EmptyState';
 import { C, F } from '../../../lib/tokens';
 
 export default function AdvertisersScreen() {
@@ -70,9 +71,7 @@ export default function AdvertisersScreen() {
         )}
         ListEmptyComponent={() =>
           loading ? <ActivityIndicator color={C.purple} style={{ margin: 40 }} /> : (
-            <View style={{ alignItems: 'center', padding: 40 }}>
-              <Text style={[{ fontFamily: F.sans, fontSize: 14, color: C.textSub }]}>No advertisers yet</Text>
-            </View>
+            <EmptyState icon="🏢" title="No advertisers yet" subtitle="Advertisers will appear here once they book a campaign on one of your screens" />
           )
         }
       />

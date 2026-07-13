@@ -8,6 +8,7 @@ import { KPI } from '../../components/ui/KPI';
 import { Card } from '../../components/ui/Card';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { PillFilter } from '../../components/ui/PillFilter';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { C, F } from '../../lib/tokens';
 import { formatCurrency, SCREEN_OWNER_SHARE } from '@adgrid/core';
 
@@ -54,11 +55,7 @@ export default function RevenueScreen() {
         )}
         ListEmptyComponent={() =>
           loading ? <ActivityIndicator color={C.purple} style={{ margin: 40 }} /> : (
-            <View style={{ alignItems: 'center', padding: 40, gap: 8 }}>
-              <Text style={{ fontSize: 48 }}>💰</Text>
-              <Text style={[{ fontFamily: F.sansBold, fontSize: 18, color: C.text }]}>No revenue yet</Text>
-              <Text style={[{ fontFamily: F.sans, fontSize: 14, color: C.textSub }]}>Approved campaigns will appear here</Text>
-            </View>
+            <EmptyState icon="💰" title="No revenue yet" subtitle="Approved campaigns will appear here" />
           )
         }
         showsVerticalScrollIndicator={false}
