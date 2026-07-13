@@ -1,3 +1,5 @@
+create extension if not exists pgcrypto with schema extensions;
+
 create type invite_status as enum ('pending', 'accepted', 'expired');
 
 create table if not exists operator_invites (
@@ -23,6 +25,12 @@ create policy "Platform owners can manage invites"
 
 -- Public read by token: the accept page looks up invite details (email, status,
 -- expiry) before the user has any authenticated session of their own yet.
+-- Safe as a `using (true)` policy because: (1) the token is 32 bytes from
+-- gen_random_bytes — 256 bits of entropy, not brute-forceable — so this is
+-- not the same class of bug as the screen_token incident (that token had a
+-- much smaller effective keyspace); (2) the exposed columns (email, status,
+-- expires_at) are low-sensitivity — no secrets, and the email is already
+-- visible in the invited user's own inbox.
 create policy "Anyone can read invite by token"
   on operator_invites for select
   using (true);
