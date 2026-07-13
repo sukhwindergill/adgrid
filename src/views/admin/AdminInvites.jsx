@@ -39,6 +39,7 @@ export function AdminInvites() {
     if (!email.includes('@')) { toast.error('Enter a valid email address.'); return }
     setSending(true)
     const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { setSending(false); toast.error('Session expired. Please log in again.'); return }
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/invite-operator`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
