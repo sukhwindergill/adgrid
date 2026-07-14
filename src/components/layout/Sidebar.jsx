@@ -43,6 +43,8 @@ function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
           <button
             key={m.id}
             title={m.label}
+            aria-label={`Switch to ${m.label} mode`}
+            aria-pressed={activeMode === m.id}
             onClick={() => onSwitch(m.id)}
             style={{
               width: '100%', padding: '6px 0', border: 'none', borderRadius: 6, cursor: 'pointer',
@@ -134,6 +136,8 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
   return (
     <button
       title={collapsed ? item.label : undefined}
+      aria-label={item.label}
+      aria-current={isActive ? 'page' : undefined}
       onClick={() => onClick(item.id)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -484,6 +488,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
         {/* Collapse toggle — hidden on mobile, where the sidebar is always icon-rail */}
         {!isMobile && <button
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           onClick={toggle}
           onMouseEnter={() => setCollapseHovered(true)}
           onMouseLeave={() => setCollapseHovered(false)}

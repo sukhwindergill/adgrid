@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParallax } from './useParallax.js';
 
-export function Hero({ onScrollTo }) {
+export function Hero({ onScrollTo, onOperatorSignup }) {
   const [liveCount, setLiveCount] = useState(null);
   const [mounted, setMounted] = useState(false);
   const parallaxRef = useParallax(0.15);
@@ -28,7 +28,7 @@ export function Hero({ onScrollTo }) {
             local advertisers buy it. Real-time pricing, full control on both sides.
           </p>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-            <button className="btn-p" onClick={() => onScrollTo('waitlist-form')}>List your screens</button>
+            <button className="btn-p" onClick={onOperatorSignup}>List your screens</button>
             <button className="btn-s" onClick={() => onScrollTo('advertisers')}>Book a campaign</button>
           </div>
           <div className="hero-stats">

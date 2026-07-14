@@ -14,6 +14,7 @@ import { Footer } from './sections/Footer.jsx';
 export function MarketingHome({ onLogin: onLoginProp }) {
   const navigate = useNavigate();
   const onLogin = onLoginProp ?? (() => navigate('/login'));
+  const onOperatorSignup = () => navigate('/login?mode=signup&intent=operator');
 
   const scrollTo = id => {
     const el = document.getElementById(id);
@@ -24,11 +25,11 @@ export function MarketingHome({ onLogin: onLoginProp }) {
   return (
     <div className="mktg" style={{ background: '#0A0A0F', minHeight: '100vh' }}>
       <Nav onScrollTo={scrollTo} onLogin={onLogin} />
-      <Hero onScrollTo={scrollTo} />
+      <Hero onScrollTo={scrollTo} onOperatorSignup={onOperatorSignup} />
       <ProofStrip />
       <ProductShowcase />
       <HowItWorks />
-      <OperatorsSection onScrollTo={scrollTo} />
+      <OperatorsSection onOperatorSignup={onOperatorSignup} />
       <AdvertisersSection />
       <MarketBand />
       <CtaBand />

@@ -41,10 +41,12 @@ function DarkInp({ label, type, placeholder, value, onChange, onKeyDown }) {
 
 export function LoginPage() {
   const { signIn, signUp, signInWithOAuth, passwordRecovery, resetPasswordForEmail, updatePassword } = useAuth();
-  const [mode, setMode]     = useState('signin');
+  const params = new URLSearchParams(window.location.search);
+  const [mode, setMode]     = useState(params.get('mode') === 'signup' ? 'signup' : 'signin');
   const [email, setEmail]   = useState('');
   const [pass, setPass]     = useState('');
   const [name, setName]     = useState('');
+  const [intent, setIntent] = useState(params.get('intent') === 'operator' ? 'operator' : 'advertiser');
   const [tosChecked, setTosChecked] = useState(false);
   const [err, setErr]       = useState('');
   const [loading, setLoading]         = useState(false);
@@ -79,8 +81,9 @@ export function LoginPage() {
       const { error } = await signIn(email, pass);
       if (error) setErr(error.message);
     } else {
+      localStorage.setItem('adgrid_signup_intent', intent);
       const { error } = await signUp(email, pass, name, new Date().toISOString());
-      if (error) setErr(error.message);
+      if (error) { localStorage.removeItem('adgrid_signup_intent'); setErr(error.message); }
       else setErr('Check your email to confirm your account.');
     }
     setLoading(false);
@@ -201,6 +204,36 @@ export function LoginPage() {
               border: `1px solid ${isSuccess ? 'rgba(0,229,160,0.3)' : 'rgba(255,71,87,0.3)'}`,
               color: isSuccess ? '#00E5A0' : '#FF4757',
             }}>{err}</div>
+          )}
+
+          {activeMode === 'signup' && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 500, color: '#8A8A9A', fontFamily: F.sans, marginBottom: 6 }}>
+                I'm signing up to
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[
+                  { id: 'advertiser', label: 'Run ad campaigns' },
+                  { id: 'operator', label: 'List my screens' },
+                ].map(o => (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => setIntent(o.id)}
+                    style={{
+                      flex: 1, padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
+                      fontSize: 13, fontWeight: 500, fontFamily: F.sans, textAlign: 'center',
+                      border: `1px solid ${intent === o.id ? '#00C2FF' : '#1E1E2E'}`,
+                      background: intent === o.id ? 'rgba(0,194,255,0.10)' : 'rgba(255,255,255,0.04)',
+                      color: intent === o.id ? '#00C2FF' : '#8A8A9A',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>

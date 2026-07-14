@@ -19,7 +19,19 @@ export function AuthProvider({ children }) {
       .eq('id', userId)
       .single()
     setProfile(data)
-    setActiveModeState(data?.active_mode ?? 'advertiser')
+    if (data && !data.active_mode) {
+      // First login after signup: honor the intent picked on the signup
+      // form (advertiser vs screen operator) instead of always defaulting
+      // to advertiser — otherwise a would-be operator lands on the
+      // advertiser dashboard with no clue the operator mode toggle exists.
+      const intent = localStorage.getItem('adgrid_signup_intent')
+      const mode = intent === 'operator' ? 'operator' : 'advertiser'
+      setActiveModeState(mode)
+      localStorage.removeItem('adgrid_signup_intent')
+      supabase.from('profiles').update({ active_mode: mode }).eq('id', userId).then(() => {})
+    } else {
+      setActiveModeState(data?.active_mode ?? 'advertiser')
+    }
     return data
   }
 

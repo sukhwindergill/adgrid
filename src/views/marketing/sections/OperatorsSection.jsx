@@ -8,7 +8,7 @@ const CARDS = [
   [IconBolt, 'No lock-in', 'Connect in minutes. No long-term contracts, no upfront costs.'],
 ];
 
-export function OperatorsSection({ onScrollTo }) {
+export function OperatorsSection({ onOperatorSignup }) {
   const [ref, on] = useReveal();
   return (
     <section className="sec lcard-bg" id="operators" ref={ref}>
@@ -29,7 +29,7 @@ export function OperatorsSection({ onScrollTo }) {
               })}
             </div>
             <div style={{ marginTop: 32 }}>
-              <button className="btn-p" onClick={() => onScrollTo('waitlist-form')}>Join the operator waitlist</button>
+              <button className="btn-p" onClick={onOperatorSignup}>List your screens — sign up free</button>
             </div>
           </div>
         </div>

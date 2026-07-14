@@ -71,15 +71,24 @@ function ScreenCard({ screen, onClick }) {
                   <span style={{ marginLeft: 6, color: C.textMuted }}>· {screen.environment === 'indoor' ? 'Indoor' : 'Outdoor'}</span>
                 )}
               </div>
-              {hs.label !== 'Live' && (
-                <div style={{ fontSize: 10, color: hs.dot, fontFamily: F.sans, fontWeight: 600, marginTop: 2 }}>
-                  {hs.label}
-                </div>
-              )}
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-            <Badge status={screen.status} />
+            {/* Single source of truth: once a screen is approved ('live'),
+                the badge reflects real connectivity, not just approval
+                status — a screen can be approved but offline right now. */}
+            {screen.status === 'live' ? (
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: '3px 9px', borderRadius: 20, fontSize: 11, fontWeight: 500,
+                fontFamily: F.sans, background: `${hs.dot}1a`, color: hs.dot, border: `1px solid ${hs.dot}55`,
+              }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: hs.dot }} />
+                {hs.label}
+              </span>
+            ) : (
+              <Badge status={screen.status} />
+            )}
             {venueLabel && (
               <span style={{
                 fontSize: 10, fontWeight: 600, fontFamily: F.sans,

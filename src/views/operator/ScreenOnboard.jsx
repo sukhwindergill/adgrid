@@ -120,6 +120,7 @@ function StepRegister({ onBack, onScreenCreated }) {
     name: '', owner_name: '', country: 'CA', state: '', city: '',
     location: '', venue_category: '', venue_subtype: '', environment: '',
     screen_position: '', display_size: '', lat: '', lng: '', showLatLng: false,
+    monthly_traffic_estimate: '',
   });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
@@ -136,7 +137,8 @@ function StepRegister({ onBack, onScreenCreated }) {
     form.name.trim() && form.owner_name.trim() && form.state.trim() &&
     form.city.trim() && form.location.trim() && form.venue_category &&
     (subtypes.length === 0 || form.venue_subtype) &&
-    form.environment && form.screen_position && form.display_size.trim();
+    form.environment && form.screen_position && form.display_size.trim() &&
+    Number(form.monthly_traffic_estimate) > 0;
 
   const handleSubmit = async () => {
     if (!valid) return;
@@ -165,6 +167,7 @@ function StepRegister({ onBack, onScreenCreated }) {
       lat:             form.lat ? parseFloat(form.lat) : null,
       lon:             form.lng ? parseFloat(form.lng) : null,
       timezone,
+      monthly_traffic_estimate: Number(form.monthly_traffic_estimate),
     }).select('id, name').single();
 
     if (error) { setErr(error.message); setSaving(false); return; }
@@ -265,6 +268,18 @@ function StepRegister({ onBack, onScreenCreated }) {
 
           <Inp label="Display Size" placeholder="e.g. 55 inch 4K, 72 inch LED"
             value={form.display_size} onChange={e => set('display_size', e.target.value)} />
+
+          <Inp
+            label="Estimated monthly foot traffic"
+            type="number" min="0" step="1"
+            placeholder="e.g. 8000"
+            value={form.monthly_traffic_estimate}
+            onChange={e => set('monthly_traffic_estimate', e.target.value)}
+          />
+          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: -10 }}>
+            Rough headcount past this screen per month. Drives the reach estimate advertisers see —
+            an empty or zero value shows their campaign as having no audience.
+          </div>
 
           <div>
             <button
