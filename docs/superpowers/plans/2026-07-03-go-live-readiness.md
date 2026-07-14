@@ -212,6 +212,42 @@ moderation queue, notifications, cron, and kiosk/agent stack are in good shape.
 >   point it at yet); revisit once a domain is bought and verified in Resend. Until then, treat
 >   AdGrid's notification system as **in-app only, no email delivery**, for planning purposes.
 
+> **Update — session 6 (2026-07-14):** Ran Next-pass item 3 — a full logged-in click-through
+> (advertiser signup → create campaign → operator approve → check billing) via a local dev server
+> against the live Supabase project, using fresh sign-up test accounts rather than existing
+> credentials.
+>
+> - **B10 (blocker, found + fixed) — campaign creation has been completely broken since the
+>   feature was first built.** Submitting the campaign wizard failed 100% of the time with a raw
+>   Postgres error surfaced to the user: `null value in column "slots" of relation "bookings"
+>   violates not-null constraint`. Root cause: `bookings.slots` and `bookings.duration` are
+>   `NOT NULL` with no default, but the 5-step wizard never collected either field and the insert
+>   in `CreateCampaign.jsx` never set them — confirmed via `git log`/`git show` back to the
+>   original submit-handler commit (`fad2f26`), i.e. **no advertiser has ever been able to create a
+>   campaign through the app.** Fixed by adding real "Ad play duration" and "Slot share" inputs to
+>   the Budget & Schedule step (not a hidden default) and wiring them through form state, the
+>   Review summary, and the `bookings` insert (`225ac27`). Re-verified live: campaign created
+>   successfully (`slots=10, duration=15, status='pending_review'`), approved by the real operator
+>   account owning the matched Toronto screens (`campaign_screens.status` → `approved` on both),
+>   and confirmed correct on the operator Revenue view ($500 gross → $60 platform/12%, $176
+>   owner/40%, $264 network pool, status "Pending Review" pending payment — booking status only
+>   flips server-side on payment, by design, not a bug).
+> - **B6 (login redirect) re-verified live** — confirmed working exactly as fixed in session 3;
+>   fresh sign-in landed straight on `/app/adv-overview`, no dead-end.
+> - **Possible latent bug, not confirmed** — `App.jsx:202-207` has a `useEffect` keyed on
+>   `[user, activeMode]` that unconditionally force-navigates to the mode's overview page. If the
+>   `user` object's identity ever changes in the background (e.g. a Supabase token refresh
+>   creating a new session object), this would silently kick anyone off whatever page they're on —
+>   mid-wizard, mid-form, anywhere — with no warning and nothing saved. Saw this exact symptom
+>   repeatedly mid-session but traced every occurrence back to Vite HMR reloading the file being
+>   edited, not this effect; never caught a live, non-HMR trigger firing it. Worth a look given the
+>   blast radius, but not elevated to a blocker without a confirmed repro.
+> - Minor, non-blocking: Supabase's signup rejects `@example.com` addresses (default domain
+>   deny-list) — a gotcha for future test scripts, not a user-facing issue. Sidebar nav buttons are
+>   icon-only with `title` tooltips but no visible text/`aria-label`.
+> - Test data (throwaway advertiser account, test campaign) deleted after verification; the real
+>   operator account's password was rotated since it was shared over chat to complete the test.
+
 ---
 
 ---
@@ -438,10 +474,10 @@ What's actually left, in priority order:
 1. **Google OAuth client secret** — manual-only, Supabase Auth → Providers → Google. Blocking
    for anyone who doesn't use password login.
 2. **S2 — leaked-password protection toggle** — manual-only, Supabase Auth → Providers → Password.
-3. **Real click-through, logged in as a real user** — the `/login` redirect bug (B6) was invisible
-   to code review and only surfaced by actually trying to log in. Now that login works, do a full
-   advertiser + operator run-through (create campaign → approve → check billing on a phone) to
-   catch anything else that only shows up live.
+3. ~~**Real click-through, logged in as a real user**~~ — ✅ **Done session 6**: full advertiser
+   signup → campaign creation → operator approval → billing run-through. Found and fixed **B10**,
+   a launch-blocking bug bigger than any prior finding — campaign creation had been completely
+   broken since the feature was built (`225ac27`). B6 (login redirect) re-verified working live.
 4. **Operator mobile app on a real device/simulator** — the schema fixes (B4) and onboarding fix
    (B5) are verified by Jest against a mocked Supabase client, never against Expo Go or a real
    build.
@@ -462,4 +498,5 @@ leaked-password protection), the operator mobile app on a real device/simulator 
 and **buying + verifying a domain in Resend** (fixes both the signup-confirmation email
 reliability issue and all transactional email delivery — currently in-app-only, no email, by
 explicit user decision until a domain exists). All are blocked on something this session can't
-provide — not on further code review.
+provide — not on further code review. Worth a look but unconfirmed: the `App.jsx` mode-switch
+effect described in session 6 that could silently discard in-progress form state app-wide.
