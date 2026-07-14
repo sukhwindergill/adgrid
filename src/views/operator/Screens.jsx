@@ -12,24 +12,7 @@ import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { VENUE_TAXONOMY } from '../../lib/venueTypes.js';
-
-function healthSignal(screen) {
-  // screen-health-cron writes health_status online/idle/offline; prefer it, then
-  // fall back to last_seen freshness. ('degraded' kept for back-compat.)
-  if (screen.health_status === 'offline') {
-    return { dot: C.red, label: 'Offline', pulse: false };
-  }
-  if (screen.health_status === 'idle' || screen.health_status === 'degraded') {
-    return { dot: C.amber, label: 'Stale', pulse: false };
-  }
-  if (!screen.last_seen) {
-    return { dot: C.red, label: 'Offline', pulse: false };
-  }
-  const minsAgo = (Date.now() - new Date(screen.last_seen).getTime()) / 60000;
-  if (minsAgo <= 5)  return { dot: C.green,  label: 'Live',    pulse: true  };
-  if (minsAgo <= 60) return { dot: C.amber,  label: 'Stale',   pulse: false };
-  return                    { dot: C.red,    label: 'Offline',  pulse: false };
-}
+import { healthSignal } from '../../lib/screenHealth.js';
 
 function uptime(screen) {
   if (!screen.last_seen) return '—';

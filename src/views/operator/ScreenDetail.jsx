@@ -13,6 +13,7 @@ import { EditScreenModal } from '../../components/screens/EditScreenModal.jsx';
 import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS } from '../../lib/venueTypes.js';
+import { healthSignal } from '../../lib/screenHealth.js';
 
 async function startStripeConnect(setConnecting) {
   setConnecting(true);
@@ -375,7 +376,23 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         onBack={onBack}
         actions={
           <>
-            <Badge status={screen.status} />
+            {/* Single source of truth (N7): once approved ('live'), the
+                badge reflects real connectivity, not just approval status. */}
+            {screen.status === 'live' ? (() => {
+              const hs = healthSignal(screen);
+              return (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  padding: '3px 9px', borderRadius: 20, fontSize: 11, fontWeight: 500,
+                  fontFamily: F.sans, background: `${hs.dot}1a`, color: hs.dot, border: `1px solid ${hs.dot}55`,
+                }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: hs.dot }} />
+                  {hs.label}
+                </span>
+              );
+            })() : (
+              <Badge status={screen.status} />
+            )}
             <Btn variant="secondary" size="sm" onClick={() => setShowEdit(true)}>✏ Edit</Btn>
             {(screen.status === 'live' || screen.status === 'inactive') && (
               <Btn
