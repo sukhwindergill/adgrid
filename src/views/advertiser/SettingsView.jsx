@@ -292,6 +292,7 @@ function TeamTab({ profile }) {
   async function invite() {
     if (!inviteEmail) return;
     const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setMsg("Session expired. Please log in again."); return; }
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/invite-team-member`, {
       method: "POST",
       headers: {
@@ -300,7 +301,11 @@ function TeamTab({ profile }) {
       },
       body: JSON.stringify({ email: inviteEmail, role: inviteRole, orgProfileId: profile.id }),
     });
-    if (!res.ok) { setMsg("Error sending invite."); return; }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setMsg(body?.error || "Error sending invite.");
+      return;
+    }
     setMsg("Invite sent to " + inviteEmail);
     setInviteEmail("");
     setTimeout(() => setMsg(null), 4000);
