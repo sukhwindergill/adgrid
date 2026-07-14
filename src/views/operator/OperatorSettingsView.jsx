@@ -273,7 +273,11 @@ function TeamTab({ profile }) {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
       body: JSON.stringify({ email: inviteEmail, role: inviteRole, orgProfileId: profile.id }),
     });
-    if (!res.ok) { setMsg('Error sending invite.'); return; }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setMsg(body?.error || 'Error sending invite.');
+      return;
+    }
     setMsg('Invite sent to ' + inviteEmail);
     setInviteEmail('');
     setTimeout(() => setMsg(null), 4000);
