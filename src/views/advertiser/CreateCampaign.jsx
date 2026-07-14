@@ -676,6 +676,15 @@ function StepBudget({ form, setForm, matchedScreens, profile }) {
             <Inp label="Until" type="time" value={form.time_end} onChange={e => setField('time_end', e.target.value)} />
           </div>
 
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Inp label="Ad play duration (seconds)" type="number" min="5" max="60" step="1"
+              value={form.duration} onChange={e => setField('duration', e.target.value)}
+              hint="How long your ad plays each time it's shown" />
+            <Inp label="Slot share (% of screen airtime)" type="number" min="1" max="100" step="1"
+              value={form.slots} onChange={e => setField('slots', e.target.value)}
+              hint="Your ad's share of each screen's rotation" />
+          </div>
+
           <div>
             <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Launch mode</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -746,6 +755,8 @@ function StepReview({ form, matchedScreens, onSubmit, submitting, err, profile, 
     ['Dates', form.start_date && form.end_date ? `${form.start_date} → ${form.end_date}${days ? ` (${days} days)` : ''}` : '—'],
     ['Time', `${form.time_start} – ${form.time_end}`],
     ['Days', form.schedule_days.join(', ')],
+    ['Ad Duration', `${form.duration}s per play`],
+    ['Slot Share', `${form.slots}% of airtime`],
     ['Launch', form.start_when === 'partial' ? 'Go live as screens approve' : 'Wait for all screens'],
   ];
 
@@ -890,6 +901,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     schedule_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     time_start: '07:00',
     time_end: '22:00',
+    duration: 15,
+    slots: 10,
 
     start_when: 'partial',
   });
@@ -956,6 +969,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       schedule_days: c.schedule_days || c.days || ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
       time_start: c.time_start || c.timeStart || '07:00',
       time_end: c.time_end || c.timeEnd || '22:00',
+      duration: c.duration || 15,
+      slots: c.slots || 10,
 
       start_when: c.start_when || 'partial',
     }));
@@ -995,6 +1010,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         schedule_days:         form.schedule_days,
         time_start:            form.time_start,
         time_end:              form.time_end,
+        duration:              parseInt(form.duration, 10) || 15,
+        slots:                 parseInt(form.slots, 10) || 10,
 
         billed_to_profile_id:  canChooseBilling && billedTo === 'agency' ? user.id : null,
         status:                'pending_review',
@@ -1068,6 +1085,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         days: form.schedule_days,
         timeStart: form.time_start,
         timeEnd: form.time_end,
+        duration: parseInt(form.duration, 10) || 15,
+        slots: parseInt(form.slots, 10) || 10,
         spent: 0, impressions: 0, scans: 0,
         status: 'pending_review',
       });
