@@ -363,8 +363,9 @@ function TeamTab({ profile }) {
               fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface,
             }}
           >
-            <option value="viewer">Viewer</option>
-            <option value="admin">Admin</option>
+            <option value="viewer">Viewer — read only</option>
+            <option value="manager">Manager — create &amp; edit campaigns</option>
+            <option value="admin">Admin — full access</option>
           </select>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
