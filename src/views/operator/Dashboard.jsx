@@ -11,6 +11,7 @@ import { SkeletonKPI } from '../../components/primitives/Skeleton.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { SectionHeader } from '../../components/primitives/SectionHeader.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { healthSignal } from '../../lib/screenHealth.js';
 
 // B14 fix: nothing previously told an operator their payouts weren't set
 // up — money was captured from advertisers but the transfer to the
@@ -253,20 +254,31 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
         <div>
           <SectionHeader title="Network Health" />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {liveScreens.slice(0, 5).map(s => (
+            {liveScreens.slice(0, 5).map(s => {
+              const hs = healthSignal(s);
+              return (
               <Card key={s.id} style={{ padding: '13px 16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                      <span className="pulse" style={{
+                      <span className={hs.pulse ? 'pulse' : undefined} style={{
                         display: 'inline-block', width: 7, height: 7, borderRadius: '50%',
-                        background: C.green, flexShrink: 0,
+                        background: hs.dot, flexShrink: 0,
                       }} />
                       <div style={{ fontSize: 13, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{s.name}</div>
                     </div>
                     <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{s.city}</div>
                   </div>
-                  <Badge status={s.status} />
+                  {/* N7: this list is already filtered to status==='live' screens,
+                      so the badge reflects real connectivity, not approval status. */}
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    padding: '3px 9px', borderRadius: 20, fontSize: 11, fontWeight: 500,
+                    fontFamily: F.sans, background: `${hs.dot}1a`, color: hs.dot, border: `1px solid ${hs.dot}55`,
+                  }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: hs.dot }} />
+                    {hs.label}
+                  </span>
                 </div>
                 <div style={{ display: 'flex', gap: 16 }}>
                   {[['Revenue', `$${(s.revenue ?? 0).toLocaleString()}`], ['Impr.', `${((s.impressions ?? 0) / 1000).toFixed(0)}K`], ['Campaigns', s.campaigns]].map(([l, v]) => (
@@ -277,7 +289,8 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
                   ))}
                 </div>
               </Card>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
