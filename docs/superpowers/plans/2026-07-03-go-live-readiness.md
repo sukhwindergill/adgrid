@@ -248,6 +248,32 @@ moderation queue, notifications, cron, and kiosk/agent stack are in good shape.
 > - Test data (throwaway advertiser account, test campaign) deleted after verification; the real
 >   operator account's password was rotated since it was shared over chat to complete the test.
 
+> **Update — session 7 (2026-07-14):** Attempted Next-pass item 4 — the operator mobile app on a
+> real device/simulator. Never reached a real device; this environment has no Android
+> emulator/`adb`, no iOS simulator (Windows), and no LAN path from this sandbox to a physical
+> phone, so even a working Expo dev server has nothing to hand a real Expo Go client. Fell back to
+> `expo start --web` as the closest runtime proxy — Jest mocks the whole Supabase client, so
+> *any* real runtime execution is worth more than another mocked test run.
+>
+> - **B11 (blocker, found + fixed) — the mobile app crashes instantly on Expo web.**
+>   `expo-secure-store`'s web build (`ExpoSecureStore.web.js`) is a literal empty stub
+>   (`export default {}`), but `mobile/lib/supabase.js` used it unconditionally as the Supabase
+>   auth storage adapter with no platform branch — every method call threw, killing the app before
+>   first paint (empty `#root`, no visible error, an `ErrorOverlay`-on-`ErrorOverlay` double-fault
+>   in the console with the real error swallowed). Fixed by branching on `Platform.OS === 'web'`
+>   to a `localStorage`-backed adapter, `SecureStore` unchanged on native (`08f17fe`). Confirmed
+>   this specific crash is gone after the fix (no longer throws on `authStorage` calls); a second,
+>   unrelated crash remained on web (pre-React-mount, uncatchable by any error boundary — never
+>   root-caused, not native-relevant) and further web debugging was abandoned as scope creep: this
+>   app was never meant to ship on web, and chasing full web parity stopped being "verify the real
+>   app" and started being "build a platform that was never a target."
+> - **Verdict: still not verified on a real device.** The schema fixes (B4) and onboarding fix (B5)
+>   from session 3 remain Jest-only. Doing this properly needs the user's own machine: `cd mobile
+>   && npm start`, scan the QR with Expo Go on a phone on the same Wi-Fi. Not something this
+>   environment can complete.
+> - Installed then reverted `react-native-web`/`react-dom`/`@opentelemetry/api` — were only needed
+>   to get the web-preview proxy running at all, not part of the real fix, not committed.
+
 ---
 
 ---
@@ -480,7 +506,10 @@ What's actually left, in priority order:
    broken since the feature was built (`225ac27`). B6 (login redirect) re-verified working live.
 4. **Operator mobile app on a real device/simulator** — the schema fixes (B4) and onboarding fix
    (B5) are verified by Jest against a mocked Supabase client, never against Expo Go or a real
-   build.
+   build. **Attempted session 7**: no emulator/device/LAN path from this environment, so this
+   still isn't done — found and fixed a real crash along the way (**B11** — `expo-secure-store`
+   has no web implementation, crashed the app instantly under `expo start --web`), but full
+   verification needs the user's own machine and phone.
 5. ~~**S1** — GET-based `handle-approval-token`~~ — ✅ **Fixed session 4**: GET now only renders
    a confirmation page; approve/reject requires an explicit POST. Deployed v3, verified live.
 6. ~~**Legal/compliance depth (area 9)**~~ — ✅ **Done session 4**: cookie policy corrected
