@@ -86,7 +86,8 @@ function AppInner() {
   const [impersonating,    setImpersonating] = useState(null); // { id, name }
   const impersonationLogId = useRef(null);
   const [campaigns,        setCampaigns]     = useState([]);
-  const [dbScreens,        setDbScreens]     = useState([]);
+  const [dbScreens,        setDbScreens]     = useState([]); // advertiser-safe: live screens, no revenue/cpm
+  const [myScreens,        setMyScreens]     = useState([]); // operator's own screens, full columns
   const [detail,           setDetail]        = useState(null);
   const [dataLoading,      setDataLoading]   = useState(false);
   const [loadError,        setLoadError]     = useState(null);
@@ -138,9 +139,12 @@ function AppInner() {
       bookingsQuery.eq('advertiser_id', activeAccount.id)
     }
 
-    const [bookingsRes, screensRes] = await Promise.all([
+    const [bookingsRes, screensRes, myScreensRes] = await Promise.all([
       bookingsQuery,
-      supabase.from('screens').select('id,name,owner_name,owner_type,city,state,country,location,status,lat,lon,venue_category,venue_subtype,environment,screen_position,display_size,monthly_traffic_estimate,cpm_floor,operating_hours_start,operating_hours_end,auto_approve,screen_photos,content_categories_blocked,timezone,max_ad_duration,monthly_revenue,operator_id,last_seen,health_status').order('name'),
+      // Advertiser-safe view: live screens only, no monthly_revenue.
+      supabase.from('advertiser_screens').select('id,name,owner_name,owner_type,city,state,country,location,status,lat,lon,venue_category,venue_subtype,environment,screen_position,display_size,monthly_traffic_estimate,cpm_floor,operating_hours_start,operating_hours_end,auto_approve,screen_photos,content_categories_blocked,timezone,max_ad_duration,operator_id,last_seen,health_status').order('name'),
+      // Operator's own screens: full columns, but only rows they own.
+      supabase.from('screens').select('id,name,owner_name,owner_type,city,state,country,location,status,lat,lon,venue_category,venue_subtype,environment,screen_position,display_size,monthly_traffic_estimate,cpm_floor,operating_hours_start,operating_hours_end,auto_approve,screen_photos,content_categories_blocked,timezone,max_ad_duration,monthly_revenue,operator_id,last_seen,health_status').eq('operator_id', user.id).order('name'),
     ])
 
     if (bookingsRes.error) {
@@ -149,8 +153,8 @@ function AppInner() {
       setDataLoading(false)
       return
     }
-    if (screensRes.error) {
-      console.error('Failed to load screens:', screensRes.error.message)
+    if (screensRes.error || myScreensRes.error) {
+      console.error('Failed to load screens:', (screensRes.error || myScreensRes.error).message)
       setLoadError('Failed to load data. Please refresh.')
       setDataLoading(false)
       return
@@ -158,6 +162,7 @@ function AppInner() {
 
     const bookings = bookingsRes.data
     const screens = screensRes.data
+    const ownedScreens = myScreensRes.data
     if (bookings && bookings.length > 0) {
       setCampaigns(bookings.map(b => ({
         ...b,
@@ -184,11 +189,23 @@ function AppInner() {
         owner: s.owner_name,
         cpm: s.cpm_floor || 4.20,
         maxDuration: s.max_ad_duration,
-        revenue: s.monthly_revenue ?? 0,
         campaigns: 0,
       })))
     } else {
       setDbScreens([])
+    }
+    if (ownedScreens && ownedScreens.length > 0) {
+      setMyScreens(ownedScreens.map(s => ({
+        ...s,
+        neighbourhood: s.location,
+        owner: s.owner_name,
+        cpm: s.cpm_floor || 4.20,
+        maxDuration: s.max_ad_duration,
+        revenue: s.monthly_revenue ?? 0,
+        campaigns: 0,
+      })))
+    } else {
+      setMyScreens([])
     }
     setDataLoading(false)
   }, [activeAccount, user])
@@ -336,11 +353,11 @@ function AppInner() {
       return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navTo} advertiserId={impersonating?.id ?? user.id} />;
     }
 
-    if (active === 'overview')     return <Dashboard campaigns={campaigns} dbScreens={dbScreens} setNav={navTo} loading={dataLoading} />;
+    if (active === 'overview')     return <Dashboard campaigns={campaigns} dbScreens={myScreens} setNav={navTo} loading={dataLoading} />;
     if (active === 'screen-onboard') return (
       <ScreenOnboardView
         onComplete={(newScreen) => {
-          setDbScreens(prev => [...prev, {
+          setMyScreens(prev => [...prev, {
             ...newScreen,
             neighbourhood: newScreen.location || '',
             cpm: 3.00,
@@ -358,20 +375,20 @@ function AppInner() {
     );
     if (active === 'screens')      return (
       <ScreensView
-        dbScreens={dbScreens}
-        setDbScreens={setDbScreens}
+        dbScreens={myScreens}
+        setDbScreens={setMyScreens}
         loading={dataLoading}
         onSelectScreen={id => { setSelectedScreenId(id); navTo('screen-detail'); }}
         onStartOnboard={() => navTo('screen-onboard')}
       />
     );
-    if (active === 'approval')      return <ApprovalQueue campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} dbScreens={dbScreens} />;
+    if (active === 'approval')      return <ApprovalQueue campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} dbScreens={myScreens} />;
     if (active === 'screen-detail') {
       if (!selectedScreenId) { navTo('screens'); return null; }
-      return <ScreenDetailView screenId={selectedScreenId} onBack={() => navTo('screens')} profile={profile} onScreenUpdated={updated => setDbScreens(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s))} />;
+      return <ScreenDetailView screenId={selectedScreenId} onBack={() => navTo('screens')} profile={profile} onScreenUpdated={updated => setMyScreens(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s))} />;
     }
     if (active === 'notif-prefs')   return <NotificationPrefsView />;
-    if (active === 'campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} />;
+    if (active === 'campaigns')    return <Campaigns campaigns={campaigns} dbScreens={myScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} />;
     if (active === 'analytics')    return <Analytics campaigns={campaigns} loading={dataLoading} />;
     if (active === 'audience')     return <Audience campaigns={campaigns} />;
     if (active === 'revenue')      return <Revenue campaigns={campaigns} loading={dataLoading} />;

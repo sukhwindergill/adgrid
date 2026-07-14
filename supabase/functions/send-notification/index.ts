@@ -201,9 +201,31 @@ Deno.serve(async (req: Request) => {
   const { userId, type, data: notifData = {} } = await req.json();
   if (!userId || !type) return new Response("Missing userId or type", { status: 400, headers: CORS });
 
-  // Non-internal callers can only send to themselves unless they are an operator
+  // Non-internal callers can only send to themselves, unless they are an
+  // operator (existing behavior), or the call matches one of these narrow,
+  // server-verified exceptions:
+  //   - campaign_submitted: any advertiser may notify a user who is
+  //     genuinely an operator (operator_id is already public on the screens
+  //     the advertiser booked).
+  //   - grant_invite: the caller may notify the grantee of an
+  //     account_grants row they themselves just created.
   if (!isInternal && callerRole !== "operator" && callerUserId !== userId) {
-    return new Response("Forbidden", { status: 403, headers: CORS });
+    let allowed = false;
+    if (type === "campaign_submitted" && callerRole === "advertiser") {
+      const { data: targetProf } = await supabase.from("profiles").select("role").eq("id", userId).single();
+      allowed = targetProf?.role === "operator";
+    } else if (type === "grant_invite") {
+      const { data: grant } = await supabase
+        .from("account_grants")
+        .select("id")
+        .eq("granted_by", callerUserId)
+        .eq("grantee_id", userId)
+        .eq("status", "pending")
+        .limit(1)
+        .maybeSingle();
+      allowed = !!grant;
+    }
+    if (!allowed) return new Response("Forbidden", { status: 403, headers: CORS });
   }
 
   const template = TEMPLATES[type];

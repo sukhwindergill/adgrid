@@ -620,6 +620,87 @@ function StepConnect({ screen, onDone, onSkip, onBack }) {
   );
 }
 
+// B14 fix (2026-07-14 ICP sweep): payouts never appeared anywhere in the
+// operator onboarding wizard, so screens went live with no way to ever get
+// paid. Makes Stripe Connect a first-class (skippable, not blocking —
+// screens already live shouldn't get bricked by this) step.
+function StepPayouts({ onDone, onSkip, onBack }) {
+  const { profile } = useAuth();
+  const [connecting, setConnecting] = useState(false);
+  const [error, setError] = useState(null);
+  const connectStatus = profile?.connect_status;
+
+  async function startConnect() {
+    setConnecting(true);
+    setError(null);
+    const state = crypto.randomUUID();
+    sessionStorage.setItem('stripe_connect_state', state);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setError('Session expired. Please log in again.'); setConnecting(false); return; }
+    try {
+      const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-connect-account`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ returnUrl: window.location.origin + '/app/screens', state }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.url) throw new Error(json.error ?? 'Failed to start Stripe Connect');
+      window.location.href = json.url;
+    } catch (e) {
+      setError(e.message);
+      setConnecting(false);
+    }
+  }
+
+  if (connectStatus === 'active') {
+    return (
+      <div style={{ maxWidth: 520, margin: '0 auto' }}>
+        <Card style={{ padding: 40, textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 20 }}>✅</div>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 12px' }}>
+            Payouts are set up
+          </h2>
+          <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, margin: '0 0 28px' }}>
+            Your Stripe account is connected. You'll get paid automatically as campaigns run.
+          </p>
+          <Btn onClick={onDone} style={{ width: '100%' }}>Finish →</Btn>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ maxWidth: 520, margin: '0 auto' }}>
+      <Card style={{ padding: 40, textAlign: 'center' }}>
+        <div style={{ fontSize: 48, marginBottom: 20 }}>💳</div>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 12px' }}>
+          Set up payouts
+        </h2>
+        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, margin: '0 0 28px' }}>
+          Connect a bank account via Stripe so you actually get paid when advertisers book your screen.
+          Without this, your cut of every campaign is held and never transferred.
+        </p>
+        {error && <ErrorBanner message={error} />}
+        <Btn onClick={startConnect} disabled={connecting} style={{ width: '100%', marginBottom: 12 }}>
+          {connecting ? 'Redirecting to Stripe…' : 'Connect with Stripe'}
+        </Btn>
+        <button onClick={onSkip} style={{
+          background: 'none', border: 'none', fontSize: 12,
+          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans,
+        }}>
+          Skip for now →
+        </button>
+      </Card>
+      <div style={{ textAlign: 'center', marginTop: 12 }}>
+        <button onClick={onBack} style={{
+          background: 'none', border: 'none', fontSize: 12,
+          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans,
+        }}>← Back</button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Wizard ─────────────────────────────────────────────────────────────
 
 export function ScreenOnboardView({ onComplete, onCancel }) {
@@ -633,7 +714,7 @@ export function ScreenOnboardView({ onComplete, onCancel }) {
 
   return (
     <div style={{ padding: '8px 0' }}>
-      <WizardProgress step={step} total={4} onCancel={onCancel} />
+      <WizardProgress step={step} total={5} onCancel={onCancel} />
 
       {step === 1 && (
         <StepWelcome onNext={() => setStep(2)} />
@@ -649,15 +730,22 @@ export function ScreenOnboardView({ onComplete, onCancel }) {
           screen={newScreen}
           onNext={() => setStep(4)}
           onBack={() => setStep(2)}
-          onSkip={() => onComplete(newScreen)}
+          onSkip={() => setStep(5)}
         />
       )}
       {step === 4 && newScreen && (
         <StepConnect
           screen={newScreen}
+          onDone={() => setStep(5)}
+          onSkip={() => setStep(5)}
+          onBack={() => setStep(3)}
+        />
+      )}
+      {step === 5 && newScreen && (
+        <StepPayouts
           onDone={() => onComplete(newScreen)}
           onSkip={() => onComplete(newScreen)}
-          onBack={() => setStep(3)}
+          onBack={() => setStep(4)}
         />
       )}
     </div>

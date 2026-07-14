@@ -18,13 +18,13 @@ function Card({ label, value, sub }) {
 }
 
 function exportCSV(rows) {
-  const header = ["Timestamp", "Campaign", "Screen", "Device", "City", "Email", "Consent"];
+  const header = ["Timestamp", "Campaign", "Screen", "Device", "Country", "Email", "Consent"];
   const lines = rows.map((r) => [
     new Date(r.scanned_at).toISOString(),
     r.bookings?.advertiser_name ?? "",
     r.screens?.name ?? "",
     r.device_type ?? "",
-    r.city ?? "",
+    r.country ?? "",
     r.email ?? "",
     r.consent ? "yes" : "no",
   ].join(","));
@@ -193,7 +193,7 @@ export default function ScansView({ impersonatingId }) {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
               <tr style={{ background: C.bg }}>
-                {["Timestamp", "Campaign", "Screen", "Device", "City", "UTM Source"].map((h) => (
+                {["Timestamp", "Campaign", "Screen", "Device", "Country", "UTM Source"].map((h) => (
                   <th key={h} style={{ padding: "10px 16px", textAlign: "left", color: C.textSub, fontWeight: 500, borderBottom: `1px solid ${C.border}` }}>{h}</th>
                 ))}
               </tr>
@@ -207,7 +207,7 @@ export default function ScansView({ impersonatingId }) {
                   <td style={{ padding: "10px 16px", color: C.text }}>{s.bookings?.advertiser_name ?? "—"}</td>
                   <td style={{ padding: "10px 16px", color: C.text }}>{s.screens?.name ?? "—"}</td>
                   <td style={{ padding: "10px 16px", color: C.textSub }}>{s.device_type ?? "—"}</td>
-                  <td style={{ padding: "10px 16px", color: C.textSub }}>{s.city ?? "—"}</td>
+                  <td style={{ padding: "10px 16px", color: C.textSub }}>{s.country ?? "—"}</td>
                   <td style={{ padding: "10px 16px", color: C.textSub }}>{s.utm_source ?? "adgrid"}</td>
                 </tr>
               ))}

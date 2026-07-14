@@ -16,12 +16,19 @@ Deno.serve(async (req: Request) => {
   // Look up campaign
   const { data: campaign, error } = await supabase
     .from("bookings")
-    .select("destination_url, advertiser_id")
+    .select("destination_url, advertiser_id, status, payment_status")
     .eq("id", campaignId)
     .single();
 
   if (error || !campaign) {
     return new Response("Campaign not found", { status: 404 });
+  }
+
+  // Only a live, paid campaign's QR should keep counting scans and
+  // redirecting — a rejected/paused/expired/unpaid campaign's code should
+  // stop working, matching what display-feed actually serves.
+  if (!["scheduled", "active"].includes(campaign.status) || campaign.payment_status !== "paid") {
+    return new Response("Campaign not active", { status: 410 });
   }
 
   const { destination_url, advertiser_id } = campaign;
@@ -44,8 +51,9 @@ Deno.serve(async (req: Request) => {
     ? "mobile"
     : "desktop";
 
-  // Geolocate via CF-IPCountry header (Cloudflare, best-effort)
-  const city = req.headers.get("cf-ipcountry") ?? null;
+  // Geolocate via CF-IPCountry header (Cloudflare, best-effort) — this is a
+  // 2-letter country code, not a city; the column is named accordingly.
+  const country = req.headers.get("cf-ipcountry") ?? null;
 
   // Insert scan record (awaited to ensure data is not lost)
   const { data: scanRow } = await supabase.from("scans").insert({
@@ -53,7 +61,7 @@ Deno.serve(async (req: Request) => {
     screen_id,
     advertiser_id,
     device_type,
-    city,
+    country,
     utm_source: "adgrid",
     utm_medium: "ooh",
     utm_campaign: campaignId,

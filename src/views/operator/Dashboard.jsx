@@ -10,6 +10,30 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { SkeletonKPI } from '../../components/primitives/Skeleton.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { SectionHeader } from '../../components/primitives/SectionHeader.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
+
+// B14 fix: nothing previously told an operator their payouts weren't set
+// up — money was captured from advertisers but the transfer to the
+// operator was silently skipped. Surface it loudly on the page they land
+// on first.
+function PayoutsWarningBanner({ onFix }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px',
+      background: '#fef3c7', border: '1px solid #fbbf24', borderRadius: 10,
+      marginBottom: 20, fontFamily: F.sans,
+    }}>
+      <span style={{ fontSize: 18 }}>⚠️</span>
+      <div style={{ flex: 1, fontSize: 13, color: '#92400e' }}>
+        <strong>Payouts aren't set up.</strong> Advertisers are being charged for campaigns on your
+        screens, but you won't receive any money until you connect a payout account.
+      </div>
+      <Btn onClick={onFix} style={{ padding: '7px 16px', fontSize: 12, whiteSpace: 'nowrap' }}>
+        Set up payouts
+      </Btn>
+    </div>
+  );
+}
 
 
 function LiveCounter({ base }) {
@@ -60,6 +84,7 @@ function HourlyChart({ data }) {
 
 export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
   const { isMobile } = useBreakpoint();
+  const { profile } = useAuth();
   const [hourlyData, setHourlyData] = useState(Array(24).fill(0));
 
   useEffect(() => {
@@ -109,6 +134,10 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
         title="Dashboard"
         subtitle={new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
       />
+
+      {dbScreens.length > 0 && profile?.connect_status !== 'active' && (
+        <PayoutsWarningBanner onFix={() => setNav?.('op-settings')} />
+      )}
 
       {/* Hero: live counter */}
       <Card style={{ marginBottom: 24, padding: 28, background: 'linear-gradient(135deg, #f5f3ff, #eff6ff)' }}>
@@ -240,7 +269,7 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
                   <Badge status={s.status} />
                 </div>
                 <div style={{ display: 'flex', gap: 16 }}>
-                  {[['Revenue', `$${s.revenue.toLocaleString()}`], ['Impr.', `${(s.impressions / 1000).toFixed(0)}K`], ['Campaigns', s.campaigns]].map(([l, v]) => (
+                  {[['Revenue', `$${(s.revenue ?? 0).toLocaleString()}`], ['Impr.', `${((s.impressions ?? 0) / 1000).toFixed(0)}K`], ['Campaigns', s.campaigns]].map(([l, v]) => (
                     <div key={l}>
                       <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>{l}</div>
                       <div style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.mono }}>{v}</div>

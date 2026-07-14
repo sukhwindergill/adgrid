@@ -9,17 +9,11 @@ const POLL_INTERVAL_MS  = 30_000;
 const ROTATE_INTERVAL_MS = 10_000;
 
 function buildQrUrl(destinationUrl, screenId, campaignId) {
-  try {
-    const u = new URL(destinationUrl);
-    u.searchParams.set('utm_source', 'adgrid');
-    u.searchParams.set('utm_medium', 'dooh');
-    u.searchParams.set('ag_screen', screenId ?? '');
-    u.searchParams.set('ag_campaign', campaignId ?? '');
-    u.searchParams.set('s', screenId ?? '');
-    return u.toString();
-  } catch {
-    return destinationUrl;
-  }
+  if (!SUPABASE_FUNCTIONS_URL || !campaignId) return destinationUrl;
+  const u = new URL(`${SUPABASE_FUNCTIONS_URL}/scan-redirect`);
+  u.searchParams.set('c', campaignId);
+  if (screenId) u.searchParams.set('s', screenId);
+  return u.toString();
 }
 
 function CreativeSlide({ campaign, screenId }) {
