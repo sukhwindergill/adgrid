@@ -12,46 +12,49 @@ import { Sidebar } from './components/layout/Sidebar.jsx';
 import { ErrorBoundary } from './components/primitives/ErrorBoundary.jsx';
 import { RequireAuth } from './components/auth/RequireAuth.jsx';
 
+import { RequirePlatformOwner } from './components/auth/RequirePlatformOwner.jsx';
+
+// Authenticated dashboard + other public views — lazy-loaded so none of this
+// code ships in the bundle a first-time marketing-page visitor downloads.
 // Operator views
-import { Dashboard }      from './views/operator/Dashboard.jsx';
-import { Campaigns }      from './views/operator/Campaigns.jsx';
-import { CampaignDetail } from './views/operator/CampaignDetail.jsx';
-import { ScreensView }    from './views/operator/Screens.jsx';
-import { Analytics }      from './views/operator/Analytics.jsx';
-import { Audience }       from './views/operator/Audience.jsx';
-import { Revenue }        from './views/operator/Revenue.jsx';
-import { Billing }        from './views/operator/Billing.jsx';
-import AdvertisersView    from './views/operator/AdvertisersView.jsx';
-import { OperatorSettingsView } from './views/operator/OperatorSettingsView.jsx';
+const Dashboard      = lazy(() => import('./views/operator/Dashboard.jsx').then(m => ({ default: m.Dashboard })));
+const Campaigns      = lazy(() => import('./views/operator/Campaigns.jsx').then(m => ({ default: m.Campaigns })));
+const CampaignDetail = lazy(() => import('./views/operator/CampaignDetail.jsx').then(m => ({ default: m.CampaignDetail })));
+const ScreensView    = lazy(() => import('./views/operator/Screens.jsx').then(m => ({ default: m.ScreensView })));
+const Analytics      = lazy(() => import('./views/operator/Analytics.jsx').then(m => ({ default: m.Analytics })));
+const Audience       = lazy(() => import('./views/operator/Audience.jsx').then(m => ({ default: m.Audience })));
+const Revenue        = lazy(() => import('./views/operator/Revenue.jsx').then(m => ({ default: m.Revenue })));
+const Billing        = lazy(() => import('./views/operator/Billing.jsx').then(m => ({ default: m.Billing })));
+const AdvertisersView = lazy(() => import('./views/operator/AdvertisersView.jsx'));
+const OperatorSettingsView = lazy(() => import('./views/operator/OperatorSettingsView.jsx').then(m => ({ default: m.OperatorSettingsView })));
 
 // Advertiser views
-import { AdvDashboard }       from './views/advertiser/AdvDashboard.jsx';
-import { CreateCampaign }     from './views/advertiser/CreateCampaign.jsx';
-import ScansView              from './views/advertiser/ScansView.jsx';
-import AdvertiserBillingView  from './views/advertiser/BillingView.jsx';
-import SettingsView           from './views/advertiser/SettingsView.jsx';
-import AdvIntegrationsView    from './views/advertiser/AdvIntegrationsView.jsx';
+const AdvDashboard      = lazy(() => import('./views/advertiser/AdvDashboard.jsx').then(m => ({ default: m.AdvDashboard })));
+const CreateCampaign    = lazy(() => import('./views/advertiser/CreateCampaign.jsx').then(m => ({ default: m.CreateCampaign })));
+const ScansView              = lazy(() => import('./views/advertiser/ScansView.jsx'));
+const AdvertiserBillingView  = lazy(() => import('./views/advertiser/BillingView.jsx'));
+const SettingsView           = lazy(() => import('./views/advertiser/SettingsView.jsx'));
+const AdvIntegrationsView    = lazy(() => import('./views/advertiser/AdvIntegrationsView.jsx'));
 
 // Operator views (new)
-import { ApprovalQueue }         from './views/operator/ApprovalQueue.jsx';
-import { ScreenDetailView }      from './views/operator/ScreenDetail.jsx';
-import { ScreenOnboardView }     from './views/operator/ScreenOnboard.jsx';
-import { NotificationPrefsView } from './views/shared/NotificationPrefsView.jsx';
+const ApprovalQueue         = lazy(() => import('./views/operator/ApprovalQueue.jsx').then(m => ({ default: m.ApprovalQueue })));
+const ScreenDetailView      = lazy(() => import('./views/operator/ScreenDetail.jsx').then(m => ({ default: m.ScreenDetailView })));
+const ScreenOnboardView     = lazy(() => import('./views/operator/ScreenOnboard.jsx').then(m => ({ default: m.ScreenOnboardView })));
+const NotificationPrefsView = lazy(() => import('./views/shared/NotificationPrefsView.jsx').then(m => ({ default: m.NotificationPrefsView })));
 
 // Shared views
-import { SignalsView }      from './views/shared/SignalsView.jsx';
-import { IntegrationsView } from './views/shared/IntegrationsView.jsx';
-import { DisplayView }      from './views/shared/DisplayView.jsx';
+const SignalsView      = lazy(() => import('./views/shared/SignalsView.jsx').then(m => ({ default: m.SignalsView })));
+const IntegrationsView = lazy(() => import('./views/shared/IntegrationsView.jsx').then(m => ({ default: m.IntegrationsView })));
+const DisplayView      = lazy(() => import('./views/shared/DisplayView.jsx').then(m => ({ default: m.DisplayView })));
 
-import { AccountHub }      from './views/accounts/AccountHub.jsx'
-import { AcceptGrantView } from './views/accounts/AcceptGrantView.jsx'
+const AccountHub      = lazy(() => import('./views/accounts/AccountHub.jsx').then(m => ({ default: m.AccountHub })));
+const AcceptGrantView = lazy(() => import('./views/accounts/AcceptGrantView.jsx').then(m => ({ default: m.AcceptGrantView })));
 
-import { AdminInvites } from './views/admin/AdminInvites.jsx';
-import { RequirePlatformOwner } from './components/auth/RequirePlatformOwner.jsx';
-import { InviteAcceptPage } from './views/invite/InviteAcceptPage.jsx';
+const AdminInvites = lazy(() => import('./views/admin/AdminInvites.jsx').then(m => ({ default: m.AdminInvites })));
 
-// Public views (no auth required) — lazy-loaded so the heavy marketing/display
+// Public views (no auth required) — also lazy so the marketing/display
 // bundles don't ship with the authenticated dashboard's first paint.
+const InviteAcceptPage = lazy(() => import('./views/invite/InviteAcceptPage.jsx').then(m => ({ default: m.InviteAcceptPage })));
 const DisplayPlayer  = lazy(() => import('./views/display/DisplayPlayer.jsx').then(m => ({ default: m.DisplayPlayer })));
 const MarketingHome  = lazy(() => import('./views/marketing/Home.jsx').then(m => ({ default: m.MarketingHome })));
 const PrivacyPolicy  = lazy(() => import('./views/legal/PrivacyPolicy.jsx').then(m => ({ default: m.PrivacyPolicy })));
