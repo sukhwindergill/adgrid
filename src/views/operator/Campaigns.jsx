@@ -11,7 +11,7 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
 
-export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, loadError, loading = false, onNewCampaign, allowCancel = false }) {
+export function Campaigns({ campaigns, setCampaigns, setDetail, loadError, loading = false, onNewCampaign, allowCancel = false }) {
   const [filter, setFilter] = useState('all');
   const [city, setCity]     = useState('All');
   const [campaignScreens, setCampaignScreens] = useState({});

@@ -78,7 +78,7 @@ async function callNotification(userId, type, data = {}) {
 // ─── AppInner (auth-gated shell) ─────────────────────────────────────────────
 
 function AppInner() {
-  const { user, profile, activeMode, setActiveMode, loading, signOut, activeAccount, setActiveAccount, grants } = useAuth();
+  const { user, profile, activeMode, setActiveMode, loading, signOut, activeAccount, grants } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
