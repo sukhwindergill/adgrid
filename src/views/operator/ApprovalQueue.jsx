@@ -232,7 +232,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
   );
 }
 
-export function ApprovalQueue({ campaigns, setCampaigns, setDetail, dbScreens = [] }) {
+export function ApprovalQueue({ campaigns, dbScreens = [] }) {
   const { user } = useAuth();
   const confirm = useConfirm();
   const [autoApprove, setAutoApprove] = useState(false);
