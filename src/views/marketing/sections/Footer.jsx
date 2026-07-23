@@ -15,6 +15,7 @@ export function Footer({ onLogin, onScrollTo }) {
               <button onClick={() => onScrollTo('operators')}>For operators</button>
               <button onClick={() => onScrollTo('advertisers')}>For advertisers</button>
               <button onClick={() => onScrollTo('how')}>How it works</button>
+              <button onClick={() => onScrollTo('faq')}>FAQ</button>
             </div>
             <div className="col">
               <h5>Account</h5>

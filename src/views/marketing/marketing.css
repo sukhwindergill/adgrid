@@ -207,6 +207,23 @@
 .market-band p { max-width: 720px; margin: 0 auto; text-align: center; font-size: 17px; line-height: 1.65; color: var(--lsub); }
 .market-band strong { color: var(--ltext); font-weight: 600; }
 
+/* ── FAQ ── */
+.faq-list { display: flex; flex-direction: column; gap: 10px; }
+.faq-item { background: var(--lcard); border: 1px solid var(--lborder); border-radius: var(--r); overflow: hidden; transition: border-color .15s; }
+.faq-item.on { border-color: var(--purple); }
+.faq-q {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  background: none; border: none; cursor: pointer; text-align: left;
+  padding: 18px 22px; font: 600 15.5px/1.4 var(--inter); color: var(--ltext);
+}
+.faq-toggle {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: #f0ebff;
+  color: var(--purple); display: flex; align-items: center; justify-content: center;
+  font-size: 16px; line-height: 1; transition: transform .2s;
+}
+.faq-item.on .faq-toggle { transform: rotate(45deg); }
+.faq-a { padding: 0 22px 20px; font-size: 14.5px; line-height: 1.65; color: var(--lsub); }
+
 /* ── CTA band / forms ── */
 .fi {
   width: 100%; background: var(--surf-el); border: 1px solid var(--border); border-radius: var(--r-btn);

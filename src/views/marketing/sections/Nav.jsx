@@ -7,6 +7,7 @@ export function Nav({ onScrollTo, onLogin }) {
           <button className="nl" onClick={() => onScrollTo('operators')}>For operators</button>
           <button className="nl" onClick={() => onScrollTo('advertisers')}>For advertisers</button>
           <button className="nl" onClick={() => onScrollTo('how')}>How it works</button>
+          <button className="nl" onClick={() => onScrollTo('faq')}>FAQ</button>
         </div>
         <div className="nav-spacer" />
         <button className="nl" onClick={onLogin}>Sign in</button>
