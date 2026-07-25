@@ -6,10 +6,12 @@
 -- from impression_events (camera) or modelled — never inferred from a play.
 -- ============================================================
 
+-- NOTE: bookings.id and screens.id are `text` in this database, not uuid.
+-- The foreign key column types must match exactly.
 CREATE TABLE IF NOT EXISTS public.ad_plays (
   id             bigserial PRIMARY KEY,
-  campaign_id    uuid NOT NULL REFERENCES public.bookings(id) ON DELETE CASCADE,
-  screen_id      uuid NOT NULL REFERENCES public.screens(id) ON DELETE CASCADE,
+  campaign_id    text NOT NULL REFERENCES public.bookings(id) ON DELETE CASCADE,
+  screen_id      text NOT NULL REFERENCES public.screens(id) ON DELETE CASCADE,
   played_at      timestamptz NOT NULL,
   duration_s     numeric NOT NULL CHECK (duration_s > 0 AND duration_s <= 300),
   completed      boolean NOT NULL DEFAULT true,
