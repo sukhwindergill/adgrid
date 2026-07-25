@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { isBotUserAgent, dedupKey, DEDUP_WINDOW_MS } from "../_shared/scanQuality.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -55,6 +56,25 @@ Deno.serve(async (req: Request) => {
   // 2-letter country code, not a city; the column is named accordingly.
   const country = req.headers.get("cf-ipcountry") ?? null;
 
+  // Quality flags. Every request is still recorded and still redirected — a
+  // filtered scan is a reporting decision, not a reason to break someone's
+  // link — but bots and repeat hits are excluded from reported counts.
+  const ip = req.headers.get("cf-connecting-ip")
+    ?? req.headers.get("x-forwarded-for")?.split(",")[0].trim()
+    ?? "";
+  const is_bot = isBotUserAgent(ua);
+  const key = await dedupKey(campaignId, screen_id, ip, ua);
+
+  const { data: recent } = await supabase
+    .from("scans")
+    .select("id")
+    .eq("dedup_key", key)
+    .gte("scanned_at", new Date(Date.now() - DEDUP_WINDOW_MS).toISOString())
+    .limit(1)
+    .maybeSingle();
+
+  const is_duplicate = Boolean(recent);
+
   // Insert scan record (awaited to ensure data is not lost)
   const { data: scanRow } = await supabase.from("scans").insert({
     campaign_id: campaignId,
@@ -65,12 +85,20 @@ Deno.serve(async (req: Request) => {
     utm_source: "adgrid",
     utm_medium: "ooh",
     utm_campaign: campaignId,
+    is_bot,
+    is_duplicate,
+    dedup_key: key,
   }).select("id").single();
 
-  // Check scan milestones non-blocking
-  if (scanRow?.id) {
+  // Check scan milestones non-blocking. Bots and repeat hits must not be able
+  // to trip a milestone notification.
+  if (scanRow?.id && !is_bot && !is_duplicate) {
     (async () => {
-      const { count } = await supabase.from("scans").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId);
+      const { count } = await supabase.from("scans")
+        .select("id", { count: "exact", head: true })
+        .eq("campaign_id", campaignId)
+        .eq("is_bot", false)
+        .eq("is_duplicate", false);
       const total = count ?? 0;
       const MILESTONES = [100, 500, 1000, 5000];
       const hit = MILESTONES.find(m => total === m);
@@ -85,8 +113,9 @@ Deno.serve(async (req: Request) => {
     })();
   }
 
-  // Fire integrations non-blocking — must not delay redirect
-  if (scanRow?.id) {
+  // Fire integrations non-blocking — must not delay redirect. A bot or a
+  // repeat hit must never forward a conversion to Meta/Google.
+  if (scanRow?.id && !is_bot && !is_duplicate) {
     fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/fire-integration`, {
       method: "POST",
       headers: {

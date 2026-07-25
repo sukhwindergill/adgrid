@@ -8,10 +8,12 @@ import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { periodDelta, splitByPeriod } from '../../lib/periodDelta.js';
 
 export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
   const { isMobile } = useBreakpoint();
   const [campaignScreens, setCampaignScreens] = useState({}); // map: campaignId -> [{screen_id, status}]
+  const [delivery, setDelivery] = useState([]);
 
   useEffect(() => {
     const fetchCampaignScreens = async () => {
@@ -39,11 +41,45 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
     fetchCampaignScreens();
   }, [campaigns, advertiserId]);
 
+  // Delivery comes from campaign_delivery_daily — the single source that
+  // derives impressions from proof of play, never a denormalized write.
+  useEffect(() => {
+    const fetchDelivery = async () => {
+      const myCampaignIds = campaigns
+        .filter(c => c.advertiser_id === advertiserId)
+        .map(c => c.id);
+      if (myCampaignIds.length === 0) { setDelivery([]); return; }
+
+      const { data, error } = await supabase
+        .from('campaign_delivery_daily')
+        .select('campaign_id, day, plays, impressions, attention_weighted_impressions, basis, scans, billable_scans')
+        .in('campaign_id', myCampaignIds);
+
+      if (!error && data) setDelivery(data);
+    };
+    fetchDelivery();
+  }, [campaigns, advertiserId]);
+
   const myCampaigns = campaigns.filter(c => c.advertiser_id === advertiserId);
   const totalSpend  = myCampaigns.reduce((a, c) => a + c.budget, 0);
   const totalSpent  = myCampaigns.reduce((a, c) => a + c.spent, 0);
-  const totalImpr   = myCampaigns.reduce((a, c) => a + c.impressions, 0);
-  const totalScans  = myCampaigns.reduce((a, c) => a + c.scans, 0);
+
+  const sum = key => delivery.reduce((a, r) => a + (Number(r[key]) || 0), 0);
+  const totalPlays    = sum('plays');
+  const totalImpr     = sum('impressions');
+  const totalScans    = sum('scans');
+  const billableScans = sum('billable_scans');
+  const filteredScans = totalScans - billableScans;
+
+  // Any modelled row makes the whole figure partly modelled — say so rather
+  // than presenting a model as a measurement.
+  const allMeasured = delivery.length > 0 && delivery.every(r => r.basis === 'measured');
+  const imprBasisLabel = delivery.length === 0
+    ? 'no delivery yet'
+    : allMeasured ? 'measured by camera' : 'part measured, part modelled';
+
+  const imprPeriods = splitByPeriod(delivery, 'day', 'impressions', 30);
+  const imprTrend   = periodDelta(imprPeriods.current, imprPeriods.prior);
 
   return (
     <div>
@@ -54,10 +90,12 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
       />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
-        <KPI label="Total Budget"  value={`$${totalSpend.toLocaleString()}`}        sub="across all campaigns" />
-        <KPI label="Spent to Date" value={`$${totalSpent.toLocaleString()}`}         sub={`${totalSpend > 0 ? Math.round((totalSpent / totalSpend) * 100) : 0}% of budget`} color={C.blue} />
-        <KPI label="Impressions"   value={`${(totalImpr / 1000).toFixed(1)}K`}       sub="verified plays" color={C.purple} />
-        <KPI label="QR Scans"      value={totalScans}                                 sub="leads captured" color={C.green} icon="📲" />
+        <KPI label="Spent to Date" value={`$${totalSpent.toLocaleString()}`}         sub={`${totalSpend > 0 ? Math.round((totalSpent / totalSpend) * 100) : 0}% of $${totalSpend.toLocaleString()} budget`} color={C.blue} />
+        <KPI label="Plays"         value={totalPlays.toLocaleString()}                sub="verified proof of play" />
+        <KPI label="Impressions"   value={`${(totalImpr / 1000).toFixed(1)}K`}        sub={imprBasisLabel} color={C.purple} trend={imprTrend} trendLabel="vs prior 30 days" />
+        <KPI label="QR Scans"      value={billableScans.toLocaleString()}
+             sub={filteredScans > 0 ? `${filteredScans} filtered as bot/duplicate` : 'leads captured'}
+             color={C.green} icon="📲" />
       </div>
 
       {myCampaigns.length > 0 ? (
