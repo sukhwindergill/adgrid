@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import QRCode from 'react-qr-code';
+import { createPlayBuffer, FLUSH_INTERVAL_MS } from '../../lib/playBuffer.js';
 
 const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
@@ -148,6 +149,9 @@ export function DisplayPlayer({ screenToken }) {
   const [errMsg, setErrMsg]         = useState('');
   const rotateRef = useRef(null);
   const stopPollingRef = useRef(false);
+  const playBufferRef = useRef(null);
+  if (playBufferRef.current === null) playBufferRef.current = createPlayBuffer();
+  const playStartRef = useRef(null);
 
   const fetchFeed = async () => {
     if (stopPollingRef.current) return;
@@ -212,6 +216,58 @@ export function DisplayPlayer({ screenToken }) {
 
   // Reset index when campaigns list changes
   useEffect(() => { setCurrentIdx(0); currentIdxRef.current = 0; setFadeIn(true); }, [campaigns]);
+
+  // Record proof of play for the creative that is leaving the screen — on
+  // rotation, on feed change, and on unmount — so duration_s is the time the
+  // creative was actually on the glass, not the nominal slot length.
+  //
+  // This records THAT a creative played, never who saw it. Audience data comes
+  // only from the CV agent (see the note above).
+  useEffect(() => {
+    const current = campaigns[currentIdx];
+    if (status !== 'ok' || !current || !screenId) return;
+
+    playStartRef.current = Date.now();
+    const campaignId = current.id;
+
+    return () => {
+      const startedAt = playStartRef.current;
+      if (!startedAt) return;
+      const durationS = (Date.now() - startedAt) / 1000;
+      if (durationS <= 0) return;
+      playBufferRef.current.record({
+        campaign_id: campaignId,
+        played_at: new Date(startedAt).toISOString(),
+        duration_s: durationS,
+        completed: durationS >= (ROTATE_INTERVAL_MS / 1000) * 0.9,
+      });
+    };
+  }, [campaigns, currentIdx, status, screenId]);
+
+  // Flush buffered plays every 60s, and once more on unmount.
+  useEffect(() => {
+    if (!screenToken) return;
+
+    const flush = async () => {
+      const buffer = playBufferRef.current;
+      const taken = buffer.take();
+      if (taken.length === 0) return;
+      try {
+        const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/ingest-plays`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ screen_token: screenToken, plays: taken }),
+        });
+        if (res.ok) buffer.ack(taken);
+        else buffer.nack(taken);
+      } catch {
+        buffer.nack(taken);
+      }
+    };
+
+    const timer = setInterval(flush, FLUSH_INTERVAL_MS);
+    return () => { clearInterval(timer); flush(); };
+  }, [screenToken]);
 
   if (status === 'loading') {
     return (
