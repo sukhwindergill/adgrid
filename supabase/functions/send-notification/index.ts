@@ -76,6 +76,36 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
     body: `"${d.campaignName}" has completed its run.`,
     html: emailHtml("Campaign ended", `Your campaign <strong>${d.campaignName}</strong> has ended. Check your analytics to see how it performed.`, "View Analytics", d.appUrl ?? ""),
   }),
+  approval_sla_approaching: (d) => ({
+    title: "A campaign is waiting on your review",
+    body: `"${d.campaignName}" needs your approval on ${d.screenName} within ${d.hoursLeft} hours.`,
+    html: emailHtml(
+      "A campaign is waiting on your review",
+      `<strong>${d.campaignName}</strong> is waiting for your approval on <strong>${d.screenName}</strong>. You have about ${d.hoursLeft} hours left before it is automatically dropped from your screen — and you will not earn on it.`,
+      "Review Now",
+      d.appUrl ?? "",
+    ),
+  }),
+  screen_dropped_sla: (d) => ({
+    title: "A screen was dropped from your campaign",
+    body: `${d.screenName} was not reviewed in time and has been removed from "${d.campaignName}". ${d.creditAmount} was credited back.`,
+    html: emailHtml(
+      "A screen was dropped from your campaign",
+      `<strong>${d.screenName}</strong> was not reviewed within the operator's ${d.slaHours}-hour window, so it has been removed from <strong>${d.campaignName}</strong>. We have credited <strong>${d.creditAmount}</strong> back to your balance. Your campaign continues on its remaining screens.`,
+      "View Campaign",
+      d.appUrl ?? "",
+    ),
+  }),
+  operator_missed_sla: (d) => ({
+    title: "You missed a review window",
+    body: `${d.screenName} was dropped from "${d.campaignName}" because it was not reviewed in time.`,
+    html: emailHtml(
+      "You missed a review window",
+      `<strong>${d.screenName}</strong> was removed from <strong>${d.campaignName}</strong> because the campaign was not reviewed within your ${d.slaHours}-hour window. That booking and its revenue have gone. You can shorten your review window or turn on auto-approve in Settings.`,
+      "Open Settings",
+      d.appUrl ?? "",
+    ),
+  }),
   delivery_shortfall_credited: (d) => ({
     title: "Delivery credit applied",
     body: `"${d.campaignName}" under-delivered on ${d.day} and ${d.creditAmount} has been credited back to your balance.`,
