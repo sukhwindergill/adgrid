@@ -425,8 +425,13 @@ Expected: no output.
 
 - [ ] **Step 7: Verify the app still builds and lints**
 
-Run: `pnpm lint && pnpm build`
-Expected: both exit 0.
+Run: `pnpm build`
+Expected: exits 0.
+
+Then lint **only the files you touched** — `pnpm lint` is not a usable gate in this repo: it reports 1001 pre-existing problems because eslint also walks `.claude/worktrees/**` and `mobile/**`. Verified identical before and after this phase's changes.
+
+Run: `pnpm exec eslint <the files this task modified>`
+Expected: no new errors attributable to your edits. (`src/views/operator/Billing.jsx:34` already reports `react-hooks/set-state-in-effect` in the pre-existing `useBilling` hook.)
 
 - [ ] **Step 8: Commit**
 
@@ -1755,8 +1760,13 @@ Expected: all suites pass. Record the count.
 
 - [ ] **Step 3: Lint and build pass**
 
-Run: `pnpm lint && pnpm build`
-Expected: both exit 0.
+Run: `pnpm build`
+Expected: exits 0.
+
+Then lint **only the files you touched** — `pnpm lint` is not a usable gate in this repo: it reports 1001 pre-existing problems because eslint also walks `.claude/worktrees/**` and `mobile/**`. Verified identical before and after this phase's changes.
+
+Run: `pnpm exec eslint <the files this task modified>`
+Expected: no new errors attributable to your edits. (`src/views/operator/Billing.jsx:34` already reports `react-hooks/set-state-in-effect` in the pre-existing `useBilling` hook.)
 
 - [ ] **Step 4: End-to-end delivery check against the dev project**
 
