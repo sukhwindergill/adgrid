@@ -10,12 +10,14 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { periodDelta, splitByPeriod } from '../../lib/periodDelta.js';
 import { DeliveryHealthCard } from '../../components/shared/DeliveryHealthCard.jsx';
+import { ApprovalTracker } from '../../components/shared/ApprovalTracker.jsx';
 
 export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
   const { isMobile } = useBreakpoint();
   const [campaignScreens, setCampaignScreens] = useState({}); // map: campaignId -> [{screen_id, status}]
   const [delivery, setDelivery] = useState([]);
   const [health, setHealth] = useState(null);
+  const [screenNames, setScreenNames] = useState({}); // screen_id -> name
 
   useEffect(() => {
     const fetchCampaignScreens = async () => {
@@ -27,7 +29,7 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
 
       const { data, error } = await supabase
         .from('campaign_screens')
-        .select('campaign_id, screen_id, status')
+        .select('campaign_id, screen_id, status, review_due_at')
         .in('campaign_id', myCampaignIds);
 
       if (!error && data) {
@@ -37,6 +39,19 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
           map[row.campaign_id].push(row);
         });
         setCampaignScreens(map);
+
+        // Screen names come from advertiser_screens — `screens` itself is not
+        // selectable by `authenticated` because it carries operator revenue.
+        const ids = [...new Set(data.map(r => r.screen_id))];
+        if (ids.length > 0) {
+          const { data: named } = await supabase
+            .from('advertiser_screens')
+            .select('id, name')
+            .in('id', ids);
+          if (named) {
+            setScreenNames(Object.fromEntries(named.map(s => [s.id, s.name])));
+          }
+        }
       }
     };
 
@@ -113,6 +128,11 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
   const imprPeriods = splitByPeriod(delivery, 'day', 'impressions', 30);
   const imprTrend   = periodDelta(imprPeriods.current, imprPeriods.prior);
 
+  // Flat list of every booked screen, for the approval tracker.
+  const approvalRows = Object.values(campaignScreens)
+    .flat()
+    .map(r => ({ ...r, screen_name: screenNames[r.screen_id] ?? r.screen_id }));
+
   return (
     <div>
       <PageHeader
@@ -133,6 +153,8 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
       <div style={{ marginBottom: 24 }}>
         <DeliveryHealthCard health={health} currency={myCampaigns[0]?.currency} />
       </div>
+
+      <ApprovalTracker rows={approvalRows} />
 
       {myCampaigns.length > 0 ? (
         <div>
