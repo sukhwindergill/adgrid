@@ -40,6 +40,7 @@ import { NotificationPrefsView } from './views/shared/NotificationPrefsView.jsx'
 
 // Shared views
 import { SignalsView }      from './views/shared/SignalsView.jsx';
+import { AutomationRulesView } from './views/shared/AutomationRulesView.jsx';
 import { IntegrationsView } from './views/shared/IntegrationsView.jsx';
 import { DisplayView }      from './views/shared/DisplayView.jsx';
 
@@ -346,6 +347,7 @@ function AppInner() {
       if (active === 'adv-campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} allowCancel />;
       if (active === 'adv-analytics')    return <Analytics campaigns={campaigns} loading={dataLoading} />;
       if (active === 'adv-audience')     return <ScansView impersonatingId={impersonating?.id ?? null} />;
+      if (active === 'adv-rules')        return <AutomationRulesView user={user} ownerSide="advertiser" />;
       if (active === 'adv-billing')      return <AdvertiserBillingView />;
       if (active === 'adv-integrations') return <AdvIntegrationsView />;
       if (active === 'adv-settings')     return <SettingsView />;
@@ -395,6 +397,7 @@ function AppInner() {
     if (active === 'billing')      return <Billing campaigns={campaigns} />;
     if (active === 'advertisers')  return <AdvertisersView onImpersonate={startImpersonation} />;
     if (active === 'signals')      return <SignalsView campaigns={campaigns} />;
+    if (active === 'rules')        return <AutomationRulesView user={user} ownerSide="operator" />;
     if (active === 'integrations') return <IntegrationsView />;
     if (active === 'display')      return <DisplayView campaigns={campaigns} />;
     if (active === 'op-settings')  return <OperatorSettingsView />;

@@ -15,6 +15,7 @@ const ICONS = {
   approval:     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
   advertisers:  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>,
   signals:      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
+  rules:        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01"/></svg>,
   integrations: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>,
   display:      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M17 2l-5 5-5-5"/></svg>,
   billing:      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>,
@@ -108,6 +109,7 @@ const OP_SECONDARY = [
   { id: 'approval',     label: 'Approval Queue',   icon: 'approval', badge: true },
   { id: 'advertisers',  label: 'Advertisers',      icon: 'advertisers' },
   { id: 'signals',      label: 'Live Signals',     icon: 'signals' },
+  { id: 'rules',        label: 'Alerts & Rules',   icon: 'rules' },
   { id: 'integrations', label: 'Integrations',     icon: 'integrations' },
   { id: 'display',      label: 'Display Manager',  icon: 'display' },
   { id: 'op-settings',  label: 'Settings',         icon: 'settings' },
@@ -121,6 +123,7 @@ const ADV_PRIMARY = [
 
 const ADV_SECONDARY = [
   { id: 'adv-audience',     label: 'Scans & Data',  icon: 'scans' },
+  { id: 'adv-rules',        label: 'Alerts & Rules', icon: 'rules' },
   { id: 'adv-billing',      label: 'Billing',        icon: 'billing' },
   { id: 'adv-settings',     label: 'Settings',       icon: 'settings' },
   { id: 'adv-integrations', label: 'Integrations',   icon: 'integrations' },
