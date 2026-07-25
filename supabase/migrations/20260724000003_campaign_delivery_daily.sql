@@ -7,6 +7,19 @@
 -- attention    — audience-weighted CV attention, only ever measured
 --
 -- Depends on 20260724000002_scan_quality.sql for scans.is_bot / is_duplicate.
+--
+-- ACCESS MODEL — read this before changing the view.
+-- `security_invoker = true` cannot be used: the view must read public.screens
+-- for timezone and footfall, and `screens` is deliberately NOT selectable by
+-- `authenticated` (it carries monthly_revenue and operator_id — the cross-tenant
+-- leak fixed by the advertiser_screens view). So this view runs as its owner and
+-- carries its OWN access predicate.
+--
+-- That predicate scopes on the DATABASE role, not the JWT claim. PostgREST
+-- always issues `set local role <anon|authenticated|service_role>`, while a
+-- direct connection is `postgres`. Scoping on auth.role() instead would open
+-- the view to any caller whose JWT claim happened to be absent — verified
+-- against the live database, where an unclaimed session saw every row.
 -- ============================================================
 
 CREATE OR REPLACE VIEW public.campaign_delivery_daily AS
@@ -19,10 +32,13 @@ WITH play_days AS (
     EXTRACT(hour FROM p.played_at AT TIME ZONE COALESCE(s.timezone, 'UTC'))::int AS hour,
     p.duration_s,
     p.completed,
-    s.venue_category,
     s.monthly_traffic_estimate
   FROM public.ad_plays p
   JOIN public.screens s ON s.id = p.screen_id
+  WHERE
+    current_user IN ('postgres', 'supabase_admin', 'service_role')
+    OR EXISTS (SELECT 1 FROM public.bookings b WHERE b.id = p.campaign_id AND b.advertiser_id = auth.uid())
+    OR s.operator_id = auth.uid()
 ),
 weighted AS (
   SELECT
@@ -81,4 +97,5 @@ LEFT JOIN scan_days sd
   ON sd.campaign_id = w.campaign_id AND sd.screen_id = w.screen_id AND sd.day = w.day
 GROUP BY w.campaign_id, w.screen_id, w.day, sd.scans, sd.billable_scans;
 
-GRANT SELECT ON public.campaign_delivery_daily TO authenticated;
+REVOKE ALL ON public.campaign_delivery_daily FROM anon;
+GRANT SELECT ON public.campaign_delivery_daily TO authenticated, service_role;
