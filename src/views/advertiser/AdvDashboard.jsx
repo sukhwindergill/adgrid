@@ -9,11 +9,13 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { periodDelta, splitByPeriod } from '../../lib/periodDelta.js';
+import { DeliveryHealthCard } from '../../components/shared/DeliveryHealthCard.jsx';
 
 export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
   const { isMobile } = useBreakpoint();
   const [campaignScreens, setCampaignScreens] = useState({}); // map: campaignId -> [{screen_id, status}]
   const [delivery, setDelivery] = useState([]);
+  const [health, setHealth] = useState(null);
 
   useEffect(() => {
     const fetchCampaignScreens = async () => {
@@ -60,6 +62,36 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
     fetchDelivery();
   }, [campaigns, advertiserId]);
 
+  // Delivery health rolls reconciliation up per campaign; sum it into one
+  // account-level number. Only CLOSED days are reconciled, so a running
+  // campaign legitimately contributes less than its full flight.
+  useEffect(() => {
+    const fetchHealth = async () => {
+      const myCampaignIds = campaigns
+        .filter(c => c.advertiser_id === advertiserId)
+        .map(c => c.id);
+      if (myCampaignIds.length === 0) { setHealth(null); return; }
+
+      const { data, error } = await supabase
+        .from('campaign_delivery_health')
+        .select('campaign_id, expected_plays, delivered_plays, delivery_pct, total_credited, offline_days')
+        .in('campaign_id', myCampaignIds);
+
+      if (error || !data || data.length === 0) { setHealth(null); return; }
+
+      const expected = data.reduce((a, r) => a + (Number(r.expected_plays) || 0), 0);
+      const delivered = data.reduce((a, r) => a + (Number(r.delivered_plays) || 0), 0);
+      setHealth({
+        expected_plays: expected,
+        delivered_plays: delivered,
+        delivery_pct: expected > 0 ? (delivered / expected) * 100 : null,
+        total_credited: data.reduce((a, r) => a + (Number(r.total_credited) || 0), 0),
+        offline_days: data.reduce((a, r) => a + (Number(r.offline_days) || 0), 0),
+      });
+    };
+    fetchHealth();
+  }, [campaigns, advertiserId]);
+
   const myCampaigns = campaigns.filter(c => c.advertiser_id === advertiserId);
   const totalSpend  = myCampaigns.reduce((a, c) => a + c.budget, 0);
   const totalSpent  = myCampaigns.reduce((a, c) => a + c.spent, 0);
@@ -96,6 +128,10 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
         <KPI label="QR Scans"      value={billableScans.toLocaleString()}
              sub={filteredScans > 0 ? `${filteredScans} filtered as bot/duplicate` : 'leads captured'}
              color={C.green} icon="📲" />
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <DeliveryHealthCard health={health} currency={myCampaigns[0]?.currency} />
       </div>
 
       {myCampaigns.length > 0 ? (
