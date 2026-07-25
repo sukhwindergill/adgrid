@@ -9,6 +9,8 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
 import { supabase } from '../../lib/supabase.js';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { ShareReportModal } from '../../components/shared/ShareReportModal.jsx';
 
 export function CampaignDetail({ campaign, onBack, onUpdate }) {
   const toast = useToast();
@@ -16,6 +18,8 @@ export function CampaignDetail({ campaign, onBack, onUpdate }) {
   const [rejecting, setRejecting] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [editing, setEditing] = useState(false);
+  const { user } = useAuth();
+  const [sharing, setSharing] = useState(false);
   const [editForm, setEditForm] = useState({ budget: campaign.budget, start: campaign.start, end: campaign.end });
   const [editingCreative, setEditingCreative] = useState(false);
   const [creativeForm, setCreativeForm] = useState({ headline: campaign.headline ?? '', cta: campaign.cta ?? '', accent_color: campaign.color ?? '#7c3aed' });
@@ -76,7 +80,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate }) {
         title={c.advertiser}
         subtitle={`${c.screen} · ${c.city} · ${c.category}`}
         back="All Campaigns" onBack={onBack}
-        actions={<>{statusAction(c.status)}<Btn variant="secondary" size="sm" onClick={() => { setEditForm({ budget: c.budget, start: c.start, end: c.end }); setEditing(true); }}>✏ Edit</Btn></>}
+        actions={<>{statusAction(c.status)}<Btn variant="secondary" size="sm" onClick={() => setSharing(true)}>Share report</Btn><Btn variant="secondary" size="sm" onClick={() => { setEditForm({ budget: c.budget, start: c.start, end: c.end }); setEditing(true); }}>✏ Edit</Btn></>}
       />
 
       {c.status === 'pending_review' && (
@@ -292,6 +296,14 @@ export function CampaignDetail({ campaign, onBack, onUpdate }) {
             </div>
           </div>
         </div>
+      )}
+
+      {sharing && (
+        <ShareReportModal
+          campaignId={c.id}
+          userId={user?.id}
+          onClose={() => setSharing(false)}
+        />
       )}
     </div>
   );

@@ -41,6 +41,7 @@ import { NotificationPrefsView } from './views/shared/NotificationPrefsView.jsx'
 // Shared views
 import { SignalsView }      from './views/shared/SignalsView.jsx';
 import { AutomationRulesView } from './views/shared/AutomationRulesView.jsx';
+import { CampaignReport }   from './views/public/CampaignReport.jsx';
 import { IntegrationsView } from './views/shared/IntegrationsView.jsx';
 import { DisplayView }      from './views/shared/DisplayView.jsx';
 
@@ -471,6 +472,7 @@ export default function App() {
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/display/:token" element={<DisplayPlayerRoute />} />
+        <Route path="/report/:token" element={<CampaignReport />} />
         <Route path="/invite/:token" element={<InviteAcceptPage />} />
         <Route path="/app/accounts" element={<RequireAuth><AccountHubRoute /></RequireAuth>} />
         <Route
