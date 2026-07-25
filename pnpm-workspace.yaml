@@ -1,3 +1,6 @@
 packages:
   - 'packages/*'
   - 'mobile'
+allowBuilds:
+  # esbuild is vitest's bundler; its install script links the platform binary.
+  esbuild: true
