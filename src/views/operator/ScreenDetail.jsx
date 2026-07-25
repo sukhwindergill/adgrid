@@ -233,6 +233,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   const [cvEvents, setCvEvents] = useState([]);
   const [cvLoading, setCvLoading] = useState(false);
   const [hwType, setHwType] = useState('kiosk');
+  const [downtime, setDowntime] = useState([]);
   const [connStatus, setConnStatus] = useState(null); // null | 'checking' | 'ok' | 'none'
   const [screenToken, setScreenToken] = useState('');
 
@@ -251,6 +252,16 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         if (!error && data) setScreen(data);
         setLoading(false);
       });
+    // Delivery this screen owed but did not produce. RLS scopes this to the
+    // operator's own screens.
+    supabase
+      .from('delivery_reconciliation')
+      .select('day, expected_plays, delivered_plays, reason, credit_amount, currency')
+      .eq('screen_id', screenId)
+      .neq('reason', 'met')
+      .order('day', { ascending: false })
+      .limit(30)
+      .then(({ data }) => setDowntime(data ?? []));
     supabase
       .rpc('get_screen_token', { p_screen_id: screenId })
       .then(({ data }) => { if (data) setScreenToken(data); });
@@ -562,6 +573,26 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
           />
         )}
       </Card>
+
+      {downtime.length > 0 && (
+        <Card style={{ padding: 0, overflow: 'hidden', marginTop: 20 }}>
+          <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.border}` }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans }}>Missed delivery</div>
+            <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+              Days this screen delivered fewer plays than campaigns had scheduled. Advertisers were credited for the shortfall.
+            </div>
+          </div>
+          <Table
+            columns={[
+              { key: 'day', label: 'Day', render: v => <span style={{ fontFamily: F.mono, fontSize: 11 }}>{v}</span> },
+              { key: 'delivered_plays', label: 'Delivered', render: (v, r) => <span style={{ fontFamily: F.mono }}>{v} of {r.expected_plays}</span> },
+              { key: 'reason', label: 'Cause', render: v => <span style={{ fontFamily: F.sans }}>{v === 'screen_offline' ? 'Screen offline' : 'Under-delivered'}</span> },
+              { key: 'credit_amount', label: 'Credited back', render: (v, r) => <span style={{ fontFamily: F.mono, color: C.red }}>${Number(v || 0).toFixed(2)} {String(r.currency ?? '').toUpperCase()}</span> },
+            ]}
+            rows={downtime}
+          />
+        </Card>
+      )}
       </>
       )}
 
