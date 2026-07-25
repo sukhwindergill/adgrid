@@ -1,5 +1,59 @@
 import { describe, it, expect } from 'vitest';
-import { parseHhMm, overlapSeconds, expectedPlays } from './deliveryExpectation.ts';
+import { parseHhMm, overlapSeconds, expectedPlays, reconciliationWindow } from './deliveryExpectation.ts';
+
+describe('reconciliationWindow', () => {
+  const today = '2026-07-25';
+
+  it('never includes today, so an open day is never scored as a shortfall', () => {
+    const w = reconciliationWindow({ start_date: '2026-07-01', end_date: '2026-07-31' }, today, 7);
+    expect(w.lastDay).toBe('2026-07-24');
+    expect(w.hasWork).toBe(true);
+  });
+
+  it('starts at the lookback boundary for a long-running flight', () => {
+    const w = reconciliationWindow({ start_date: '2026-01-01', end_date: '2026-12-31' }, today, 7);
+    expect(w.firstDay).toBe('2026-07-18');
+  });
+
+  it('starts at the flight start when that is inside the lookback window', () => {
+    const w = reconciliationWindow({ start_date: '2026-07-22', end_date: '2026-07-31' }, today, 7);
+    expect(w.firstDay).toBe('2026-07-22');
+  });
+
+  it('ends at the flight end when the campaign has already finished', () => {
+    const w = reconciliationWindow({ start_date: '2026-07-01', end_date: '2026-07-20' }, today, 7);
+    expect(w.lastDay).toBe('2026-07-20');
+    expect(w.hasWork).toBe(true);
+  });
+
+  it('reports no work when the flight ended before the lookback window', () => {
+    // This is the real production case: campaigns that ended weeks ago.
+    const w = reconciliationWindow({ start_date: '2026-06-01', end_date: '2026-06-15' }, today, 7);
+    expect(w.hasWork).toBe(false);
+  });
+
+  it('reports no work for a flight that has not started', () => {
+    const w = reconciliationWindow({ start_date: '2026-08-01', end_date: '2026-08-31' }, today, 7);
+    expect(w.hasWork).toBe(false);
+  });
+
+  it('reports no work on the first day of a flight, because no day has closed', () => {
+    const w = reconciliationWindow({ start_date: today, end_date: '2026-08-31' }, today, 7);
+    expect(w.hasWork).toBe(false);
+  });
+
+  it('handles open-ended dates by falling back to the lookback window', () => {
+    const w = reconciliationWindow({ start_date: null, end_date: null }, today, 7);
+    expect(w.firstDay).toBe('2026-07-18');
+    expect(w.lastDay).toBe('2026-07-24');
+    expect(w.hasWork).toBe(true);
+  });
+
+  it('treats a negative lookback as a positive window rather than inverting', () => {
+    const w = reconciliationWindow({ start_date: '2026-01-01', end_date: '2026-12-31' }, today, -7);
+    expect(w.firstDay).toBe('2026-07-18');
+  });
+});
 
 describe('parseHhMm', () => {
   it('parses HH:MM to seconds from midnight', () => {

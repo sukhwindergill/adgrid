@@ -68,6 +68,49 @@ function isScheduledDay(scheduleDays: string[] | null | undefined, day: Date): b
   return scheduleDays.some(d => typeof d === 'string' && d.slice(0, 3).toLowerCase() === abbr.toLowerCase());
 }
 
+export interface ReconciliationWindow {
+  firstDay: string;
+  lastDay: string;
+  hasWork: boolean;
+}
+
+/**
+ * Which days to reconcile for a campaign, given today's date in the screen's
+ * own timezone.
+ *
+ * Two invariants:
+ *   - Only CLOSED days. `lastDay` is never today or later, so a day still in
+ *     progress can never be scored as a shortfall.
+ *   - Bounded lookback, so a cron outage is covered without rescanning all of
+ *     history. A flight that ended before the lookback window yields
+ *     `hasWork: false` rather than an inverted range.
+ */
+export function reconciliationWindow(
+  campaign: Pick<CampaignSchedule, 'start_date' | 'end_date'>,
+  todayInScreenTz: string,
+  lookbackDays: number,
+): ReconciliationWindow {
+  const yesterday = addDaysIso(todayInScreenTz, -1);
+  const windowStart = addDaysIso(todayInScreenTz, -Math.abs(lookbackDays));
+
+  const firstDay = campaign.start_date && campaign.start_date > windowStart
+    ? campaign.start_date
+    : windowStart;
+
+  const lastDay = campaign.end_date && campaign.end_date < yesterday
+    ? campaign.end_date
+    : yesterday;
+
+  return { firstDay, lastDay, hasWork: lastDay >= firstDay };
+}
+
+function addDaysIso(day: string, delta: number): string {
+  const d = new Date(`${day}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return day;
+  d.setUTCDate(d.getUTCDate() + delta);
+  return d.toISOString().slice(0, 10);
+}
+
 export function expectedPlays(
   campaign: CampaignSchedule,
   screen: ScreenHours,
