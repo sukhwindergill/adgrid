@@ -596,7 +596,9 @@ pnpm dlx supabase functions deploy send-notification
 
 Then confirm the type list grew — the function returns 400 `Unknown notification type` for a bogus type and does not for the new ones. Verify by reading the deployed source list:
 
-Run: `grep -c "html: emailHtml" supabase/functions/send-notification/index.ts`
+Count template KEYS, not `emailHtml` calls — at least one template calls the helper twice, so the call count is not the template count:
+
+Run: `grep -cE "^  [a-z_]+: \(d\) => \(\{" supabase/functions/send-notification/index.ts`
 Expected: 19 (17 existing + 2 new).
 
 - [ ] **Step 3: Commit**

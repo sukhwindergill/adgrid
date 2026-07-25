@@ -76,6 +76,26 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
     body: `"${d.campaignName}" has completed its run.`,
     html: emailHtml("Campaign ended", `Your campaign <strong>${d.campaignName}</strong> has ended. Check your analytics to see how it performed.`, "View Analytics", d.appUrl ?? ""),
   }),
+  delivery_shortfall_credited: (d) => ({
+    title: "Delivery credit applied",
+    body: `"${d.campaignName}" under-delivered on ${d.day} and ${d.creditAmount} has been credited back to your balance.`,
+    html: emailHtml(
+      "Delivery credit applied",
+      `Your campaign <strong>${d.campaignName}</strong> delivered ${d.deliveredPlays} of ${d.expectedPlays} scheduled plays on ${d.day}. We have credited <strong>${d.creditAmount}</strong> back to your account balance.`,
+      "View Delivery",
+      d.appUrl ?? "",
+    ),
+  }),
+  screen_downtime_attributed: (d) => ({
+    title: "Screen downtime affected a campaign",
+    body: `${d.screenName} missed ${d.missedPlays} scheduled plays on ${d.day}. The advertiser has been credited.`,
+    html: emailHtml(
+      "Screen downtime affected a campaign",
+      `<strong>${d.screenName}</strong> delivered ${d.deliveredPlays} of ${d.expectedPlays} scheduled plays on ${d.day}. The advertiser has been credited for the shortfall. Check the screen's connection to avoid further lost revenue.`,
+      "View Screen",
+      d.appUrl ?? "",
+    ),
+  }),
   scan_milestone: (d) => ({
     title: `Milestone: ${d.count} scans reached`,
     body: `"${d.campaignName}" just hit ${d.count} QR scans.`,
