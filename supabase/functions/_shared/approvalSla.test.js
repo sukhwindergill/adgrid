@@ -1,5 +1,36 @@
 import { describe, it, expect } from 'vitest';
-import { reviewDueAt, isBreached, hoursRemaining, policyApproves, DEFAULT_SLA_HOURS } from './approvalSla.ts';
+import { reviewDueAt, isBreached, hoursRemaining, policyApproves, shouldSweep, DEFAULT_SLA_HOURS } from './approvalSla.ts';
+
+describe('shouldSweep', () => {
+  it('sweeps campaigns where approval still matters', () => {
+    expect(shouldSweep('pending_review')).toBe(true);
+    expect(shouldSweep('scheduled')).toBe(true);
+    expect(shouldSweep('active')).toBe(true);
+  });
+
+  it('never sweeps a completed campaign', () => {
+    // A real production row sat pending on a completed, paid campaign with a
+    // backfilled deadline 1,253 hours overdue. Sweeping it would have expired
+    // the screen and credited the full budget back, months after the flight
+    // ended.
+    expect(shouldSweep('completed')).toBe(false);
+  });
+
+  it('never sweeps a cancelled or paused campaign', () => {
+    expect(shouldSweep('cancelled')).toBe(false);
+    expect(shouldSweep('paused')).toBe(false);
+  });
+
+  it('never sweeps on a missing or non-string status', () => {
+    expect(shouldSweep(null)).toBe(false);
+    expect(shouldSweep(undefined)).toBe(false);
+    expect(shouldSweep(123)).toBe(false);
+  });
+
+  it('is case and whitespace insensitive', () => {
+    expect(shouldSweep('  Active ')).toBe(true);
+  });
+});
 
 const submitted = new Date('2026-07-25T09:00:00Z');
 

@@ -34,6 +34,20 @@ export function reviewDueAt(submittedAt: Date, slaHours: number | null | undefin
   return new Date(t + hours * 3600 * 1000).toISOString();
 }
 
+// Campaign statuses where an approval decision still means something.
+//
+// A screen pending on a COMPLETED campaign must never be swept: the flight is
+// over, the screen never played, and issuing a makegood credit for it now
+// would hand back money for delivery that was never scheduled to happen
+// again. Backfilling deadlines onto historical rows would otherwise arm the
+// first sweep to retroactively expire and credit months of dead rows.
+const SWEEPABLE_CAMPAIGN_STATUSES = ['pending_review', 'scheduled', 'active'];
+
+export function shouldSweep(campaignStatus: string | null | undefined): boolean {
+  if (typeof campaignStatus !== 'string') return false;
+  return SWEEPABLE_CAMPAIGN_STATUSES.includes(campaignStatus.trim().toLowerCase());
+}
+
 export function isBreached(dueAt: string | null | undefined, now: Date = new Date()): boolean {
   if (!dueAt) return false;
   const due = new Date(dueAt).getTime();
