@@ -3,6 +3,7 @@ import { C, F } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useBreakpoint } from "../../lib/useBreakpoint.js";
+import { downloadCsv } from "../../lib/csv.js";
 
 function Card({ label, value, sub }) {
   return (
@@ -17,23 +18,34 @@ function Card({ label, value, sub }) {
   );
 }
 
+const SCAN_EXPORT_COLUMNS = [
+  { key: "timestamp", label: "Timestamp" },
+  { key: "campaign",  label: "Campaign" },
+  { key: "screen",    label: "Screen" },
+  { key: "device",    label: "Device" },
+  { key: "country",   label: "Country" },
+  { key: "email",     label: "Email" },
+  { key: "consent",   label: "Consent" },
+  // Disclose why a scan was excluded from reported counts. An export that
+  // hides the filtering invites "your numbers don't match" support tickets.
+  { key: "filtered_bot",       label: "Filtered as bot" },
+  { key: "filtered_duplicate", label: "Filtered as duplicate" },
+];
+
 function exportCSV(rows) {
-  const header = ["Timestamp", "Campaign", "Screen", "Device", "Country", "Email", "Consent"];
-  const lines = rows.map((r) => [
-    new Date(r.scanned_at).toISOString(),
-    r.bookings?.advertiser_name ?? "",
-    r.screens?.name ?? "",
-    r.device_type ?? "",
-    r.country ?? "",
-    r.email ?? "",
-    r.consent ? "yes" : "no",
-  ].join(","));
-  const csv = [header.join(","), ...lines].join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "adgrid-scans.csv";
-  a.click();
+  // toCsv reads flat keys, and these rows carry joined relations.
+  const flat = rows.map((r) => ({
+    timestamp: r.scanned_at ? new Date(r.scanned_at).toISOString() : "",
+    campaign:  r.bookings?.advertiser_name ?? "",
+    screen:    r.screens?.name ?? "",
+    device:    r.device_type ?? "",
+    country:   r.country ?? "",
+    email:     r.email ?? "",
+    consent:   r.consent ? "yes" : "no",
+    filtered_bot:       r.is_bot ? "yes" : "no",
+    filtered_duplicate: r.is_duplicate ? "yes" : "no",
+  }));
+  downloadCsv("adgrid-scans.csv", SCAN_EXPORT_COLUMNS, flat);
 }
 
 export default function ScansView({ impersonatingId }) {
