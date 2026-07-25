@@ -179,6 +179,155 @@ function SecurityTab() {
   );
 }
 
+function ReviewTab({ profile }) {
+  const [policy, setPolicy] = useState({ enabled: false, auto_approve_categories: [], min_completed_campaigns: 1 });
+  const [slaHours, setSlaHours] = useState(24);
+  const [categories, setCategories] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const { data } = await supabase
+        .from('operator_approval_rules')
+        .select('enabled, auto_approve_categories, min_completed_campaigns')
+        .eq('operator_id', profile.id)
+        .maybeSingle();
+      if (!cancelled && data) {
+        setPolicy({
+          enabled: data.enabled,
+          auto_approve_categories: data.auto_approve_categories ?? [],
+          min_completed_campaigns: data.min_completed_campaigns ?? 0,
+        });
+      }
+
+      const { data: screenRows } = await supabase
+        .from('screens')
+        .select('review_sla_hours, venue_category')
+        .eq('operator_id', profile.id);
+      if (!cancelled && screenRows?.length) {
+        const firstSla = screenRows.find(s => s.review_sla_hours != null)?.review_sla_hours;
+        if (firstSla) setSlaHours(firstSla);
+      }
+
+      // Offer the categories advertisers actually book, taken from live
+      // campaigns rather than a hardcoded list that could drift.
+      const { data: cats } = await supabase.from('bookings').select('category');
+      if (!cancelled && cats) {
+        setCategories([...new Set(cats.map(c => c.category).filter(Boolean))].sort());
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [profile.id]);
+
+  async function save() {
+    setSaving(true);
+    const { error } = await supabase
+      .from('operator_approval_rules')
+      .upsert({
+        operator_id: profile.id,
+        enabled: policy.enabled,
+        auto_approve_categories: policy.auto_approve_categories,
+        min_completed_campaigns: Number(policy.min_completed_campaigns) || 0,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'operator_id' });
+
+    // The SLA lives on each screen, matching how auto_approve is already
+    // toggled in bulk from the approval queue.
+    const hours = Math.min(Math.max(Number(slaHours) || 24, 1), 168);
+    const { error: slaError } = await supabase
+      .from('screens')
+      .update({ review_sla_hours: hours })
+      .eq('operator_id', profile.id);
+
+    setSaving(false);
+    setMsg(error || slaError ? 'Error saving.' : 'Saved.');
+    setTimeout(() => setMsg(null), 3000);
+  }
+
+  const toggleCategory = (cat) => setPolicy(p => ({
+    ...p,
+    auto_approve_categories: p.auto_approve_categories.includes(cat)
+      ? p.auto_approve_categories.filter(c => c !== cat)
+      : [...p.auto_approve_categories, cat],
+  }));
+
+  return (
+    <div style={{ maxWidth: 520 }}>
+      <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20, lineHeight: 1.5 }}>
+        How long you get to review a campaign before it is dropped from your screens.
+        A dropped campaign is revenue you do not earn.
+      </div>
+
+      <Field label="Review window (hours)">
+        <SettingsInput type="number" value={slaHours} onChange={e => setSlaHours(e.target.value)} />
+      </Field>
+
+      <div
+        onClick={() => setPolicy(p => ({ ...p, enabled: !p.enabled }))}
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderTop: `1px solid ${C.border}`, cursor: 'pointer' }}
+      >
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: C.text }}>Auto-approve matching campaigns</div>
+          <div style={{ fontSize: 12, color: C.textSub, marginTop: 2 }}>Skip manual review for work you already trust</div>
+        </div>
+        <div style={{
+          width: 44, height: 24, borderRadius: 12, flexShrink: 0,
+          background: policy.enabled ? C.purple : C.border, position: 'relative', transition: 'background 0.2s',
+        }}>
+          <div style={{
+            position: 'absolute', top: 3, left: policy.enabled ? 23 : 3,
+            width: 18, height: 18, borderRadius: '50%', background: '#fff',
+            transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+          }} />
+        </div>
+      </div>
+
+      {policy.enabled && (
+        <div style={{ paddingTop: 16 }}>
+          <Field label="Categories to auto-approve">
+            <div style={{ fontSize: 12, color: C.textSub, marginBottom: 10 }}>
+              Nothing selected means nothing is auto-approved.
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {categories.length === 0 && (
+                <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans }}>No campaign categories yet.</span>
+              )}
+              {categories.map(cat => {
+                const active = policy.auto_approve_categories.includes(cat);
+                return (
+                  <button key={cat} type="button" onClick={() => toggleCategory(cat)} style={{
+                    padding: '6px 12px', borderRadius: 20, cursor: 'pointer',
+                    border: `1px solid ${active ? C.purple : C.border}`,
+                    background: active ? C.purple : 'transparent',
+                    color: active ? '#fff' : C.textSub,
+                    fontSize: 12, fontFamily: F.sans,
+                  }}>{cat}</button>
+                );
+              })}
+            </div>
+          </Field>
+
+          <Field label="Only for advertisers with at least this many completed campaigns">
+            <SettingsInput
+              type="number"
+              value={policy.min_completed_campaigns}
+              onChange={e => setPolicy(p => ({ ...p, min_completed_campaigns: e.target.value }))}
+            />
+          </Field>
+        </div>
+      )}
+
+      <div style={{ marginTop: 20, display: 'flex', gap: 12, alignItems: 'center' }}>
+        <SaveBtn onClick={save} saving={saving} />
+        {msg && <span style={{ fontSize: 13, color: msg === 'Saved.' ? C.green : C.red }}>{msg}</span>}
+      </div>
+    </div>
+  );
+}
+
 function NotificationsTab({ profile }) {
   const [prefs, setPrefs] = useState(
     profile?.notification_prefs ?? {
@@ -544,6 +693,7 @@ export function OperatorSettingsView() {
   const tabs = [
     { id: 'profile',       label: 'Profile' },
     { id: 'security',      label: 'Security' },
+    { id: 'review',        label: 'Review' },
     { id: 'notifications', label: 'Notifications' },
     { id: 'team',          label: 'Team' },
     { id: 'payouts',       label: 'Payouts' },
@@ -565,6 +715,7 @@ export function OperatorSettingsView() {
 
       {tab === 'profile'       && <ProfileTab profile={profile} onSaved={updates => setProfile(p => ({ ...p, ...updates }))} />}
       {tab === 'security'      && <SecurityTab />}
+      {tab === 'review'        && <ReviewTab profile={profile} />}
       {tab === 'notifications' && <NotificationsTab profile={profile} />}
       {tab === 'team'          && <TeamTab profile={profile} />}
       {tab === 'payouts'       && <PayoutsTab profile={profile} />}
