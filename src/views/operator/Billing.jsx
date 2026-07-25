@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { periodDelta, splitByPeriod } from '../../lib/periodDelta.js';
 import { useToast } from '../../components/primitives/Toast.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
@@ -52,6 +53,11 @@ export function Billing() {
   const availableOut  = balance?.available ?? 0;
   const pendingIn     = balance?.pending ?? 0;
 
+  // `charges` rows are shaped { id, advertiser, screen, date, amount, status }
+  // by the operator-billing edge function — the date field is `date`.
+  const chargedPeriods = splitByPeriod(charges, 'date', 'amount', 30);
+  const chargedTrend   = periodDelta(chargedPeriods.current, chargedPeriods.prior);
+
   const doPayoutAll = async () => {
     if (availableOut <= 0) return;
     setPaying(true);
@@ -89,7 +95,7 @@ export function Billing() {
         actions={<a href="https://dashboard.stripe.com" target="_blank" rel="noreferrer"><Btn variant="secondary" size="sm">Stripe Dashboard ↗</Btn></a>} />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
-        <KPI label="Total Ad Spend"   value={`$${totalCharged.toLocaleString()}`}  sub="charged campaigns" trend={14} icon="💰" />
+        <KPI label="Total Ad Spend"   value={`$${totalCharged.toLocaleString()}`}  sub="charged campaigns" trend={chargedTrend} trendLabel="vs prior 30 days" icon="💰" />
         <KPI label="Platform Net"     value={`$${platformNet.toLocaleString()}`}   sub="12% platform fee"  color={C.blue} icon="$" />
         <KPI label="Available Balance" value={balance ? `$${availableOut.toLocaleString()}` : '—'} sub={connectStatus === 'active' ? 'ready to pay out' : 'connect Stripe'} color={C.green} icon="✓" />
         <KPI label="Pending Balance"  value={balance ? `$${pendingIn.toLocaleString()}` : '—'} sub="in transit" color={C.amber} icon="⏳" />

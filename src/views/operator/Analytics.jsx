@@ -4,6 +4,7 @@ import { SkeletonRow, Skeleton } from '../../components/ui/Skeleton.jsx';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
+import { periodDelta } from '../../lib/periodDelta.js';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
@@ -53,6 +54,11 @@ function useImpressionStats(period = 7, customFrom = '', customTo = '') {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hasReal, setHasReal] = useState(false);
+  // People counted over the equal-length window immediately before the
+  // selected one. Kept out of `rows` on purpose: `rows` feeds the hourly,
+  // daily and demographic aggregates, which would double-count if the fetch
+  // window were simply widened.
+  const [priorPeople, setPriorPeople] = useState(null);
 
   useEffect(() => {
     let from, to;
@@ -79,6 +85,16 @@ function useImpressionStats(period = 7, customFrom = '', customTo = '') {
           setHasReal(true);
         }
         setLoading(false);
+      });
+
+    const spanMs = to.getTime() - from.getTime();
+    supabase
+      .from('impression_events')
+      .select('people_count')
+      .gte('window_start', new Date(from.getTime() - spanMs).toISOString())
+      .lt('window_start', from.toISOString())
+      .then(({ data }) => {
+        setPriorPeople(data ? data.reduce((a, r) => a + (r.people_count || 0), 0) : null);
       });
   }, [period, customFrom, customTo]);
 
@@ -127,7 +143,9 @@ function useImpressionStats(period = 7, customFrom = '', customTo = '') {
     };
   }, [rows, hasReal]);
 
-  return { stats, loading, hasReal };
+  const impressionTrend = periodDelta(stats?.totalPeople ?? NaN, priorPeople ?? NaN);
+
+  return { stats, loading, hasReal, impressionTrend };
 }
 
 export function Analytics({ campaigns }) {
@@ -136,7 +154,7 @@ export function Analytics({ campaigns }) {
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const { isMobile } = useBreakpoint();
-  const { stats, loading, hasReal } = useImpressionStats(period, customFrom, customTo);
+  const { stats, loading, hasReal, impressionTrend } = useImpressionStats(period, customFrom, customTo);
 
   const totalImpr  = campaigns.reduce((a, c) => a + (c.impressions || 0), 0);
   const totalScans = campaigns.reduce((a, c) => a + (c.scans || 0), 0);
@@ -273,7 +291,7 @@ export function Analytics({ campaigns }) {
 
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
-        <KPI label="Total Impressions" value={hasReal ? totalPeople.toLocaleString() : `${(totalImpr / 1000).toFixed(1)}K`} sub={hasReal ? 'verified by CV' : 'estimated'} trend={8} icon="👁" />
+        <KPI label="Total Impressions" value={hasReal ? totalPeople.toLocaleString() : `${(totalImpr / 1000).toFixed(1)}K`} sub={hasReal ? 'verified by CV' : 'estimated'} trend={hasReal ? impressionTrend : null} trendLabel={`vs prior ${period === 'custom' ? 'range' : period + ' days'}`} icon="👁" />
         <KPI label="Avg Dwell Time"    value={hasReal ? `${avgDwell}s` : `$${avgCPM} CPM`} sub={hasReal ? 'seconds on screen' : 'cost per 1,000'} color={C.blue} icon={hasReal ? '⏱' : '💲'} />
         <KPI label="QR Scans"          value={totalScans} sub="total scans" color={C.green} icon="📲" />
         <KPI label={hasReal ? 'Avg Attention' : 'Scan Rate'} value={hasReal ? `${avgAttn}%` : `${scanRate}%`} sub={hasReal ? 'frontal attention score' : 'scans / impressions'} icon="📊" />

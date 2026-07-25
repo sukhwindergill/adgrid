@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { C, F } from '../../design/tokens.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { periodDelta, splitByPeriod } from '../../lib/periodDelta.js';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
@@ -35,6 +36,10 @@ export function Revenue({ campaigns, loading = false }) {
   const cities   = [...new Set(filteredCampaigns.map(c => c.city))];
   const maxRev   = Math.max(...cities.map(city => filteredCampaigns.filter(c => c.city === city).reduce((a, c) => a + c.budget, 0)), 1);
 
+  // Real 30-day-over-30-day delta from the same rows `total` sums.
+  const spendPeriods = splitByPeriod(filteredCampaigns, 'start_date', 'budget', 30);
+  const spendTrend   = periodDelta(spendPeriods.current, spendPeriods.prior);
+
   return (
     <div>
       <PageHeader title="Revenue" subtitle="Platform earnings, owner payouts, and network splits"
@@ -52,7 +57,7 @@ export function Revenue({ campaigns, loading = false }) {
           </div>
         } />
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
-        <KPI label="Total Ad Spend"   value={`$${total.toLocaleString()}`}    sub="from advertisers" trend={14} icon="💰" />
+        <KPI label="Total Ad Spend"   value={`$${total.toLocaleString()}`}    sub="from advertisers" trend={spendTrend} trendLabel="vs prior 30 days" icon="💰" />
         <KPI label="Platform Revenue" value={`$${platform.toLocaleString()}`} sub="12% fee" color={C.blue} icon="$" />
         <KPI label="Owner Payouts"    value={`$${owners.toLocaleString()}`}   sub="40% of net" color={C.green} icon="🏦" />
         <KPI label="Network Pool"     value={`$${network.toLocaleString()}`}  sub="reinvestment" icon="♻" />

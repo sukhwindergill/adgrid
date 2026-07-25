@@ -106,6 +106,9 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
         setHourlyData(hours);
       });
   }, []);
+  // Snapshot of each screen's current monthly revenue — there is no history
+  // here, so there is no honest prior period to trend against. The KPI below
+  // therefore shows no trend arrow rather than a made-up one.
   const totalRev    = dbScreens.reduce((a, s) => a + (s.revenue ?? s.monthly_revenue ?? 0), 0);
   const totalImpr   = dbScreens.reduce((a, s) => a + (s.impressions ?? 0), 0);
   const active      = campaigns.filter(c => c.status === 'active');
@@ -171,7 +174,7 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
 
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: kpiCols, gap: 14, marginBottom: 24 }}>
-        <KPI label="Network Revenue"  value={`$${totalRev.toLocaleString()}`}               sub="this month" trend={12} icon="💰" />
+        <KPI label="Network Revenue"  value={`$${totalRev.toLocaleString()}`}               sub="this month" icon="💰" />
         <KPI label="Active Campaigns" value={active.length}                                  sub="running now" icon="▶" />
         <KPI label="Total Booked"     value={`$${totalSpend.toLocaleString()}`}              sub="campaign budgets" />
         <KPI label="QR Scans"         value={totalScans}                                     sub="consented leads" color={C.green} icon="📲" />
