@@ -76,6 +76,46 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
     body: `"${d.campaignName}" has completed its run.`,
     html: emailHtml("Campaign ended", `Your campaign <strong>${d.campaignName}</strong> has ended. Check your analytics to see how it performed.`, "View Analytics", d.appUrl ?? ""),
   }),
+  screen_offline_during_flight: (d) => ({
+    title: "A screen went dark on your campaign",
+    body: `${d.screenName} has been offline for ${d.offlineMinutes} minutes while "${d.campaignName}" is live.`,
+    html: emailHtml(
+      "A screen went dark on your campaign",
+      `<strong>${d.screenName}</strong> has been offline for ${d.offlineMinutes} minutes while your campaign <strong>${d.campaignName}</strong> is scheduled to run. You are not receiving the plays you booked on this screen.`,
+      "View Campaign",
+      d.appUrl ?? "",
+    ),
+  }),
+  campaign_pacing_behind: (d) => ({
+    title: "Campaign is pacing behind",
+    body: `"${d.campaignName}" has spent ${d.spentPct}% of budget with ${d.elapsedPct}% of the flight elapsed.`,
+    html: emailHtml(
+      "Campaign is pacing behind",
+      `Your campaign <strong>${d.campaignName}</strong> has spent ${d.spentPct}% of its budget with ${d.elapsedPct}% of the flight elapsed. At this rate it will under-deliver before the end date.`,
+      "View Campaign",
+      d.appUrl ?? "",
+    ),
+  }),
+  cost_per_scan_high: (d) => ({
+    title: "Cost per scan above your target",
+    body: `"${d.campaignName}" is at ${d.costPerScan} per scan, above your ${d.threshold} target.`,
+    html: emailHtml(
+      "Cost per scan above your target",
+      `Your campaign <strong>${d.campaignName}</strong> is currently at <strong>${d.costPerScan}</strong> per scan, above the ${d.threshold} target you set.`,
+      "View Campaign",
+      d.appUrl ?? "",
+    ),
+  }),
+  rule_paused_campaign: (d) => ({
+    title: "A rule paused your campaign",
+    body: `"${d.campaignName}" was paused automatically: ${d.ruleName}.`,
+    html: emailHtml(
+      "A rule paused your campaign",
+      `Your campaign <strong>${d.campaignName}</strong> was paused automatically by your rule <strong>${d.ruleName}</strong> (${d.metric} was ${d.value}). Nothing further will be spent until you resume it.`,
+      "View Campaign",
+      d.appUrl ?? "",
+    ),
+  }),
   approval_sla_approaching: (d) => ({
     title: "A campaign is waiting on your review",
     body: `"${d.campaignName}" needs your approval on ${d.screenName} within ${d.hoursLeft} hours.`,
