@@ -141,11 +141,26 @@ Deno.serve(async (req: Request) => {
 
       if (!advCampaigns || advCampaigns.length === 0) continue;
 
+      // Billable scans only. Counting every row here would report more
+      // "leads" than the dashboard shows for the same week, because the
+      // dashboard excludes bots and duplicates.
       const { data: scans } = await supabase
         .from("scans")
         .select("id")
         .eq("advertiser_id", advId)
+        .eq("is_bot", false)
+        .eq("is_duplicate", false)
         .gte("scanned_at", new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+      const advCampaignIds = advCampaigns.map((c: { id: string }) => c.id);
+      const { data: weekDelivery } = await supabase
+        .from("campaign_delivery_daily")
+        .select("plays")
+        .in("campaign_id", advCampaignIds)
+        .gte("day", new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
+      const weekPlays = (weekDelivery ?? []).reduce(
+        (s: number, r: { plays: number }) => s + (Number(r.plays) || 0), 0
+      );
 
       const totalSpend = advCampaigns.reduce(
         (s: number, c: { budget: number }) => s + (c.budget ?? 0), 0
@@ -153,6 +168,7 @@ Deno.serve(async (req: Request) => {
 
       await sendNotification(advId, "weekly_report", {
         totalScans: String((scans ?? []).length),
+        totalPlays: String(weekPlays),
         activeCampaigns: String(advCampaigns.length),
         totalSpend: totalSpend.toFixed(2),
         appUrl,

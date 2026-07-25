@@ -173,8 +173,10 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
   }),
   weekly_report: (d) => ({
     title: "Your weekly performance report",
-    body: `${d.totalScans} scans across ${d.activeCampaigns} campaigns this week.`,
-    html: emailHtml("Weekly Performance Report", `This week: <strong>${d.totalScans} scans</strong> across <strong>${d.activeCampaigns} active campaigns</strong>.<br><br>Total spend: <strong>${fmtMoney(d.totalSpend, d.currency)}</strong>`, "View Analytics", d.appUrl ?? ""),
+    // totalScans is the billable count — bots and duplicates excluded — so it
+    // matches what the dashboard shows for the same week.
+    body: `${d.totalPlays ?? "0"} plays and ${d.totalScans} scans across ${d.activeCampaigns} campaigns this week.`,
+    html: emailHtml("Weekly Performance Report", `This week: <strong>${d.totalPlays ?? "0"} plays</strong> and <strong>${d.totalScans} scans</strong> across <strong>${d.activeCampaigns} active campaigns</strong>.<br><br>Total spend: <strong>${fmtMoney(d.totalSpend, d.currency)}</strong>`, "View Analytics", d.appUrl ?? ""),
   }),
   payment_failed: (d) => ({
     title: "Payment failed",
