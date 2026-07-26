@@ -114,6 +114,29 @@ function PillGroup({ options, value, onChange }) {
   );
 }
 
+const FORMAT_OPTIONS = ['jpg', 'png', 'gif', 'webp', 'mp4', 'webm'];
+
+function FormatChips({ value, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      {FORMAT_OPTIONS.map(fmt => {
+        const active = value.includes(fmt);
+        return (
+          <button key={fmt} type="button" onClick={() => {
+            onChange(active ? value.filter(f => f !== fmt) : [...value, fmt]);
+          }} style={{
+            padding: '6px 12px', borderRadius: 16, cursor: 'pointer',
+            border: `1px solid ${active ? C.purple : C.border}`,
+            background: active ? C.purpleSoft : C.surface,
+            color: active ? C.purple : C.textSub,
+            fontSize: 12, fontFamily: F.sans,
+          }}>{fmt}</button>
+        );
+      })}
+    </div>
+  );
+}
+
 function StepRegister({ onBack, onScreenCreated }) {
   const { user } = useAuth();
   const [form, setForm] = useState({
@@ -121,6 +144,7 @@ function StepRegister({ onBack, onScreenCreated }) {
     location: '', venue_category: '', venue_subtype: '', environment: '',
     screen_position: '', display_size: '', lat: '', lng: '',
     monthly_traffic_estimate: '',
+    resolution_w: '', resolution_h: '', accepted_formats: [], max_file_mb: '',
   });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
@@ -165,6 +189,10 @@ function StepRegister({ onBack, onScreenCreated }) {
       environment:     form.environment,
       screen_position: form.screen_position,
       display_size:    form.display_size.trim(),
+      resolution_w:      form.resolution_w ? parseInt(form.resolution_w, 10) : null,
+      resolution_h:      form.resolution_h ? parseInt(form.resolution_h, 10) : null,
+      accepted_formats:  form.accepted_formats.length > 0 ? form.accepted_formats : null,
+      max_file_mb:       form.max_file_mb ? parseInt(form.max_file_mb, 10) : null,
       status:          'pending',
       operator_id:     user.id,
       max_ad_duration: 30,
@@ -272,6 +300,28 @@ function StepRegister({ onBack, onScreenCreated }) {
 
           <Inp label="Display Size" placeholder="e.g. 55 inch 4K, 72 inch LED"
             value={form.display_size} onChange={e => set('display_size', e.target.value)} />
+
+          <div style={{ marginTop: 8 }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 4 }}>
+              Creative spec <span style={{ color: C.textMuted, fontWeight: 400 }}>(optional)</span>
+            </div>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 10, lineHeight: 1.5 }}>
+              Lets advertisers know before they upload whether their creative fits your screen.
+              Leave blank if you're not sure — it won't block anything.
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+              <Inp label="Resolution width (px)" type="number" min="1" placeholder="e.g. 1080"
+                value={form.resolution_w} onChange={e => set('resolution_w', e.target.value)} />
+              <Inp label="Resolution height (px)" type="number" min="1" placeholder="e.g. 1920"
+                value={form.resolution_h} onChange={e => set('resolution_h', e.target.value)} />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 6 }}>Accepted file formats</div>
+              <FormatChips value={form.accepted_formats} onChange={v => set('accepted_formats', v)} />
+            </div>
+            <Inp label="Max file size (MB)" type="number" min="1" placeholder="e.g. 20"
+              value={form.max_file_mb} onChange={e => set('max_file_mb', e.target.value)} />
+          </div>
 
           <Inp
             label="Estimated monthly foot traffic"
