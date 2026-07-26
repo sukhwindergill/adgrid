@@ -542,27 +542,44 @@ function StepCreative({ form, setForm, matchedScreens = [] }) {
     },
   }));
 
-  const [overrideUploading, setOverrideUploading] = useState(null); // screenId currently uploading, or null
+  const [overrideUploading, setOverrideUploading] = useState(() => new Set()); // screenIds currently uploading
+  const [overrideErrors, setOverrideErrors] = useState({}); // screenId -> error message
+
+  const setOverrideErr = (screenId, msg) => setOverrideErrors(s => ({ ...s, [screenId]: msg }));
 
   const handleOverrideFile = async (screenId, file) => {
     if (!file) return;
+    const ALLOWED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime'];
     const isVid = file.type.startsWith('video/');
-    setOverrideUploading(screenId);
+    if (!ALLOWED.includes(file.type)) { setOverrideErr(screenId, 'Use JPG, PNG, GIF, WEBP, or MP4/WEBM/MOV video.'); return; }
+    const maxMB = isVid ? 100 : 15;
+    if (file.size > maxMB * 1024 * 1024) { setOverrideErr(screenId, `File too large — max ${maxMB} MB for ${isVid ? 'video' : 'images'}.`); return; }
+    setOverrideErr(screenId, null);
+    setOverrideUploading(s => new Set(s).add(screenId));
     const ext = (file.name.split('.').pop() || (isVid ? 'mp4' : 'jpg')).toLowerCase();
     const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage.from('creatives').upload(path, file, { contentType: file.type, upsert: false });
-    if (error) { setOverrideUploading(null); return; }
+    if (error) {
+      setOverrideErr(screenId, error.message);
+      setOverrideUploading(s => { const n = new Set(s); n.delete(screenId); return n; });
+      return;
+    }
     const { data } = supabase.storage.from('creatives').getPublicUrl(path);
     let width = null, height = null;
     try {
       const dims = await getMediaDimensions(file);
-      width = dims.width; height = dims.height;
-    } catch { /* best-effort, see Task 9's handleFile */ }
+      width = dims.width;
+      height = dims.height;
+    } catch {
+      // Dimensions are best-effort. A read failure must not block the upload
+      // — the creative is still usable, it just won't be fit-checked until
+      // dimensions are known (checkCreativeFit reports 'unknown' without them).
+    }
     setOverride(screenId, 'media_url', data.publicUrl);
     setOverride(screenId, 'media_type', isVid ? 'video' : 'image');
     setOverride(screenId, 'media_width', width);
     setOverride(screenId, 'media_height', height);
-    setOverrideUploading(null);
+    setOverrideUploading(s => { const n = new Set(s); n.delete(screenId); return n; });
   };
 
   const previewCampaign = {
@@ -661,17 +678,18 @@ function StepCreative({ form, setForm, matchedScreens = [] }) {
                         {ov.media_url ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <span style={{ fontSize: 11, color: C.text, fontFamily: F.sans }}>{ov.media_type === 'video' ? 'Video' : 'Image'} uploaded ✓</span>
-                            <button type="button" onClick={() => { setOverride(screenId, 'media_url', ''); setOverride(screenId, 'media_type', ''); setOverride(screenId, 'media_width', null); setOverride(screenId, 'media_height', null); }}
+                            <button type="button" onClick={() => { setOverride(screenId, 'media_url', ''); setOverride(screenId, 'media_type', ''); setOverride(screenId, 'media_width', null); setOverride(screenId, 'media_height', null); setOverrideErr(screenId, null); }}
                               style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, padding: '2px 8px', fontSize: 11, color: C.textSub, cursor: 'pointer', fontFamily: F.sans }}>Remove</button>
                           </div>
                         ) : (
-                          <label style={{ display: 'inline-block', border: `1px dashed ${C.border}`, borderRadius: 6, padding: '6px 12px', fontSize: 11, color: C.textSub, cursor: overrideUploading === screenId ? 'default' : 'pointer', fontFamily: F.sans }}>
+                          <label style={{ display: 'inline-block', border: `1px dashed ${C.border}`, borderRadius: 6, padding: '6px 12px', fontSize: 11, color: C.textSub, cursor: overrideUploading.has(screenId) ? 'default' : 'pointer', fontFamily: F.sans }}>
                             <input type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime" style={{ display: 'none' }}
-                              disabled={overrideUploading === screenId}
+                              disabled={overrideUploading.has(screenId)}
                               onChange={e => handleOverrideFile(screenId, e.target.files?.[0])} />
-                            {overrideUploading === screenId ? 'Uploading…' : '+ Upload replacement'}
+                            {overrideUploading.has(screenId) ? 'Uploading…' : '+ Upload replacement'}
                           </label>
                         )}
+                        {overrideErrors[screenId] && <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, marginTop: 6 }}>{overrideErrors[screenId]}</div>}
                       </div>
                     </div>
                   );
