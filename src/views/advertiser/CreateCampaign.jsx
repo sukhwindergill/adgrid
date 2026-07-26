@@ -16,6 +16,7 @@ import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { formatCurrency } from '../../lib/formatCurrency.js';
+import { haversineKm } from '../../lib/geo.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -35,14 +36,6 @@ const CITY_CENTERS = {
   'Hamilton':     [43.2557,  -79.8711],
   'Kitchener':    [43.4516,  -80.4925],
 };
-
-function haversine(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
 
 // ─── Stepper ─────────────────────────────────────────────────────────────────
 
@@ -131,8 +124,10 @@ function ScreenMap({ center, radius, screens, selected, onToggle }) {
       m.setView(center, 12);
       markersRef.current.forEach(mk => mk.remove());
       markersRef.current = screens.filter(s => s.lat != null && s.lon != null).map(s => {
-        const d = haversine(center[0], center[1], s.lat, s.lon);
-        const inRadius = d <= radius;
+        // A screen with unknown coordinates is excluded, not treated as
+        // distance zero — haversineKm returns null rather than NaN for that.
+        const d = haversineKm(center[0], center[1], s.lat, s.lon);
+        const inRadius = d !== null && d <= radius;
         const isSel = selected.includes(s.id);
         const icon = Lf.divIcon({
           className: '',
@@ -926,8 +921,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       const lon = form.radius_center_lon;
       if (lat && lon) {
         screens = screens.filter(s => {
-          if (s.lat == null || s.lon == null) return false;
-          return haversine(lat, lon, s.lat, s.lon) <= form.radius_km;
+          const d = haversineKm(lat, lon, s.lat, s.lon);
+          return d !== null && d <= form.radius_km;
         });
       }
     }

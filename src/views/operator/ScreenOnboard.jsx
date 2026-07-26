@@ -119,7 +119,7 @@ function StepRegister({ onBack, onScreenCreated }) {
   const [form, setForm] = useState({
     name: '', owner_name: '', country: 'CA', state: '', city: '',
     location: '', venue_category: '', venue_subtype: '', environment: '',
-    screen_position: '', display_size: '', lat: '', lng: '', showLatLng: false,
+    screen_position: '', display_size: '', lat: '', lng: '',
     monthly_traffic_estimate: '',
   });
   const [saving, setSaving] = useState(false);
@@ -138,7 +138,11 @@ function StepRegister({ onBack, onScreenCreated }) {
     form.city.trim() && form.location.trim() && form.venue_category &&
     (subtypes.length === 0 || form.venue_subtype) &&
     form.environment && form.screen_position && form.display_size.trim() &&
-    Number(form.monthly_traffic_estimate) > 0;
+    Number(form.monthly_traffic_estimate) > 0 &&
+    // Coordinates are required: without them the screen is invisible to radius
+    // targeting and cannot contribute to reach estimation.
+    Number.isFinite(parseFloat(form.lat)) &&
+    Number.isFinite(parseFloat(form.lng));
 
   const handleSubmit = async () => {
     if (!valid) return;
@@ -282,21 +286,17 @@ function StepRegister({ onBack, onScreenCreated }) {
           </div>
 
           <div>
-            <button
-              type="button"
-              onClick={() => set('showLatLng', !form.showLatLng)}
-              style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans, padding: 0 }}
-            >
-              {form.showLatLng ? '▾' : '▸'} Add location coordinates (for radius targeting)
-            </button>
-            {form.showLatLng && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
-                <Inp label="Latitude" type="number" step="any" placeholder="e.g. 43.6532"
-                  value={form.lat} onChange={e => set('lat', e.target.value)} />
-                <Inp label="Longitude" type="number" step="any" placeholder="e.g. -79.3832"
-                  value={form.lng} onChange={e => set('lng', e.target.value)} />
-              </div>
-            )}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <Inp label="Latitude" type="number" step="any" placeholder="e.g. 43.6532"
+                value={form.lat} onChange={e => set('lat', e.target.value)} />
+              <Inp label="Longitude" type="number" step="any" placeholder="e.g. -79.3832"
+                value={form.lng} onChange={e => set('lng', e.target.value)} />
+            </div>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 6 }}>
+              Right-click your screen&apos;s location in Google Maps and copy the two numbers.
+              Advertisers use this to find your screen by radius — without it, your screen
+              will not appear in location-based searches.
+            </div>
           </div>
         </div>
 

@@ -140,6 +140,18 @@ export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelect
         subtitle={`${allScreens.length} registered · ${allScreens.filter(s => s.status === 'live').length} live · ${allScreens.filter(s => s.status === 'pending').length} pending`}
         actions={<><Btn variant="secondary" size="sm">↓ Export</Btn><Btn onClick={onStartOnboard}>+ Register Screen</Btn></>} />
 
+      {allScreens.some(s => s.lat == null || s.lon == null) && (
+        <Card style={{ padding: 16, marginBottom: 20, borderLeft: `3px solid ${C.amber}` }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans }}>
+            {allScreens.filter(s => s.lat == null || s.lon == null).length} screen(s) missing coordinates
+          </div>
+          <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginTop: 4 }}>
+            Advertisers searching by radius cannot find these screens, and they are excluded from
+            audience reach estimates. Add coordinates from each screen&apos;s settings.
+          </div>
+        </Card>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
         <KPI label="Total Screens"     value={allScreens.length} />
         <KPI label="Online"            value={allScreens.filter(s => s.status === 'live').length} color={C.green} />
