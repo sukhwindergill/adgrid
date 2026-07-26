@@ -5,6 +5,29 @@ import { Btn } from '../primitives/Btn.jsx';
 import { Inp } from '../primitives/Inp.jsx';
 import { SelInput } from '../primitives/SelInput.jsx';
 
+const FORMAT_OPTIONS = ['jpg', 'png', 'gif', 'webp', 'mp4', 'webm'];
+
+function FormatChips({ value, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      {FORMAT_OPTIONS.map(fmt => {
+        const active = value.includes(fmt);
+        return (
+          <button key={fmt} type="button" onClick={() => {
+            onChange(active ? value.filter(f => f !== fmt) : [...value, fmt]);
+          }} style={{
+            padding: '6px 12px', borderRadius: 16, cursor: 'pointer',
+            border: `1px solid ${active ? C.purple : C.border}`,
+            background: active ? C.purpleSoft : C.surface,
+            color: active ? C.purple : C.textSub,
+            fontSize: 12, fontFamily: F.sans,
+          }}>{fmt}</button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function EditScreenModal({ screen, onClose, onSaved }) {
   const [form, setForm] = useState({
     name:                     screen.name || '',
@@ -15,6 +38,10 @@ export function EditScreenModal({ screen, onClose, onSaved }) {
     monthly_traffic_estimate: screen.monthly_traffic_estimate || '',
     lat:                      screen.lat || '',
     lng:                      screen.lng || '',
+    resolution_w:      screen.resolution_w || '',
+    resolution_h:      screen.resolution_h || '',
+    accepted_formats:  screen.accepted_formats || [],
+    max_file_mb:       screen.max_file_mb || '',
   });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
@@ -36,6 +63,10 @@ export function EditScreenModal({ screen, onClose, onSaved }) {
         impressions:              form.monthly_traffic_estimate ? parseInt(form.monthly_traffic_estimate) * 1000 : screen.impressions,
         lat:                      form.lat ? parseFloat(form.lat) : null,
         lng:                      form.lng ? parseFloat(form.lng) : null,
+        resolution_w:      Number(form.resolution_w) > 0 ? parseInt(form.resolution_w, 10) : null,
+        resolution_h:      Number(form.resolution_h) > 0 ? parseInt(form.resolution_h, 10) : null,
+        accepted_formats:  form.accepted_formats.length > 0 ? form.accepted_formats : null,
+        max_file_mb:       Number(form.max_file_mb) > 0 ? parseInt(form.max_file_mb, 10) : null,
       })
       .eq('id', screen.id)
       .select()
@@ -67,6 +98,26 @@ export function EditScreenModal({ screen, onClose, onSaved }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Inp label="Monthly Footfall (thousands)" type="number" value={form.monthly_traffic_estimate} onChange={e => setForm(f => ({ ...f, monthly_traffic_estimate: e.target.value }))} />
             <Inp label="CPM Floor (£)" type="number" step="0.50" value={form.cpm_floor} onChange={e => setForm(f => ({ ...f, cpm_floor: e.target.value }))} />
+          </div>
+          <div style={{ marginTop: 4 }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 4 }}>
+              Creative spec <span style={{ color: C.textMuted, fontWeight: 400 }}>(optional)</span>
+            </div>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 10, lineHeight: 1.5 }}>
+              Lets advertisers know before they upload whether their creative fits your screen.
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+              <Inp label="Resolution width (px)" type="number" min="1" placeholder="e.g. 1080"
+                value={form.resolution_w} onChange={e => setForm(f => ({ ...f, resolution_w: e.target.value }))} />
+              <Inp label="Resolution height (px)" type="number" min="1" placeholder="e.g. 1920"
+                value={form.resolution_h} onChange={e => setForm(f => ({ ...f, resolution_h: e.target.value }))} />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 6 }}>Accepted file formats</div>
+              <FormatChips value={form.accepted_formats} onChange={v => setForm(f => ({ ...f, accepted_formats: v }))} />
+            </div>
+            <Inp label="Max file size (MB)" type="number" min="1" placeholder="e.g. 20"
+              value={form.max_file_mb} onChange={e => setForm(f => ({ ...f, max_file_mb: e.target.value }))} />
           </div>
         </div>
         {err && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginBottom: 12 }}>{err}</div>}
