@@ -144,9 +144,9 @@ function AppInner() {
     const [bookingsRes, screensRes, myScreensRes] = await Promise.all([
       bookingsQuery,
       // Advertiser-safe view: live screens only, no monthly_revenue.
-      supabase.from('advertiser_screens').select('id,name,owner_name,owner_type,city,state,country,location,status,lat,lon,venue_category,venue_subtype,environment,screen_position,display_size,monthly_traffic_estimate,cpm_floor,operating_hours_start,operating_hours_end,auto_approve,screen_photos,content_categories_blocked,timezone,max_ad_duration,operator_id,last_seen,health_status').order('name'),
+      supabase.from('advertiser_screens').select('id,name,owner_name,owner_type,city,state,country,location,status,lat,lon,venue_category,venue_subtype,environment,screen_position,display_size,monthly_traffic_estimate,cpm_floor,operating_hours_start,operating_hours_end,auto_approve,screen_photos,content_categories_blocked,timezone,max_ad_duration,operator_id,last_seen,health_status,resolution_w,resolution_h,accepted_formats,max_file_mb').order('name'),
       // Operator's own screens: full columns, but only rows they own.
-      supabase.from('screens').select('id,name,owner_name,owner_type,city,state,country,location,status,lat,lon,venue_category,venue_subtype,environment,screen_position,display_size,monthly_traffic_estimate,cpm_floor,operating_hours_start,operating_hours_end,auto_approve,screen_photos,content_categories_blocked,timezone,max_ad_duration,monthly_revenue,operator_id,last_seen,health_status').eq('operator_id', user.id).order('name'),
+      supabase.from('screens').select('id,name,owner_name,owner_type,city,state,country,location,status,lat,lon,venue_category,venue_subtype,environment,screen_position,display_size,monthly_traffic_estimate,cpm_floor,operating_hours_start,operating_hours_end,auto_approve,screen_photos,content_categories_blocked,timezone,max_ad_duration,monthly_revenue,operator_id,last_seen,health_status,resolution_w,resolution_h,accepted_formats,max_file_mb').eq('operator_id', user.id).order('name'),
     ])
 
     if (bookingsRes.error) {
