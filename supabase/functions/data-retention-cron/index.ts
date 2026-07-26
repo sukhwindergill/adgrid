@@ -2,8 +2,11 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Enforces the retention windows promised in the Privacy Policy
 // (src/views/legal/PrivacyPolicy.jsx, "Data retention" section):
-// screen telemetry/heartbeats 12 months, QR scan events 24 months.
+// screen telemetry (heartbeats, impression events, proof-of-play) 12 months,
+// QR scan events 24 months.
 // Without this job those tables grew forever despite the policy promising deletion.
+// ad_plays is proof-of-play telemetry and was missing from the original pass —
+// added so it is covered by the same 12-month window as the other telemetry.
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -31,6 +34,11 @@ Deno.serve(async (_req: Request) => {
     .delete({ count: "exact" })
     .lt("created_at", telemetryCutoff);
 
+  const { error: adPlayErr, count: adPlayCount } = await supabase
+    .from("ad_plays")
+    .delete({ count: "exact" })
+    .lt("played_at", telemetryCutoff);
+
   const { error: scanErr, count: scanCount } = await supabase
     .from("scans")
     .delete({ count: "exact" })
@@ -38,15 +46,17 @@ Deno.serve(async (_req: Request) => {
 
   return new Response(
     JSON.stringify({
-      ok: !heartbeatErr && !impressionErr && !scanErr,
+      ok: !heartbeatErr && !impressionErr && !adPlayErr && !scanErr,
       deleted: {
         display_heartbeats: heartbeatCount ?? 0,
         impression_events: impressionCount ?? 0,
+        ad_plays: adPlayCount ?? 0,
         scans: scanCount ?? 0,
       },
       errors: {
         display_heartbeats: heartbeatErr?.message ?? null,
         impression_events: impressionErr?.message ?? null,
+        ad_plays: adPlayErr?.message ?? null,
         scans: scanErr?.message ?? null,
       },
     }),
