@@ -18,8 +18,11 @@ Deno.serve(async (_req: Request) => {
 
   const { data: screens } = await supabase
     .from("screens")
-    .select("id, name, operator_id, last_seen, health_status")
-    .not("last_seen", "is", null);
+    .select("id, name, operator_id, last_seen, health_status");
+  // Screens that have NEVER connected are included on purpose. Filtering them
+  // out left a screen with last_seen = NULL sitting on whatever health_status
+  // it was seeded with — production had one reading "online" that had never
+  // contacted the platform at all.
 
   if (!screens || screens.length === 0) {
     return new Response(JSON.stringify({ ok: true, checked: 0 }), {
@@ -30,9 +33,13 @@ Deno.serve(async (_req: Request) => {
   const updates: { id: string; health_status: string; wasOnline: boolean }[] = [];
 
   for (const screen of screens) {
-    const lastSeen = screen.last_seen as string;
+    const lastSeen = screen.last_seen as string | null;
     let newStatus: string;
-    if (lastSeen < offlineCutoff) newStatus = "offline";
+    // A screen that has never checked in is offline, not online. Comparing a
+    // null lastSeen against the cutoffs would yield false for every branch and
+    // silently fall through to "online".
+    if (!lastSeen) newStatus = "offline";
+    else if (lastSeen < offlineCutoff) newStatus = "offline";
     else if (lastSeen < idleCutoff) newStatus = "idle";
     else newStatus = "online";
 
