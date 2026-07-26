@@ -114,7 +114,7 @@ function PillGroup({ options, value, onChange }) {
   );
 }
 
-const FORMAT_OPTIONS = ['jpg', 'png', 'gif', 'webp', 'mp4', 'webm'];
+const FORMAT_OPTIONS = ['jpg', 'png', 'gif', 'webp', 'mp4', 'webm', 'mov'];
 
 function FormatChips({ value, onChange }) {
   return (
