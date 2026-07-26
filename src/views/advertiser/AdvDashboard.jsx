@@ -11,6 +11,7 @@ import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { periodDelta, splitByPeriod } from '../../lib/periodDelta.js';
 import { DeliveryHealthCard } from '../../components/shared/DeliveryHealthCard.jsx';
 import { ApprovalTracker } from '../../components/shared/ApprovalTracker.jsx';
+import { estimateReach, averageFrequency } from '../../lib/reach.js';
 
 export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
   const { isMobile } = useBreakpoint();
@@ -18,6 +19,7 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
   const [delivery, setDelivery] = useState([]);
   const [health, setHealth] = useState(null);
   const [screenNames, setScreenNames] = useState({}); // screen_id -> name
+  const [screenCoords, setScreenCoords] = useState({}); // screen_id -> {lat, lon}
 
   useEffect(() => {
     const fetchCampaignScreens = async () => {
@@ -46,10 +48,11 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
         if (ids.length > 0) {
           const { data: named } = await supabase
             .from('advertiser_screens')
-            .select('id, name')
+            .select('id, name, lat, lon')
             .in('id', ids);
           if (named) {
             setScreenNames(Object.fromEntries(named.map(s => [s.id, s.name])));
+            setScreenCoords(Object.fromEntries(named.map(s => [s.id, { lat: s.lat, lon: s.lon }])));
           }
         }
       }
@@ -128,6 +131,19 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
   const imprPeriods = splitByPeriod(delivery, 'day', 'impressions', 30);
   const imprTrend   = periodDelta(imprPeriods.current, imprPeriods.prior);
 
+  // Reach: impressions summed per screen, then discounted for screens whose
+  // audiences overlap. Modelled, never measured — labelled as an estimate.
+  const perScreen = Object.values(
+    delivery.reduce((acc, r) => {
+      acc[r.screen_id] = acc[r.screen_id] ?? { screen_id: r.screen_id, impressions: 0 };
+      acc[r.screen_id].impressions += Number(r.impressions) || 0;
+      return acc;
+    }, {})
+  ).map(s => ({ ...s, ...(screenCoords[s.screen_id] ?? { lat: null, lon: null }) }));
+
+  const { reach, hasUnknownPositions } = estimateReach(perScreen);
+  const frequency = averageFrequency(totalImpr, reach);
+
   // Flat list of every booked screen, for the approval tracker.
   const approvalRows = Object.values(campaignScreens)
     .flat()
@@ -149,6 +165,21 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
              sub={filteredScans > 0 ? `${filteredScans} filtered as bot/duplicate` : 'leads captured'}
              color={C.green} icon="📲" />
       </div>
+
+      {reach > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
+          <KPI
+            label="Estimated reach"
+            value={reach.toLocaleString()}
+            sub={hasUnknownPositions ? 'some screens missing coordinates' : 'unique people, overlap-adjusted'}
+          />
+          <KPI
+            label="Avg frequency"
+            value={frequency === null ? '—' : `${frequency}×`}
+            sub="times each person saw it"
+          />
+        </div>
+      )}
 
       <div style={{ marginBottom: 24 }}>
         <DeliveryHealthCard health={health} currency={myCampaigns[0]?.currency} />
