@@ -1,12 +1,7 @@
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../primitives/Card.jsx';
 import { CreativePreview } from './CreativePreview.jsx';
-
-const REASON_LABEL = {
-  orientation: 'Wrong orientation',
-  format: 'Format not accepted',
-  file_size: 'File too large',
-};
+import { REASON_LABEL } from '../../lib/creativeFit.js';
 
 // Shows only what needs attention: screens the creative does NOT fit.
 // Screens that fit, or whose spec is unknown, are never listed here — this

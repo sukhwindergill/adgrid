@@ -7,7 +7,7 @@ import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
-import { checkCreativeFit } from '../../lib/creativeFit.js';
+import { checkCreativeFit, REASON_LABEL } from '../../lib/creativeFit.js';
 import { useConfirm } from '../../components/primitives/ConfirmModal.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
@@ -188,11 +188,15 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
               {myRows.map(row => {
                 const screen = allScreens.find(s => s.id === row.screen_id);
                 const health = screen ? healthLabel(screen) : null;
+                // fileSizeMb is a representative value only, not the real file size —
+                // real MIME subtype/file size aren't captured today, so format/size
+                // checks are approximate. Same deliberate simplification as
+                // CreateCampaign.jsx's wizard-side fit check (Task 9); not fixed here.
                 const rowMedia = {
                   widthPx: row.media_width ?? campaign.media_width,
                   heightPx: row.media_height ?? campaign.media_height,
                   fileType: (row.media_type ?? campaign.media_type) === 'video' ? 'video/mp4' : 'image/png',
-                  fileSizeMb: 0, // representative value only — matches the same simplification made in CreateCampaign.jsx's wizard-side fit check (Task 9): real MIME subtype/file size aren't captured today, so format/size checks are approximate. Do not try to fix this here — it's the same deliberate, documented simplification as Task 9.
+                  fileSizeMb: 0,
                 };
                 const fit = screen ? checkCreativeFit(rowMedia, {
                   resolution_w: screen.resolution_w,
@@ -207,7 +211,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
                       {health && <span style={{ fontSize: 10, color: health.color, fontFamily: F.sans }}>⚠ {health.label}</span>}
                       {fit.status === 'mismatch' && (
                         <span style={{ fontSize: 10, color: C.amber, fontFamily: F.sans, marginLeft: health ? 8 : 0 }}>
-                          ⚠ Creative may not fit ({fit.reasons.join(', ')})
+                          ⚠ Creative may not fit ({fit.reasons.map(r => REASON_LABEL[r] ?? r).join(', ')})
                         </span>
                       )}
                     </div>

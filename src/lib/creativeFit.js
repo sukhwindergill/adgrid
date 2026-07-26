@@ -25,6 +25,15 @@ export function aspectOrientation(widthPx, heightPx) {
   return widthPx > heightPx ? 'landscape' : 'portrait';
 }
 
+// Human-readable labels for the reason codes checkCreativeFit() returns.
+// Shared by the advertiser-facing CreativeFitPanel and the operator-facing
+// ApprovalQueue so both surfaces describe a mismatch the same way.
+export const REASON_LABEL = {
+  orientation: 'Wrong orientation',
+  format: 'Format not accepted',
+  file_size: 'File too large',
+};
+
 function hasCompleteSpec(spec) {
   if (!spec) return false;
   return (
