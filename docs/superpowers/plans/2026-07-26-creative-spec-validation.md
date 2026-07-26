@@ -1,6 +1,6 @@
 # Creative Spec Validation Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Teach the app each screen's physical spec (resolution, accepted file formats, max file size), check an uploaded creative against every selected screen's spec, and show the advertiser — visually, not as text — which screens their creative doesn't fit, before they finish the campaign wizard. Advisory only, never a hard block. Give the operator the same information during review.
 
@@ -63,7 +63,7 @@
 **Files:**
 - Create: `src/lib/creativeFit.js`, `src/lib/creativeFit.test.js`
 
-- [ ] **Step 1: Write the failing test at `src/lib/creativeFit.test.js`**
+- [x] **Step 1: Write the failing test at `src/lib/creativeFit.test.js`**
 
 ```js
 import { describe, it, expect } from 'vitest';
@@ -191,12 +191,12 @@ describe('checkCreativeFit', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pnpm test src/lib/creativeFit.test.js`
 Expected: FAIL — cannot resolve `./creativeFit.js`.
 
-- [ ] **Step 3: Write `src/lib/creativeFit.js`**
+- [x] **Step 3: Write `src/lib/creativeFit.js`**
 
 ```js
 // Pure creative-fit checking. No DOM, no network — takes already-known
@@ -268,12 +268,12 @@ export function checkCreativeFit(creative, spec) {
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `pnpm test src/lib/creativeFit.test.js`
 Expected: PASS, 16 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/creativeFit.js src/lib/creativeFit.test.js
@@ -289,7 +289,7 @@ git commit -m "feat: add pure creative-fit checker"
 
 Follows the dependency-injection pattern already used in `src/lib/playBuffer.js` (Phase 1) so browser-only APIs (`Image`, `<video>`) can be swapped for fakes in tests.
 
-- [ ] **Step 1: Write the failing test at `src/lib/mediaDimensions.test.js`**
+- [x] **Step 1: Write the failing test at `src/lib/mediaDimensions.test.js`**
 
 ```js
 import { describe, it, expect, vi } from 'vitest';
@@ -362,12 +362,12 @@ describe('getMediaDimensions', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pnpm test src/lib/mediaDimensions.test.js`
 Expected: FAIL — cannot resolve `./mediaDimensions.js`.
 
-- [ ] **Step 3: Write `src/lib/mediaDimensions.js`**
+- [x] **Step 3: Write `src/lib/mediaDimensions.js`**
 
 ```js
 // Reads a File's pixel dimensions client-side, before or independent of any
@@ -414,12 +414,12 @@ export function getMediaDimensions(file, {
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `pnpm test src/lib/mediaDimensions.test.js`
 Expected: PASS, 5 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/mediaDimensions.js src/lib/mediaDimensions.test.js
@@ -433,7 +433,7 @@ git commit -m "feat: add client-side media dimension reader"
 **Files:**
 - Create: `supabase/migrations/20260727000000_screen_creative_specs.sql`
 
-- [ ] **Step 1: Write the migration**
+- [x] **Step 1: Write the migration**
 
 ```sql
 -- ============================================================
@@ -453,11 +453,11 @@ ALTER TABLE public.screens ADD COLUMN IF NOT EXISTS accepted_formats text[];
 ALTER TABLE public.screens ADD COLUMN IF NOT EXISTS max_file_mb integer;
 ```
 
-- [ ] **Step 2: Apply via the Supabase MCP `apply_migration` (project `hkqiuwnppxkkztacwicj`, name `screen_creative_specs`)**
+- [x] **Step 2: Apply via the Supabase MCP `apply_migration` (project `hkqiuwnppxkkztacwicj`, name `screen_creative_specs`)**
 
 Do not use `supabase db push` — remote migration history does not match local filenames (pre-existing drift).
 
-- [ ] **Step 3: Verify the columns exist and are null on every existing screen**
+- [x] **Step 3: Verify the columns exist and are null on every existing screen**
 
 ```sql
 select column_name, data_type from information_schema.columns
@@ -467,7 +467,7 @@ select count(*) as total, count(resolution_w) as with_spec from public.screens;
 ```
 Expected: 4 columns present; `with_spec` is `0` (no screen has been given a spec yet).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add supabase/migrations/20260727000000_screen_creative_specs.sql
@@ -481,7 +481,7 @@ git commit -m "feat: add per-screen creative spec columns"
 **Files:**
 - Create: `supabase/migrations/20260727000001_creative_media_dimensions.sql`
 
-- [ ] **Step 1: Write the migration**
+- [x] **Step 1: Write the migration**
 
 ```sql
 -- Pixel dimensions of the uploaded creative, captured client-side at upload
@@ -497,9 +497,9 @@ ALTER TABLE public.campaign_screens ADD COLUMN IF NOT EXISTS media_width  intege
 ALTER TABLE public.campaign_screens ADD COLUMN IF NOT EXISTS media_height integer;
 ```
 
-- [ ] **Step 2: Apply via the Supabase MCP `apply_migration`, name `creative_media_dimensions`**
+- [x] **Step 2: Apply via the Supabase MCP `apply_migration`, name `creative_media_dimensions`**
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```sql
 select table_name, column_name from information_schema.columns
@@ -508,7 +508,7 @@ order by table_name, column_name;
 ```
 Expected: 4 rows.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add supabase/migrations/20260727000001_creative_media_dimensions.sql
@@ -523,7 +523,7 @@ git commit -m "feat: add creative dimension columns for fit checking"
 - Modify: `src/components/shared/CreativePreview.jsx`
 - Create: `src/components/shared/CreativePreview.test.jsx`
 
-- [ ] **Step 1: Write the failing test at `src/components/shared/CreativePreview.test.jsx`**
+- [x] **Step 1: Write the failing test at `src/components/shared/CreativePreview.test.jsx`**
 
 ```jsx
 import { describe, it, expect } from 'vitest';
@@ -543,12 +543,12 @@ describe('CreativePreview', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pnpm test src/components/shared/CreativePreview.test.jsx`
 Expected: FAIL — the `aspectRatio="9/16"` case fails because the component ignores the prop (always renders `16/9`).
 
-- [ ] **Step 3: Add the prop in `src/components/shared/CreativePreview.jsx`**
+- [x] **Step 3: Add the prop in `src/components/shared/CreativePreview.jsx`**
 
 Change the function signature:
 
@@ -564,12 +564,12 @@ And change the outer div's inline style (currently `aspectRatio: '16/9'`, around
 
 Leave every other line in the file unchanged.
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `pnpm test src/components/shared/CreativePreview.test.jsx`
 Expected: PASS, 2 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/shared/CreativePreview.jsx src/components/shared/CreativePreview.test.jsx
@@ -585,7 +585,7 @@ git commit -m "feat: CreativePreview accepts an aspectRatio prop"
 
 Renders nothing when there are no mismatches. For each mismatched screen, shows the creative live inside that screen's actual shape plus which reasons caused the mismatch.
 
-- [ ] **Step 1: Write the failing test at `src/components/shared/CreativeFitPanel.test.jsx`**
+- [x] **Step 1: Write the failing test at `src/components/shared/CreativeFitPanel.test.jsx`**
 
 ```jsx
 import { describe, it, expect } from 'vitest';
@@ -647,12 +647,12 @@ describe('CreativeFitPanel', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pnpm test src/components/shared/CreativeFitPanel.test.jsx`
 Expected: FAIL — cannot resolve `./CreativeFitPanel.jsx`.
 
-- [ ] **Step 3: Write `src/components/shared/CreativeFitPanel.jsx`**
+- [x] **Step 3: Write `src/components/shared/CreativeFitPanel.jsx`**
 
 ```jsx
 import { C, F } from '../../design/tokens.js';
@@ -704,12 +704,12 @@ export function CreativeFitPanel({ campaign, mismatches = [] }) {
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `pnpm test src/components/shared/CreativeFitPanel.test.jsx`
 Expected: PASS, 5 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/shared/CreativeFitPanel.jsx src/components/shared/CreativeFitPanel.test.jsx
@@ -725,7 +725,7 @@ git commit -m "feat: add visual creative-fit mismatch panel"
 
 Optional section — does not block onboarding completion, unlike the required coordinates field from Phase 3C.
 
-- [ ] **Step 1: Add spec fields to the form state**
+- [x] **Step 1: Add spec fields to the form state**
 
 Near the existing `lat: '', lng: '',` in the initial `useState` (around line 122), add:
 
@@ -733,7 +733,7 @@ Near the existing `lat: '', lng: '',` in the initial `useState` (around line 122
     resolution_w: '', resolution_h: '', accepted_formats: [], max_file_mb: '',
 ```
 
-- [ ] **Step 2: Add a local format-chip toggle**
+- [x] **Step 2: Add a local format-chip toggle**
 
 Add this small component near the top of the file, alongside other local helpers (not exported — matches the `PillGroup` convention in `CreateCampaign.jsx`):
 
@@ -762,7 +762,7 @@ function FormatChips({ value, onChange }) {
 }
 ```
 
-- [ ] **Step 3: Render the optional section**
+- [x] **Step 3: Render the optional section**
 
 Directly below the existing `Display Size` field (around line 274), add:
 
@@ -790,7 +790,7 @@ Directly below the existing `Display Size` field (around line 274), add:
           </div>
 ```
 
-- [ ] **Step 4: Persist on submit**
+- [x] **Step 4: Persist on submit**
 
 In the `screens` insert payload (around line 167, alongside `display_size: form.display_size.trim(),`), add:
 
@@ -801,7 +801,7 @@ In the `screens` insert payload (around line 167, alongside `display_size: form.
       max_file_mb:       form.max_file_mb ? parseInt(form.max_file_mb, 10) : null,
 ```
 
-- [ ] **Step 5: Verify manually**
+- [x] **Step 5: Verify manually**
 
 Start the preview server, walk through screen onboarding, fill in a resolution and two format chips, submit, and confirm via SQL that the new row has the values set:
 
@@ -812,7 +812,7 @@ from screens order by created_at desc limit 1;
 
 Then onboard a second screen leaving the section blank and confirm those four fields are `null`, not empty strings or `[]`.
 
-- [ ] **Step 6: Verify and commit**
+- [x] **Step 6: Verify and commit**
 
 Run: `pnpm test && pnpm build`
 Expected: both pass.
@@ -834,7 +834,7 @@ git commit -m "feat: collect optional creative spec at screen onboarding"
 
 Same fields, same chip component (duplicated locally per the convention noted in Context — this file does not import from `ScreenOnboard.jsx`).
 
-- [ ] **Step 1: Add a local `FormatChips` component**
+- [x] **Step 1: Add a local `FormatChips` component**
 
 Add this near the top of the file, alongside the existing local helpers (same component as introduced in `ScreenOnboard.jsx` — duplicated here rather than imported, per the file-local-helper convention noted in Context):
 
@@ -863,7 +863,7 @@ function FormatChips({ value, onChange }) {
 }
 ```
 
-- [ ] **Step 2: Add spec fields to form state**
+- [x] **Step 2: Add spec fields to form state**
 
 In the initial `useState` (around line 8–17), add:
 
@@ -874,7 +874,7 @@ In the initial `useState` (around line 8–17), add:
     max_file_mb:       screen.max_file_mb || '',
 ```
 
-- [ ] **Step 3: Add fields to the update payload**
+- [x] **Step 3: Add fields to the update payload**
 
 In the `supabase.from('screens').update({...})` call (around line 27–37), add:
 
@@ -885,7 +885,7 @@ In the `supabase.from('screens').update({...})` call (around line 27–37), add:
         max_file_mb:       form.max_file_mb ? parseInt(form.max_file_mb, 10) : null,
 ```
 
-- [ ] **Step 4: Render the fields**
+- [x] **Step 4: Render the fields**
 
 This file updates form state inline (`setForm(f => ({ ...f, key: value }))`), unlike `ScreenOnboard.jsx`'s `set(key, value)` helper — the block below matches this file's actual pattern. Add it directly after the existing `Monthly Footfall` / `CPM Floor` grid (the last field block before `{err && ...}`):
 
@@ -912,11 +912,11 @@ This file updates form state inline (`setForm(f => ({ ...f, key: value }))`), un
           </div>
 ```
 
-- [ ] **Step 5: Verify manually**
+- [x] **Step 5: Verify manually**
 
 Open the edit modal for a screen with no spec, fill in resolution and formats, save, and confirm via SQL that the row now has those values. Re-open the modal and confirm the fields are pre-populated from the saved row.
 
-- [ ] **Step 6: Verify and commit**
+- [x] **Step 6: Verify and commit**
 
 Run: `pnpm test && pnpm build`
 Expected: both pass.
@@ -936,7 +936,7 @@ git commit -m "feat: let operators edit creative spec on existing screens"
 **Files:**
 - Modify: `src/views/advertiser/CreateCampaign.jsx`
 
-- [ ] **Step 1: Import the new modules**
+- [x] **Step 1: Import the new modules**
 
 Near the other imports at the top of the file:
 
@@ -946,7 +946,7 @@ import { checkCreativeFit } from '../../lib/creativeFit.js';
 import { CreativeFitPanel } from '../../components/shared/CreativeFitPanel.jsx';
 ```
 
-- [ ] **Step 2: Add dimension fields to form state**
+- [x] **Step 2: Add dimension fields to form state**
 
 In the top-level `useState` (around line 894, alongside `media_url: '', media_type: '',`), add:
 
@@ -955,7 +955,7 @@ In the top-level `useState` (around line 894, alongside `media_url: '', media_ty
     media_height: null,
 ```
 
-- [ ] **Step 3: Capture dimensions in `handleFile`**
+- [x] **Step 3: Capture dimensions in `handleFile`**
 
 In the inner upload component's `handleFile` (around line 464–478), after the successful upload and before `setUploading(false)`, add a best-effort dimension read that does not block or fail the upload if it errors:
 
@@ -983,7 +983,7 @@ Also update `clear()` (a few lines below) to reset the new fields:
   const clear = () => setForm(s => ({ ...s, media_url: '', media_type: '', media_width: null, media_height: null }));
 ```
 
-- [ ] **Step 4: Run the fit check and render the panel**
+- [x] **Step 4: Run the fit check and render the panel**
 
 `StepCreative` is called at line 1184 as `<StepCreative form={form} setForm={setForm} />`. Change the call site to also pass the selected screens (the parent already computes `selectedScreens` at line 946, used by `StepBudget`):
 
@@ -1021,7 +1021,7 @@ Render the panel directly below the existing `<CreativePreview campaign={preview
             <CreativeFitPanel campaign={previewCampaign} mismatches={fitMismatches} />
 ```
 
-- [ ] **Step 5: Persist dimensions on submit**
+- [x] **Step 5: Persist dimensions on submit**
 
 In the `bookings` insert payload (around line 1005–1006, alongside `media_url: form.media_url || null, media_type: form.media_type || null,`), add:
 
@@ -1030,11 +1030,11 @@ In the `bookings` insert payload (around line 1005–1006, alongside `media_url:
         media_height:           form.media_height,
 ```
 
-- [ ] **Step 6: Verify manually**
+- [x] **Step 6: Verify manually**
 
 Upload a portrait image, select a mix of screens (some with a spec you set in Task 7/8, some without), and confirm the fit panel appears only for screens whose stored spec conflicts with the upload's orientation — and that screens with no spec never appear in the panel.
 
-- [ ] **Step 7: Verify and commit**
+- [x] **Step 7: Verify and commit**
 
 Run: `pnpm test && pnpm build`
 Expected: both pass.
@@ -1056,7 +1056,7 @@ git commit -m "feat: check uploaded creative against selected screens' specs"
 
 Adds a media upload control to the existing per-screen override panel (`form.show_overrides`), so an advertiser whose creative doesn't fit a screen can upload a replacement for just that screen.
 
-- [ ] **Step 1: Add an upload handler scoped to one screen**
+- [x] **Step 1: Add an upload handler scoped to one screen**
 
 `StepCreative` does not currently call `useAuth()` — the main creative uploader is a sibling component, `MediaUpload` (starts ~line 459), which has its own `const { user } = useAuth();` at line 460. `StepCreative` needs the same import for the override upload path's storage key.
 
@@ -1095,7 +1095,7 @@ Near the top-level `setOverride` helper inside `StepCreative` (around line 524�
 
 `useAuth` is already imported at the top of `CreateCampaign.jsx` (used by the main component and by `MediaUpload`), so no new import is needed — only the hook call inside `StepCreative` itself.
 
-- [ ] **Step 2: Add the upload control to the override panel**
+- [x] **Step 2: Add the upload control to the override panel**
 
 In the per-screen override render block (around line 591–609), inside the `.map(screenId => { ... })`, alongside the existing `Headline override`/`CTA override` inputs, add:
 
@@ -1121,7 +1121,7 @@ In the per-screen override render block (around line 591–609), inside the `.ma
                       </div>
 ```
 
-- [ ] **Step 3: Persist override dimensions on submit**
+- [x] **Step 3: Persist override dimensions on submit**
 
 In the `screenRows` builder (around line 1030–1037), add to the returned object:
 
@@ -1132,11 +1132,11 @@ In the `screenRows` builder (around line 1030–1037), add to the returned objec
           media_height:    ov.media_height || null,
 ```
 
-- [ ] **Step 4: Verify manually**
+- [x] **Step 4: Verify manually**
 
 Upload a mismatched main creative, open per-screen overrides, upload a replacement for one mismatched screen, submit the campaign, and confirm via SQL that the corresponding `campaign_screens` row has the override's `media_url`/`media_width`/`media_height` set, distinct from the campaign-level `bookings` row.
 
-- [ ] **Step 5: Verify and commit**
+- [x] **Step 5: Verify and commit**
 
 Run: `pnpm test && pnpm build`
 Expected: both pass.
@@ -1156,13 +1156,13 @@ git commit -m "feat: let advertisers upload a per-screen creative override"
 **Files:**
 - Modify: `src/views/operator/ApprovalQueue.jsx`
 
-- [ ] **Step 1: Import the checker**
+- [x] **Step 1: Import the checker**
 
 ```js
 import { checkCreativeFit } from '../../lib/creativeFit.js';
 ```
 
-- [ ] **Step 2: Compute and render the fit badge per row**
+- [x] **Step 2: Compute and render the fit badge per row**
 
 Inside `MultiScreenCampaignCard`, in the `myRows.map(row => { ... })` block (around line 187–200), after `const health = screen ? healthLabel(screen) : null;`, add:
 
@@ -1196,11 +1196,11 @@ Render the badge next to the existing health badge:
 
 Nothing is rendered for `fits` or `unknown` — consistent with the panel being advisory and only surfacing actionable information.
 
-- [ ] **Step 3: Verify manually**
+- [x] **Step 3: Verify manually**
 
 Submit a campaign whose creative mismatches a screen with a spec set (from Task 7/8), open the approval queue as that screen's operator, and confirm the mismatch badge appears with the correct reasons. Confirm a screen with no spec shows no badge.
 
-- [ ] **Step 4: Verify and commit**
+- [x] **Step 4: Verify and commit**
 
 Run: `pnpm test && pnpm build`
 Expected: both pass.
@@ -1217,25 +1217,25 @@ git commit -m "feat: show creative-fit mismatch to operators during review"
 
 ## Task 12: Verification pass
 
-- [ ] **Step 1: Full test suite**
+- [x] **Step 1: Full test suite**
 
 Run: `pnpm test`
 Expected: all pass, including the 16 + 5 + 2 + 5 = 28 tests added in Tasks 1, 2, 5, 6.
 
-- [ ] **Step 2: Build**
+- [x] **Step 2: Build**
 
 Run: `pnpm build`
 Expected: exits 0.
 
-- [ ] **Step 3: Unknown-spec screens never appear as mismatches**
+- [x] **Step 3: Unknown-spec screens never appear as mismatches**
 
 With no screen given a spec (fresh check against production data, where all 12 screens have every field null), upload any creative in the wizard against any screen selection and confirm the fit panel never renders. This is the single most important behavior in this plan — a false mismatch on an unconfigured screen would train advertisers to ignore the warning.
 
-- [ ] **Step 4: A configured mismatch is visible, and fixable**
+- [x] **Step 4: A configured mismatch is visible, and fixable**
 
 With at least one screen given an orientation-conflicting spec: confirm the wizard's `CreativeFitPanel` shows it, confirm a per-screen override upload clears it from that screen specifically (the panel re-evaluates on every render since it's derived from `form` state, not cached), and confirm the operator's approval queue shows the same mismatch for an unfixed screen.
 
-- [ ] **Step 5: Persisted dimensions round-trip correctly**
+- [x] **Step 5: Persisted dimensions round-trip correctly**
 
 ```sql
 select id, media_url, media_width, media_height from bookings where media_width is not null order by created_at desc limit 3;
@@ -1243,7 +1243,7 @@ select campaign_id, screen_id, media_url, media_width, media_height from campaig
 ```
 Expected: dimensions present and matching what was uploaded (spot-check against the actual image/video's known dimensions).
 
-- [ ] **Step 6: Confirm the acceptance criteria**
+- [x] **Step 6: Confirm the acceptance criteria**
 
 - A screen with no creative spec is never flagged as a mismatch, in either the wizard or the approval queue.
 - An orientation, format, or file-size mismatch against a configured screen is shown visually (the creative rendered in that screen's shape), not just as text.
@@ -1251,7 +1251,7 @@ Expected: dimensions present and matching what was uploaded (spot-check against 
 - An advertiser can resolve a mismatch for one screen via a per-screen override without affecting other screens.
 - The operator sees the same mismatch information during review, sourced from the same pure `checkCreativeFit` function used in the wizard.
 
-- [ ] **Step 7: Commit the checked-off plan**
+- [x] **Step 7: Commit the checked-off plan**
 
 ```bash
 git add docs/superpowers/plans/2026-07-26-creative-spec-validation.md
