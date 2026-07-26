@@ -532,6 +532,7 @@ function MediaUpload({ form, setForm }) {
 }
 
 function StepCreative({ form, setForm, matchedScreens = [] }) {
+  const { user } = useAuth();
   const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
   const setOverride = (screenId, k, v) => setForm(s => ({
     ...s,
@@ -540,6 +541,29 @@ function StepCreative({ form, setForm, matchedScreens = [] }) {
       [screenId]: { ...(s.per_screen_overrides[screenId] || {}), [k]: v },
     },
   }));
+
+  const [overrideUploading, setOverrideUploading] = useState(null); // screenId currently uploading, or null
+
+  const handleOverrideFile = async (screenId, file) => {
+    if (!file) return;
+    const isVid = file.type.startsWith('video/');
+    setOverrideUploading(screenId);
+    const ext = (file.name.split('.').pop() || (isVid ? 'mp4' : 'jpg')).toLowerCase();
+    const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from('creatives').upload(path, file, { contentType: file.type, upsert: false });
+    if (error) { setOverrideUploading(null); return; }
+    const { data } = supabase.storage.from('creatives').getPublicUrl(path);
+    let width = null, height = null;
+    try {
+      const dims = await getMediaDimensions(file);
+      width = dims.width; height = dims.height;
+    } catch { /* best-effort, see Task 9's handleFile */ }
+    setOverride(screenId, 'media_url', data.publicUrl);
+    setOverride(screenId, 'media_type', isVid ? 'video' : 'image');
+    setOverride(screenId, 'media_width', width);
+    setOverride(screenId, 'media_height', height);
+    setOverrideUploading(null);
+  };
 
   const previewCampaign = {
     headline: form.headline,
@@ -629,6 +653,25 @@ function StepCreative({ form, setForm, matchedScreens = [] }) {
                           value={ov.headline || ''} onChange={e => setOverride(screenId, 'headline', e.target.value)} />
                         <Inp label="CTA override" placeholder="Leave blank for default"
                           value={ov.cta_text || ''} onChange={e => setOverride(screenId, 'cta_text', e.target.value)} />
+                      </div>
+                      <div style={{ marginTop: 10 }}>
+                        <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginBottom: 6 }}>
+                          Creative override <span style={{ color: C.textMuted }}>(leave blank to use the campaign creative)</span>
+                        </div>
+                        {ov.media_url ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 11, color: C.text, fontFamily: F.sans }}>{ov.media_type === 'video' ? 'Video' : 'Image'} uploaded ✓</span>
+                            <button type="button" onClick={() => { setOverride(screenId, 'media_url', ''); setOverride(screenId, 'media_type', ''); setOverride(screenId, 'media_width', null); setOverride(screenId, 'media_height', null); }}
+                              style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, padding: '2px 8px', fontSize: 11, color: C.textSub, cursor: 'pointer', fontFamily: F.sans }}>Remove</button>
+                          </div>
+                        ) : (
+                          <label style={{ display: 'inline-block', border: `1px dashed ${C.border}`, borderRadius: 6, padding: '6px 12px', fontSize: 11, color: C.textSub, cursor: overrideUploading === screenId ? 'default' : 'pointer', fontFamily: F.sans }}>
+                            <input type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime" style={{ display: 'none' }}
+                              disabled={overrideUploading === screenId}
+                              onChange={e => handleOverrideFile(screenId, e.target.files?.[0])} />
+                            {overrideUploading === screenId ? 'Uploading…' : '+ Upload replacement'}
+                          </label>
+                        )}
                       </div>
                     </div>
                   );
@@ -1066,6 +1109,10 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
           cta_text:        ov.cta_text || null,
           accent_color:    ov.accent_color || null,
           destination_url: ov.destination_url || null,
+          media_url:       ov.media_url || null,
+          media_type:      ov.media_type || null,
+          media_width:     ov.media_width || null,
+          media_height:    ov.media_height || null,
         };
       });
       const { error: screenErr } = await supabase.from('campaign_screens').insert(screenRows);
