@@ -10,6 +10,9 @@ import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { ErrorBanner } from '../../components/primitives/ErrorBanner.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
+import { getMediaDimensions } from '../../lib/mediaDimensions.js';
+import { checkCreativeFit } from '../../lib/creativeFit.js';
+import { CreativeFitPanel } from '../../components/shared/CreativeFitPanel.jsx';
 import { CATEGORIES } from '../../lib/data.js';
 import { VENUE_TAXONOMY, COUNTRIES } from '../../lib/venueTypes.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
@@ -475,11 +478,21 @@ function MediaUpload({ form, setForm }) {
     const { error } = await supabase.storage.from('creatives').upload(path, file, { contentType: file.type, upsert: false });
     if (error) { setErr(error.message); setUploading(false); return; }
     const { data } = supabase.storage.from('creatives').getPublicUrl(path);
-    setForm(s => ({ ...s, media_url: data.publicUrl, media_type: isVid ? 'video' : 'image' }));
+    let width = null, height = null;
+    try {
+      const dims = await getMediaDimensions(file);
+      width = dims.width;
+      height = dims.height;
+    } catch {
+      // Dimensions are best-effort. A read failure must not block the upload
+      // — the creative is still usable, it just won't be fit-checked until
+      // dimensions are known (checkCreativeFit reports 'unknown' without them).
+    }
+    setForm(s => ({ ...s, media_url: data.publicUrl, media_type: isVid ? 'video' : 'image', media_width: width, media_height: height }));
     setUploading(false);
   };
 
-  const clear = () => setForm(s => ({ ...s, media_url: '', media_type: '' }));
+  const clear = () => setForm(s => ({ ...s, media_url: '', media_type: '', media_width: null, media_height: null }));
 
   return (
     <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: `1px solid ${C.border}` }}>
@@ -518,7 +531,7 @@ function MediaUpload({ form, setForm }) {
   );
 }
 
-function StepCreative({ form, setForm }) {
+function StepCreative({ form, setForm, matchedScreens = [] }) {
   const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
   const setOverride = (screenId, k, v) => setForm(s => ({
     ...s,
@@ -537,6 +550,18 @@ function StepCreative({ form, setForm }) {
     media_url: form.media_url,
     media_type: form.media_type,
   };
+
+  const fitMismatches = form.media_url
+    ? matchedScreens
+        .map(s => {
+          const { status, reasons } = checkCreativeFit(
+            { widthPx: form.media_width, heightPx: form.media_height, fileType: form.media_type === 'video' ? 'video/mp4' : 'image/png', fileSizeMb: 0 },
+            { resolution_w: s.resolution_w, resolution_h: s.resolution_h, accepted_formats: s.accepted_formats, max_file_mb: s.max_file_mb },
+          );
+          return status === 'mismatch' ? { screenId: s.id, screenName: s.name, reasons, resolution_w: s.resolution_w, resolution_h: s.resolution_h } : null;
+        })
+        .filter(Boolean)
+    : [];
 
   const selectedScreenIds = form.selected_screen_ids;
 
@@ -576,6 +601,7 @@ function StepCreative({ form, setForm }) {
           <div>
             <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Preview</div>
             <CreativePreview campaign={previewCampaign} />
+            <CreativeFitPanel campaign={previewCampaign} mismatches={fitMismatches} />
           </div>
         </div>
 
@@ -893,6 +919,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     category: 'Food & Beverage',
     media_url: '',
     media_type: '',
+    media_width: null,
+    media_height: null,
     per_screen_overrides: {},
     show_overrides: false,
     budget_mode: 'total',
@@ -1004,6 +1032,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         category:              form.category,
         media_url:             form.media_url || null,
         media_type:            form.media_type || null,
+        media_width:           form.media_width,
+        media_height:          form.media_height,
         budget:                parseFloat(form.budget) || 0,
         currency:              profile?.preferred_currency || 'cad',
         budget_mode:           form.budget_mode,
@@ -1181,7 +1211,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
 
       {step === 0 && <StepArea form={form} setForm={setForm} reachSummary={reachSummary} allScreens={dbScreens} onPrevCampaigns={campaigns.length > 0 ? () => setShowDupModal(true) : null} />}
       {step === 1 && <StepScreens form={form} setForm={setForm} matchedScreens={matchedScreens} />}
-      {step === 2 && <StepCreative form={form} setForm={setForm} />}
+      {step === 2 && <StepCreative form={form} setForm={setForm} matchedScreens={selectedScreens} />}
       {step === 3 && <StepBudget form={form} setForm={setForm} matchedScreens={selectedScreens} profile={profile} />}
       {step === 4 && <StepReview form={form} matchedScreens={selectedScreens} onSubmit={handleSubmit} submitting={submitting} err={submitErr} profile={profile} canChooseBilling={canChooseBilling} billedTo={billedTo} setBilledTo={setBilledTo} />}
       {step === 5 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} requiresAction={requiresAction} onGoToBilling={() => navigate('/app/adv-billing')} />}
