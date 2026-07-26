@@ -17,6 +17,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { formatCurrency } from '../../lib/formatCurrency.js';
 import { haversineKm } from '../../lib/geo.js';
+import { isValidDestinationUrl, normalizeDestinationUrl } from '../../lib/destinationUrl.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -554,6 +555,11 @@ function StepCreative({ form, setForm }) {
               value={form.cta_text} onChange={e => setField('cta_text', e.target.value)} />
             <Inp label="Destination URL" placeholder="https://example.com" type="url"
               value={form.destination_url} onChange={e => setField('destination_url', e.target.value)} />
+            {form.destination_url.trim() !== '' && !isValidDestinationUrl(form.destination_url) && (
+              <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, marginTop: -8 }}>
+                Enter a full web address, like https://example.com — this is where your QR code sends people.
+              </div>
+            )}
             <SelInput label="Category" value={form.category} onChange={e => setField('category', e.target.value)}>
               {CATEGORIES.map(c => <option key={c}>{c}</option>)}
             </SelInput>
@@ -991,7 +997,9 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         city:                  form.city || form.state || form.country || '',
         headline:              form.headline,
         cta_text:              form.cta_text,
-        destination_url:       form.destination_url,
+        // Normalized so a typed bare domain is stored as a real URL — the QR
+        // encodes this value verbatim.
+        destination_url:       normalizeDestinationUrl(form.destination_url),
         accent_color:          form.accent_color,
         category:              form.category,
         media_url:             form.media_url || null,
@@ -1071,7 +1079,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         headline: form.headline,
         cta: form.cta_text,
         color: form.accent_color,
-        destination: form.destination_url,
+        destination: normalizeDestinationUrl(form.destination_url),
         category: form.category,
         budget: parseFloat(form.budget) || 0,
         budget_mode: form.budget_mode,
@@ -1184,7 +1192,10 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
           <Btn onClick={next} style={{ flex: 1 }}
             disabled={
               (step === 0 && form.area_type === 'radius' && !form.radius_center_lat) ||
-              (step === 1 && form.selected_screen_ids.length === 0)
+              (step === 1 && form.selected_screen_ids.length === 0) ||
+              // Creative step: a campaign with no valid destination goes live
+              // with a QR code that sends every scanner to an error.
+              (step === 2 && !isValidDestinationUrl(form.destination_url))
             }
           >
             {step === 3 ? 'Review →' : 'Next →'}
