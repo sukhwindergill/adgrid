@@ -58,7 +58,6 @@ export function EditScreenModal({ screen, onClose, onSaved }) {
         city:                     form.city,
         display_size:             form.display_size || null,
         cpm_floor:                parseFloat(form.cpm_floor) || 3.00,
-        cpm:                      parseFloat(form.cpm_floor) || 3.00,
         monthly_traffic_estimate: form.monthly_traffic_estimate ? parseInt(form.monthly_traffic_estimate) : null,
         impressions:              form.monthly_traffic_estimate ? parseInt(form.monthly_traffic_estimate) * 1000 : screen.impressions,
         lat:                      form.lat ? parseFloat(form.lat) : null,
