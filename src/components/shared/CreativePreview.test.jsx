@@ -13,3 +13,15 @@ describe('CreativePreview', () => {
     expect(container.firstChild.style.aspectRatio).toBe('9/16');
   });
 });
+
+describe('CreativePreview blur', () => {
+  it('applies no blur filter by default', () => {
+    const { container } = render(<CreativePreview campaign={{ headline: 'Test' }} />);
+    expect(container.firstChild.style.filter).toBe('');
+  });
+
+  it('applies a blur filter when blurPx is passed', () => {
+    const { container } = render(<CreativePreview campaign={{ headline: 'Test' }} blurPx={7} />);
+    expect(container.firstChild.style.filter).toBe('blur(7px)');
+  });
+});

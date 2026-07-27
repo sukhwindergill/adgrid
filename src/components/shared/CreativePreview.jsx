@@ -8,7 +8,7 @@ import { F } from '../../design/tokens.js';
  *   category, headline, advertiser, cta, cta_text
  * Normalises both old (color, cta, destination) and new (accent_color, cta_text, destination_url) field names.
  */
-export function CreativePreview({ campaign, aspectRatio = '16/9' }) {
+export function CreativePreview({ campaign, aspectRatio = '16/9', blurPx = 0 }) {
   const bg = campaign.accent_color || campaign.color || '#7c3aed';
   const headline = campaign.headline || campaign.advertiser || '';
   const cta = campaign.cta_text || campaign.cta || '';
@@ -19,6 +19,7 @@ export function CreativePreview({ campaign, aspectRatio = '16/9' }) {
   return (
     <div style={{
       position: 'relative', width: '100%', aspectRatio,
+      filter: blurPx > 0 ? `blur(${blurPx}px)` : undefined,
       background: `linear-gradient(160deg, #050a10 0%, #0d1520 60%, ${bg}22 100%)`,
       borderRadius: 8, overflow: 'hidden', flexShrink: 0,
     }}>
