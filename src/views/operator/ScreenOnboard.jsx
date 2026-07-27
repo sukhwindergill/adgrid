@@ -175,8 +175,9 @@ function StepRegister({ onBack, onScreenCreated }) {
     const tzMap = STATE_TIMEZONE[form.country] ?? {};
     const timezone = tzMap[form.state.trim()] ?? tzMap['default'] ?? 'America/Toronto';
 
-    const { data, error } = await supabase.from('screens').insert({
-      id:              crypto.randomUUID(),
+    const newScreenId = crypto.randomUUID();
+    const insertPayload = {
+      id:              newScreenId,
       name:            form.name.trim(),
       owner_name:      form.owner_name.trim(),
       owner_type:      'Business',
@@ -200,7 +201,12 @@ function StepRegister({ onBack, onScreenCreated }) {
       lon:             form.lng ? parseFloat(form.lng) : null,
       timezone,
       monthly_traffic_estimate: Number(form.monthly_traffic_estimate),
-    }).select('id, name').single();
+    };
+    // Insert only returns id/name (screen_token is not column-readable, see
+    // below) -- the caller's list view needs the full row it just submitted
+    // (lat/lon, creative spec, etc.), so pass insertPayload up rather than
+    // making a second round trip that would hit the same grant scoping.
+    const { data, error } = await supabase.from('screens').insert(insertPayload).select('id, name').single();
 
     if (error) { setErr(error.message); setSaving(false); return; }
 
@@ -227,7 +233,7 @@ function StepRegister({ onBack, onScreenCreated }) {
     }
 
     setSaving(false);
-    onScreenCreated({ id: data.id, name: data.name, screen_token: token });
+    onScreenCreated({ ...insertPayload, id: data.id, name: data.name, screen_token: token });
   };
 
   return (

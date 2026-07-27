@@ -37,7 +37,7 @@ export function EditScreenModal({ screen, onClose, onSaved }) {
     cpm_floor:                screen.cpm_floor ?? screen.cpm ?? 3.00,
     monthly_traffic_estimate: screen.monthly_traffic_estimate || '',
     lat:                      screen.lat || '',
-    lng:                      screen.lng || '',
+    lon:                      screen.lon || '',
     resolution_w:      screen.resolution_w || '',
     resolution_h:      screen.resolution_h || '',
     accepted_formats:  screen.accepted_formats || [],
@@ -59,7 +59,7 @@ export function EditScreenModal({ screen, onClose, onSaved }) {
       monthly_traffic_estimate: form.monthly_traffic_estimate ? parseInt(form.monthly_traffic_estimate) : null,
       impressions:              form.monthly_traffic_estimate ? parseInt(form.monthly_traffic_estimate) * 1000 : screen.impressions,
       lat:                      form.lat ? parseFloat(form.lat) : null,
-      lng:                      form.lng ? parseFloat(form.lng) : null,
+      lon:                      form.lon ? parseFloat(form.lon) : null,
       resolution_w:      Number(form.resolution_w) > 0 ? parseInt(form.resolution_w, 10) : null,
       resolution_h:      Number(form.resolution_h) > 0 ? parseInt(form.resolution_h, 10) : null,
       accepted_formats:  form.accepted_formats.length > 0 ? form.accepted_formats : null,
@@ -95,7 +95,7 @@ export function EditScreenModal({ screen, onClose, onSaved }) {
           <Inp label="Display Size" placeholder="e.g. 55 inch 4K" value={form.display_size} onChange={e => setForm(f => ({ ...f, display_size: e.target.value }))} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Inp label="Latitude" type="number" step="any" value={form.lat} onChange={e => setForm(f => ({ ...f, lat: e.target.value }))} />
-            <Inp label="Longitude" type="number" step="any" value={form.lng} onChange={e => setForm(f => ({ ...f, lng: e.target.value }))} />
+            <Inp label="Longitude" type="number" step="any" value={form.lon} onChange={e => setForm(f => ({ ...f, lon: e.target.value }))} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Inp label="Monthly Footfall (thousands)" type="number" value={form.monthly_traffic_estimate} onChange={e => setForm(f => ({ ...f, monthly_traffic_estimate: e.target.value }))} />
