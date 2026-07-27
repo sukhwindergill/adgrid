@@ -1,6 +1,6 @@
 # Readability Score Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Score the platform-controlled creative fields (headline, CTA, accent color) against the campaign's play duration and `CreativePreview`'s fixed rendering rules, surface a 0–100 score with named fixes, and show a blurred preview simulating how the ad reads from a realistic viewing distance. Advisory only, never blocks the wizard.
 
@@ -51,7 +51,7 @@
 **Files:**
 - Create: `src/lib/creativeReadability.js`, `src/lib/creativeReadability.test.js`
 
-- [ ] **Step 1: Write the failing test at `src/lib/creativeReadability.test.js`**
+- [x] **Step 1: Write the failing test at `src/lib/creativeReadability.test.js`**
 
 ```js
 import { describe, it, expect } from 'vitest';
@@ -211,12 +211,12 @@ describe('checkReadability', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pnpm test src/lib/creativeReadability.test.js`
 Expected: FAIL — cannot resolve `./creativeReadability.js`.
 
-- [ ] **Step 3: Write `src/lib/creativeReadability.js`**
+- [x] **Step 3: Write `src/lib/creativeReadability.js`**
 
 ```js
 // Pure readability scoring for platform-controlled creative text (headline,
@@ -332,12 +332,12 @@ export function checkReadability({
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `pnpm test src/lib/creativeReadability.test.js`
 Expected: PASS, 24 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/creativeReadability.js src/lib/creativeReadability.test.js
@@ -351,7 +351,7 @@ git commit -m "feat: add pure readability scorer for creative text"
 **Files:**
 - Modify: `src/components/shared/CreativePreview.jsx`, `src/components/shared/CreativePreview.test.jsx`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to the existing `src/components/shared/CreativePreview.test.jsx` (alongside its existing `aspectRatio` tests — do not remove those):
 
@@ -369,12 +369,12 @@ describe('CreativePreview blur', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pnpm test src/components/shared/CreativePreview.test.jsx`
 Expected: FAIL — the `blurPx={7}` case fails because the component ignores the prop.
 
-- [ ] **Step 3: Add the prop in `src/components/shared/CreativePreview.jsx`**
+- [x] **Step 3: Add the prop in `src/components/shared/CreativePreview.jsx`**
 
 Change the function signature:
 
@@ -391,12 +391,12 @@ And change the outer div's inline style object to include `filter` alongside the
 
 Leave every other line in the file unchanged.
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `pnpm test src/components/shared/CreativePreview.test.jsx`
 Expected: PASS, 4 tests (2 existing `aspectRatio` + 2 new).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/shared/CreativePreview.jsx src/components/shared/CreativePreview.test.jsx
@@ -412,7 +412,7 @@ git commit -m "feat: CreativePreview accepts a blurPx prop"
 
 Renders nothing when `score` is `null`/`undefined`. Otherwise shows the score, any issue messages, and one blurred `CreativePreview` per distinct viewing-distance tier.
 
-- [ ] **Step 1: Write the failing test at `src/components/shared/ReadabilityPanel.test.jsx`**
+- [x] **Step 1: Write the failing test at `src/components/shared/ReadabilityPanel.test.jsx`**
 
 ```jsx
 import { describe, it, expect } from 'vitest';
@@ -467,12 +467,12 @@ describe('ReadabilityPanel', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pnpm test src/components/shared/ReadabilityPanel.test.jsx`
 Expected: FAIL — cannot resolve `./ReadabilityPanel.jsx`.
 
-- [ ] **Step 3: Write `src/components/shared/ReadabilityPanel.jsx`**
+- [x] **Step 3: Write `src/components/shared/ReadabilityPanel.jsx`**
 
 ```jsx
 import { C, F } from '../../design/tokens.js';
@@ -528,12 +528,12 @@ export function ReadabilityPanel({ campaign, score, issues = [], tiers = [] }) {
 
 Note: the `⚠` above is the warning-triangle character (⚠, the same one already used in `CreativeFitPanel.jsx`) — type it as the literal character in the file, matching that file's existing convention, rather than the escape sequence.
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `pnpm test src/components/shared/ReadabilityPanel.test.jsx`
 Expected: PASS, 6 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/shared/ReadabilityPanel.jsx src/components/shared/ReadabilityPanel.test.jsx
@@ -547,7 +547,7 @@ git commit -m "feat: add readability score panel with per-tier blur preview"
 **Files:**
 - Modify: `src/views/advertiser/CreateCampaign.jsx`
 
-- [ ] **Step 1: Import the new modules**
+- [x] **Step 1: Import the new modules**
 
 Near the other imports at the top of the file (alongside the existing `CreativeFitPanel` import at line 15):
 
@@ -556,7 +556,7 @@ import { checkReadability, distinctTiers } from '../../lib/creativeReadability.j
 import { ReadabilityPanel } from '../../components/shared/ReadabilityPanel.jsx';
 ```
 
-- [ ] **Step 2: Compute the score and tiers in `StepCreative`**
+- [x] **Step 2: Compute the score and tiers in `StepCreative`**
 
 Inside `StepCreative`, after the existing `fitMismatches` computation (search for `fitMismatches`), add:
 
@@ -570,7 +570,7 @@ Inside `StepCreative`, after the existing `fitMismatches` computation (search fo
   const readabilityTiers = distinctTiers(matchedScreens);
 ```
 
-- [ ] **Step 3: Render the panel**
+- [x] **Step 3: Render the panel**
 
 Directly below the existing `<CreativeFitPanel campaign={previewCampaign} mismatches={fitMismatches} />` call (search for that exact line, currently around where `<CreativePreview campaign={previewCampaign} />` also sits, per the existing `previewCampaign` object built earlier in the same function):
 
@@ -578,11 +578,11 @@ Directly below the existing `<CreativeFitPanel campaign={previewCampaign} mismat
             <ReadabilityPanel campaign={previewCampaign} score={readability.score} issues={readability.issues} tiers={readabilityTiers} />
 ```
 
-- [ ] **Step 4: Verify manually**
+- [x] **Step 4: Verify manually**
 
 You don't have live browser access in this sandboxed task — skip live verification and instead carefully re-read your diff: confirm `readability`/`readabilityTiers` are computed from `form`/`matchedScreens` (both already in scope inside `StepCreative`), confirm the panel renders unconditionally (not gated behind `form.media_url` the way the fit panel is — a readability score applies whether or not a custom creative is uploaded, since it scores the headline/CTA/accent fields, not the uploaded media), and confirm nothing here can disable the wizard's `Next`/`Submit` button.
 
-- [ ] **Step 5: Verify and commit**
+- [x] **Step 5: Verify and commit**
 
 Run: `pnpm test && pnpm build`
 Expected: both pass.
@@ -602,14 +602,14 @@ git commit -m "feat: show readability score and blur preview in the wizard"
 **Files:**
 - Modify: `src/views/operator/ApprovalQueue.jsx`
 
-- [ ] **Step 1: Import the new modules**
+- [x] **Step 1: Import the new modules**
 
 ```js
 import { checkReadability, distinctTiers } from '../../lib/creativeReadability.js';
 import { ReadabilityPanel } from '../../components/shared/ReadabilityPanel.jsx';
 ```
 
-- [ ] **Step 2: Compute the score and tiers in `MultiScreenCampaignCard`**
+- [x] **Step 2: Compute the score and tiers in `MultiScreenCampaignCard`**
 
 Inside `MultiScreenCampaignCard`, after the existing `myRows` computation (search for `const myRows =`) and before the JSX `return`, add:
 
@@ -626,7 +626,7 @@ Inside `MultiScreenCampaignCard`, after the existing `myRows` computation (searc
 
 This is a campaign-level score (the headline/CTA/accent color don't vary by screen), computed once per card — not per screen row, unlike the fit-mismatch check which is inherently per-screen. `cardScreens` only includes screens actually matched to this operator's pending rows, matching how the fit-mismatch check already scopes itself.
 
-- [ ] **Step 3: Render the panel**
+- [x] **Step 3: Render the panel**
 
 Directly below the existing `<CreativePreview campaign={campaign} />` call (inside the same "Creative preview" column div):
 
@@ -634,11 +634,11 @@ Directly below the existing `<CreativePreview campaign={campaign} />` call (insi
           <ReadabilityPanel campaign={campaign} score={readability.score} issues={readability.issues} tiers={readabilityTiers} />
 ```
 
-- [ ] **Step 4: Verify manually**
+- [x] **Step 4: Verify manually**
 
 Skip live verification (sandboxed) — re-read your diff instead: confirm `readability`/`readabilityTiers` are computed once per card (not inside the `myRows.map`), confirm `cardScreens` correctly filters out any row whose screen isn't found in `allScreens`, and confirm this reuses `checkReadability`/`distinctTiers` rather than reimplementing any of that logic.
 
-- [ ] **Step 5: Verify and commit**
+- [x] **Step 5: Verify and commit**
 
 Run: `pnpm test && pnpm build`
 Expected: both pass.
@@ -655,25 +655,25 @@ git commit -m "feat: show readability score to operators during review"
 
 ## Task 6: Verification pass
 
-- [ ] **Step 1: Full test suite**
+- [x] **Step 1: Full test suite**
 
 Run: `pnpm test`
 Expected: all pass, including the 24 + 4 + 6 = 34 tests added or extended in Tasks 1–3 (24 new in `creativeReadability.test.js`, 2 new + 2 pre-existing in `CreativePreview.test.jsx`, 6 new in `ReadabilityPanel.test.jsx`).
 
-- [ ] **Step 2: Build**
+- [x] **Step 2: Build**
 
 Run: `pnpm build`
 Expected: exits 0.
 
-- [ ] **Step 3: Score never blocks submission**
+- [x] **Step 3: Score never blocks submission**
 
 Re-read `StepCreative` and the wizard's step-navigation logic: confirm no code path reads `readability.score` or `readability.issues` to gate the `Next`/`Submit` button. This is the single most important behavior in this plan — a readability score that blocks submission would contradict the "advisory only" design and everything the creative-fit check already established.
 
-- [ ] **Step 4: Unknown environment never produces a tier**
+- [x] **Step 4: Unknown environment never produces a tier**
 
 Confirm (by re-reading `tierForEnvironment` and `distinctTiers`) that a screen with `environment: null` or any value other than `'indoor'`/`'outdoor'` contributes to neither tier — matching the "never guess" precedent from `checkCreativeFit`'s handling of incomplete screen specs.
 
-- [ ] **Step 5: Confirm the acceptance criteria**
+- [x] **Step 5: Confirm the acceptance criteria**
 
 - The score is computed identically in the wizard and the approval queue, from the same `checkReadability` function.
 - A campaign with a short headline, short CTA, ample duration, and a high-contrast accent color scores 100 with no issues.
@@ -681,7 +681,7 @@ Confirm (by re-reading `tierForEnvironment` and `distinctTiers`) that a screen w
 - The blur-test preview renders one card per distinct viewing-distance tier represented among the relevant screens, never one per screen, and never guesses a tier for a screen with unknown `environment`.
 - `CreativePreview`'s existing call sites (fit-mismatch panel, plain wizard preview, approval queue preview) are visually unaffected — `blurPx` defaults to `0`.
 
-- [ ] **Step 6: Commit the checked-off plan**
+- [x] **Step 6: Commit the checked-off plan**
 
 ```bash
 git add docs/superpowers/plans/2026-07-27-readability-score.md
