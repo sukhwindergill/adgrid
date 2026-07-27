@@ -846,6 +846,20 @@ function StepReview({ form, matchedScreens, onSubmit, submitting, err, profile, 
     : null;
   const totalImpr = matchedScreens.reduce((a, s) => a + (s.impressions || 0), 0);
 
+  // Duration is only editable in StepBudget, which comes after StepCreative
+  // (where the readability score first appears) -- an advertiser who adjusts
+  // duration and never navigates back to step 2 would otherwise submit
+  // without ever seeing the score recomputed against the value they actually
+  // ended up with. Re-check here with the final form state, right before
+  // submission, so the number always matches what actually gets persisted.
+  const readability = checkReadability({
+    headline: form.headline,
+    ctaText: form.cta_text,
+    accentColor: form.accent_color,
+    durationSeconds: parseInt(form.duration, 10) || 15,
+  });
+  const readabilityTiers = distinctTiers(matchedScreens);
+
   const rows = [
     ['Area', `${form.area_type === 'radius' ? `${form.radius_km}km radius` : form.city || form.state || form.country}`],
     ['Screens', `${form.selected_screen_ids.length} selected · ~${(totalImpr / 1000).toFixed(0)}K impr/mo`],
@@ -868,6 +882,7 @@ function StepReview({ form, matchedScreens, onSubmit, submitting, err, profile, 
         <div style={{ display: 'flex', gap: 24, marginBottom: 24, flexWrap: 'wrap' }}>
           <div style={{ width: 180, flexShrink: 0 }}>
             <CreativePreview campaign={{ headline: form.headline, cta_text: form.cta_text, accent_color: form.accent_color, destination_url: form.destination_url, category: form.category, media_url: form.media_url, media_type: form.media_type }} />
+            <ReadabilityPanel campaign={{ headline: form.headline, cta_text: form.cta_text, accent_color: form.accent_color, destination_url: form.destination_url, category: form.category, media_url: form.media_url, media_type: form.media_type }} score={readability.score} issues={readability.issues} tiers={readabilityTiers} />
           </div>
           <div style={{ flex: 1, minWidth: 200 }}>
             {rows.map(([label, value]) => (

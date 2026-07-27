@@ -76,8 +76,17 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
   // inherently per-screen. cardScreens only includes screens actually
   // matched to this operator's pending rows, matching how the fit-mismatch
   // check already scopes itself.
+  // headline is scored as-is, with no advertiser-name fallback: CreativePreview
+  // itself falls back to campaign.advertiser for *display* when headline is
+  // blank, but previewCampaign in CreateCampaign.jsx never carries an
+  // advertiser field, so the wizard's score always sees a truly blank
+  // headline as 0 words. Scoring the same way here keeps the number the
+  // advertiser saw in the wizard consistent with what the operator sees for
+  // the same submitted campaign -- matching CreativePreview's own rendered
+  // fallback per-consumer would silently produce two different scores for
+  // the same blank-headline campaign.
   const readability = checkReadability({
-    headline: campaign.headline || campaign.advertiser,
+    headline: campaign.headline,
     ctaText: campaign.cta_text || campaign.cta,
     accentColor: campaign.accent_color || campaign.color,
     durationSeconds: campaign.duration || 15,
