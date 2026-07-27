@@ -9,14 +9,18 @@
 // viewer is walking/riding/driving, not just reading.
 const WORDS_PER_SECOND = 2.5;
 
-// CreativePreview renders the headline at a fixed 13px, clamped to 2 lines,
-// inside a card-sized preview -- every usage in this app is a narrow card
-// (the wizard's own preview, the fit-mismatch cards, the approval queue),
-// never edge-to-edge. ~12 words is a reasonable estimate for what two lines
-// hold at that size. This is a word-count heuristic rather than a
-// character-width/canvas measurement, so this module stays DOM-free and
-// doesn't need to know any specific container's actual pixel width.
-const TRUNCATION_WORD_LIMIT = 12;
+// CreativePreview renders the headline at a fixed 13px/weight-800/Georgia
+// (a wide serif), clamped to 2 lines, with fixed `left: 14, right: 60`
+// padding regardless of card size. Real usages in CreateCampaign.jsx are a
+// ~220px wizard preview column and a ~180px review-step card -- after the
+// fixed padding that leaves only ~146px/~106px of usable width per line, not
+// enough for anywhere near 12 words. ~8 words is a more realistic estimate
+// of what two lines hold at the smaller of those real container sizes, and
+// errs toward not over-flagging reasonably short headlines. This is a
+// word-count heuristic rather than a character-width/canvas measurement, so
+// this module stays DOM-free and doesn't need to know any specific
+// container's actual pixel width.
+const TRUNCATION_WORD_LIMIT = 8;
 
 const CONTRAST_MIN_RATIO = 4.5; // WCAG AA, normal text
 const PREVIEW_BG_HEX = '#050a10'; // CreativePreview's darkest gradient stop
@@ -70,6 +74,13 @@ export function checkReadability({
   accentColor = '#7c3aed',
   durationSeconds = 15,
 } = {}) {
+  // The destructured default above only applies when the key is `undefined`,
+  // not `null` -- callers like ApprovalQueue pass
+  // `accentColor: campaign.accent_color || campaign.color`, which evaluates
+  // to `null` when both DB columns are null on a legacy row. Normalize here
+  // so hexToRgb never receives a non-string and crashes the caller.
+  const safeAccentColor = (typeof accentColor === 'string' && accentColor) ? accentColor : '#7c3aed';
+
   let score = 100;
   const issues = [];
 
@@ -97,7 +108,7 @@ export function checkReadability({
   // truthy (`{cta && (<div>...</div>)}`) -- with no CTA text there's no
   // colored text on screen at all, so there's nothing to check contrast for.
   if (wordCount(ctaText) > 0) {
-    const ratio = contrastRatio(accentColor, PREVIEW_BG_HEX);
+    const ratio = contrastRatio(safeAccentColor, PREVIEW_BG_HEX);
     if (ratio < CONTRAST_MIN_RATIO) {
       score -= 25;
       issues.push({

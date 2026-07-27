@@ -104,15 +104,15 @@ describe('checkReadability', () => {
 
   it('does not flag truncation at exactly the word limit', () => {
     // duration long enough that read-time never fires, isolating the truncation check
-    const result = checkReadability({ headline: words(12), ctaText: '', accentColor: '#ffffff', durationSeconds: 60 });
+    const result = checkReadability({ headline: words(8), ctaText: '', accentColor: '#ffffff', durationSeconds: 60 });
     expect(result.issues.some(i => i.type === 'truncation')).toBe(false);
   });
 
   it('flags truncation one word past the limit', () => {
-    const result = checkReadability({ headline: words(13), ctaText: '', accentColor: '#ffffff', durationSeconds: 60 });
+    const result = checkReadability({ headline: words(9), ctaText: '', accentColor: '#ffffff', durationSeconds: 60 });
     const issue = result.issues.find(i => i.type === 'truncation');
     expect(issue).toBeDefined();
-    expect(issue.message).toContain('13 words');
+    expect(issue.message).toContain('9 words');
   });
 
   it('flags weak CTA contrast when the accent color matches the background', () => {
@@ -134,6 +134,12 @@ describe('checkReadability', () => {
     const result = checkReadability({ headline: words(50), ctaText: 'x', accentColor: '#050a10', durationSeconds: 5 });
     expect(result.issues.map(i => i.type).sort()).toEqual(['contrast', 'read_time', 'truncation']);
     expect(result.score).toBe(0);
+  });
+
+  it('does not throw when accentColor is null (e.g. a legacy campaign with no color columns set)', () => {
+    expect(() =>
+      checkReadability({ headline: 'x', ctaText: 'Go', accentColor: null, durationSeconds: 15 })
+    ).not.toThrow();
   });
 
   it('using all default parameters does not throw and returns a valid score shape', () => {
