@@ -8,6 +8,8 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
 import { checkCreativeFit, REASON_LABEL } from '../../lib/creativeFit.js';
+import { checkReadability, distinctTiers } from '../../lib/creativeReadability.js';
+import { ReadabilityPanel } from '../../components/shared/ReadabilityPanel.jsx';
 import { useConfirm } from '../../components/primitives/ConfirmModal.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
@@ -68,6 +70,20 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
   const myRows = (campaign.campaign_screens || []).filter(
     row => myScreens.some(s => s.id === row.screen_id) && row.status === 'pending'
   );
+
+  // Campaign-level score (headline/CTA/accent color don't vary by screen) --
+  // computed once per card, not per row, unlike checkCreativeFit which is
+  // inherently per-screen. cardScreens only includes screens actually
+  // matched to this operator's pending rows, matching how the fit-mismatch
+  // check already scopes itself.
+  const readability = checkReadability({
+    headline: campaign.headline,
+    ctaText: campaign.cta_text || campaign.cta,
+    accentColor: campaign.accent_color || campaign.color,
+    durationSeconds: campaign.duration,
+  });
+  const cardScreens = myRows.map(row => allScreens.find(s => s.id === row.screen_id)).filter(Boolean);
+  const readabilityTiers = distinctTiers(cardScreens);
 
   const approveScreen = async (screenId) => {
     setActing(true);
@@ -163,6 +179,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
         }}>
           <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Creative Preview</div>
           <CreativePreview campaign={campaign} />
+          <ReadabilityPanel campaign={campaign} score={readability.score} issues={readability.issues} tiers={readabilityTiers} />
         </div>
 
         {/* Details + per-screen actions */}
