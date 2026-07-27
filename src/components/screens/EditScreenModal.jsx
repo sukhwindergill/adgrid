@@ -50,29 +50,32 @@ export function EditScreenModal({ screen, onClose, onSaved }) {
     if (!form.name.trim()) return;
     setSaving(true);
     setErr(null);
-    const { data, error } = await supabase
+    const updates = {
+      name:                     form.name.trim(),
+      location:                 form.location.trim() || form.city,
+      city:                     form.city,
+      display_size:             form.display_size || null,
+      cpm_floor:                parseFloat(form.cpm_floor) || 3.00,
+      monthly_traffic_estimate: form.monthly_traffic_estimate ? parseInt(form.monthly_traffic_estimate) : null,
+      impressions:              form.monthly_traffic_estimate ? parseInt(form.monthly_traffic_estimate) * 1000 : screen.impressions,
+      lat:                      form.lat ? parseFloat(form.lat) : null,
+      lng:                      form.lng ? parseFloat(form.lng) : null,
+      resolution_w:      Number(form.resolution_w) > 0 ? parseInt(form.resolution_w, 10) : null,
+      resolution_h:      Number(form.resolution_h) > 0 ? parseInt(form.resolution_h, 10) : null,
+      accepted_formats:  form.accepted_formats.length > 0 ? form.accepted_formats : null,
+      max_file_mb:       Number(form.max_file_mb) > 0 ? parseInt(form.max_file_mb, 10) : null,
+    };
+    // No .select() on the update: screens' SELECT grant is column-scoped
+    // (screen_token is deliberately excluded), and .select() defaults to
+    // requesting every column, which fails with a permission error even
+    // when the write itself succeeds. Merge the known update locally instead.
+    const { error } = await supabase
       .from('screens')
-      .update({
-        name:                     form.name.trim(),
-        location:                 form.location.trim() || form.city,
-        city:                     form.city,
-        display_size:             form.display_size || null,
-        cpm_floor:                parseFloat(form.cpm_floor) || 3.00,
-        monthly_traffic_estimate: form.monthly_traffic_estimate ? parseInt(form.monthly_traffic_estimate) : null,
-        impressions:              form.monthly_traffic_estimate ? parseInt(form.monthly_traffic_estimate) * 1000 : screen.impressions,
-        lat:                      form.lat ? parseFloat(form.lat) : null,
-        lng:                      form.lng ? parseFloat(form.lng) : null,
-        resolution_w:      Number(form.resolution_w) > 0 ? parseInt(form.resolution_w, 10) : null,
-        resolution_h:      Number(form.resolution_h) > 0 ? parseInt(form.resolution_h, 10) : null,
-        accepted_formats:  form.accepted_formats.length > 0 ? form.accepted_formats : null,
-        max_file_mb:       Number(form.max_file_mb) > 0 ? parseInt(form.max_file_mb, 10) : null,
-      })
-      .eq('id', screen.id)
-      .select()
-      .single();
+      .update(updates)
+      .eq('id', screen.id);
 
     if (error) { setErr(error.message); setSaving(false); return; }
-    onSaved(data);
+    onSaved({ ...screen, ...updates });
     onClose();
   };
 
