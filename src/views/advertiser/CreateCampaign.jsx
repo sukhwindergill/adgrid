@@ -13,6 +13,8 @@ import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
 import { getMediaDimensions } from '../../lib/mediaDimensions.js';
 import { checkCreativeFit } from '../../lib/creativeFit.js';
 import { CreativeFitPanel } from '../../components/shared/CreativeFitPanel.jsx';
+import { checkReadability, distinctTiers } from '../../lib/creativeReadability.js';
+import { ReadabilityPanel } from '../../components/shared/ReadabilityPanel.jsx';
 import { CATEGORIES } from '../../lib/data.js';
 import { VENUE_TAXONOMY, COUNTRIES } from '../../lib/venueTypes.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
@@ -604,6 +606,14 @@ function StepCreative({ form, setForm, matchedScreens = [] }) {
         .filter(Boolean)
     : [];
 
+  const readability = checkReadability({
+    headline: form.headline,
+    ctaText: form.cta_text,
+    accentColor: form.accent_color,
+    durationSeconds: parseInt(form.duration, 10) || 15,
+  });
+  const readabilityTiers = distinctTiers(matchedScreens);
+
   const selectedScreenIds = form.selected_screen_ids;
 
   return (
@@ -643,6 +653,7 @@ function StepCreative({ form, setForm, matchedScreens = [] }) {
             <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Preview</div>
             <CreativePreview campaign={previewCampaign} />
             <CreativeFitPanel campaign={previewCampaign} mismatches={fitMismatches} />
+            <ReadabilityPanel campaign={previewCampaign} score={readability.score} issues={readability.issues} tiers={readabilityTiers} />
           </div>
         </div>
 
