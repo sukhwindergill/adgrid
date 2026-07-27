@@ -77,10 +77,10 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
   // matched to this operator's pending rows, matching how the fit-mismatch
   // check already scopes itself.
   const readability = checkReadability({
-    headline: campaign.headline,
+    headline: campaign.headline || campaign.advertiser,
     ctaText: campaign.cta_text || campaign.cta,
     accentColor: campaign.accent_color || campaign.color,
-    durationSeconds: campaign.duration,
+    durationSeconds: campaign.duration || 15,
   });
   const cardScreens = myRows.map(row => allScreens.find(s => s.id === row.screen_id)).filter(Boolean);
   const readabilityTiers = distinctTiers(cardScreens);
