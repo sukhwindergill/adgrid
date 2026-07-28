@@ -1003,6 +1003,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     cta_text: '',
     destination_url: '',
     accent_color: '#7c3aed',
+    secondary_color: '',
+    creative_template: 'bottom_bar',
     category: 'Food & Beverage',
     media_url: '',
     media_type: '',
@@ -1057,6 +1059,20 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
   useEffect(() => {
     setForm(s => ({ ...s, selected_screen_ids: matchedScreens.map(sc => sc.id) }));
   }, [matchedKey]);
+
+  // Seeds a brand-new draft's colors from the advertiser's brand kit, once
+  // profile finishes loading (it starts null in AuthContext until its own
+  // fetch resolves, so this can't be done in the initial useState above).
+  // Only overwrites while the fields still hold their just-mounted hardcoded
+  // defaults, so it never clobbers an edit the advertiser already made.
+  useEffect(() => {
+    if (!profile) return;
+    setForm(s => ({
+      ...s,
+      accent_color: s.accent_color === '#7c3aed' && profile.brand_color_1 ? profile.brand_color_1 : s.accent_color,
+      secondary_color: s.secondary_color === '' && profile.brand_color_2 ? profile.brand_color_2 : s.secondary_color,
+    }));
+  }, [profile]);
 
   const selectedScreens = matchedScreens.filter(s => form.selected_screen_ids.includes(s.id));
   const totalImpressions = selectedScreens.reduce((a, s) => a + (s.impressions || 0), 0);

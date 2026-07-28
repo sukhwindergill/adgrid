@@ -132,6 +132,7 @@ function ProfileTab({ profile, onSaved }) {
 }
 
 function BrandKitTab({ profile, onSaved }) {
+  const { refreshProfile } = useAuth();
   const [brandColor1, setBrandColor1] = useState(profile?.brand_color_1 ?? "#7c3aed");
   const [brandColor2, setBrandColor2] = useState(profile?.brand_color_2 ?? "#0d1520");
   const [brandFont, setBrandFont] = useState(profile?.brand_font ?? "sans");
@@ -147,6 +148,7 @@ function BrandKitTab({ profile, onSaved }) {
     setSaving(false);
     setMsg(error ? "Error saving." : "Saved.");
     if (!error) onSaved({ brand_color_1: brandColor1, brand_color_2: brandColor2, brand_font: brandFont });
+    if (!error) refreshProfile();
     setTimeout(() => setMsg(null), 3000);
   }
 
