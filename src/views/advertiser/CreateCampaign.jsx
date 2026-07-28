@@ -24,6 +24,7 @@ import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { formatCurrency } from '../../lib/formatCurrency.js';
 import { haversineKm } from '../../lib/geo.js';
 import { isValidDestinationUrl, normalizeDestinationUrl } from '../../lib/destinationUrl.js';
+import { buildPreviewCampaign } from '../../lib/buildPreviewCampaign.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -677,18 +678,7 @@ function StepCreative({ form, setForm, matchedScreens = [], profile }) {
     setOverrideUploading(s => { const n = new Set(s); n.delete(screenId); return n; });
   };
 
-  const previewCampaign = {
-    headline: form.headline,
-    cta_text: form.cta_text,
-    accent_color: form.accent_color,
-    destination_url: form.destination_url,
-    category: form.category,
-    media_url: form.media_url,
-    media_type: form.media_type,
-    creative_template: form.creative_template,
-    secondary_color: form.secondary_color,
-    creative_font: profile?.brand_font || 'sans',
-  };
+  const previewCampaign = buildPreviewCampaign(form, profile);
 
   const fitMismatches = form.media_url
     ? matchedScreens
@@ -969,18 +959,7 @@ function StepReview({ form, matchedScreens, onSubmit, submitting, err, profile, 
   });
   const readabilityTiers = distinctTiers(matchedScreens);
 
-  const previewCampaign = {
-    headline: form.headline,
-    cta_text: form.cta_text,
-    accent_color: form.accent_color,
-    destination_url: form.destination_url,
-    category: form.category,
-    media_url: form.media_url,
-    media_type: form.media_type,
-    creative_template: form.creative_template,
-    secondary_color: form.secondary_color,
-    creative_font: profile?.brand_font || 'sans',
-  };
+  const previewCampaign = buildPreviewCampaign(form, profile);
 
   const rows = [
     ['Area', `${form.area_type === 'radius' ? `${form.radius_km}km radius` : form.city || form.state || form.country}`],
@@ -1245,6 +1224,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     try {
       const campaignId = crypto.randomUUID();
       const firstScreen = selectedScreens[0];
+      const preview = buildPreviewCampaign(form, profile);
       const { error: bookingErr } = await supabase.from('bookings').insert({
         id:                    campaignId,
         advertiser_id:         user.id,
@@ -1258,9 +1238,9 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         // encodes this value verbatim.
         destination_url:       normalizeDestinationUrl(form.destination_url),
         accent_color:          form.accent_color,
-        secondary_color:       form.secondary_color || null,
-        creative_template:     form.creative_template,
-        creative_font:         profile?.brand_font || 'sans',
+        secondary_color:       preview.secondary_color || null,
+        creative_template:     preview.creative_template,
+        creative_font:         preview.creative_font,
         category:              form.category,
         media_url:             form.media_url || null,
         media_type:            form.media_type || null,
