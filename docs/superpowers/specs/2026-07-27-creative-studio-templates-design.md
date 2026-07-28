@@ -65,7 +65,7 @@ Template picker: a row of 3 small static shape-diagram swatches (CSS boxes sketc
 New pure function, `src/lib/creativeMessageSplit.js`: `splitMessage(message) → { headline, cta }`, same pure/unit-tested shape as `creativeFit.js`/`creativeReadability.js`.
 
 1. Trim input; empty → `{ headline: '', cta: '' }`.
-2. Find the **last** delimiter (`, ; — - . ! ?`) in the message. The trimmed substring after it is the CTA candidate.
+2. Find the **last** delimiter (`, ; — . ! ?`) in the message. The trimmed substring after it is the CTA candidate. (A bare hyphen `-` was dropped from this set during Task 7 wiring — it was hijacking the split on hyphenated compound words like "sugar-free"; comma/period/em-dash/etc. still work as manual separators.)
 3. The candidate counts as a real CTA only if it starts with an allow-listed lead word — `shop/get/try/save/learn/visit/order/book/call/sign up/download`, word-boundary, case-insensitive — **and** is ≤ 6 words. If so: `headline` = everything before that delimiter, `cta` = the candidate, casing preserved as typed.
 4. Otherwise (no delimiter, or candidate fails the check): `headline` = the whole message, `cta` = `'Learn More'`.
 5. No length/truncation capping here — the existing `ReadabilityPanel` already scores whatever headline results, identical treatment to a hand-typed headline.
