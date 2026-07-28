@@ -9,5 +9,13 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS brand_color_1 text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS brand_color_2 text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS brand_font text DEFAULT 'sans';
 
-ALTER TABLE public.profiles ADD CONSTRAINT profiles_brand_font_check
-  CHECK (brand_font IN ('sans', 'serif', 'mono'));
+-- ADD CONSTRAINT has no IF NOT EXISTS, so guard it for re-runs.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'profiles_brand_font_check'
+  ) THEN
+    ALTER TABLE public.profiles ADD CONSTRAINT profiles_brand_font_check
+      CHECK (brand_font IN ('sans', 'serif', 'mono'));
+  END IF;
+END $$;
