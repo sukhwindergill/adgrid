@@ -3,14 +3,24 @@
 // rendering rules. No DOM, no network, no OCR -- an uploaded creative's own
 // baked-in text is never inspected (see the design doc for why: OCR is a
 // heavy, unreliable dependency for what should be a cheap advisory check).
+//
+// Calibrated for CreativePreview's `bottom_bar` template only (the one that
+// existed when this module was built). The `full_bleed`/`split_panel`
+// templates added later render at different sizes, positions, and contrast
+// contexts (see the truncation and contrast comments below) that this module
+// doesn't yet account for -- the score can under- or over-report for those
+// two. Advisory-only either way (never blocks the wizard), so this is a
+// known, accepted gap, not a hard-blocking bug -- see
+// docs/superpowers/specs/2026-07-27-creative-studio-templates-design.md.
 
 // ~2.5 words/second is a conservative "glance-read" rate for the OOH 3-5
 // second rule -- slower than normal reading speed (~4-5 wps) because a
 // viewer is walking/riding/driving, not just reading.
 const WORDS_PER_SECOND = 2.5;
 
-// CreativePreview renders the headline at a fixed 13px/weight-800/Georgia
-// (a wide serif), clamped to 2 lines, with fixed `left: 14, right: 60`
+// CreativePreview's `bottom_bar` template (see note above -- this module
+// isn't template-aware yet) renders the headline at a fixed 13px/weight-800/
+// Georgia (a wide serif), clamped to 2 lines, with fixed `left: 14, right: 60`
 // padding regardless of card size. Real usages in CreateCampaign.jsx are a
 // ~220px wizard preview column and a ~180px review-step card -- after the
 // fixed padding that leaves only ~146px/~106px of usable width per line, not
@@ -19,7 +29,10 @@ const WORDS_PER_SECOND = 2.5;
 // errs toward not over-flagging reasonably short headlines. This is a
 // word-count heuristic rather than a character-width/canvas measurement, so
 // this module stays DOM-free and doesn't need to know any specific
-// container's actual pixel width.
+// container's actual pixel width. `full_bleed` (14px, centered, no fixed
+// gutter) and `split_panel` (12px, 3-line clamp, ~40%-width panel) each hold
+// a different number of words per line -- this limit isn't recalibrated for
+// either.
 const TRUNCATION_WORD_LIMIT = 8;
 
 const CONTRAST_MIN_RATIO = 4.5; // WCAG AA, normal text
@@ -107,6 +120,15 @@ export function checkReadability({
   // CreativePreview only renders the accent-colored CTA text when cta is
   // truthy (`{cta && (<div>...</div>)}`) -- with no CTA text there's no
   // colored text on screen at all, so there's nothing to check contrast for.
+  // This check assumes `bottom_bar`'s CTA rendering (accent-colored text on
+  // CreativePreview's fixed dark gradient background). It doesn't hold for
+  // `full_bleed` (the CTA is a solid accent-colored pill with WHITE text --
+  // the relevant pair is white-vs-accent, not accent-vs-dark-bg) or
+  // `split_panel` (the headline AND the CTA render in white on the arbitrary
+  // secondary_color/accent block, a contrast pair this check doesn't
+  // consider at all -- and unlike the other two templates, split_panel's
+  // headline is no longer guaranteed-safe-by-construction, since it no
+  // longer always sits on a dark background).
   if (wordCount(ctaText) > 0) {
     const ratio = contrastRatio(safeAccentColor, PREVIEW_BG_HEX);
     if (ratio < CONTRAST_MIN_RATIO) {
