@@ -220,6 +220,7 @@ export function AuthProvider({ children }) {
       resetPasswordForEmail, updatePassword,
       setActiveMode, setActiveAccount, acceptGrant, revokeGrant,
       refreshGrants: () => user ? fetchGrants(user.id) : Promise.resolve(),
+      refreshProfile: () => user ? fetchProfile(user.id) : Promise.resolve(),
     }}>
       {children}
     </AuthContext.Provider>
