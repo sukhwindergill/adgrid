@@ -1,6 +1,6 @@
 // src/lib/creativeMessageSplit.js
 const CTA_LEAD_WORDS = ['shop', 'get', 'try', 'save', 'learn', 'visit', 'order', 'book', 'call', 'sign up', 'download'];
-const DELIMITERS = /[,;—.!?-]/g;
+const DELIMITERS = /[,;—.!?]/g;
 
 function isCtaCandidate(text) {
   const words = text.split(/\s+/).filter(Boolean);
