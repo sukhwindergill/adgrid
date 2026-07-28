@@ -749,9 +749,9 @@ function StepCreative({ form, setForm, matchedScreens = [], profile }) {
               <div>
                 <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>Secondary Colour</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <input type="color" value={form.secondary_color || '#0d1520'} onChange={e => setField('secondary_color', e.target.value)}
+                  <input type="color" value={form.secondary_color || form.accent_color} onChange={e => setField('secondary_color', e.target.value)}
                     style={{ width: 40, height: 36, border: `1px solid ${C.border}`, borderRadius: 6, cursor: 'pointer', padding: 2 }} />
-                  <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.mono }}>{form.secondary_color || '#0d1520'}</span>
+                  <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.mono }}>{form.secondary_color || form.accent_color}</span>
                 </div>
               </div>
             )}
@@ -1217,6 +1217,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       cta_text: c.cta_text || c.cta || '',
       destination_url: c.destination_url || c.destination || '',
       accent_color: c.accent_color || c.color || '#7c3aed',
+      secondary_color: c.secondary_color || '',
+      creative_template: c.creative_template || 'bottom_bar',
       category: c.category || 'Food & Beverage',
       budget: String(c.budget || ''),
       budget_mode: c.budget_mode || 'total',
