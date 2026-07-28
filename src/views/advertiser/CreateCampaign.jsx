@@ -969,6 +969,19 @@ function StepReview({ form, matchedScreens, onSubmit, submitting, err, profile, 
   });
   const readabilityTiers = distinctTiers(matchedScreens);
 
+  const previewCampaign = {
+    headline: form.headline,
+    cta_text: form.cta_text,
+    accent_color: form.accent_color,
+    destination_url: form.destination_url,
+    category: form.category,
+    media_url: form.media_url,
+    media_type: form.media_type,
+    creative_template: form.creative_template,
+    secondary_color: form.secondary_color,
+    creative_font: profile?.brand_font || 'sans',
+  };
+
   const rows = [
     ['Area', `${form.area_type === 'radius' ? `${form.radius_km}km radius` : form.city || form.state || form.country}`],
     ['Screens', `${form.selected_screen_ids.length} selected · ~${(totalImpr / 1000).toFixed(0)}K impr/mo`],
@@ -990,8 +1003,8 @@ function StepReview({ form, matchedScreens, onSubmit, submitting, err, profile, 
 
         <div style={{ display: 'flex', gap: 24, marginBottom: 24, flexWrap: 'wrap' }}>
           <div style={{ width: 180, flexShrink: 0 }}>
-            <CreativePreview campaign={{ headline: form.headline, cta_text: form.cta_text, accent_color: form.accent_color, destination_url: form.destination_url, category: form.category, media_url: form.media_url, media_type: form.media_type }} />
-            <ReadabilityPanel campaign={{ headline: form.headline, cta_text: form.cta_text, accent_color: form.accent_color, destination_url: form.destination_url, category: form.category, media_url: form.media_url, media_type: form.media_type }} score={readability.score} issues={readability.issues} tiers={readabilityTiers} />
+            <CreativePreview campaign={previewCampaign} />
+            <ReadabilityPanel campaign={previewCampaign} score={readability.score} issues={readability.issues} tiers={readabilityTiers} />
           </div>
           <div style={{ flex: 1, minWidth: 200 }}>
             {rows.map(([label, value]) => (
@@ -1243,6 +1256,9 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         // encodes this value verbatim.
         destination_url:       normalizeDestinationUrl(form.destination_url),
         accent_color:          form.accent_color,
+        secondary_color:       form.secondary_color || null,
+        creative_template:     form.creative_template,
+        creative_font:         profile?.brand_font || 'sans',
         category:              form.category,
         media_url:             form.media_url || null,
         media_type:            form.media_type || null,
