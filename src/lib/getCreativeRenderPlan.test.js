@@ -15,12 +15,14 @@ describe('getCreativeRenderPlan', () => {
     expect(getCreativeRenderPlan({ advertiser: 'A', advertiser_name: 'B' }).headline).toBe('A');
     expect(getCreativeRenderPlan({ advertiser_name: 'B' }).headline).toBe('B');
     expect(getCreativeRenderPlan({}).headline).toBe('');
+    expect(getCreativeRenderPlan({ headline: '', advertiser: 'A' }).headline).toBe('A');
   });
 
   it('falls back through cta field name variants', () => {
-    expect(getCreativeRenderPlan({ cta_text: 'Order now', cta: 'Old CTA' }).cta).toBe('Order now');
+    expect(getCreativeRenderPlan({ cta_text: 'Order now', cta: 'Old CTA' }).cta).toBe('Old CTA');
     expect(getCreativeRenderPlan({ cta: 'Old CTA' }).cta).toBe('Old CTA');
     expect(getCreativeRenderPlan({}).cta).toBe('');
+    expect(getCreativeRenderPlan({ cta: '', cta_text: 'Booking Default' }).cta).toBe('Booking Default');
   });
 
   it('defaults template to bottom_bar when unset', () => {
@@ -32,12 +34,14 @@ describe('getCreativeRenderPlan', () => {
     expect(getCreativeRenderPlan({ accent_color: '#111111', color: '#222222' }).bg).toBe('#111111');
     expect(getCreativeRenderPlan({ color: '#222222' }).bg).toBe('#222222');
     expect(getCreativeRenderPlan({}).bg).toBe('#7c3aed');
+    expect(getCreativeRenderPlan({ accent_color: '', color: '#222222' }).bg).toBe('#222222');
   });
 
   it('falls back through destination field name variants, then the hardcoded default', () => {
     expect(getCreativeRenderPlan({ destination_url: 'https://a.com', destination: 'https://b.com' }).destination).toBe('https://a.com');
     expect(getCreativeRenderPlan({ destination: 'https://b.com' }).destination).toBe('https://b.com');
     expect(getCreativeRenderPlan({}).destination).toBe('https://adgrid.io');
+    expect(getCreativeRenderPlan({ destination_url: '', destination: 'https://b.com' }).destination).toBe('https://b.com');
   });
 
   it('passes through secondary_color, category, media type unmodified', () => {
