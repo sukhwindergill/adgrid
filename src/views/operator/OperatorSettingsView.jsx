@@ -64,7 +64,8 @@ function SaveBtn({ onClick, saving, label = 'Save Changes' }) {
   );
 }
 
-function ProfileTab({ profile, onSaved }) {
+export function ProfileTab({ profile, onSaved }) {
+  const { refreshProfile } = useAuth();
   const [name, setName] = useState(profile?.name ?? '');
   const [companyName, setCompanyName] = useState(profile?.company_name ?? '');
   const [companyWebsite, setCompanyWebsite] = useState(profile?.company_website ?? '');
@@ -80,7 +81,10 @@ function ProfileTab({ profile, onSaved }) {
       .eq('id', profile.id);
     setSaving(false);
     setMsg(error ? 'Error saving.' : 'Saved.');
-    if (!error) onSaved({ name, company_name: companyName, company_website: companyWebsite, timezone });
+    if (!error) {
+      onSaved({ name, company_name: companyName, company_website: companyWebsite, timezone });
+      refreshProfile();
+    }
     setTimeout(() => setMsg(null), 3000);
   }
 

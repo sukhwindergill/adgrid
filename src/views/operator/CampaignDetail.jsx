@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabase.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { ShareReportModal } from '../../components/shared/ShareReportModal.jsx';
 import { ApproveBtn } from '../../lib/campaignActions.jsx';
+import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
 
 export function CampaignDetail({ campaign, onBack, onUpdate, canReview = false, setCampaigns }) {
   const toast = useToast();
@@ -174,14 +175,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, canReview = false, 
         <Card>
           <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Ad Creative</div>
           <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 24, alignItems: 'start' }}>
-            <div style={{ borderRadius: 10, overflow: 'hidden', aspectRatio: '16/9', position: 'relative', background: 'linear-gradient(145deg,#1a0800,#3d1800,#7a3200)' }}>
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top,rgba(0,0,0,0.85),rgba(0,0,0,0.1))' }} />
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 14px' }}>
-                <div style={{ fontFamily: 'Georgia,serif', fontSize: 14, fontWeight: 700, color: '#fff', lineHeight: 1.1, marginBottom: 4 }}>{c.headline}</div>
-                <div style={{ display: 'inline-block', padding: '3px 10px', border: `1px solid ${c.color || '#fff'}`, color: c.color || '#fff', fontSize: 8, borderRadius: 2 }}>Learn More →</div>
-              </div>
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: c.color || '#f59e0b' }} />
-            </div>
+            <CreativePreview campaign={c} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[['Headline', c.headline], ['Category', c.category], ['Accent Colour', c.color || '—'], ['QR Destination', c.destination || '—']].map(([l, v]) => (
                 <div key={l}>
