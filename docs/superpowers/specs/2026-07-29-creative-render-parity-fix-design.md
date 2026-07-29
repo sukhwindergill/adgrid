@@ -30,6 +30,7 @@ New pure function, `src/lib/getCreativeRenderPlan.js`:
 
 ```js
 export function getCreativeRenderPlan(campaign) {
+  campaign = campaign || {};
   const mediaUrl = campaign.media_url || null;
   return {
     mediaUrl,
@@ -37,7 +38,7 @@ export function getCreativeRenderPlan(campaign) {
     showTextOverlay: !mediaUrl,
     template: campaign.creative_template || 'bottom_bar',
     headline: campaign.headline || campaign.advertiser || campaign.advertiser_name || '',
-    cta: campaign.cta_text || campaign.cta || '',
+    cta: campaign.cta || campaign.cta_text || '',
     bg: campaign.accent_color || campaign.color || '#7c3aed',
     secondaryBg: campaign.secondary_color || null,
     category: campaign.category || null,
@@ -46,7 +47,9 @@ export function getCreativeRenderPlan(campaign) {
 }
 ```
 
-Pure, no DOM/network — same shape as `creativeFit.js`/`creativeReadability.js`/`creativeMessageSplit.js`. The dual fallback chains (`advertiser || advertiser_name`, `cta_text || cta`) intentionally cover both data shapes it will be called with — the App.jsx-aliased shape `CreativePreview` usually sees, and whatever `display-feed` returns to `DisplayPlayer` directly, without either caller needing to know which shape it has.
+Pure, no DOM/network — same shape as `creativeFit.js`/`creativeReadability.js`/`creativeMessageSplit.js`, including a guard against a nullish `campaign` argument (this codebase already hit the "default parameter doesn't catch explicit `null`" footgun once, in `creativeReadability.js`; guarded against it here from the start instead of inline-`||`-ing a normalized local everywhere).
+
+The dual fallback chain for `advertiser`/`advertiser_name` covers two different data shapes this is called with — the App.jsx-aliased shape `CreativePreview` usually sees, and whatever `display-feed` returns to `DisplayPlayer` directly — without either caller needing to know which shape it has. **`cta`/`cta_text` is not the same kind of alias, and the order matters**: `display-feed` writes the per-screen-override-aware value to `cta` while leaving the raw booking-level default under its own `cta_text` key (see `supabase/functions/display-feed/index.ts`'s `cta: cs?.cta_text || b.cta_text` merge) — so `campaign.cta` must be checked first, or a live per-screen CTA override silently stops reaching the physical screen. (This was caught in review after an earlier draft of this function had the order reversed — worth flagging here so a future edit doesn't reverse it back.)
 
 **`CreativePreview.jsx`:** replaces its own inline field derivation (`bg`, `headline`, `cta`, `destination`, `mediaUrl`, `isVideo`, `template`) with a single `getCreativeRenderPlan(campaign)` call, then uses the returned plan's fields in place of its current locals. `Body` rendering already gates on `!mediaUrl`; changes to read `plan.showTextOverlay` instead (same boolean, now sourced from the shared function rather than computed locally).
 

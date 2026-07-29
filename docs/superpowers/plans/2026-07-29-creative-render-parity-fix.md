@@ -40,8 +40,8 @@ describe('getCreativeRenderPlan', () => {
     expect(getCreativeRenderPlan({}).headline).toBe('');
   });
 
-  it('falls back through cta field name variants', () => {
-    expect(getCreativeRenderPlan({ cta_text: 'Order now', cta: 'Old CTA' }).cta).toBe('Order now');
+  it('falls back through cta field name variants, prioritizing the override-aware cta field', () => {
+    expect(getCreativeRenderPlan({ cta_text: 'Order now', cta: 'Old CTA' }).cta).toBe('Old CTA');
     expect(getCreativeRenderPlan({ cta: 'Old CTA' }).cta).toBe('Old CTA');
     expect(getCreativeRenderPlan({}).cta).toBe('');
   });
@@ -97,13 +97,19 @@ Expected: FAIL — `Cannot find module './getCreativeRenderPlan.js'`
  * an uploaded creative. Pure, no DOM/network -- same shape as
  * creativeFit.js/creativeReadability.js/creativeMessageSplit.js.
  *
- * The dual fallback chains (advertiser/advertiser_name, cta_text/cta) exist
- * because this is called with two different data shapes: the App.jsx-aliased
- * campaign objects CreativePreview usually sees, and whatever
+ * The dual fallback chain for advertiser/advertiser_name exists because this
+ * is called with two different data shapes: the App.jsx-aliased campaign
+ * objects CreativePreview usually sees, and whatever
  * supabase/functions/display-feed returns directly to DisplayPlayer over
  * HTTP. Neither caller needs to know which shape it has.
+ *
+ * cta/cta_text is NOT the same kind of alias -- display-feed writes the
+ * per-screen-override-aware value to cta while leaving the raw booking-level
+ * default under cta_text, so cta must be checked first or a live per-screen
+ * CTA override silently stops reaching the physical screen.
  */
 export function getCreativeRenderPlan(campaign) {
+  campaign = campaign || {};
   const mediaUrl = campaign.media_url || null;
   return {
     mediaUrl,
@@ -111,7 +117,7 @@ export function getCreativeRenderPlan(campaign) {
     showTextOverlay: !mediaUrl,
     template: campaign.creative_template || 'bottom_bar',
     headline: campaign.headline || campaign.advertiser || campaign.advertiser_name || '',
-    cta: campaign.cta_text || campaign.cta || '',
+    cta: campaign.cta || campaign.cta_text || '',
     bg: campaign.accent_color || campaign.color || '#7c3aed',
     secondaryBg: campaign.secondary_color || null,
     category: campaign.category || null,
