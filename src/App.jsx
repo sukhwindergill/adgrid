@@ -279,6 +279,8 @@ function AppInner() {
   }
 
   const isAdv = impersonating ? true : activeMode === 'advertiser';
+  // Approve/Reject is a screen owner's call, not the advertiser's — gate it on mode.
+  const canReview = !isAdv;
   const displayUser = { name: profile?.name || user.email?.split('@')[0] || 'User', email: user.email };
   const pendingCount = campaigns.filter(c => c.status === 'pending_review').length;
 
@@ -329,7 +331,7 @@ function AppInner() {
   // ── View routing ───────────────────────────────────────────────────────────
   const view = () => {
     if (detail && (active === 'campaigns' || active === 'analytics' || active === 'adv-campaigns' || active === 'approval')) {
-      return <CampaignDetail campaign={detail} onBack={() => setDetail(null)} onUpdate={updateCampaign} />;
+      return <CampaignDetail campaign={detail} onBack={() => setDetail(null)} onUpdate={updateCampaign} canReview={canReview} setCampaigns={setCampaigns} />;
     }
 
     if (isAdv) {
@@ -391,7 +393,7 @@ function AppInner() {
       return <ScreenDetailView screenId={selectedScreenId} onBack={() => navTo('screens')} profile={profile} onScreenUpdated={updated => setMyScreens(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s))} />;
     }
     if (active === 'notif-prefs')   return <NotificationPrefsView />;
-    if (active === 'campaigns')    return <Campaigns campaigns={campaigns} dbScreens={myScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} />;
+    if (active === 'campaigns')    return <Campaigns campaigns={campaigns} dbScreens={myScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} canReview={canReview} />;
     if (active === 'analytics')    return <Analytics campaigns={campaigns} loading={dataLoading} />;
     if (active === 'audience')     return <Audience campaigns={campaigns} />;
     if (active === 'revenue')      return <Revenue campaigns={campaigns} loading={dataLoading} />;

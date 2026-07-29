@@ -184,7 +184,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
-    .select("id, budget, currency, advertiser_id, advertiser_name, screen_name, payment_status")
+    .select("id, status, budget, currency, advertiser_id, advertiser_name, screen_name, payment_status")
     .eq("id", campaign_id)
     .single();
 
@@ -220,6 +220,29 @@ Deno.serve(async (req: Request) => {
     if (!operatorLink) {
       return new Response("Forbidden", { status: 403 });
     }
+  }
+
+  // A campaign that's already rejected, or that every screen it targets has
+  // rejected, can never actually serve — display-feed only plays
+  // campaign_screens rows with status approved/auto_approved. Refuse to
+  // charge for something that's dead on arrival.
+  if (booking.status === "rejected") {
+    return new Response(
+      JSON.stringify({ error: "This campaign was rejected and cannot be charged." }),
+      { status: 400, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
+  const { data: screenLinks } = await supabase
+    .from("campaign_screens")
+    .select("status")
+    .eq("campaign_id", campaign_id);
+
+  if (screenLinks && screenLinks.length > 0 && screenLinks.every((r) => r.status === "rejected")) {
+    return new Response(
+      JSON.stringify({ error: "Every screen targeted by this campaign has rejected it — there's nothing to charge for." }),
+      { status: 400, headers: { "Content-Type": "application/json" } },
+    );
   }
 
   // Atomic lock: flip payment_status to 'charging' only if currently not paid/charging.
