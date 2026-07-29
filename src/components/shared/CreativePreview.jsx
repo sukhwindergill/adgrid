@@ -1,6 +1,7 @@
 // src/components/shared/CreativePreview.jsx
 import QRCode from 'react-qr-code';
 import { F } from '../../design/tokens.js';
+import { getCreativeRenderPlan } from '../../lib/getCreativeRenderPlan.js';
 
 const FONT_STACKS = { sans: F.sans, serif: 'Georgia, serif', mono: F.mono };
 const fontFor = (creativeFont) => FONT_STACKS[creativeFont] || FONT_STACKS.serif;
@@ -113,13 +114,7 @@ const BODIES = { full_bleed: FullBleedBody, split_panel: SplitPanelBody, bottom_
  * the ad; the platform doesn't add copy to it.
  */
 export function CreativePreview({ campaign, aspectRatio = '16/9', blurPx = 0 }) {
-  const bg = campaign.accent_color || campaign.color || '#7c3aed';
-  const headline = campaign.headline || campaign.advertiser || '';
-  const cta = campaign.cta_text || campaign.cta || '';
-  const destination = campaign.destination_url || campaign.destination || 'https://adgrid.io';
-  const mediaUrl = campaign.media_url || null;
-  const isVideo = campaign.media_type === 'video';
-  const template = campaign.creative_template || 'bottom_bar';
+  const { mediaUrl, isVideo, showTextOverlay, template, headline, cta, bg, secondaryBg, category, destination } = getCreativeRenderPlan(campaign);
   const Body = BODIES[template] || BottomBarBody;
   const mediaStyle = { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' };
 
@@ -154,7 +149,7 @@ export function CreativePreview({ campaign, aspectRatio = '16/9', blurPx = 0 }) 
       }}>
         <QRCode value={destination} size={36} level="M" />
       </div>
-      {!mediaUrl && <Body headline={headline} cta={cta} bg={bg} secondaryBg={campaign.secondary_color} category={campaign.category} headlineFont={fontFor(campaign.creative_font)} />}
+      {showTextOverlay && <Body headline={headline} cta={cta} bg={bg} secondaryBg={secondaryBg} category={category} headlineFont={fontFor(campaign.creative_font)} />}
     </div>
   );
 }
