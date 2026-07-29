@@ -58,4 +58,11 @@ describe('getCreativeRenderPlan', () => {
     expect(plan.category).toBeNull();
     expect(plan.mediaUrl).toBeNull();
   });
+
+  it('does not throw when campaign is null, undefined, or omitted', () => {
+    expect(() => getCreativeRenderPlan(null)).not.toThrow();
+    expect(() => getCreativeRenderPlan(undefined)).not.toThrow();
+    expect(() => getCreativeRenderPlan()).not.toThrow();
+    expect(getCreativeRenderPlan(null).headline).toBe('');
+  });
 });

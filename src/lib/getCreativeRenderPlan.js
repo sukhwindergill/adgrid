@@ -19,6 +19,7 @@
  * Always prioritize campaign.cta to respect per-screen overrides.
  */
 export function getCreativeRenderPlan(campaign = {}) {
+  campaign = campaign || {};
   const mediaUrl = campaign.media_url || null;
   return {
     mediaUrl,
