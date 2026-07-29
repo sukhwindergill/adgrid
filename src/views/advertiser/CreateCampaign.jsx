@@ -492,12 +492,14 @@ function MediaUpload({ form, setForm }) {
       // — the creative is still usable, it just won't be fit-checked until
       // dimensions are known (checkCreativeFit reports 'unknown' without them).
     }
-    // Resets to bottom_bar on upload -- split_panel/full_bleed reposition
-    // uploaded media (split_panel crops it to the right 60%), and with the
-    // template picker now hidden once media is set, leaving a non-default
-    // template in effect would silently crop someone's creative with no
-    // visible control left to fix it.
-    setForm(s => ({ ...s, media_url: data.publicUrl, media_type: isVid ? 'video' : 'image', media_width: width, media_height: height, creative_template: 'bottom_bar' }));
+    // Once there's an uploaded creative, the platform never overlays
+    // headline/CTA text on it (CreativePreview skips its text layer
+    // entirely whenever media_url is set) -- clear them so no stale,
+    // now-invisible text lingers in the readability score or gets
+    // persisted to a row nothing will ever render it on. creative_template
+    // resets to bottom_bar too: it's now a no-media-path-only concept, so
+    // there's no reason to carry forward whatever was selected before.
+    setForm(s => ({ ...s, media_url: data.publicUrl, media_type: isVid ? 'video' : 'image', media_width: width, media_height: height, creative_template: 'bottom_bar', headline: '', cta_text: '' }));
     setUploading(false);
   };
 
@@ -716,11 +718,15 @@ function StepCreative({ form, setForm, matchedScreens = [], profile }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 28 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {!form.media_url && <MessageQuickFill onFill={handleMessageFill} />}
-            <Inp label="Headline" placeholder="e.g. Start Your Morning Right"
-              value={form.headline} onChange={e => setField('headline', e.target.value)} />
-            <Inp label="CTA Text" placeholder="e.g. Learn More"
-              value={form.cta_text} onChange={e => setField('cta_text', e.target.value)} />
+            {!form.media_url && (
+              <>
+                <MessageQuickFill onFill={handleMessageFill} />
+                <Inp label="Headline" placeholder="e.g. Start Your Morning Right"
+                  value={form.headline} onChange={e => setField('headline', e.target.value)} />
+                <Inp label="CTA Text" placeholder="e.g. Learn More"
+                  value={form.cta_text} onChange={e => setField('cta_text', e.target.value)} />
+              </>
+            )}
             <Inp label="Destination URL" placeholder="https://example.com" type="url"
               value={form.destination_url} onChange={e => setField('destination_url', e.target.value)} />
             {form.destination_url.trim() !== '' && !isValidDestinationUrl(form.destination_url) && (

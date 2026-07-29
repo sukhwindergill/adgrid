@@ -49,24 +49,32 @@ describe('CreativePreview templates', () => {
     expect(panel.style.background).toContain('18, 52, 86');
   });
 
-  it('confines uploaded media to the right 60% and skips the scrim for split_panel', () => {
-    const { container } = render(<CreativePreview campaign={{ headline: 'Cold Brew', creative_template: 'split_panel', media_url: 'https://example.com/photo.jpg', media_type: 'image' }} />);
-    const img = container.querySelector('img');
-    expect(img.style.left).toBe('40%');
-    expect(img.style.right).toBe('0px');
-    const scrim = [...container.querySelectorAll('div')].find(d => d.style.background.includes('linear-gradient(to top'));
-    expect(scrim).toBeUndefined();
-  });
-
-  it('fills the whole frame with uploaded media and keeps the scrim for bottom_bar and full_bleed', () => {
+  it('fills the whole frame with uploaded media regardless of template, even split_panel', () => {
     const { container: bar } = render(<CreativePreview campaign={{ headline: 'Cold Brew', media_url: 'https://example.com/photo.jpg', media_type: 'image' }} />);
     expect(bar.querySelector('img').style.width).toBe('100%');
     expect(bar.querySelector('img').style.height).toBe('100%');
 
-    const { container: bleed } = render(<CreativePreview campaign={{ headline: 'Cold Brew', creative_template: 'full_bleed', media_url: 'https://example.com/photo.jpg', media_type: 'image' }} />);
-    expect(bleed.querySelector('img').style.width).toBe('100%');
-    const scrim = [...bleed.querySelectorAll('div')].find(d => d.style.background.includes('linear-gradient(to top'));
-    expect(scrim).toBeDefined();
+    const { container: panel } = render(<CreativePreview campaign={{ headline: 'Cold Brew', creative_template: 'split_panel', media_url: 'https://example.com/photo.jpg', media_type: 'image' }} />);
+    const img = panel.querySelector('img');
+    expect(img.style.width).toBe('100%');
+    expect(img.style.left).toBe('');
+  });
+
+  it('never overlays headline/CTA text on uploaded media, for any template', () => {
+    const props = { headline: 'Cold Brew', cta_text: 'Order now', media_url: 'https://example.com/photo.jpg', media_type: 'image' };
+    for (const creative_template of ['bottom_bar', 'full_bleed', 'split_panel']) {
+      const { container } = render(<CreativePreview campaign={{ ...props, creative_template }} />);
+      expect(container.querySelector('[data-headline]')).toBeNull();
+      expect(container.textContent).not.toContain('Cold Brew');
+      expect(container.textContent).not.toContain('Order now');
+    }
+  });
+
+  it('still overlays headline/CTA text when there is no uploaded media', () => {
+    const { container } = render(<CreativePreview campaign={{ headline: 'Cold Brew', cta_text: 'Order now' }} />);
+    expect(container.querySelector('[data-headline]')).not.toBeNull();
+    expect(container.textContent).toContain('Cold Brew');
+    expect(container.textContent).toContain('Order now');
   });
 });
 
