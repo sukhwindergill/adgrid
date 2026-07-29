@@ -492,7 +492,12 @@ function MediaUpload({ form, setForm }) {
       // — the creative is still usable, it just won't be fit-checked until
       // dimensions are known (checkCreativeFit reports 'unknown' without them).
     }
-    setForm(s => ({ ...s, media_url: data.publicUrl, media_type: isVid ? 'video' : 'image', media_width: width, media_height: height }));
+    // Resets to bottom_bar on upload -- split_panel/full_bleed reposition
+    // uploaded media (split_panel crops it to the right 60%), and with the
+    // template picker now hidden once media is set, leaving a non-default
+    // template in effect would silently crop someone's creative with no
+    // visible control left to fix it.
+    setForm(s => ({ ...s, media_url: data.publicUrl, media_type: isVid ? 'video' : 'image', media_width: width, media_height: height, creative_template: 'bottom_bar' }));
     setUploading(false);
   };
 
@@ -711,7 +716,7 @@ function StepCreative({ form, setForm, matchedScreens = [], profile }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 28 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <MessageQuickFill onFill={handleMessageFill} />
+            {!form.media_url && <MessageQuickFill onFill={handleMessageFill} />}
             <Inp label="Headline" placeholder="e.g. Start Your Morning Right"
               value={form.headline} onChange={e => setField('headline', e.target.value)} />
             <Inp label="CTA Text" placeholder="e.g. Learn More"
@@ -749,7 +754,7 @@ function StepCreative({ form, setForm, matchedScreens = [], profile }) {
 
           <div>
             <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Preview</div>
-            <TemplatePicker value={form.creative_template} onChange={v => setField('creative_template', v)} />
+            {!form.media_url && <TemplatePicker value={form.creative_template} onChange={v => setField('creative_template', v)} />}
             <CreativePreview campaign={previewCampaign} />
             <CreativeFitPanel campaign={previewCampaign} mismatches={fitMismatches} />
             <ReadabilityPanel campaign={previewCampaign} score={readability.score} issues={readability.issues} tiers={readabilityTiers} />
