@@ -76,6 +76,17 @@ describe('CreativePreview templates', () => {
     expect(container.textContent).toContain('Cold Brew');
     expect(container.textContent).toContain('Order now');
   });
+
+  it('prioritizes cta over cta_text when both are present (override-awareness, pinned through actual render)', () => {
+    const { container } = render(<CreativePreview campaign={{ headline: 'Test', cta: 'Override CTA', cta_text: 'Default CTA' }} />);
+    expect(container.textContent).toContain('Override CTA');
+    expect(container.textContent).not.toContain('Default CTA');
+  });
+
+  it('falls back to advertiser_name for the headline when neither headline nor advertiser is set', () => {
+    const { container } = render(<CreativePreview campaign={{ advertiser_name: 'Acme Co' }} />);
+    expect(container.querySelector('[data-headline]').textContent).toBe('Acme Co');
+  });
 });
 
 describe('CreativePreview font', () => {
