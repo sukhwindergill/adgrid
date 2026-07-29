@@ -11,13 +11,16 @@ import { Tabs } from '../../components/primitives/Tabs.jsx';
 import { supabase } from '../../lib/supabase.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { ShareReportModal } from '../../components/shared/ShareReportModal.jsx';
+import { ApproveBtn } from '../../lib/campaignActions.jsx';
 import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
 
-export function CampaignDetail({ campaign, onBack, onUpdate }) {
+export function CampaignDetail({ campaign, onBack, onUpdate, canReview = false, setCampaigns }) {
   const toast = useToast();
   const [tab, setTab] = useState('overview');
   const [rejecting, setRejecting] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const [rejectLoading, setRejectLoading] = useState(false);
+  const [rejectErr, setRejectErr] = useState(null);
   const [editing, setEditing] = useState(false);
   const { user } = useAuth();
   const [sharing, setSharing] = useState(false);
@@ -36,10 +39,27 @@ export function CampaignDetail({ campaign, onBack, onUpdate }) {
   });
   const maxH = Math.max(...hourly.map(d => d.v), 1);
 
+  const confirmReject = async () => {
+    const reason = rejectReason.trim();
+    if (!reason) return;
+    setRejectLoading(true);
+    setRejectErr(null);
+    // RLS (operator_update_own_screen_links) scopes this to screens this
+    // operator owns — a multi-operator campaign only gets rejected on their
+    // rows, not the whole booking.
+    const { error } = await supabase.from('campaign_screens')
+      .update({ status: 'rejected', reject_reason: reason })
+      .eq('campaign_id', c.id);
+    setRejectLoading(false);
+    if (error) { setRejectErr(error.message); return; }
+    toast.success('Campaign rejected.');
+    onBack();
+  };
+
   const statusAction = (s) => {
     if (s === 'active') return <Btn variant="danger" size="sm" onClick={() => onUpdate({ ...c, status: 'paused' })}>⏸ Pause</Btn>;
     if (s === 'paused') return <Btn variant="success" size="sm" onClick={() => onUpdate({ ...c, status: 'active' })}>▶ Resume</Btn>;
-    if (s === 'pending_review') return (
+    if (s === 'pending_review' && canReview) return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {rejecting ? (
           <>
@@ -53,20 +73,17 @@ export function CampaignDetail({ campaign, onBack, onUpdate }) {
                 fontFamily: F.sans, fontSize: 12, width: 220, outline: 'none',
               }}
               onKeyDown={e => {
-                if (e.key === 'Enter' && rejectReason.trim()) {
-                  onUpdate({ ...c, status: 'rejected', rejectReason: rejectReason.trim() });
-                }
-                if (e.key === 'Escape') { setRejecting(false); setRejectReason(''); }
+                if (e.key === 'Enter') confirmReject();
+                if (e.key === 'Escape') { setRejecting(false); setRejectReason(''); setRejectErr(null); }
               }}
             />
-            <Btn variant="danger" size="sm" onClick={() => {
-              if (rejectReason.trim()) onUpdate({ ...c, status: 'rejected', rejectReason: rejectReason.trim() });
-            }}>Confirm Reject</Btn>
-            <Btn variant="secondary" size="sm" onClick={() => { setRejecting(false); setRejectReason(''); }}>Cancel</Btn>
+            <Btn variant="danger" size="sm" disabled={rejectLoading} onClick={confirmReject}>{rejectLoading ? '…' : 'Confirm Reject'}</Btn>
+            <Btn variant="secondary" size="sm" onClick={() => { setRejecting(false); setRejectReason(''); setRejectErr(null); }}>Cancel</Btn>
+            {rejectErr && <span style={{ fontSize: 11, color: C.red, fontFamily: F.sans }}>{rejectErr}</span>}
           </>
         ) : (
           <>
-            <Btn variant="success" size="sm" onClick={() => onUpdate({ ...c, status: 'scheduled' })}>✓ Approve</Btn>
+            <ApproveBtn campaign={c} setCampaigns={setCampaigns} onSuccess={onBack} />
             <Btn variant="danger" size="sm" onClick={() => setRejecting(true)}>✗ Reject</Btn>
           </>
         )}
@@ -89,7 +106,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate }) {
           <span style={{ fontSize: 16 }}>⏳</span>
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: C.amber }}>Awaiting Review</div>
-            <div style={{ fontSize: 12, color: C.textSub, marginTop: 1 }}>Review the creative and schedule below, then approve or reject.</div>
+            <div style={{ fontSize: 12, color: C.textSub, marginTop: 1 }}>{canReview ? 'Review the creative and schedule below, then approve or reject.' : 'Your screen owner(s) are reviewing this campaign.'}</div>
           </div>
         </div>
       )}
