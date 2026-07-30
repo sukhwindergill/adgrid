@@ -2,17 +2,36 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useReveal } from './useReveal.js';
 import { IconCheck } from './icons.jsx';
+import { supabase } from '../../../lib/supabase.js';
 
 export function CtaBand() {
   const [ref, on] = useReveal();
   const [form, setForm] = useState({ name: '', email: '', company: '', city: '', screens: '', source: '' });
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitErr, setSubmitErr] = useState(null);
 
   const set = field => e => setForm(prev => ({ ...prev, [field]: e.target.value }));
 
-  const handleSubmit = e => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    if (form.name && form.email) setSubmitted(true);
+    if (!form.name || !form.email) return;
+    setSubmitting(true);
+    setSubmitErr(null);
+    const { error } = await supabase.from('waitlist_entries').insert({
+      name: form.name.trim(),
+      email: form.email.trim().toLowerCase(),
+      company: form.company.trim() || null,
+      city: form.city || null,
+      screens: form.screens || null,
+      source: form.source.trim() || null,
+    });
+    setSubmitting(false);
+    if (error && !error.message?.includes('duplicate')) {
+      setSubmitErr('Something went wrong. Please try again.');
+      return;
+    }
+    setSubmitted(true);
   };
 
   return (
@@ -86,9 +105,15 @@ export function CtaBand() {
                 <input id="wl-source" className="fi" type="text" value={form.source} onChange={set('source')} />
               </div>
 
-              <button type="submit" className="btn-p" style={{ width: '100%', padding: 15 }}>
-                Join the operator waitlist
+              <button type="submit" className="btn-p" style={{ width: '100%', padding: 15 }} disabled={submitting}>
+                {submitting ? 'Submitting…' : 'Join the operator waitlist'}
               </button>
+
+              {submitErr && (
+                <p style={{ font: '400 13px/1.5 var(--inter)', color: '#f87171', textAlign: 'center', marginTop: 12 }}>
+                  {submitErr}
+                </p>
+              )}
 
               <p style={{ font: '400 13px/1.5 var(--inter)', color: 'var(--muted)', textAlign: 'center', marginTop: 16 }}>
                 By submitting, you agree to our <Link to="/privacy" style={{ color: 'var(--sec)' }}>Privacy Policy</Link>. We'll never share your information.

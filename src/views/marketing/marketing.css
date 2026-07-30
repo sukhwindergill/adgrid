@@ -56,6 +56,26 @@
 .nav-spacer { flex: 1; }
 @media (max-width: 768px) { .nav-mid { display: none; } }
 
+/* ── Mobile nav ── */
+.nav-burger {
+  display: none; background: none; border: none; cursor: pointer;
+  padding: 8px; flex-direction: column; gap: 5px; border-radius: 6px;
+  transition: background .15s;
+}
+.nav-burger:hover { background: rgba(255,255,255,0.06); }
+.nav-burger span { display: block; width: 20px; height: 2px; background: #fff; border-radius: 2px; transition: opacity .15s; }
+.nav-mobile-menu {
+  display: flex; flex-direction: column;
+  background: rgba(10,10,15,0.97); border-top: 1px solid var(--border);
+  padding: 8px 0;
+}
+.nav-mobile-menu .nl { text-align: left; padding: 12px 20px; font-size: 15px; }
+.nav-divider { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
+@media (max-width: 768px) {
+  .nav-burger { display: flex; }
+  .nav-desktop-only { display: none; }
+}
+
 /* ── Sections ── */
 .sec { padding: 88px 24px; }
 .sec .inner { max-width: var(--maxw); margin: 0 auto; }
