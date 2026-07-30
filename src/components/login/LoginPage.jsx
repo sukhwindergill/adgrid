@@ -51,6 +51,11 @@ export function LoginPage() {
   const [err, setErr]       = useState('');
   const [loading, setLoading]         = useState(false);
   const [oauthLoading, setOauthLoading] = useState('');
+  const [demoLoading, setDemoLoading] = useState(false);
+
+  // Read per-render (not module scope) so tests can stub these per-case.
+  const demoEmail = import.meta.env.VITE_DEMO_EMAIL;
+  const demoPassword = import.meta.env.VITE_DEMO_PASSWORD;
 
   const activeMode = passwordRecovery ? 'reset' : mode;
 
@@ -87,6 +92,13 @@ export function LoginPage() {
       else setErr('Check your email to confirm your account.');
     }
     setLoading(false);
+  };
+
+  const handleDemo = async () => {
+    setErr(''); setDemoLoading(true);
+    const { error } = await signIn(demoEmail, demoPassword);
+    if (error) setErr(error.message);
+    setDemoLoading(false);
   };
 
   const handleOAuth = async (provider) => {
@@ -262,6 +274,25 @@ export function LoginPage() {
           >
             {loading ? 'Please wait…' : activeMode === 'forgot' ? 'Send reset link →' : activeMode === 'reset' ? 'Update password →' : activeMode === 'signin' ? 'Sign in →' : 'Create account →'}
           </button>
+
+          {activeMode === 'signin' && demoEmail && demoPassword && (
+            <button
+              type="button"
+              onClick={handleDemo}
+              disabled={loading || demoLoading}
+              style={{
+                width: '100%', padding: '10px 20px', borderRadius: 8, marginTop: 10,
+                background: 'transparent', border: '1px solid #1E1E2E',
+                color: '#8A8A9A', cursor: demoLoading ? 'not-allowed' : 'pointer',
+                fontSize: 13, fontWeight: 500, fontFamily: F.sans,
+                transition: 'border-color 0.15s, color 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#00C2FF'; e.currentTarget.style.color = '#fff'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1E1E2E'; e.currentTarget.style.color = '#8A8A9A'; }}
+            >
+              {demoLoading ? 'Signing in…' : '▶ Try Demo'}
+            </button>
+          )}
 
           {activeMode === 'signup' && (
             <label style={{
