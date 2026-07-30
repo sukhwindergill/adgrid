@@ -48,7 +48,7 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
         const screenIds = [...new Set(screenRows?.map(s => s.screen_id) || [])];
         if (screenIds.length > 0) {
           const { data: screens, error: screenDetailErr } = await supabase
-            .from('screens')
+            .from('advertiser_screens')
             .select('id, name, city')
             .in('id', screenIds);
 

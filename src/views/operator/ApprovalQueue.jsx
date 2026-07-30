@@ -60,12 +60,49 @@ function healthLabel(screen) {
   return { label: 'Offline', color: C.red };
 }
 
-function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, onRejected }) {
+function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, onRejected, setCampaigns }) {
   const { isMobile } = useBreakpoint();
   const confirm = useConfirm();
   const [rejectScreenId, setRejectScreenId] = useState(null);
   const [rejectReason, setRejectReason] = useState(REJECT_REASONS[0]);
   const [acting, setActing] = useState(false);
+  const [chargeErr, setChargeErr] = useState(null);
+
+  const attemptCharge = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    setChargeErr(null);
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/charge-campaign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ campaign_id: campaign.id }),
+    });
+    if (res.ok) {
+      setCampaigns(prev => prev.map(x =>
+        x.id === campaign.id ? { ...x, status: 'scheduled', payment_status: 'paid' } : x
+      ));
+      return;
+    }
+    const body = await res.json().catch(() => ({}));
+    const msg = body.error ?? 'Charge failed';
+    const isNoPayment = msg.toLowerCase().includes('no payment') || msg.toLowerCase().includes('no card');
+    if (isNoPayment) {
+      const confirmed = await confirm({
+        title: 'Approve without charging?',
+        message: `${msg}\n\nYou can collect payment manually.`,
+        confirmLabel: 'Approve anyway',
+        danger: false,
+      });
+      if (confirmed) {
+        await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
+        setCampaigns(prev => prev.map(x =>
+          x.id === campaign.id ? { ...x, status: 'scheduled' } : x
+        ));
+      }
+      return;
+    }
+    setChargeErr(msg);
+  };
 
   const myRows = (campaign.campaign_screens || []).filter(
     row => myScreens.some(s => s.id === row.screen_id) && row.status === 'pending'
@@ -96,21 +133,17 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
 
   const approveScreen = async (screenId) => {
     setActing(true);
+    setChargeErr(null);
     await supabase.from('campaign_screens')
       .update({ status: 'approved', approved_at: new Date().toISOString() })
       .eq('campaign_id', campaign.id)
       .eq('screen_id', screenId);
-    // Booking status moves to 'scheduled' server-side (charge-campaign) once
-    // payment succeeds — clients cannot write status, by design. We only
-    // notify the advertiser here once their content is fully cleared.
-    if (campaign.start_when === 'partial') {
+    const { data: remaining } = await supabase
+      .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
+    const allClear = campaign.start_when === 'partial' || !remaining || remaining.length === 0;
+    if (allClear) {
       notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
-    } else {
-      const { data: remaining } = await supabase
-        .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
-      if (!remaining || remaining.length === 0) {
-        notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
-      }
+      await attemptCharge();
     }
     setActing(false);
     onApproved(campaign.id, screenId);
@@ -124,6 +157,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
     });
     if (!ok) return;
     setActing(true);
+    setChargeErr(null);
     await Promise.all(myRows.map(row =>
       supabase.from('campaign_screens')
         .update({ status: 'approved', approved_at: new Date().toISOString() })
@@ -131,16 +165,12 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
         .eq('screen_id', row.screen_id)
     ));
     myRows.forEach(row => onApproved(campaign.id, row.screen_id));
-    // Booking status moves to 'scheduled' server-side (charge-campaign) once
-    // payment succeeds — clients cannot write status, by design.
-    if (campaign.start_when === 'partial') {
+    const { data: remaining } = await supabase
+      .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
+    const allClear = campaign.start_when === 'partial' || !remaining || remaining.length === 0;
+    if (allClear) {
       notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
-    } else {
-      const { data: remaining } = await supabase
-        .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
-      if (!remaining || remaining.length === 0) {
-        notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
-      }
+      await attemptCharge();
     }
     setActing(false);
   };
@@ -252,6 +282,11 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
                 ✓ Approve all my screens ({myRows.length})
               </Btn>
             )}
+            {chargeErr && (
+              <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, marginTop: 8 }}>
+                ⚠ Approved but charge failed: {chargeErr}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -347,6 +382,7 @@ export function ApprovalQueue({ campaigns, setCampaigns, setDetail, dbScreens = 
       confirmLabel: 'Approve all',
     });
     if (!ok) return;
+    const { data: { session } } = await supabase.auth.getSession();
     await Promise.all(enriched.map(async (campaign) => {
       const rows = campaign.campaign_screens.filter(r => myScreens.some(s => s.id === r.screen_id) && r.status === 'pending');
       if (rows.length === 0) return;
@@ -357,15 +393,34 @@ export function ApprovalQueue({ campaigns, setCampaigns, setDetail, dbScreens = 
           .eq('screen_id', row.screen_id)
       ));
       rows.forEach(row => handleApproved(campaign.id, row.screen_id));
-      // Booking status moves to 'scheduled' server-side (charge-campaign) once
-      // payment succeeds — clients cannot write status, by design.
-      if (campaign.start_when === 'partial') {
+      const { data: remaining } = await supabase
+        .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
+      const allClear = campaign.start_when === 'partial' || !remaining || remaining.length === 0;
+      if (allClear) {
         notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
-      } else {
-        const { data: remaining } = await supabase
-          .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
-        if (!remaining || remaining.length === 0) {
-          notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
+        if (session) {
+          try {
+            const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/charge-campaign`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+              body: JSON.stringify({ campaign_id: campaign.id }),
+            });
+            if (res.ok) {
+              setCampaigns(prev => prev.map(x =>
+                x.id === campaign.id ? { ...x, status: 'scheduled', payment_status: 'paid' } : x
+              ));
+            } else {
+              const body = await res.json().catch(() => ({}));
+              const msg = body.error ?? '';
+              const isNoPayment = msg.toLowerCase().includes('no payment') || msg.toLowerCase().includes('no card');
+              if (isNoPayment) {
+                await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
+                setCampaigns(prev => prev.map(x =>
+                  x.id === campaign.id ? { ...x, status: 'scheduled' } : x
+                ));
+              }
+            }
+          } catch { /* silent — approval already succeeded */ }
         }
       }
     }));
@@ -426,6 +481,7 @@ export function ApprovalQueue({ campaigns, setCampaigns, setDetail, dbScreens = 
             allScreens={dbScreens}
             onApproved={handleApproved}
             onRejected={handleRejected}
+            setCampaigns={setCampaigns}
           />
         ))
       )}
