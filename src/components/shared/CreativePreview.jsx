@@ -1,7 +1,6 @@
 // src/components/shared/CreativePreview.jsx
 import QRCode from 'react-qr-code';
 import { F } from '../../design/tokens.js';
-import { getCreativeRenderPlan } from '../../lib/getCreativeRenderPlan.js';
 
 const FONT_STACKS = { sans: F.sans, serif: 'Georgia, serif', mono: F.mono };
 const fontFor = (creativeFont) => FONT_STACKS[creativeFont] || FONT_STACKS.serif;
@@ -105,18 +104,23 @@ const BODIES = { full_bleed: FullBleedBody, split_panel: SplitPanelBody, bottom_
  *   creative_template ('bottom_bar' | 'full_bleed' | 'split_panel'),
  *   secondary_color, creative_font ('sans' | 'serif' | 'mono')
  * Normalises both old (color, cta, destination) and new (accent_color, cta_text, destination_url) field names.
- *
- * Template layout (text position, media crop region) only applies to the
- * generated-card path (no uploaded media). Once an advertiser has their own
- * creative, the platform never overlays headline/CTA text on it -- the
- * uploaded image/video fills the full frame, untouched, with just the
- * QR/wordmark/accent-bar chrome on top. The advertiser's own creative is
- * the ad; the platform doesn't add copy to it.
  */
 export function CreativePreview({ campaign, aspectRatio = '16/9', blurPx = 0 }) {
-  const { mediaUrl, isVideo, showTextOverlay, template, headline, cta, bg, secondaryBg, category, destination } = getCreativeRenderPlan(campaign);
+  const bg = campaign.accent_color || campaign.color || '#7c3aed';
+  const headline = campaign.headline || campaign.advertiser || '';
+  const cta = campaign.cta_text || campaign.cta || '';
+  const destination = campaign.destination_url || campaign.destination || 'https://adgrid.io';
+  const mediaUrl = campaign.media_url || null;
+  const isVideo = campaign.media_type === 'video';
+  const template = campaign.creative_template || 'bottom_bar';
   const Body = BODIES[template] || BottomBarBody;
-  const mediaStyle = { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' };
+
+  // split_panel confines media to its right 60% (the left 40% is an opaque
+  // brand-color block); the other two templates fill the whole frame, same
+  // as before templates existed.
+  const mediaStyle = template === 'split_panel'
+    ? { position: 'absolute', top: 0, bottom: 0, left: '40%', right: 0, objectFit: 'cover' }
+    : { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' };
 
   return (
     <div data-template={template} style={{
@@ -125,12 +129,17 @@ export function CreativePreview({ campaign, aspectRatio = '16/9', blurPx = 0 }) 
       background: `linear-gradient(160deg, #050a10 0%, #0d1520 60%, ${bg}22 100%)`,
       borderRadius: 8, overflow: 'hidden', flexShrink: 0,
     }}>
-      {/* Uploaded creative (image/video) fills the whole frame, untouched */}
+      {/* Uploaded creative (image/video) fills its layout region when present */}
       {mediaUrl && (isVideo ? (
         <video src={mediaUrl} muted loop autoPlay playsInline style={mediaStyle} />
       ) : (
         <img src={mediaUrl} alt="" style={mediaStyle} />
       ))}
+      {/* Scrim for text legibility over uploaded media -- split_panel's text
+          sits on its own opaque block, never over the media, so it's skipped there. */}
+      {mediaUrl && template !== 'split_panel' && (
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 55%)', pointerEvents: 'none' }} />
+      )}
       {!mediaUrl && <div style={{
         position: 'absolute', top: '-10%', right: '-5%',
         width: '50%', height: '60%',
@@ -149,7 +158,7 @@ export function CreativePreview({ campaign, aspectRatio = '16/9', blurPx = 0 }) 
       }}>
         <QRCode value={destination} size={36} level="M" />
       </div>
-      {showTextOverlay && <Body headline={headline} cta={cta} bg={bg} secondaryBg={secondaryBg} category={category} headlineFont={fontFor(campaign.creative_font)} />}
+      <Body headline={headline} cta={cta} bg={bg} secondaryBg={campaign.secondary_color} category={campaign.category} headlineFont={fontFor(campaign.creative_font)} />
     </div>
   );
 }

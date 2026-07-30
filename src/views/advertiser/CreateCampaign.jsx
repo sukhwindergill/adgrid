@@ -492,14 +492,7 @@ function MediaUpload({ form, setForm }) {
       // — the creative is still usable, it just won't be fit-checked until
       // dimensions are known (checkCreativeFit reports 'unknown' without them).
     }
-    // Once there's an uploaded creative, the platform never overlays
-    // headline/CTA text on it (CreativePreview skips its text layer
-    // entirely whenever media_url is set) -- clear them so no stale,
-    // now-invisible text lingers in the readability score or gets
-    // persisted to a row nothing will ever render it on. creative_template
-    // resets to bottom_bar too: it's now a no-media-path-only concept, so
-    // there's no reason to carry forward whatever was selected before.
-    setForm(s => ({ ...s, media_url: data.publicUrl, media_type: isVid ? 'video' : 'image', media_width: width, media_height: height, creative_template: 'bottom_bar', headline: '', cta_text: '' }));
+    setForm(s => ({ ...s, media_url: data.publicUrl, media_type: isVid ? 'video' : 'image', media_width: width, media_height: height }));
     setUploading(false);
   };
 
@@ -704,6 +697,8 @@ function StepCreative({ form, setForm, matchedScreens = [], profile }) {
     ctaText: form.cta_text,
     accentColor: form.accent_color,
     durationSeconds: parseInt(form.duration, 10) || 15,
+    creativeTemplate: form.creative_template,
+    secondaryColor: form.secondary_color,
   });
   const readabilityTiers = distinctTiers(matchedScreens);
 
@@ -718,15 +713,11 @@ function StepCreative({ form, setForm, matchedScreens = [], profile }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 28 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {!form.media_url && (
-              <>
-                <MessageQuickFill onFill={handleMessageFill} />
-                <Inp label="Headline" placeholder="e.g. Start Your Morning Right"
-                  value={form.headline} onChange={e => setField('headline', e.target.value)} />
-                <Inp label="CTA Text" placeholder="e.g. Learn More"
-                  value={form.cta_text} onChange={e => setField('cta_text', e.target.value)} />
-              </>
-            )}
+            <MessageQuickFill onFill={handleMessageFill} />
+            <Inp label="Headline" placeholder="e.g. Start Your Morning Right"
+              value={form.headline} onChange={e => setField('headline', e.target.value)} />
+            <Inp label="CTA Text" placeholder="e.g. Learn More"
+              value={form.cta_text} onChange={e => setField('cta_text', e.target.value)} />
             <Inp label="Destination URL" placeholder="https://example.com" type="url"
               value={form.destination_url} onChange={e => setField('destination_url', e.target.value)} />
             {form.destination_url.trim() !== '' && !isValidDestinationUrl(form.destination_url) && (
@@ -760,7 +751,7 @@ function StepCreative({ form, setForm, matchedScreens = [], profile }) {
 
           <div>
             <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Preview</div>
-            {!form.media_url && <TemplatePicker value={form.creative_template} onChange={v => setField('creative_template', v)} />}
+            <TemplatePicker value={form.creative_template} onChange={v => setField('creative_template', v)} />
             <CreativePreview campaign={previewCampaign} />
             <CreativeFitPanel campaign={previewCampaign} mismatches={fitMismatches} />
             <ReadabilityPanel campaign={previewCampaign} score={readability.score} issues={readability.issues} tiers={readabilityTiers} />
@@ -967,6 +958,8 @@ function StepReview({ form, matchedScreens, onSubmit, submitting, err, profile, 
     ctaText: form.cta_text,
     accentColor: form.accent_color,
     durationSeconds: parseInt(form.duration, 10) || 15,
+    creativeTemplate: form.creative_template,
+    secondaryColor: form.secondary_color,
   });
   const readabilityTiers = distinctTiers(matchedScreens);
 
