@@ -1065,8 +1065,10 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
   // fetch resolves, so this can't be done in the initial useState above).
   // Only overwrites while the fields still hold their just-mounted hardcoded
   // defaults, so it never clobbers an edit the advertiser already made.
+  const brandKitSeeded = useRef(false);
   useEffect(() => {
-    if (!profile) return;
+    if (!profile || brandKitSeeded.current) return;
+    brandKitSeeded.current = true;
     setForm(s => ({
       ...s,
       accent_color: s.accent_color === '#7c3aed' && profile.brand_color_1 ? profile.brand_color_1 : s.accent_color,
