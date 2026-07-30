@@ -135,6 +135,65 @@ export function ProfileTab({ profile, onSaved }) {
   );
 }
 
+function BrandKitTab({ profile, onSaved }) {
+  const { refreshProfile } = useAuth();
+  const [brandColor1, setBrandColor1] = useState(profile?.brand_color_1 ?? "#7c3aed");
+  const [brandColor2, setBrandColor2] = useState(profile?.brand_color_2 ?? "#0d1520");
+  const [brandFont, setBrandFont] = useState(profile?.brand_font ?? "sans");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  async function save() {
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ brand_color_1: brandColor1, brand_color_2: brandColor2, brand_font: brandFont })
+      .eq("id", profile.id);
+    setSaving(false);
+    setMsg(error ? "Error saving." : "Saved.");
+    if (!error) onSaved({ brand_color_1: brandColor1, brand_color_2: brandColor2, brand_font: brandFont });
+    if (!error) refreshProfile();
+    setTimeout(() => setMsg(null), 3000);
+  }
+
+  return (
+    <div style={{ maxWidth: 480 }}>
+      <Field label="Primary Colour">
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <input type="color" value={brandColor1} onChange={(e) => setBrandColor1(e.target.value)}
+            style={{ width: 40, height: 36, border: `1px solid ${C.border}`, borderRadius: 6, cursor: "pointer", padding: 2 }} />
+          <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.mono }}>{brandColor1}</span>
+        </div>
+      </Field>
+      <Field label="Secondary Colour">
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <input type="color" value={brandColor2} onChange={(e) => setBrandColor2(e.target.value)}
+            style={{ width: 40, height: 36, border: `1px solid ${C.border}`, borderRadius: 6, cursor: "pointer", padding: 2 }} />
+          <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.mono }}>{brandColor2}</span>
+        </div>
+      </Field>
+      <Field label="Font">
+        <select
+          value={brandFont}
+          onChange={(e) => setBrandFont(e.target.value)}
+          style={{ width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface }}
+        >
+          <option value="sans">Sans</option>
+          <option value="serif">Serif</option>
+          <option value="mono">Mono</option>
+        </select>
+      </Field>
+      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: -8, marginBottom: 20 }}>
+        Seeds the colors on new campaign drafts in the wizard. Doesn't change campaigns you've already created.
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <SaveBtn onClick={save} saving={saving} />
+        {msg && <span style={{ fontSize: 13, color: msg === "Saved." ? C.green : C.red }}>{msg}</span>}
+      </div>
+    </div>
+  );
+}
+
 function SecurityTab() {
   const [newEmail, setNewEmail] = useState("");
   const [newPw, setNewPw] = useState("");
@@ -408,6 +467,7 @@ export default function SettingsView() {
       }}>
         {[
           { id: "profile", label: "Profile" },
+          { id: "branding", label: "Brand Kit" },
           { id: "security", label: "Security" },
           { id: "notifications", label: "Notifications" },
           { id: "team", label: "Team" },
@@ -418,6 +478,7 @@ export default function SettingsView() {
       </div>
 
       {tab === "profile" && <ProfileTab profile={profile} onSaved={(updates) => setProfile((p) => ({ ...p, ...updates }))} />}
+      {tab === "branding" && <BrandKitTab profile={profile} onSaved={(updates) => setProfile((p) => ({ ...p, ...updates }))} />}
       {tab === "security" && <SecurityTab />}
       {tab === "notifications" && <NotificationsTab profile={profile} />}
       {tab === "team" && <TeamTab profile={profile} />}
