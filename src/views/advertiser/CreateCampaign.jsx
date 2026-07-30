@@ -15,6 +15,7 @@ import { checkCreativeFit } from '../../lib/creativeFit.js';
 import { CreativeFitPanel } from '../../components/shared/CreativeFitPanel.jsx';
 import { checkReadability, distinctTiers } from '../../lib/creativeReadability.js';
 import { ReadabilityPanel } from '../../components/shared/ReadabilityPanel.jsx';
+import { splitMessage } from '../../lib/creativeMessageSplit.js';
 import { CATEGORIES } from '../../lib/data.js';
 import { VENUE_TAXONOMY, COUNTRIES } from '../../lib/venueTypes.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
@@ -533,7 +534,92 @@ function MediaUpload({ form, setForm }) {
   );
 }
 
-function StepCreative({ form, setForm, matchedScreens = [] }) {
+const TEMPLATES = [
+  { id: 'bottom_bar', label: 'Bottom Bar' },
+  { id: 'full_bleed', label: 'Full Bleed' },
+  { id: 'split_panel', label: 'Split Panel' },
+];
+
+function TemplateSwatch({ id, active, onClick }) {
+  const inner = {
+    bottom_bar: (
+      <div style={{ position: 'absolute', bottom: 6, left: 6, right: 6 }}>
+        <div style={{ height: 4, width: '70%', background: '#fff', borderRadius: 1, marginBottom: 3 }} />
+        <div style={{ height: 3, width: '35%', background: C.purple, borderRadius: 1 }} />
+      </div>
+    ),
+    full_bleed: (
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+        <div style={{ height: 4, width: '60%', background: '#fff', borderRadius: 1 }} />
+        <div style={{ height: 6, width: '30%', background: C.purple, borderRadius: 3 }} />
+      </div>
+    ),
+    split_panel: (
+      <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
+        <div style={{ width: '40%', background: C.purple, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 3, padding: 4 }}>
+          <div style={{ height: 3, width: '80%', background: '#fff', borderRadius: 1 }} />
+          <div style={{ height: 3, width: '50%', background: '#fff', borderRadius: 1 }} />
+        </div>
+        <div style={{ flex: 1, background: C.surfaceAlt }} />
+      </div>
+    ),
+  }[id];
+
+  return (
+    <button type="button" onClick={onClick} style={{
+      position: 'relative', width: 60, height: 34, borderRadius: 6, overflow: 'hidden',
+      background: '#0d1520', cursor: 'pointer', padding: 0,
+      border: `2px solid ${active ? C.purple : C.border}`,
+    }}>
+      {inner}
+    </button>
+  );
+}
+
+function TemplatePicker({ value, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+      {TEMPLATES.map(t => (
+        <div key={t.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <TemplateSwatch id={t.id} active={value === t.id} onClick={() => onChange(t.id)} />
+          <span style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>{t.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MessageQuickFill({ onFill }) {
+  const [message, setMessage] = useState('');
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 4 }}>
+        Describe your ad in one line <span style={{ color: C.textMuted, fontWeight: 400 }}>(optional)</span>
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          type="text"
+          value={message}
+          maxLength={120}
+          placeholder="e.g. Fresh cold brew, delivered daily, Order now"
+          onChange={e => setMessage(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); onFill(message); } }}
+          style={{
+            flex: 1, padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8,
+            fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface,
+          }}
+        />
+        <button type="button" onClick={() => onFill(message)} disabled={!message.trim()} style={{
+          padding: '9px 16px', borderRadius: 8, border: 'none',
+          background: message.trim() ? C.purple : C.border, color: '#fff',
+          cursor: message.trim() ? 'pointer' : 'default', fontFamily: F.sans, fontSize: 13, fontWeight: 500,
+        }}>Fill in →</button>
+      </div>
+    </div>
+  );
+}
+
+function StepCreative({ form, setForm, matchedScreens = [], profile }) {
   const { user } = useAuth();
   const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
   const setOverride = (screenId, k, v) => setForm(s => ({
@@ -548,6 +634,12 @@ function StepCreative({ form, setForm, matchedScreens = [] }) {
   const [overrideErrors, setOverrideErrors] = useState({}); // screenId -> error message
 
   const setOverrideErr = (screenId, msg) => setOverrideErrors(s => ({ ...s, [screenId]: msg }));
+
+  const handleMessageFill = (message) => {
+    const { headline, cta } = splitMessage(message);
+    setField('headline', headline);
+    setField('cta_text', cta);
+  };
 
   const handleOverrideFile = async (screenId, file) => {
     if (!file) return;
@@ -592,6 +684,9 @@ function StepCreative({ form, setForm, matchedScreens = [] }) {
     category: form.category,
     media_url: form.media_url,
     media_type: form.media_type,
+    creative_template: form.creative_template,
+    secondary_color: form.secondary_color,
+    creative_font: profile?.brand_font || 'sans',
   };
 
   const fitMismatches = form.media_url
@@ -625,6 +720,7 @@ function StepCreative({ form, setForm, matchedScreens = [] }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 28 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <MessageQuickFill onFill={handleMessageFill} />
             <Inp label="Headline" placeholder="e.g. Start Your Morning Right"
               value={form.headline} onChange={e => setField('headline', e.target.value)} />
             <Inp label="CTA Text" placeholder="e.g. Learn More"
@@ -647,10 +743,22 @@ function StepCreative({ form, setForm, matchedScreens = [] }) {
                 <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.mono }}>{form.accent_color}</span>
               </div>
             </div>
+
+            {form.creative_template === 'split_panel' && (
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>Secondary Colour</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <input type="color" value={form.secondary_color || '#0d1520'} onChange={e => setField('secondary_color', e.target.value)}
+                    style={{ width: 40, height: 36, border: `1px solid ${C.border}`, borderRadius: 6, cursor: 'pointer', padding: 2 }} />
+                  <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.mono }}>{form.secondary_color || '#0d1520'}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
             <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Preview</div>
+            <TemplatePicker value={form.creative_template} onChange={v => setField('creative_template', v)} />
             <CreativePreview campaign={previewCampaign} />
             <CreativeFitPanel campaign={previewCampaign} mismatches={fitMismatches} />
             <ReadabilityPanel campaign={previewCampaign} score={readability.score} issues={readability.issues} tiers={readabilityTiers} />
@@ -1320,7 +1428,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
 
       {step === 0 && <StepArea form={form} setForm={setForm} reachSummary={reachSummary} allScreens={dbScreens} onPrevCampaigns={campaigns.length > 0 ? () => setShowDupModal(true) : null} />}
       {step === 1 && <StepScreens form={form} setForm={setForm} matchedScreens={matchedScreens} />}
-      {step === 2 && <StepCreative form={form} setForm={setForm} matchedScreens={selectedScreens} />}
+      {step === 2 && <StepCreative form={form} setForm={setForm} matchedScreens={selectedScreens} profile={profile} />}
       {step === 3 && <StepBudget form={form} setForm={setForm} matchedScreens={selectedScreens} profile={profile} />}
       {step === 4 && <StepReview form={form} matchedScreens={selectedScreens} onSubmit={handleSubmit} submitting={submitting} err={submitErr} profile={profile} canChooseBilling={canChooseBilling} billedTo={billedTo} setBilledTo={setBilledTo} />}
       {step === 5 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} requiresAction={requiresAction} onGoToBilling={() => navigate('/app/adv-billing')} />}
