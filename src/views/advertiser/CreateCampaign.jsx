@@ -636,6 +636,7 @@ function StepCreative({ form, setForm, matchedScreens = [], profile }) {
   const setOverrideErr = (screenId, msg) => setOverrideErrors(s => ({ ...s, [screenId]: msg }));
 
   const handleMessageFill = (message) => {
+    if (!message.trim()) return;
     const { headline, cta } = splitMessage(message);
     setField('headline', headline);
     setField('cta_text', cta);
