@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
@@ -10,6 +11,7 @@ import { SCREENS } from '../../lib/data.js';
 const BOOSTS = { 'Food & Beverage': { morning: 2, cold: 1, highFoot: 2 }, 'Health & Fitness': { morning: 3, weekend: 2, sunny: 2 }, 'Fashion & Retail': { weekend: 2, highFoot: 3, sunny: 1 }, 'Finance & Banking': { morning: 3, weekday: 2 }, Entertainment: { evening: 3, weekend: 3 }, Technology: { morning: 1, weekday: 2 } };
 
 export function SignalsView({ campaigns }) {
+  const { isMobile } = useBreakpoint();
   const now = new Date();
   const [hour, setHour]     = useState(now.getHours());
   const [day, setDay]       = useState(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][now.getDay()]);
@@ -51,7 +53,7 @@ export function SignalsView({ campaigns }) {
   return (
     <div>
       <PageHeader title="Live Signals" subtitle="Real-time context engine — weather, footfall, and ad ranking" />
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 20, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '320px 1fr', gap: 20, alignItems: 'start' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Card>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Context Signals</div>
