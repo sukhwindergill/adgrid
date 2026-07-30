@@ -158,4 +158,99 @@ describe('checkReadability', () => {
     const hasContrastIssue = result.issues.some(i => i.type === 'contrast');
     expect(hasContrastIssue).toBe(ratio < 4.5);
   });
+
+  describe('truncation limit by creativeTemplate', () => {
+    it('does not flag truncation at exactly the bottom_bar limit (8 words, the default template)', () => {
+      const result = checkReadability({ headline: words(8), ctaText: '', accentColor: '#ffffff', durationSeconds: 60, creativeTemplate: 'bottom_bar' });
+      expect(result.issues.some(i => i.type === 'truncation')).toBe(false);
+    });
+
+    it('does not flag truncation at exactly the full_bleed limit (10 words)', () => {
+      const result = checkReadability({ headline: words(10), ctaText: '', accentColor: '#ffffff', durationSeconds: 60, creativeTemplate: 'full_bleed' });
+      expect(result.issues.some(i => i.type === 'truncation')).toBe(false);
+    });
+
+    it('flags truncation one word past the full_bleed limit', () => {
+      const result = checkReadability({ headline: words(11), ctaText: '', accentColor: '#ffffff', durationSeconds: 60, creativeTemplate: 'full_bleed' });
+      const issue = result.issues.find(i => i.type === 'truncation');
+      expect(issue).toBeDefined();
+      expect(issue.message).toContain('11 words');
+    });
+
+    it('does not flag truncation at exactly the split_panel limit (6 words)', () => {
+      const result = checkReadability({ headline: words(6), ctaText: '', accentColor: '#ffffff', durationSeconds: 60, creativeTemplate: 'split_panel' });
+      expect(result.issues.some(i => i.type === 'truncation')).toBe(false);
+    });
+
+    it('flags truncation one word past the split_panel limit, mentioning its 3-line clamp', () => {
+      const result = checkReadability({ headline: words(7), ctaText: '', accentColor: '#ffffff', durationSeconds: 60, creativeTemplate: 'split_panel' });
+      const issue = result.issues.find(i => i.type === 'truncation');
+      expect(issue).toBeDefined();
+      expect(issue.message).toContain('7 words');
+      expect(issue.message).toContain('3 lines');
+    });
+
+    it('falls back to the bottom_bar limit for an unrecognized creativeTemplate value', () => {
+      const result = checkReadability({ headline: words(9), ctaText: '', accentColor: '#ffffff', durationSeconds: 60, creativeTemplate: 'not_a_real_template' });
+      expect(result.issues.some(i => i.type === 'truncation')).toBe(true);
+    });
+
+    it('falls back to the bottom_bar limit and does not throw when creativeTemplate is null', () => {
+      expect(() =>
+        checkReadability({ headline: words(9), ctaText: '', accentColor: '#ffffff', durationSeconds: 60, creativeTemplate: null })
+      ).not.toThrow();
+      const result = checkReadability({ headline: words(9), ctaText: '', accentColor: '#ffffff', durationSeconds: 60, creativeTemplate: null });
+      expect(result.issues.some(i => i.type === 'truncation')).toBe(true);
+    });
+  });
+
+  describe('contrast pair by creativeTemplate', () => {
+    it('full_bleed: flags weak contrast for a white-text CTA pill on a pale accent color', () => {
+      const result = checkReadability({ headline: 'Short', ctaText: 'Go', accentColor: '#ffffff', durationSeconds: 60, creativeTemplate: 'full_bleed' });
+      const issue = result.issues.find(i => i.type === 'contrast');
+      expect(issue).toBeDefined();
+    });
+
+    it('full_bleed: does not flag contrast for a dark accent color, even though that same color would fail the bottom_bar (accent-vs-dark-bg) check', () => {
+      const result = checkReadability({ headline: 'Short', ctaText: 'Go', accentColor: '#050a10', durationSeconds: 60, creativeTemplate: 'full_bleed' });
+      expect(result.issues.some(i => i.type === 'contrast')).toBe(false);
+    });
+
+    it('split_panel: flags the headline when it renders white-on-secondaryColor and secondaryColor is pale', () => {
+      const result = checkReadability({ headline: 'Short', ctaText: '', accentColor: '#7c3aed', secondaryColor: '#ffffff', durationSeconds: 60, creativeTemplate: 'split_panel' });
+      const issue = result.issues.find(i => i.type === 'contrast_headline');
+      expect(issue).toBeDefined();
+      expect(result.score).toBeLessThan(100);
+    });
+
+    it('split_panel: flags the CTA when it renders white-on-secondaryColor and secondaryColor is pale', () => {
+      const result = checkReadability({ headline: '', ctaText: 'Go', accentColor: '#7c3aed', secondaryColor: '#ffffff', durationSeconds: 60, creativeTemplate: 'split_panel' });
+      const issue = result.issues.find(i => i.type === 'contrast');
+      expect(issue).toBeDefined();
+    });
+
+    it('never reports contrast_headline for bottom_bar or full_bleed, regardless of color', () => {
+      const bottomBar = checkReadability({ headline: 'Short', ctaText: 'Go', accentColor: '#ffffff', durationSeconds: 60, creativeTemplate: 'bottom_bar' });
+      const fullBleed = checkReadability({ headline: 'Short', ctaText: 'Go', accentColor: '#ffffff', durationSeconds: 60, creativeTemplate: 'full_bleed' });
+      expect(bottomBar.issues.some(i => i.type === 'contrast_headline')).toBe(false);
+      expect(fullBleed.issues.some(i => i.type === 'contrast_headline')).toBe(false);
+    });
+
+    it('split_panel: falls back to accentColor for the panel background when secondaryColor is unset', () => {
+      const result = checkReadability({ headline: 'Short', ctaText: '', accentColor: '#ffffff', secondaryColor: undefined, durationSeconds: 60, creativeTemplate: 'split_panel' });
+      const issue = result.issues.find(i => i.type === 'contrast_headline');
+      expect(issue).toBeDefined();
+    });
+
+    it('split_panel: does not flag headline or CTA when the effective panel background is dark', () => {
+      const result = checkReadability({ headline: 'Short', ctaText: 'Go', accentColor: '#7c3aed', secondaryColor: '#050a10', durationSeconds: 60, creativeTemplate: 'split_panel' });
+      expect(result.issues.some(i => i.type === 'contrast_headline')).toBe(false);
+      expect(result.issues.some(i => i.type === 'contrast')).toBe(false);
+    });
+
+    it('split_panel: skips the headline contrast check when there is no headline text', () => {
+      const result = checkReadability({ headline: '', ctaText: '', accentColor: '#7c3aed', secondaryColor: '#ffffff', durationSeconds: 60, creativeTemplate: 'split_panel' });
+      expect(result.issues.some(i => i.type === 'contrast_headline')).toBe(false);
+    });
+  });
 });

@@ -90,6 +90,8 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
     ctaText: campaign.cta_text || campaign.cta,
     accentColor: campaign.accent_color || campaign.color,
     durationSeconds: campaign.duration || 15,
+    creativeTemplate: campaign.creative_template,
+    secondaryColor: campaign.secondary_color,
   });
   const cardScreens = myRows.map(row => allScreens.find(s => s.id === row.screen_id)).filter(Boolean);
   const readabilityTiers = distinctTiers(cardScreens);

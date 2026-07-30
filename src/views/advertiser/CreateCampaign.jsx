@@ -697,6 +697,8 @@ function StepCreative({ form, setForm, matchedScreens = [], profile }) {
     ctaText: form.cta_text,
     accentColor: form.accent_color,
     durationSeconds: parseInt(form.duration, 10) || 15,
+    creativeTemplate: form.creative_template,
+    secondaryColor: form.secondary_color,
   });
   const readabilityTiers = distinctTiers(matchedScreens);
 
@@ -956,6 +958,8 @@ function StepReview({ form, matchedScreens, onSubmit, submitting, err, profile, 
     ctaText: form.cta_text,
     accentColor: form.accent_color,
     durationSeconds: parseInt(form.duration, 10) || 15,
+    creativeTemplate: form.creative_template,
+    secondaryColor: form.secondary_color,
   });
   const readabilityTiers = distinctTiers(matchedScreens);
 
