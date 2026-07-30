@@ -48,6 +48,26 @@ describe('CreativePreview templates', () => {
     const panel = container.querySelector('[data-panel]');
     expect(panel.style.background).toContain('18, 52, 86');
   });
+
+  it('confines uploaded media to the right 60% and skips the scrim for split_panel', () => {
+    const { container } = render(<CreativePreview campaign={{ headline: 'Cold Brew', creative_template: 'split_panel', media_url: 'https://example.com/photo.jpg', media_type: 'image' }} />);
+    const img = container.querySelector('img');
+    expect(img.style.left).toBe('40%');
+    expect(img.style.right).toBe('0px');
+    const scrim = [...container.querySelectorAll('div')].find(d => d.style.background.includes('linear-gradient(to top'));
+    expect(scrim).toBeUndefined();
+  });
+
+  it('fills the whole frame with uploaded media and keeps the scrim for bottom_bar and full_bleed', () => {
+    const { container: bar } = render(<CreativePreview campaign={{ headline: 'Cold Brew', media_url: 'https://example.com/photo.jpg', media_type: 'image' }} />);
+    expect(bar.querySelector('img').style.width).toBe('100%');
+    expect(bar.querySelector('img').style.height).toBe('100%');
+
+    const { container: bleed } = render(<CreativePreview campaign={{ headline: 'Cold Brew', creative_template: 'full_bleed', media_url: 'https://example.com/photo.jpg', media_type: 'image' }} />);
+    expect(bleed.querySelector('img').style.width).toBe('100%');
+    const scrim = [...bleed.querySelectorAll('div')].find(d => d.style.background.includes('linear-gradient(to top'));
+    expect(scrim).toBeDefined();
+  });
 });
 
 describe('CreativePreview font', () => {
