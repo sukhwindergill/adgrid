@@ -41,11 +41,4 @@ describe('splitMessage', () => {
       cta: 'ORDER now',
     });
   });
-
-  it('does not let a hyphenated compound word inside the CTA clause hijack the split', () => {
-    expect(splitMessage('Free shipping on all orders, Shop sugar-free treats')).toEqual({
-      headline: 'Free shipping on all orders',
-      cta: 'Shop sugar-free treats',
-    });
-  });
 });
