@@ -21,7 +21,6 @@ Let an advertiser (1) set a brand kit once (2 colors + font, on `profiles`) that
 - **Live mini-render swatches.** The template picker uses small static shape-diagrams, not 3 simultaneously-rendered live `CreativePreview`s.
 - **Variant testing integration.** `campaign_creatives`/rotation (the 4th sub-project, G15) doesn't exist yet; this ships one template + one set of fields per campaign, same cardinality as today.
 - **Screens' actual per-screen aspect ratio driving template layout automatically.** All 12 production screens currently have null `resolution_w/h` (see `20260727000000_screen_creative_specs.sql`), so orientation is effectively always "unknown → landscape" in practice today; templates render in whatever aspect ratio the preview is already given, same as existing behavior.
-- **Making the readability score (`src/lib/creativeReadability.js`, from the prior sub-project) template-aware.** It was built when `CreativePreview` had only one rendering path and still assumes that path today: the truncation word-limit is calibrated to `bottom_bar`'s text box, and the contrast check only compares `accent_color` against `CreativePreview`'s fixed dark background — the pairing that's actually on screen for `bottom_bar`'s CTA. Neither holds for `full_bleed` (CTA is a white-on-accent pill) or `split_panel` (headline *and* CTA render in white on the arbitrary `secondary_color`/accent block, a pairing the check never looks at, and a background that's no longer guaranteed-dark). The score can under- or over-report for those two templates as a result — advisory-only, never blocks the wizard, but not accurate for 2 of 3 templates. Caught during this branch's final review; module comments were corrected to say so plainly rather than continue claiming to model a rendering path that no longer exists; making the score itself template-aware is left as follow-up work, not done in this pass.
 
 ## Design
 
@@ -66,7 +65,7 @@ Template picker: a row of 3 small static shape-diagram swatches (CSS boxes sketc
 New pure function, `src/lib/creativeMessageSplit.js`: `splitMessage(message) → { headline, cta }`, same pure/unit-tested shape as `creativeFit.js`/`creativeReadability.js`.
 
 1. Trim input; empty → `{ headline: '', cta: '' }`.
-2. Find the **last** delimiter (`, ; — . ! ?`) in the message. The trimmed substring after it is the CTA candidate. (A bare hyphen `-` was dropped from this set during Task 7 wiring — it was hijacking the split on hyphenated compound words like "sugar-free"; comma/period/em-dash/etc. still work as manual separators.)
+2. Find the **last** delimiter (`, ; — - . ! ?`) in the message. The trimmed substring after it is the CTA candidate.
 3. The candidate counts as a real CTA only if it starts with an allow-listed lead word — `shop/get/try/save/learn/visit/order/book/call/sign up/download`, word-boundary, case-insensitive — **and** is ≤ 6 words. If so: `headline` = everything before that delimiter, `cta` = the candidate, casing preserved as typed.
 4. Otherwise (no delimiter, or candidate fails the check): `headline` = the whole message, `cta` = `'Learn More'`.
 5. No length/truncation capping here — the existing `ReadabilityPanel` already scores whatever headline results, identical treatment to a hand-typed headline.
