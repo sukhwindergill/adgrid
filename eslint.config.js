@@ -26,4 +26,16 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  {
+    files: ['vite.config.js', 'mobile/**/*.{js,jsx}'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+  {
+    files: ['mobile/__tests__/**/*.{js,jsx}', 'mobile/__mocks__/**/*.{js,jsx}', 'mobile/jest.setup.js'],
+    languageOptions: {
+      globals: globals.jest,
+    },
+  },
 ])
