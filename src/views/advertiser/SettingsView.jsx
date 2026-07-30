@@ -461,20 +461,22 @@ export default function SettingsView() {
     <div style={{ padding: "32px 40px", fontFamily: F.sans, maxWidth: 900 }}>
       <h2 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: "0 0 24px" }}>Settings</h2>
 
-      <div style={{
-        display: "flex", gap: 4, background: C.bg, padding: 4, borderRadius: 10,
-        border: `1px solid ${C.border}`, width: "fit-content", marginBottom: 32,
-      }}>
-        {[
-          { id: "profile", label: "Profile" },
-          { id: "branding", label: "Brand Kit" },
-          { id: "security", label: "Security" },
-          { id: "notifications", label: "Notifications" },
-          { id: "team", label: "Team" },
-          { id: "access", label: "Access" },
-        ].map((t) => (
-          <TabBtn key={t.id} label={t.label} active={tab === t.id} onClick={() => setTab(t.id)} />
-        ))}
+      <div style={{ overflowX: "auto", maxWidth: "100%", marginBottom: 32 }}>
+        <div style={{
+          display: "flex", gap: 4, background: C.bg, padding: 4, borderRadius: 10,
+          border: `1px solid ${C.border}`, width: "fit-content",
+        }}>
+          {[
+            { id: "profile", label: "Profile" },
+            { id: "branding", label: "Brand Kit" },
+            { id: "security", label: "Security" },
+            { id: "notifications", label: "Notifications" },
+            { id: "team", label: "Team" },
+            { id: "access", label: "Access" },
+          ].map((t) => (
+            <TabBtn key={t.id} label={t.label} active={tab === t.id} onClick={() => setTab(t.id)} />
+          ))}
+        </div>
       </div>
 
       {tab === "profile" && <ProfileTab profile={profile} onSaved={(updates) => setProfile((p) => ({ ...p, ...updates }))} />}

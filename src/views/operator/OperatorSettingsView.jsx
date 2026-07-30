@@ -708,13 +708,15 @@ export function OperatorSettingsView() {
   return (
     <div>
       <PageHeader title="Settings" subtitle="Manage your operator account" />
-      <div style={{
-        display: 'flex', gap: 4, background: C.bg, padding: 4, borderRadius: 10,
-        border: `1px solid ${C.border}`, width: 'fit-content', marginBottom: 32,
-      }}>
-        {tabs.map(t => (
-          <TabBtn key={t.id} label={t.label} active={tab === t.id} onClick={() => setTab(t.id)} />
-        ))}
+      <div style={{ overflowX: 'auto', maxWidth: '100%', marginBottom: 32 }}>
+        <div style={{
+          display: 'flex', gap: 4, background: C.bg, padding: 4, borderRadius: 10,
+          border: `1px solid ${C.border}`, width: 'fit-content',
+        }}>
+          {tabs.map(t => (
+            <TabBtn key={t.id} label={t.label} active={tab === t.id} onClick={() => setTab(t.id)} />
+          ))}
+        </div>
       </div>
 
       {tab === 'profile'       && <ProfileTab profile={profile} onSaved={updates => setProfile(p => ({ ...p, ...updates }))} />}
