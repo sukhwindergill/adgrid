@@ -9,6 +9,7 @@ import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { ErrorBanner } from '../../components/primitives/ErrorBanner.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS, STATE_TIMEZONE } from '../../lib/venueTypes.js';
+import { ScreenLocationPicker } from '../../components/ScreenLocationPicker.jsx';
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
@@ -342,17 +343,13 @@ function StepRegister({ onBack, onScreenCreated }) {
           </div>
 
           <div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <Inp label="Latitude" type="number" step="any" placeholder="e.g. 43.6532"
-                value={form.lat} onChange={e => set('lat', e.target.value)} />
-              <Inp label="Longitude" type="number" step="any" placeholder="e.g. -79.3832"
-                value={form.lng} onChange={e => set('lng', e.target.value)} />
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>
+              Screen Location
             </div>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 6 }}>
-              Right-click your screen&apos;s location in Google Maps and copy the two numbers.
-              Advertisers use this to find your screen by radius — without it, your screen
-              will not appear in location-based searches.
-            </div>
+            <ScreenLocationPicker
+              value={form.lat !== '' && form.lng !== '' ? { lat: Number(form.lat), lng: Number(form.lng) } : null}
+              onChange={({ lat, lng }) => setForm(s => ({ ...s, lat, lng }))}
+            />
           </div>
         </div>
 
