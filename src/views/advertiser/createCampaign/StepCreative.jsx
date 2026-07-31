@@ -2,10 +2,12 @@
 import { useState } from 'react';
 import { C, F } from '../../../design/tokens.js';
 import { Card } from '../../../components/primitives/Card.jsx';
+import { SelInput } from '../../../components/primitives/SelInput.jsx';
 import { PillGroup } from './PillGroup.jsx';
 import { ScreenPickerCard } from './ScreenPickerCard.jsx';
 import { CreativeCard } from './CreativeCard.jsx';
 import { unassignedScreenIds, splitScreenIdsByOrientation } from '../../../lib/creativeAssignment.js';
+import { VENUE_TAXONOMY } from '../../../lib/venueTypes.js';
 
 const BLANK_CREATIVE = () => ({
   id: crypto.randomUUID(),
@@ -100,6 +102,12 @@ export function StepCreative({ form, setForm, matchedScreens, profile }) {
                 onChange={v => setForm(s => ({ ...s, env_filter: v }))}
               />
             </div>
+            <SelInput label="Venue Category" value={form.venue_filter} onChange={e => setForm(s => ({ ...s, venue_filter: e.target.value }))}>
+              <option value="">Any venue type</option>
+              {Object.entries(VENUE_TAXONOMY).map(([key, { label }]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </SelInput>
           </div>
         )}
 
