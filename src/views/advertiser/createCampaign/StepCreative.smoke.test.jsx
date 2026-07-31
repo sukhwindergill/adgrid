@@ -37,7 +37,7 @@ const baseForm = {
 describe('StepCreative', () => {
   it('renders the default single-creative flow without assignment UI', () => {
     render(
-      <StepCreative form={baseForm} setForm={() => {}} matchedScreens={[SCREEN_A, SCREEN_B]} />
+      <StepCreative form={baseForm} setForm={() => {}} matchedScreens={[SCREEN_A, SCREEN_B]} profile={null} />
     );
     expect(screen.getByText('Screens')).toBeInTheDocument();
     expect(screen.getByText('Creative')).toBeInTheDocument();
@@ -53,7 +53,7 @@ describe('StepCreative', () => {
       ],
     };
     render(
-      <StepCreative form={form} setForm={() => {}} matchedScreens={[SCREEN_A, SCREEN_B]} />
+      <StepCreative form={form} setForm={() => {}} matchedScreens={[SCREEN_A, SCREEN_B]} profile={{ brand_font: 'sans' }} />
     );
     expect(screen.getByText('Creatives')).toBeInTheDocument();
     expect(screen.getAllByText(/Split by screen type/).length).toBe(2);

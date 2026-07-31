@@ -12,11 +12,12 @@ const BLANK_CREATIVE = () => ({
   label: '',
   headline: '', cta_text: '', destination_url: '', accent_color: '#7c3aed', category: 'Food & Beverage',
   media_url: '', media_type: '', media_width: null, media_height: null,
+  creative_template: 'bottom_bar', secondary_color: '',
   assigned_screen_ids: [],
   weight: 100,
 });
 
-export function StepCreative({ form, setForm, matchedScreens }) {
+export function StepCreative({ form, setForm, matchedScreens, profile }) {
   const [showFilters, setShowFilters] = useState(false);
 
   const toggleScreen = (id) => setForm(s => ({
@@ -146,6 +147,7 @@ export function StepCreative({ form, setForm, matchedScreens }) {
             showAssignment={isMulti}
             duration={form.duration}
             onSplitByType={() => splitByType(c.id)}
+            profile={profile}
           />
         ))}
 
