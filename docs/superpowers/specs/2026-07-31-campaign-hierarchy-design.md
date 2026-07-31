@@ -130,7 +130,7 @@ This design effectively delivers G15's foundational table early, with a differen
 
 Matching this codebase's established pattern (`creativeFit.js`, `reach.js`, `periodDelta.js` are all pure, unit-tested, and separate from the components that call them):
 
-- `src/lib/creativeSelection.js` — weighted-random pick among a screen's assigned creatives; pure, seedable for tests.
+- `supabase/functions/_shared/creativeSelection.ts` — weighted expansion of a screen's assigned creatives into an interleaved rotation list; pure, unit-tested. Lives in `_shared` (not `src/lib`) because it's consumed only by the `display-feed` edge function (Deno runtime), matching where `playValidation.ts`/`scanQuality.ts` already live for the same reason.
 - Extend `src/lib/creativeFit.js`'s existing orientation derivation for the "split by screen type" wizard helper, rather than duplicating it.
 - `src/lib/campaignRollup.js` — aggregates a campaign's Targeting groups into the dashboard's summary numbers (total budget, total screens, status).
 
