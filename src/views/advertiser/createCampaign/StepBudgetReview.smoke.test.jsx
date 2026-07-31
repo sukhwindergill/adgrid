@@ -2,7 +2,8 @@
 // and resolvable (imports exist, renders without throwing) before it is wired
 // into CreateCampaign.jsx's render switch in a later task.
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { useState } from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { StepBudgetReview } from './StepBudgetReview.jsx';
 
 const SCREEN_A = {
@@ -84,6 +85,42 @@ describe('StepBudgetReview', () => {
     expect(screen.getByText('A budget (USD)')).toBeInTheDocument();
     expect(screen.getByText('B budget (USD)')).toBeInTheDocument();
     expect(screen.getByText('Bill to')).toBeInTheDocument();
+  });
+
+  it('scopes a per-creative budget edit to only that creative by id', () => {
+    function Wrapper() {
+      const [form, setForm] = useState({
+        ...baseForm,
+        budget_level: 'per_creative',
+        creatives: [
+          { id: 'c1', label: 'A', headline: 'Iced Lattes', budget: '' },
+          { id: 'c2', label: 'B', headline: 'Cold Brew', budget: '' },
+        ],
+      });
+      return (
+        <StepBudgetReview
+          form={form}
+          setForm={setForm}
+          matchedScreens={[SCREEN_A, SCREEN_B]}
+          profile={{ preferred_currency: 'usd' }}
+          onSubmit={() => {}}
+          submitting={false}
+          err={null}
+          canChooseBilling={false}
+          billedTo="client"
+          setBilledTo={() => {}}
+        />
+      );
+    }
+    render(<Wrapper />);
+    const bLabel = screen.getByText('B budget (USD)');
+    const bInput = bLabel.parentElement.querySelector('input');
+    fireEvent.change(bInput, { target: { value: '75' } });
+
+    const aLabel = screen.getByText('A budget (USD)');
+    const aInput = aLabel.parentElement.querySelector('input');
+    expect(bInput.value).toBe('75');
+    expect(aInput.value).toBe('');
   });
 
   it('shows the low-budget warning banner and an error banner when provided', () => {

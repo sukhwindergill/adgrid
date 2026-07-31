@@ -35,6 +35,8 @@ export function StepBudgetReview({
     ['Dates', form.start_date && form.end_date ? `${form.start_date} → ${form.end_date} (${days} days)` : '—'],
     ['Time', `${form.time_start} – ${form.time_end}`],
     ['Days', form.schedule_days.join(', ')],
+    ['Ad Duration', `${form.duration}s per play`],
+    ['Slot Share', `${form.slots}% of airtime`],
     ['Launch', form.start_when === 'partial' ? 'Go live as screens approve' : 'Wait for all screens'],
   ];
 
@@ -68,6 +70,11 @@ export function StepBudgetReview({
                 value={form.budget_level}
                 onChange={v => setField('budget_level', v)}
               />
+              {form.budget_level === 'per_creative' && (
+                <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 6 }}>
+                  The budget above is still your overall spend cap — per-creative amounts track how that total is split, they don't add to it.
+                </div>
+              )}
             </div>
           )}
 
