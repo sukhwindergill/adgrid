@@ -27,11 +27,14 @@ export function expandCreativeAssignments(assignments: CreativeAssignment[]): st
 
   const totalWeight = valid.reduce((sum, a) => sum + a.weight, 0);
 
-  // Largest-remainder method: every assignment gets at least one slot no
-  // matter how skewed the weights are, and the total stays at
+  // Largest-remainder method: the total always stays at exactly
   // CREATIVE_ROTATION_SLOTS regardless of how many assignments there are.
+  // When there are no more assignments than slots, every assignment is also
+  // guaranteed at least one slot (via the borrowing step below); when there
+  // are more assignments than slots, it's mathematically impossible to give
+  // everyone a slot and some legitimately get none.
   const shares = valid.map(a => (a.weight / totalWeight) * CREATIVE_ROTATION_SLOTS);
-  const counts = shares.map(s => Math.max(1, Math.floor(s)));
+  const counts = shares.map(s => Math.floor(s));
   let allocated = counts.reduce((a, b) => a + b, 0);
 
   const remainders = shares
@@ -43,6 +46,29 @@ export function expandCreativeAssignments(assignments: CreativeAssignment[]): st
     counts[remainders[idx].i] += 1;
     allocated += 1;
     idx += 1;
+  }
+
+  // Guarantee every valid assignment gets at least one slot when that's
+  // mathematically possible (i.e. no more assignments than slots), by
+  // borrowing a slot from whichever assignment currently holds the most —
+  // never borrowing one down to 0. This keeps the total fixed at exactly
+  // CREATIVE_ROTATION_SLOTS throughout, unlike a naive "add more slots"
+  // approach which can overflow past the budget.
+  if (valid.length <= CREATIVE_ROTATION_SLOTS) {
+    for (let i = 0; i < counts.length; i++) {
+      if (counts[i] === 0) {
+        let maxIdx = -1;
+        for (let j = 0; j < counts.length; j++) {
+          if (counts[j] > 1 && (maxIdx === -1 || counts[j] > counts[maxIdx])) {
+            maxIdx = j;
+          }
+        }
+        if (maxIdx !== -1) {
+          counts[maxIdx] -= 1;
+          counts[i] += 1;
+        }
+      }
+    }
   }
 
   // Interleave round-robin rather than repeating one creative in a block,
