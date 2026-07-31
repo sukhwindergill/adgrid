@@ -108,4 +108,36 @@ describe('expandCreativeAssignments', () => {
       expect(dominantCount).toBeGreaterThan(c * 2);
     }
   });
+
+  it('bounds the tie-break artifact between equal weights to at most one slot, independent of array order', () => {
+    // Reviewer's counter-example: two assignments tied at weight 46 must not
+    // diverge by more than the one indivisible last slot, regardless of
+    // which one the largest-remainder sort happens to land on first when
+    // their fractional remainders are exactly equal.
+    const result = expandCreativeAssignments([
+      { creative_id: 'a', weight: 46 },
+      { creative_id: 'b', weight: 46 },
+      { creative_id: 'c', weight: 2 },
+      { creative_id: 'd', weight: 2 },
+      { creative_id: 'e', weight: 4 },
+    ]);
+    expect(result).toHaveLength(CREATIVE_ROTATION_SLOTS);
+
+    const counts = ['a', 'b', 'c', 'd', 'e'].map(
+      id => result.filter(r => r === id).length,
+    );
+    for (const c of counts) {
+      expect(c).toBeGreaterThanOrEqual(1);
+    }
+
+    const [aCount, bCount, cCount, dCount] = counts;
+    // Not exact equality: splitting one indivisible last slot between exact
+    // ties has to land on one side or the other.
+    expect(Math.abs(aCount - bCount)).toBeLessThanOrEqual(1);
+
+    expect(aCount).toBeGreaterThan(cCount);
+    expect(aCount).toBeGreaterThan(dCount);
+    expect(bCount).toBeGreaterThan(cCount);
+    expect(bCount).toBeGreaterThan(dCount);
+  });
 });
