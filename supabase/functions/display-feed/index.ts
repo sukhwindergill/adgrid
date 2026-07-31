@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { expandCreativeAssignments } from "../_shared/creativeSelection.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -80,6 +81,42 @@ Deno.serve(async (req: Request) => {
       .lte("start_date", today)
       .gte("end_date", today);
 
+    // Step 3: this screen's explicit creative assignments (Phase 1 schema),
+    // grouped by which targeting group (booking) they belong to. A booking
+    // with no rows here falls all the way through to its own single
+    // creative fields, unchanged from today.
+    const { data: ccsRows } = await supabase
+      .from("campaign_creative_screens")
+      .select("creative_id, weight")
+      .eq("screen_id", screen.id);
+
+    const creativesByTargeting = new Map<string, { creative_id: string; weight: number; media_url: string | null; media_type: string | null; headline: string | null; cta_text: string | null; destination_url: string | null; accent_color: string | null }[]>();
+
+    if (ccsRows && ccsRows.length > 0) {
+      const creativeIds = ccsRows.map((r) => r.creative_id);
+      const { data: creatives } = await supabase
+        .from("campaign_creatives")
+        .select("id, targeting_id, status, media_url, media_type, headline, cta_text, destination_url, accent_color")
+        .in("id", creativeIds)
+        .eq("status", "active");
+
+      const weightById = new Map(ccsRows.map((r) => [r.creative_id, r.weight as number]));
+      for (const cr of creatives ?? []) {
+        const list = creativesByTargeting.get(cr.targeting_id as string) ?? [];
+        list.push({
+          creative_id: cr.id as string,
+          weight: weightById.get(cr.id as string) ?? 100,
+          media_url: cr.media_url as string | null,
+          media_type: cr.media_type as string | null,
+          headline: cr.headline as string | null,
+          cta_text: cr.cta_text as string | null,
+          destination_url: cr.destination_url as string | null,
+          accent_color: cr.accent_color as string | null,
+        });
+        creativesByTargeting.set(cr.targeting_id as string, list);
+      }
+    }
+
     if (bookings) {
       const csMap = new Map(csRows.map((r) => [r.campaign_id, r]));
 
@@ -89,16 +126,44 @@ Deno.serve(async (req: Request) => {
         const inDay = days.length === 0 || days.includes(currentDay);
         const inTime = currentTime >= ((b.time_start as string) ?? "00:00") && currentTime <= ((b.time_end as string) ?? "23:59");
         if (!inDay || !inTime) continue;
-        // Apply per-screen creative overrides from campaign_screens
-        activeCampaigns.push({
-          ...b,
-          cta: cs?.cta_text || b.cta_text,
-          headline: cs?.headline || b.headline,
-          accent_color: cs?.accent_color || b.accent_color,
-          destination_url: cs?.destination_url || b.destination_url,
-          media_url: cs?.media_url || b.media_url,
-          media_type: cs?.media_type || b.media_type,
-        });
+
+        const assignments = creativesByTargeting.get(b.id as string) ?? [];
+
+        if (assignments.length === 0) {
+          // Unchanged from today: per-screen override falls back to the booking's own fields.
+          activeCampaigns.push({
+            ...b,
+            creative_id: null,
+            cta: cs?.cta_text || b.cta_text,
+            headline: cs?.headline || b.headline,
+            accent_color: cs?.accent_color || b.accent_color,
+            destination_url: cs?.destination_url || b.destination_url,
+            media_url: cs?.media_url || b.media_url,
+            media_type: cs?.media_type || b.media_type,
+          });
+          continue;
+        }
+
+        // One or more creatives explicitly assigned to this screen — expand by
+        // weight and push one array entry per slot. The legacy per-screen
+        // override columns on campaign_screens are not consulted here; the
+        // new campaign_creatives fields are the sole source once they exist.
+        const creativeById = new Map(assignments.map((a) => [a.creative_id, a]));
+        const order = expandCreativeAssignments(assignments.map((a) => ({ creative_id: a.creative_id, weight: a.weight })));
+
+        for (const creativeId of order) {
+          const cr = creativeById.get(creativeId)!;
+          activeCampaigns.push({
+            ...b,
+            creative_id: creativeId,
+            cta: cr.cta_text || b.cta_text,
+            headline: cr.headline || b.headline,
+            accent_color: cr.accent_color || b.accent_color,
+            destination_url: cr.destination_url || b.destination_url,
+            media_url: cr.media_url || b.media_url,
+            media_type: cr.media_type || b.media_type,
+          });
+        }
       }
     }
   }
@@ -107,9 +172,10 @@ Deno.serve(async (req: Request) => {
   // last_seen update ensures idle screens (no active campaigns) still show as
   // online in the operator dashboard — impression ingest only fires when playing.
   const now_iso = new Date().toISOString();
+  const activeBookingIds = new Set(activeCampaigns.map((c) => c.id as string));
   supabase.from("display_heartbeats").insert({
     screen_id: screen.id,
-    campaign_id: activeCampaigns.length === 1 ? (activeCampaigns[0].id as string) : null,
+    campaign_id: activeBookingIds.size === 1 ? [...activeBookingIds][0] : null,
     status: activeCampaigns.length > 0 ? "playing" : "idle",
   }).then(() => {});
   supabase.from("screens").update({ last_seen: now_iso }).eq("id", screen.id).then(() => {});

@@ -7,6 +7,7 @@ const MAX_AGE_MS = 48 * 60 * 60 * 1000;
 
 export interface RawPlay {
   campaign_id?: unknown;
+  creative_id?: unknown;
   client_play_id?: unknown;
   played_at?: unknown;
   duration_s?: unknown;
@@ -15,6 +16,7 @@ export interface RawPlay {
 
 export interface CleanPlay {
   campaign_id: string;
+  creative_id: string | null;
   client_play_id: string;
   played_at: string;
   duration_s: number;
@@ -59,9 +61,13 @@ export function validatePlayBatch(
       continue;
     }
 
+    const trimmedCreativeId = typeof raw?.creative_id === 'string' ? raw.creative_id.trim() : '';
+    const creativeId = trimmedCreativeId || null;
+
     seen.add(clientId);
     accepted.push({
       campaign_id: campaignId,
+      creative_id: creativeId,
       client_play_id: clientId,
       played_at: new Date(t).toISOString(),
       duration_s: Math.min(rawDuration, MAX_DURATION_S),

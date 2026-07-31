@@ -9,6 +9,7 @@ const supabase = createClient(
 Deno.serve(async (req: Request) => {
   const url = new URL(req.url);
   const campaignId = url.searchParams.get("c");
+  const creativeId = url.searchParams.get("cr");
 
   if (!campaignId) {
     return new Response("Missing campaign id", { status: 400 });
@@ -78,6 +79,7 @@ Deno.serve(async (req: Request) => {
   // Insert scan record (awaited to ensure data is not lost)
   const { data: scanRow } = await supabase.from("scans").insert({
     campaign_id: campaignId,
+    creative_id: creativeId,
     screen_id,
     advertiser_id,
     device_type,

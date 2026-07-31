@@ -10,18 +10,19 @@ const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL
 const POLL_INTERVAL_MS  = 30_000;
 const ROTATE_INTERVAL_MS = 10_000;
 
-function buildQrUrl(destinationUrl, screenId, campaignId) {
+function buildQrUrl(destinationUrl, screenId, campaignId, creativeId) {
   if (!SUPABASE_FUNCTIONS_URL || !campaignId) return destinationUrl;
   const u = new URL(`${SUPABASE_FUNCTIONS_URL}/scan-redirect`);
   u.searchParams.set('c', campaignId);
   if (screenId) u.searchParams.set('s', screenId);
+  if (creativeId) u.searchParams.set('cr', creativeId);
   return u.toString();
 }
 
 function CreativeSlide({ campaign, screenId }) {
   const plan = getCreativeRenderPlan(campaign);
   const { mediaUrl, isVideo, showTextOverlay, bg, headline, cta, category } = plan;
-  const qrUrl = buildQrUrl(plan.destination, screenId, campaign.id);
+  const qrUrl = buildQrUrl(plan.destination, screenId, campaign.id, campaign.creative_id);
 
   return (
     <div style={{
@@ -231,6 +232,7 @@ export function DisplayPlayer({ screenToken }) {
 
     playStartRef.current = Date.now();
     const campaignId = current.id;
+    const creativeId = current.creative_id ?? null;
 
     return () => {
       const startedAt = playStartRef.current;
@@ -239,6 +241,7 @@ export function DisplayPlayer({ screenToken }) {
       if (durationS <= 0) return;
       playBufferRef.current.record({
         campaign_id: campaignId,
+        creative_id: creativeId,
         played_at: new Date(startedAt).toISOString(),
         duration_s: durationS,
         completed: durationS >= (ROTATE_INTERVAL_MS / 1000) * 0.9,
