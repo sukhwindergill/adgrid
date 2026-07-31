@@ -11,6 +11,9 @@ const VENUES = [
 const SLIDES = [
   { src: '/marketing/venue-retail.jpg', alt: 'Digital ad screen in a retail store', caption: 'Retail — in-store display', width: 1600, height: 1073 },
   { src: '/marketing/venue-transit.jpg', alt: 'Digital ad screen at a transit shelter', caption: 'Transit — shelter display', width: 1600, height: 1073 },
+  { src: '/marketing/venue-clinic.jpg', alt: 'Digital ad screen in a clinic waiting room', caption: 'Clinics — waiting room display', width: 1600, height: 1073 },
+  { src: '/marketing/venue-hotel.jpg', alt: 'Digital ad screen in a hotel lobby', caption: 'Hotels — lobby display', width: 1600, height: 1073 },
+  { src: '/marketing/venue-campus.jpg', alt: 'Digital ad screen in a university campus hallway', caption: 'Campuses — common area display', width: 1600, height: 1073 },
 ];
 
 export function ProofStrip() {

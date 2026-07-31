@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { supabase } from '../../lib/supabase.js';
 import { C, F } from '../../lib/constants.js';
 import { SkeletonCard, SkeletonRow } from '../../components/ui/Skeleton.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
@@ -112,7 +111,7 @@ function ScreenCard({ screen, onClick }) {
   );
 }
 
-export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelectScreen, onStartOnboard }) {
+export function ScreensView({ dbScreens, loading = false, onSelectScreen, onStartOnboard }) {
   const [filter, setFilter] = useState('All');
   const { isMobile, isTablet } = useBreakpoint();
 

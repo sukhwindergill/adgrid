@@ -64,7 +64,8 @@ function SaveBtn({ onClick, saving, label = 'Save Changes' }) {
   );
 }
 
-function ProfileTab({ profile, onSaved }) {
+export function ProfileTab({ profile, onSaved }) {
+  const { refreshProfile } = useAuth();
   const [name, setName] = useState(profile?.name ?? '');
   const [companyName, setCompanyName] = useState(profile?.company_name ?? '');
   const [companyWebsite, setCompanyWebsite] = useState(profile?.company_website ?? '');
@@ -80,7 +81,10 @@ function ProfileTab({ profile, onSaved }) {
       .eq('id', profile.id);
     setSaving(false);
     setMsg(error ? 'Error saving.' : 'Saved.');
-    if (!error) onSaved({ name, company_name: companyName, company_website: companyWebsite, timezone });
+    if (!error) {
+      onSaved({ name, company_name: companyName, company_website: companyWebsite, timezone });
+      refreshProfile();
+    }
     setTimeout(() => setMsg(null), 3000);
   }
 
@@ -704,13 +708,15 @@ export function OperatorSettingsView() {
   return (
     <div>
       <PageHeader title="Settings" subtitle="Manage your operator account" />
-      <div style={{
-        display: 'flex', gap: 4, background: C.bg, padding: 4, borderRadius: 10,
-        border: `1px solid ${C.border}`, width: 'fit-content', marginBottom: 32,
-      }}>
-        {tabs.map(t => (
-          <TabBtn key={t.id} label={t.label} active={tab === t.id} onClick={() => setTab(t.id)} />
-        ))}
+      <div style={{ overflowX: 'auto', maxWidth: '100%', marginBottom: 32 }}>
+        <div style={{
+          display: 'flex', gap: 4, background: C.bg, padding: 4, borderRadius: 10,
+          border: `1px solid ${C.border}`, width: 'fit-content',
+        }}>
+          {tabs.map(t => (
+            <TabBtn key={t.id} label={t.label} active={tab === t.id} onClick={() => setTab(t.id)} />
+          ))}
+        </div>
       </div>
 
       {tab === 'profile'       && <ProfileTab profile={profile} onSaved={updates => setProfile(p => ({ ...p, ...updates }))} />}

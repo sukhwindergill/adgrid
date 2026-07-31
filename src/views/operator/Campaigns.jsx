@@ -11,7 +11,7 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
 
-export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, loadError, loading = false, onNewCampaign, allowCancel = false }) {
+export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, loadError, loading = false, onNewCampaign, allowCancel = false, canReview = false }) {
   const [filter, setFilter] = useState('all');
   const [city, setCity]     = useState('All');
   const [campaignScreens, setCampaignScreens] = useState({});
@@ -48,7 +48,7 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
         const screenIds = [...new Set(screenRows?.map(s => s.screen_id) || [])];
         if (screenIds.length > 0) {
           const { data: screens, error: screenDetailErr } = await supabase
-            .from('screens')
+            .from('advertiser_screens')
             .select('id, name, city')
             .in('id', screenIds);
 
@@ -251,7 +251,7 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
                     <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>scans</div>
                   </div>
                   <div style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub, whiteSpace: 'nowrap' }}>{c.start} →<br />{c.end}</div>
-                  {isPending ? (
+                  {isPending && canReview ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }} onClick={e => e.preventDefault()}>
                       <ApproveBtn campaign={c} setCampaigns={setCampaigns} />
                       <Btn variant="danger"  size="sm" onClick={e => { e.preventDefault(); e.stopPropagation(); setDetail(c); }}>✗ Reject…</Btn>

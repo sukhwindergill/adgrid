@@ -19,7 +19,7 @@ function StatusBadge({ status }) {
 function Modal({ title, onClose, children }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <div style={{ background: C.surface, borderRadius: 16, padding: 28, width: 400, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", fontFamily: F.sans }} onClick={(e) => e.stopPropagation()}>
+      <div style={{ background: C.surface, borderRadius: 16, padding: 28, width: 400, maxWidth: "calc(100vw - 32px)", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", fontFamily: F.sans }} onClick={(e) => e.stopPropagation()}>
         <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 20 }}>{title}</div>
         {children}
         <button onClick={onClose} style={{ marginTop: 16, padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.surface, cursor: "pointer", fontFamily: F.sans, fontSize: 13, color: C.textSub }}>Cancel</button>
@@ -71,7 +71,7 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
   }
 
   return (
-    <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: 520, background: C.surface, borderLeft: `1px solid ${C.border}`, boxShadow: "-8px 0 32px rgba(0,0,0,0.08)", zIndex: 200, display: "flex", flexDirection: "column", fontFamily: F.sans }}>
+    <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: 520, maxWidth: "100vw", background: C.surface, borderLeft: `1px solid ${C.border}`, boxShadow: "-8px 0 32px rgba(0,0,0,0.08)", zIndex: 200, display: "flex", flexDirection: "column", fontFamily: F.sans }}>
       <div style={{ padding: "20px 24px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 17, fontWeight: 700, color: C.text }}>{adv.name}</div>

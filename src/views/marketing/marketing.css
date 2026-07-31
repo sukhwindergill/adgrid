@@ -56,6 +56,26 @@
 .nav-spacer { flex: 1; }
 @media (max-width: 768px) { .nav-mid { display: none; } }
 
+/* ── Mobile nav ── */
+.nav-burger {
+  display: none; background: none; border: none; cursor: pointer;
+  padding: 8px; flex-direction: column; gap: 5px; border-radius: 6px;
+  transition: background .15s;
+}
+.nav-burger:hover { background: rgba(255,255,255,0.06); }
+.nav-burger span { display: block; width: 20px; height: 2px; background: #fff; border-radius: 2px; transition: opacity .15s; }
+.nav-mobile-menu {
+  display: flex; flex-direction: column;
+  background: rgba(10,10,15,0.97); border-top: 1px solid var(--border);
+  padding: 8px 0;
+}
+.nav-mobile-menu .nl { text-align: left; padding: 12px 20px; font-size: 15px; }
+.nav-divider { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
+@media (max-width: 768px) {
+  .nav-burger { display: flex; }
+  .nav-desktop-only { display: none; }
+}
+
 /* ── Sections ── */
 .sec { padding: 88px 24px; }
 .sec .inner { max-width: var(--maxw); margin: 0 auto; }
@@ -206,6 +226,23 @@
 .market-band { background: var(--lcard); border-top: 1px solid var(--lborder); border-bottom: 1px solid var(--lborder); padding: 44px 24px; }
 .market-band p { max-width: 720px; margin: 0 auto; text-align: center; font-size: 17px; line-height: 1.65; color: var(--lsub); }
 .market-band strong { color: var(--ltext); font-weight: 600; }
+
+/* ── FAQ ── */
+.faq-list { display: flex; flex-direction: column; gap: 10px; }
+.faq-item { background: var(--lcard); border: 1px solid var(--lborder); border-radius: var(--r); overflow: hidden; transition: border-color .15s; }
+.faq-item.on { border-color: var(--purple); }
+.faq-q {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  background: none; border: none; cursor: pointer; text-align: left;
+  padding: 18px 22px; font: 600 15.5px/1.4 var(--inter); color: var(--ltext);
+}
+.faq-toggle {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: #f0ebff;
+  color: var(--purple); display: flex; align-items: center; justify-content: center;
+  font-size: 16px; line-height: 1; transition: transform .2s;
+}
+.faq-item.on .faq-toggle { transform: rotate(45deg); }
+.faq-a { padding: 0 22px 20px; font-size: 14.5px; line-height: 1.65; color: var(--lsub); }
 
 /* ── CTA band / forms ── */
 .fi {

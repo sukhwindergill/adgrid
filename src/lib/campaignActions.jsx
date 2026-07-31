@@ -5,7 +5,7 @@ import { C, F } from '../design/tokens.js';
 import { useConfirm } from '../components/primitives/ConfirmModal.jsx';
 import { Btn } from '../components/primitives/Btn.jsx';
 
-export function ApproveBtn({ campaign, setCampaigns }) {
+export function ApproveBtn({ campaign, setCampaigns, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
   const confirm = useConfirm();
@@ -46,6 +46,7 @@ export function ApproveBtn({ campaign, setCampaigns }) {
         if (dbErr) { setErr(dbErr.message); setLoading(false); return; }
         setCampaigns(prev => prev.map(x => x.id === campaign.id ? { ...x, status: 'scheduled' } : x));
         setLoading(false);
+        onSuccess?.();
         return;
       }
 
@@ -57,6 +58,7 @@ export function ApproveBtn({ campaign, setCampaigns }) {
     await supabase.from('bookings').update({ status: 'scheduled', payment_status: 'paid' }).eq('id', campaign.id);
     setCampaigns(prev => prev.map(x => x.id === campaign.id ? { ...x, status: 'scheduled', payment_status: 'paid' } : x));
     setLoading(false);
+    onSuccess?.();
   };
 
   return (

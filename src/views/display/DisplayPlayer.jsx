@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import QRCode from 'react-qr-code';
 import { createPlayBuffer, FLUSH_INTERVAL_MS } from '../../lib/playBuffer.js';
+import { getCreativeRenderPlan } from '../../lib/getCreativeRenderPlan.js';
 
 const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
@@ -18,10 +19,9 @@ function buildQrUrl(destinationUrl, screenId, campaignId) {
 }
 
 function CreativeSlide({ campaign, screenId }) {
-  const bg = campaign.accent_color || '#7c3aed';
-  const qrUrl = buildQrUrl(campaign.destination_url || 'https://adgrid.io', screenId, campaign.id);
-  const mediaUrl = campaign.media_url || null;
-  const isVideo = campaign.media_type === 'video';
+  const plan = getCreativeRenderPlan(campaign);
+  const { mediaUrl, isVideo, showTextOverlay, bg, headline, cta, category } = plan;
+  const qrUrl = buildQrUrl(plan.destination, screenId, campaign.id);
 
   return (
     <div style={{
@@ -78,26 +78,28 @@ function CreativeSlide({ campaign, screenId }) {
       </div>
 
       {/* Category tag */}
-      {campaign.category && (
+      {showTextOverlay && category && (
         <div style={{
           fontSize: 'clamp(10px, 1vw, 14px)', letterSpacing: '3px', textTransform: 'uppercase',
           color: 'rgba(255,255,255,0.4)', fontFamily: "'Inter', sans-serif", marginBottom: 'clamp(12px, 2vw, 24px)',
         }}>
-          {campaign.category}
+          {category}
         </div>
       )}
 
       {/* Headline */}
-      <div style={{
-        fontSize: 'clamp(32px, 6vw, 96px)', fontWeight: 800, color: '#fff',
-        lineHeight: 1.05, maxWidth: '70%', marginBottom: 'clamp(16px, 2.5vw, 40px)',
-        fontFamily: 'Georgia, serif', textShadow: '0 4px 24px rgba(0,0,0,0.5)',
-      }}>
-        {campaign.headline || campaign.advertiser_name}
-      </div>
+      {showTextOverlay && (
+        <div style={{
+          fontSize: 'clamp(32px, 6vw, 96px)', fontWeight: 800, color: '#fff',
+          lineHeight: 1.05, maxWidth: '70%', marginBottom: 'clamp(16px, 2.5vw, 40px)',
+          fontFamily: 'Georgia, serif', textShadow: '0 4px 24px rgba(0,0,0,0.5)',
+        }}>
+          {headline}
+        </div>
+      )}
 
       {/* CTA button */}
-      {campaign.cta && (
+      {showTextOverlay && cta && (
         <div style={{
           display: 'inline-block',
           padding: 'clamp(8px, 1.2vw, 18px) clamp(20px, 3vw, 48px)',
@@ -106,7 +108,7 @@ function CreativeSlide({ campaign, screenId }) {
           fontWeight: 600, borderRadius: 4,
           fontFamily: "'Inter', sans-serif", letterSpacing: '1px',
         }}>
-          {campaign.cta}
+          {cta}
         </div>
       )}
     </div>

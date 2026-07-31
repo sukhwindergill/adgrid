@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { C, F, SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
+import { useBreakpoint } from "../../lib/useBreakpoint.js";
 
 // ─── Platform definitions ───────────────────────────────────────────────────
 
@@ -290,6 +291,7 @@ function PlatformCard({ platform, integration, eventCount, onConnect, onDisconne
 // ─── Main view ───────────────────────────────────────────────────────────────
 
 export default function AdvIntegrationsView() {
+  const { isMobile } = useBreakpoint();
   const [tab, setTab] = useState("platforms");
   const [integrations, setIntegrations] = useState([]);
   const [events, setEvents] = useState([]);
@@ -386,7 +388,7 @@ export default function AdvIntegrationsView() {
 
       {/* Platforms tab */}
       {tab === "platforms" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 20 }}>
           {PLATFORMS.map(p => (
             <PlatformCard
               key={p.id}
