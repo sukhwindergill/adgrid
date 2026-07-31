@@ -231,6 +231,7 @@ export function DisplayPlayer({ screenToken }) {
 
     playStartRef.current = Date.now();
     const campaignId = current.id;
+    const creativeId = current.creative_id ?? null;
 
     return () => {
       const startedAt = playStartRef.current;
@@ -239,6 +240,7 @@ export function DisplayPlayer({ screenToken }) {
       if (durationS <= 0) return;
       playBufferRef.current.record({
         campaign_id: campaignId,
+        creative_id: creativeId,
         played_at: new Date(startedAt).toISOString(),
         duration_s: durationS,
         completed: durationS >= (ROTATE_INTERVAL_MS / 1000) * 0.9,

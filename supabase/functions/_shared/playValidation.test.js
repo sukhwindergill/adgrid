@@ -80,4 +80,13 @@ describe('validatePlayBatch', () => {
     expect(validatePlayBatch(null, now).accepted).toHaveLength(0);
     expect(validatePlayBatch('nope', now).accepted).toHaveLength(0);
   });
+
+  it('passes creative_id through when present, and defaults to null when absent', () => {
+    const { accepted } = validatePlayBatch([
+      { ...valid, client_play_id: 'p2', creative_id: 'cr-1' },
+      { ...valid, client_play_id: 'p3' },
+    ], now);
+    expect(accepted[0].creative_id).toBe('cr-1');
+    expect(accepted[1].creative_id).toBeNull();
+  });
 });

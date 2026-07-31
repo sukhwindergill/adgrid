@@ -33,12 +33,13 @@ export function createPlayBuffer({
   }
 
   return {
-    record({ campaign_id, duration_s, played_at, completed = true, client_play_id }) {
+    record({ campaign_id, creative_id = null, duration_s, played_at, completed = true, client_play_id }) {
       if (!campaign_id) return;
       const d = Number(duration_s);
       if (!Number.isFinite(d) || d <= 0) return;
       queue.push({
         campaign_id,
+        creative_id,
         client_play_id: client_play_id ?? newId(),
         played_at: played_at ?? new Date().toISOString(),
         duration_s: d,
