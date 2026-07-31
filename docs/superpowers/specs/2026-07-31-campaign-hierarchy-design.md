@@ -56,7 +56,7 @@ ALTER TABLE bookings ADD COLUMN budget_level text
 -- Creative tier
 CREATE TABLE campaign_creatives (
   id            uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  targeting_id  uuid NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+  targeting_id  text NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,  -- bookings.id is text, not uuid
   label         text NOT NULL DEFAULT 'Creative 1',
   media_url     text,
   media_type    text,
@@ -72,7 +72,7 @@ CREATE TABLE campaign_creatives (
 -- Which screens (from the targeting group's pool) each creative plays on, and at what relative share
 CREATE TABLE campaign_creative_screens (
   creative_id   uuid NOT NULL REFERENCES campaign_creatives(id) ON DELETE CASCADE,
-  screen_id     uuid NOT NULL REFERENCES screens(id) ON DELETE CASCADE,
+  screen_id     text NOT NULL REFERENCES screens(id) ON DELETE CASCADE,  -- screens.id is text, not uuid
   weight        int NOT NULL DEFAULT 100,  -- advertiser-set share of plays; never auto-adjusted
   PRIMARY KEY (creative_id, screen_id)
 );
