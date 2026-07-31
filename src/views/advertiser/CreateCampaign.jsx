@@ -294,45 +294,6 @@ function StepArea({ form, setForm, reachSummary, allScreens, onPrevCampaigns }) 
   );
 }
 
-// ─── Step 2: Filters ──────────────────────────────────────────────────────────
-
-function StepFilters({ form, setForm, reachSummary }) {
-  const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
-  return (
-    <div style={{ maxWidth: 560, margin: '0 auto' }}>
-      <Card style={{ padding: 32 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 4px' }}>Filter screens</h2>
-        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>Narrow down by type of venue. All optional.</p>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Environment</div>
-            <PillGroup
-              options={[{ value: 'any', label: 'Any' }, { value: 'indoor', label: 'Indoor' }, { value: 'outdoor', label: 'Outdoor' }]}
-              value={form.env_filter}
-              onChange={v => setField('env_filter', v)}
-            />
-          </div>
-          <div>
-            <SelInput label="Venue Category" value={form.venue_filter} onChange={e => setField('venue_filter', e.target.value)}>
-              <option value="">Any venue type</option>
-              {Object.entries(VENUE_TAXONOMY).map(([key, { label }]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
-            </SelInput>
-          </div>
-        </div>
-
-        {reachSummary && (
-          <div style={{ marginTop: 20, padding: '10px 14px', background: C.purpleSoft, borderRadius: 8, fontSize: 13, color: C.purple, fontFamily: F.sans }}>
-            {reachSummary}
-          </div>
-        )}
-      </Card>
-    </div>
-  );
-}
-
 // ─── Steps 3-7: Placeholders ─────────────────────────────────────────────────
 
 function ScreenPickerCard({ screen, selected, onToggle }) {
@@ -903,36 +864,6 @@ function StepBudget({ form, setForm, matchedScreens, profile }) {
             </div>
           </div>
 
-        </div>
-      </Card>
-    </div>
-  );
-}
-
-function StepLaunch({ form, setForm }) {
-  const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
-  return (
-    <div style={{ maxWidth: 540, margin: '0 auto' }}>
-      <Card style={{ padding: 32 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 8px' }}>How should it launch?</h2>
-        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>
-          Screen owners need to approve your campaign before it runs on their display.
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {[
-            { value: 'partial', title: 'Go live as screens approve', desc: 'Your campaign starts running on each screen as soon as that screen\'s owner approves. Other screens join when they approve.' },
-            { value: 'all', title: 'Wait for all screens', desc: 'Campaign stays pending until every targeted screen owner has approved. Coordinated launch across all screens.' },
-          ].map(opt => (
-            <button key={opt.value} type="button" onClick={() => setField('start_when', opt.value)} style={{
-              padding: '16px 18px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
-              border: `2px solid ${form.start_when === opt.value ? C.purple : C.border}`,
-              background: form.start_when === opt.value ? C.purpleSoft : C.surface,
-              transition: 'all 0.15s',
-            }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>{opt.title}</div>
-              <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5 }}>{opt.desc}</div>
-            </button>
-          ))}
         </div>
       </Card>
     </div>
