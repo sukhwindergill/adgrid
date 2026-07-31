@@ -70,6 +70,10 @@ describe('expandCreativeAssignments', () => {
   it('keeps the total bounded at 10 when many low-weight assignments would otherwise force overflow', () => {
     // 1 assignment at weight 91 + 9 at weight 1 each = 10 assignments.
     // Forced Math.max(1, ...) minimums alone would previously sum past 10.
+    // With exactly 10 assignments the reserved-minimum budget is fully
+    // exhausted (remainingBudget = 0), so this is also the one case where
+    // weight has zero effect on the outcome — everyone gets exactly 1 slot,
+    // which is the only mathematically valid split at that boundary.
     const assignments = [
       { creative_id: 'dominant', weight: 91 },
       ...Array.from({ length: 9 }, (_, i) => ({ creative_id: `low-${i}`, weight: 1 })),
@@ -77,7 +81,7 @@ describe('expandCreativeAssignments', () => {
     const result = expandCreativeAssignments(assignments);
     expect(result).toHaveLength(CREATIVE_ROTATION_SLOTS);
     for (const a of assignments) {
-      expect(result.filter(id => id === a.creative_id).length).toBeGreaterThanOrEqual(1);
+      expect(result.filter(id => id === a.creative_id).length).toBe(1);
     }
   });
 

@@ -63,6 +63,10 @@ export function expandCreativeAssignments(assignments: CreativeAssignment[]): st
     // between exactly-tied weights is bounded to at most one slot — an
     // unavoidable artifact of splitting one indivisible last slot between
     // exact ties, not a directional bias toward array order.
+    // Note: when n === CREATIVE_ROTATION_SLOTS exactly, remainingBudget is
+    // 0, so every assignment gets exactly its one reserved slot and weight
+    // has no effect on the outcome at all — that's the only mathematically
+    // valid split when the assignment count exactly exhausts the budget.
     const remainingBudget = CREATIVE_ROTATION_SLOTS - n;
     const shares = valid.map(a => (a.weight / totalWeight) * remainingBudget);
     const extra = shares.map(s => Math.floor(s));
