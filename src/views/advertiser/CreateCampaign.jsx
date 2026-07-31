@@ -18,7 +18,6 @@ import { ReadabilityPanel } from '../../components/shared/ReadabilityPanel.jsx';
 import { splitMessage } from '../../lib/creativeMessageSplit.js';
 import { CATEGORIES } from '../../lib/data.js';
 import { VENUE_TAXONOMY, COUNTRIES } from '../../lib/venueTypes.js';
-import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { formatCurrency } from '../../lib/formatCurrency.js';
@@ -185,7 +184,7 @@ function StepArea({ form, setForm, reachSummary, allScreens, onPrevCampaigns }) 
         const [lon, lat] = feature.center;
         setForm(s => ({ ...s, radius_center_lat: lat, radius_center_lon: lon }));
       }
-    } catch (_) {
+    } catch {
       // leave center unchanged — CITY_CENTERS fast path already handles known cities
     }
     setGeocoding(false);
@@ -471,7 +470,6 @@ function MediaUpload({ form, setForm }) {
   const handleFile = async (file) => {
     if (!file) return;
     const ALLOWED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime'];
-    const isImg = file.type.startsWith('image/');
     const isVid = file.type.startsWith('video/');
     if (!ALLOWED.includes(file.type)) { setErr('Use JPG, PNG, GIF, WEBP, or MP4/WEBM/MOV video.'); return; }
     const maxMB = isVid ? 100 : 15;

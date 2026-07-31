@@ -8,6 +8,7 @@ import { HowItWorks } from './sections/HowItWorks.jsx';
 import { OperatorsSection } from './sections/OperatorsSection.jsx';
 import { AdvertisersSection } from './sections/AdvertisersSection.jsx';
 import { MarketBand } from './sections/MarketBand.jsx';
+import { Faq } from './sections/Faq.jsx';
 import { CtaBand } from './sections/CtaBand.jsx';
 import { Footer } from './sections/Footer.jsx';
 
@@ -32,6 +33,7 @@ export function MarketingHome({ onLogin: onLoginProp }) {
       <OperatorsSection onOperatorSignup={onOperatorSignup} />
       <AdvertisersSection />
       <MarketBand />
+      <Faq />
       <CtaBand />
       <Footer onLogin={onLogin} onScrollTo={scrollTo} />
     </div>

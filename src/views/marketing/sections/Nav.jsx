@@ -13,6 +13,7 @@ export function Nav({ onScrollTo, onLogin }) {
           <button className="nl" onClick={() => go('operators')}>For operators</button>
           <button className="nl" onClick={() => go('advertisers')}>For advertisers</button>
           <button className="nl" onClick={() => go('how')}>How it works</button>
+          <button className="nl" onClick={() => go('faq')}>FAQ</button>
         </div>
         <div className="nav-spacer" />
         <button className="nl nav-desktop-only" onClick={onLogin}>Sign in</button>
