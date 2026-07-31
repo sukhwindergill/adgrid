@@ -61,7 +61,8 @@ export function validatePlayBatch(
       continue;
     }
 
-    const creativeId = typeof raw?.creative_id === 'string' && raw.creative_id.trim() ? raw.creative_id.trim() : null;
+    const trimmedCreativeId = typeof raw?.creative_id === 'string' ? raw.creative_id.trim() : '';
+    const creativeId = trimmedCreativeId || null;
 
     seen.add(clientId);
     accepted.push({

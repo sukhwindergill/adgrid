@@ -37,6 +37,13 @@ describe('createPlayBuffer', () => {
     expect(buf.pending()[0].creative_id).toBe('cr-9');
   });
 
+  it('survives a storage round-trip with creative_id intact', () => {
+    const buf = createPlayBuffer({ storage: store, newId: () => 'gen-1' });
+    buf.record({ campaign_id: 'c1', creative_id: 'cr-9', duration_s: 10, played_at: '2026-07-24T11:00:00Z' });
+    const restored = createPlayBuffer({ storage: store });
+    expect(restored.pending()[0].creative_id).toBe('cr-9');
+  });
+
   it('ignores a play with no campaign_id', () => {
     const buf = createPlayBuffer({ storage: store });
     buf.record({ duration_s: 10 });
