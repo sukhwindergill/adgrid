@@ -55,4 +55,9 @@ describe('reconcileAssignments', () => {
     const result = reconcileAssignments(input, ['a']);
     expect(result[0]).toEqual({ id: 'cr-0', label: 'Creative 1', headline: 'Hi', assigned_screen_ids: ['a'] });
   });
+
+  it('defaults a missing assigned_screen_ids to empty instead of throwing', () => {
+    const result = reconcileAssignments([{ id: 'cr-0', label: 'no field yet' }], ['a', 'b']);
+    expect(result[0].assigned_screen_ids).toEqual([]);
+  });
 });

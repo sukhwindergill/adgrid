@@ -8,7 +8,7 @@ import { aspectOrientation } from './creativeFit.js';
 // dropping them — at submit time, an unassigned screen falls back to the
 // first creative (see the wizard's submit handler).
 export function unassignedScreenIds(screenIds, creatives) {
-  const claimed = new Set(creatives.flatMap(c => c.assigned_screen_ids));
+  const claimed = new Set(creatives.flatMap(c => c.assigned_screen_ids ?? []));
   return screenIds.filter(id => !claimed.has(id));
 }
 
@@ -40,6 +40,6 @@ export function reconcileAssignments(creatives, selectedScreenIds) {
   const selected = new Set(selectedScreenIds);
   return creatives.map(c => ({
     ...c,
-    assigned_screen_ids: c.assigned_screen_ids.filter(id => selected.has(id)),
+    assigned_screen_ids: (c.assigned_screen_ids ?? []).filter(id => selected.has(id)),
   }));
 }
