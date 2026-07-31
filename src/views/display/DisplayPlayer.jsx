@@ -10,18 +10,19 @@ const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL
 const POLL_INTERVAL_MS  = 30_000;
 const ROTATE_INTERVAL_MS = 10_000;
 
-function buildQrUrl(destinationUrl, screenId, campaignId) {
+function buildQrUrl(destinationUrl, screenId, campaignId, creativeId) {
   if (!SUPABASE_FUNCTIONS_URL || !campaignId) return destinationUrl;
   const u = new URL(`${SUPABASE_FUNCTIONS_URL}/scan-redirect`);
   u.searchParams.set('c', campaignId);
   if (screenId) u.searchParams.set('s', screenId);
+  if (creativeId) u.searchParams.set('cr', creativeId);
   return u.toString();
 }
 
 function CreativeSlide({ campaign, screenId }) {
   const plan = getCreativeRenderPlan(campaign);
   const { mediaUrl, isVideo, showTextOverlay, bg, headline, cta, category } = plan;
-  const qrUrl = buildQrUrl(plan.destination, screenId, campaign.id);
+  const qrUrl = buildQrUrl(plan.destination, screenId, campaign.id, campaign.creative_id);
 
   return (
     <div style={{
