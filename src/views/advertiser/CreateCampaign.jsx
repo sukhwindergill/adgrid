@@ -24,6 +24,11 @@ import { formatCurrency } from '../../lib/formatCurrency.js';
 import { haversineKm } from '../../lib/geo.js';
 import { isValidDestinationUrl, normalizeDestinationUrl } from '../../lib/destinationUrl.js';
 import { buildPreviewCampaign } from '../../lib/buildPreviewCampaign.js';
+import { PillGroup } from './createCampaign/PillGroup.jsx';
+import { Stepper } from './createCampaign/Stepper.jsx';
+import { ScreenMap } from './createCampaign/ScreenMap.jsx';
+import { ScreenPickerCard } from './createCampaign/ScreenPickerCard.jsx';
+import { MediaUpload } from './createCampaign/MediaUpload.jsx';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -43,118 +48,6 @@ const CITY_CENTERS = {
   'Hamilton':     [43.2557,  -79.8711],
   'Kitchener':    [43.4516,  -80.4925],
 };
-
-// ─── Stepper ─────────────────────────────────────────────────────────────────
-
-function Stepper({ step, onCancel }) {
-  return (
-    <div style={{ marginBottom: 28 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>Step {step + 1} of {STEP_LABELS.length}</div>
-        <button onClick={onCancel} style={{ background: 'none', border: 'none', fontSize: 12, color: C.textMuted, cursor: 'pointer', fontFamily: F.sans }}>Cancel</button>
-      </div>
-      <div style={{ height: 4, background: C.border, borderRadius: 2 }}>
-        <div style={{ height: '100%', width: `${(step / (STEP_LABELS.length - 1)) * 100}%`, background: C.purple, borderRadius: 2, transition: 'width 0.3s' }} />
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-        {STEP_LABELS.map((l, i) => (
-          <div key={l} style={{ fontSize: 10, fontFamily: F.sans, color: i <= step ? C.purple : C.textMuted, fontWeight: i === step ? 600 : 400 }}>{l}</div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── PillGroup ────────────────────────────────────────────────────────────────
-
-function PillGroup({ options, value, onChange, multi = false }) {
-  const vals = multi ? (value || []) : null;
-  return (
-    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-      {options.map(opt => {
-        const v = typeof opt === 'string' ? opt : opt.value;
-        const l = typeof opt === 'string' ? opt : opt.label;
-        const active = multi ? vals.includes(v) : value === v;
-        return (
-          <button key={v} type="button" onClick={() => {
-            if (multi) {
-              onChange(active ? vals.filter(x => x !== v) : [...vals, v]);
-            } else {
-              onChange(v);
-            }
-          }} style={{
-            padding: '7px 14px', borderRadius: 20, cursor: 'pointer',
-            border: `1px solid ${active ? C.purple : C.border}`,
-            background: active ? C.purpleSoft : C.surface,
-            color: active ? C.purple : C.textSub,
-            fontSize: 12, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
-          }}>{l}</button>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─── Leaflet map (radius mode only) ──────────────────────────────────────────
-
-function ScreenMap({ center, radius, screens, selected, onToggle }) {
-  const mapRef    = useRef(null);
-  const leafletRef = useRef(null);
-  const markersRef = useRef([]);
-  const circleRef  = useRef(null);
-
-  useEffect(() => {
-    async function init() {
-      if (leafletRef.current) return;
-      if (!document.getElementById('leaflet-css')) {
-        const link = document.createElement('link');
-        link.id = 'leaflet-css'; link.rel = 'stylesheet';
-        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        document.head.appendChild(link);
-      }
-      const L = (await import('leaflet')).default;
-      delete L.Icon.Default.prototype._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-      });
-      const map = L.map(mapRef.current, { zoomControl: true, scrollWheelZoom: false }).setView(center, 12);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 18 }).addTo(map);
-      leafletRef.current = { L, map };
-    }
-    init().then(() => {
-      if (!leafletRef.current) return;
-      const { L: Lf, map: m } = leafletRef.current;
-      if (circleRef.current) circleRef.current.remove();
-      circleRef.current = Lf.circle(center, { radius: radius * 1000, color: '#7c3aed', fillColor: '#7c3aed', fillOpacity: 0.06, weight: 2, dashArray: '6 4' }).addTo(m);
-      m.setView(center, 12);
-      markersRef.current.forEach(mk => mk.remove());
-      markersRef.current = screens.filter(s => s.lat != null && s.lon != null).map(s => {
-        // A screen with unknown coordinates is excluded, not treated as
-        // distance zero — haversineKm returns null rather than NaN for that.
-        const d = haversineKm(center[0], center[1], s.lat, s.lon);
-        const inRadius = d !== null && d <= radius;
-        const isSel = selected.includes(s.id);
-        const icon = Lf.divIcon({
-          className: '',
-          html: `<div style="width:14px;height:14px;border-radius:50%;background:${isSel ? '#7c3aed' : inRadius ? '#16a34a' : '#9ca3af'};border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.3);cursor:${inRadius ? 'pointer' : 'default'}"></div>`,
-          iconSize: [14, 14], iconAnchor: [7, 7],
-        });
-        const marker = Lf.marker([s.lat, s.lon], { icon });
-        marker.bindTooltip(s.name, { permanent: false, direction: 'top', offset: [0, -8] });
-        if (inRadius) marker.on('click', () => onToggle(s.id));
-        return marker.addTo(m);
-      });
-    });
-  }, [center, radius, screens, selected]);
-
-  useEffect(() => () => {
-    if (leafletRef.current?.map) { leafletRef.current.map.remove(); leafletRef.current = null; }
-  }, []);
-
-  return <div ref={mapRef} style={{ height: 260, borderRadius: 12, overflow: 'hidden', border: `1px solid ${C.border}`, marginBottom: 16 }} />;
-}
 
 // ─── Step 1: Area ─────────────────────────────────────────────────────────────
 
@@ -296,51 +189,6 @@ function StepArea({ form, setForm, reachSummary, allScreens, onPrevCampaigns }) 
 
 // ─── Steps 3-7: Placeholders ─────────────────────────────────────────────────
 
-function ScreenPickerCard({ screen, selected, onToggle }) {
-  const firstPhoto = screen.screen_photos?.[0];
-  const venueLabel = screen.venue_subtype || screen.venue_category;
-  const isSelected = selected.includes(screen.id);
-
-  return (
-    <div
-      onClick={() => onToggle(screen.id)}
-      style={{
-        border: `2px solid ${isSelected ? C.purple : C.border}`,
-        borderRadius: 10, overflow: 'hidden', cursor: 'pointer',
-        background: isSelected ? C.purpleSoft : C.surface,
-        transition: 'all 0.15s', position: 'relative',
-      }}
-    >
-      {firstPhoto && (
-        <img src={firstPhoto} alt={screen.name} style={{ width: '100%', height: 72, objectFit: 'cover', display: 'block' }} />
-      )}
-      <div style={{ padding: '10px 12px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, lineHeight: 1.3 }}>{screen.name}</div>
-          <div style={{
-            width: 18, height: 18, borderRadius: 4, border: `2px solid ${isSelected ? C.purple : C.border}`,
-            background: isSelected ? C.purple : 'transparent', flexShrink: 0, marginLeft: 8, marginTop: 1,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            {isSelected && <span style={{ color: '#fff', fontSize: 11, lineHeight: 1 }}>✓</span>}
-          </div>
-        </div>
-        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
-          {screen.city}{screen.environment ? ` · ${screen.environment === 'indoor' ? 'Indoor' : 'Outdoor'}` : ''}
-        </div>
-        {venueLabel && (
-          <span style={{ display: 'inline-block', marginTop: 6, fontSize: 10, fontWeight: 600, background: C.blueSoft, color: C.blue, padding: '1px 7px', borderRadius: 10, fontFamily: F.sans }}>
-            {venueLabel}
-          </span>
-        )}
-        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 4 }}>
-          ~{screen.impressions > 0 ? `${(screen.impressions / 1000).toFixed(0)}K impr/mo` : 'No data yet'}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function StepScreens({ form, setForm, matchedScreens }) {
   const [showFilters, setShowFilters] = useState(false);
 
@@ -419,77 +267,6 @@ function StepScreens({ form, setForm, matchedScreens }) {
           </div>
         )}
       </Card>
-    </div>
-  );
-}
-
-function MediaUpload({ form, setForm }) {
-  const { user } = useAuth();
-  const [uploading, setUploading] = useState(false);
-  const [err, setErr] = useState(null);
-
-  const handleFile = async (file) => {
-    if (!file) return;
-    const ALLOWED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime'];
-    const isVid = file.type.startsWith('video/');
-    if (!ALLOWED.includes(file.type)) { setErr('Use JPG, PNG, GIF, WEBP, or MP4/WEBM/MOV video.'); return; }
-    const maxMB = isVid ? 100 : 15;
-    if (file.size > maxMB * 1024 * 1024) { setErr(`File too large — max ${maxMB} MB for ${isVid ? 'video' : 'images'}.`); return; }
-    setErr(null); setUploading(true);
-    const ext = (file.name.split('.').pop() || (isVid ? 'mp4' : 'jpg')).toLowerCase();
-    const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from('creatives').upload(path, file, { contentType: file.type, upsert: false });
-    if (error) { setErr(error.message); setUploading(false); return; }
-    const { data } = supabase.storage.from('creatives').getPublicUrl(path);
-    let width = null, height = null;
-    try {
-      const dims = await getMediaDimensions(file);
-      width = dims.width;
-      height = dims.height;
-    } catch {
-      // Dimensions are best-effort. A read failure must not block the upload
-      // — the creative is still usable, it just won't be fit-checked until
-      // dimensions are known (checkCreativeFit reports 'unknown' without them).
-    }
-    setForm(s => ({ ...s, media_url: data.publicUrl, media_type: isVid ? 'video' : 'image', media_width: width, media_height: height }));
-    setUploading(false);
-  };
-
-  const clear = () => setForm(s => ({ ...s, media_url: '', media_type: '', media_width: null, media_height: null }));
-
-  return (
-    <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: `1px solid ${C.border}` }}>
-      <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 4 }}>
-        Ad creative <span style={{ color: C.textMuted, fontWeight: 400 }}>(optional — image or video)</span>
-      </div>
-      <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 10, lineHeight: 1.5 }}>
-        Upload your own designed ad. Landscape 16:9 works best. Leave empty to use the generated card from your headline & colour.
-      </div>
-      {form.media_url ? (
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <div style={{ width: 120, aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden', background: C.surfaceAlt, flexShrink: 0 }}>
-            {form.media_type === 'video'
-              ? <video src={form.media_url} muted loop autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : <img src={form.media_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-          </div>
-          <div>
-            <div style={{ fontSize: 12, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>{form.media_type === 'video' ? 'Video' : 'Image'} uploaded ✓</div>
-            <button type="button" onClick={clear} style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, padding: '4px 12px', fontSize: 12, color: C.textSub, cursor: 'pointer', fontFamily: F.sans }}>Remove</button>
-          </div>
-        </div>
-      ) : (
-        <label style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          border: `2px dashed ${C.border}`, borderRadius: 10, padding: '18px',
-          cursor: uploading ? 'default' : 'pointer', background: C.surfaceAlt,
-          fontSize: 13, color: C.textSub, fontFamily: F.sans,
-        }}>
-          <input type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime" style={{ display: 'none' }} disabled={uploading}
-            onChange={e => handleFile(e.target.files?.[0])} />
-          {uploading ? 'Uploading…' : '+ Upload image or video'}
-        </label>
-      )}
-      {err && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginTop: 8 }}>{err}</div>}
     </div>
   );
 }
@@ -1327,7 +1104,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
           }}>Set up billing →</a>
         </div>
       )}
-      {step < 5 && <Stepper step={step} onCancel={onCancel} />}
+      {step < 5 && <Stepper step={step} labels={STEP_LABELS} onCancel={onCancel} />}
 
       {showDupModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
