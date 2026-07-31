@@ -37,9 +37,13 @@ export function StepCreative({ form, setForm, matchedScreens, profile }) {
   const creatives = form.creatives.length > 0 ? form.creatives : [BLANK_CREATIVE()];
   const isMulti = creatives.length > 1;
 
+  // When form.creatives is still empty, the rendered `creatives` array above is a
+  // locally-generated placeholder (fresh id every render) -- there's no id to match
+  // against inside setForm's updater, so the first edit must seed state directly
+  // rather than trying to find-and-replace by id.
   const updateCreative = (id, next) => setForm(s => ({
     ...s,
-    creatives: (s.creatives.length > 0 ? s.creatives : [BLANK_CREATIVE()]).map(c => c.id === id ? next : c),
+    creatives: s.creatives.length > 0 ? s.creatives.map(c => c.id === id ? next : c) : [next],
   }));
 
   const addCreative = () => setForm(s => {

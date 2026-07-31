@@ -3,7 +3,7 @@
 // throwing) before they are wired into CreateCampaign.jsx's render switch in
 // a later task.
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 
 // StepCreative pulls in CreativeCard -> MediaUpload, which imports the real
 // supabase client (throws "supabaseUrl is required" under jsdom with no env)
@@ -59,5 +59,20 @@ describe('StepCreative', () => {
     expect(screen.getAllByText(/Split by screen type/).length).toBe(2);
     // scr-2 isn't claimed by either creative -- the "unassigned" banner should surface it.
     expect(screen.getByText(/aren't assigned to a creative yet/)).toBeInTheDocument();
+  });
+
+  it('preserves the first edit when starting from an empty creatives array', () => {
+    let capturedUpdater;
+    const setForm = (updater) => { capturedUpdater = updater; };
+    render(
+      <StepCreative form={baseForm} setForm={setForm} matchedScreens={[SCREEN_A, SCREEN_B]} profile={null} />
+    );
+    const headlineInput = screen.getByPlaceholderText('e.g. Start Your Morning Right');
+    fireEvent.change(headlineInput, { target: { value: 'H' } });
+
+    expect(capturedUpdater).toBeTypeOf('function');
+    const next = capturedUpdater(baseForm);
+    expect(next.creatives).toHaveLength(1);
+    expect(next.creatives[0].headline).toBe('H');
   });
 });

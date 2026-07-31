@@ -271,6 +271,10 @@ function StepScreens({ form, setForm, matchedScreens }) {
   );
 }
 
+// TEMPLATES/TemplateSwatch/TemplatePicker/MessageQuickFill below are temporarily
+// duplicated in createCampaign/TemplatePicker.jsx and createCampaign/MessageQuickFill.jsx
+// for the new multi-creative StepCreative. Edit both until this file's StepCreative
+// is rewritten to use those files directly and these copies are deleted.
 const TEMPLATES = [
   { id: 'bottom_bar', label: 'Bottom Bar' },
   { id: 'full_bleed', label: 'Full Bleed' },

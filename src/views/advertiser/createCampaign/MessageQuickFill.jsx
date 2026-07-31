@@ -1,4 +1,8 @@
 // src/views/advertiser/createCampaign/MessageQuickFill.jsx
+//
+// Temporarily duplicated with the still-live MessageQuickFill inside
+// ../CreateCampaign.jsx (its single-creative StepCreative isn't rewritten yet).
+// Edit both until that rewrite lands and the old copy is deleted.
 import { useState } from 'react';
 import { C, F } from '../../../design/tokens.js';
 

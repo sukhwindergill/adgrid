@@ -1,4 +1,8 @@
 // src/views/advertiser/createCampaign/TemplatePicker.jsx
+//
+// Temporarily duplicated with the still-live TEMPLATES/TemplateSwatch/TemplatePicker
+// inside ../CreateCampaign.jsx (its single-creative StepCreative isn't rewritten yet).
+// Edit both until that rewrite lands and the old copy is deleted.
 import { C, F } from '../../../design/tokens.js';
 
 export const TEMPLATES = [
