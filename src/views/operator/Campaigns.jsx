@@ -2,13 +2,12 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { C, F } from '../../design/tokens.js';
 import { SkeletonRow, SkeletonCard } from '../../components/ui/Skeleton.jsx';
-import { ApproveBtn } from '../../lib/campaignActions.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
-import { Badge } from '../../components/primitives/Badge.jsx';
-import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { groupByCampaignId, rollupGroup } from '../../lib/campaignRollup.js';
+import { CampaignRow } from './CampaignRow.jsx';
 
 
 export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, loadError, loading = false, onNewCampaign, allowCancel = false, canReview = false }) {
@@ -73,6 +72,25 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
 
     fetchCampaignScreens();
   }, [campaigns]);
+
+  const [campaignParents, setCampaignParents] = useState({}); // campaignParentId -> { id, name }
+
+  useEffect(() => {
+    const ids = [...new Set(campaigns.map(c => c.campaign_id).filter(Boolean))];
+    if (ids.length === 0) { setCampaignParents({}); return; }
+    supabase.from('campaigns').select('id, name').in('id', ids).then(({ data }) => {
+      const byId = {};
+      (data || []).forEach(row => { byId[row.id] = row; });
+      setCampaignParents(byId);
+    });
+  }, [campaigns.map(c => c.campaign_id).join(',')]);
+
+  const [expandedGroups, setExpandedGroups] = useState(new Set());
+  const toggleGroup = (id) => setExpandedGroups(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
 
   if (loading) {
     return (
@@ -193,83 +211,63 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {shown.map(c => {
-            const pct = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
-            const isPending = c.status === 'pending_review';
-
-            // Get campaign_screens for this campaign
-            const screens = campaignScreens[c.id] || [];
-            const screenCount = screens.length;
-
-            // Derive city from the screens' cities (prefer unique city if all same, else use campaign city as fallback)
-            const cities = [...new Set(screens.map(s => screenData[s.screen_id]?.city).filter(Boolean))];
-            const displayCity = cities.length === 1 ? cities[0] : (c.city || '');
-
-            // Calculate multi-screen status badge logic
-            let badgeStatus = c.status;
-            if (c.status === 'approved' || c.status === 'scheduled') {
-              const hasPending = screens.some(s => s.status === 'pending');
-              const hasApproved = screens.some(s => s.status === 'approved' || s.status === 'auto_approved');
-              if (hasPending && hasApproved) {
-                badgeStatus = 'partially_approved';
+          {Array.from(groupByCampaignId(shown).entries()).map(([groupId, groupBookings]) => {
+            const withBadge = groupBookings.map(c => {
+              const screens = campaignScreens[c.id] || [];
+              let badgeStatus = c.status;
+              if (c.status === 'approved' || c.status === 'scheduled') {
+                const hasPending = screens.some(s => s.status === 'pending');
+                const hasApproved = screens.some(s => s.status === 'approved' || s.status === 'auto_approved');
+                if (hasPending && hasApproved) badgeStatus = 'partially_approved';
               }
+              const cities = [...new Set(screens.map(s => screenData[s.screen_id]?.city).filter(Boolean))];
+              return { ...c, badgeStatus, screenCount: screens.length, displayCity: cities.length === 1 ? cities[0] : (c.city || '') };
+            });
+
+            if (withBadge.length === 1) {
+              const c = withBadge[0];
+              return (
+                <CampaignRow key={c.id} c={c} screenCount={c.screenCount} displayCity={c.displayCity}
+                  isMobile={isMobile} allowCancel={allowCancel} canReview={canReview} setDetail={setDetail} setCampaigns={setCampaigns} />
+              );
             }
 
+            const parentName = campaignParents[groupId]?.name || withBadge[0].advertiser;
+            const rollup = rollupGroup(withBadge);
+            const totalScreens = withBadge.reduce((a, c) => a + c.screenCount, 0);
+            const expanded = expandedGroups.has(groupId);
+
             return (
-              <div key={c.id}
-                onClick={e => { if (!e.defaultPrevented) setDetail(c); }}
-                style={{
-                  background: isPending ? C.amberSoft : C.surface,
-                  border: `1px solid ${isPending ? C.amberBorder : C.border}`,
-                  borderRadius: 12, padding: '16px 20px', cursor: 'pointer', transition: 'all 0.15s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = isPending ? C.amber : C.purpleBorder; e.currentTarget.style.boxShadow = '0 4px 12px rgba(124,58,237,0.08)'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = isPending ? C.amberBorder : C.border; e.currentTarget.style.boxShadow = 'none'; }}
-              >
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 180px 120px 80px 110px 110px', gap: 16, alignItems: 'start' }}>
+              <div key={groupId} style={{ border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden' }}>
+                <div
+                  onClick={() => toggleGroup(groupId)}
+                  style={{ padding: '14px 20px', background: C.surfaceAlt, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                      <div style={{ fontWeight: 600, color: C.text, fontFamily: F.sans }}>{c.advertiser}</div>
-                      {isPending && <span style={{ fontSize: 10, background: C.amber, color: '#fff', padding: '1px 6px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>REVIEW</span>}
+                    <div style={{ fontWeight: 700, color: C.text, fontFamily: F.sans }}>{expanded ? '▾' : '▸'} {parentName}</div>
+                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+                      {withBadge.length} targeting groups · {totalScreens} screens · ${rollup.spent.toLocaleString()} of ${rollup.budget.toLocaleString()}
                     </div>
-                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.category} · {screenCount} screens · {displayCity}</div>
                   </div>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.mono }}>${c.spent.toLocaleString()}</span>
-                      <span style={{ fontSize: 12, color: C.textMuted, fontFamily: F.mono }}>${c.budget.toLocaleString()}</span>
+                  <div style={{ display: 'flex', gap: 20 }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontFamily: F.mono, fontSize: 13, fontWeight: 600, color: C.text }}>{(rollup.impressions / 1000).toFixed(1)}K</div>
+                      <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>impressions</div>
                     </div>
-                    <ProgressBar value={c.spent} max={c.budget} height={4} />
-                    <div style={{ fontSize: 10, color: pct > 90 ? C.red : pct > 70 ? C.amber : C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{pct}% used</div>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontFamily: F.mono, fontSize: 14, fontWeight: 600, color: C.text }}>{(c.impressions / 1000).toFixed(1)}K</div>
-                    <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>impressions</div>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontFamily: F.mono, fontSize: 14, fontWeight: 600, color: C.purple }}>{c.scans}</div>
-                    <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>scans</div>
-                  </div>
-                  <div style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub, whiteSpace: 'nowrap' }}>{c.start} →<br />{c.end}</div>
-                  {isPending && canReview ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }} onClick={e => e.preventDefault()}>
-                      <ApproveBtn campaign={c} setCampaigns={setCampaigns} />
-                      <Btn variant="danger"  size="sm" onClick={e => { e.preventDefault(); e.stopPropagation(); setDetail(c); }}>✗ Reject…</Btn>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontFamily: F.mono, fontSize: 13, fontWeight: 600, color: C.purple }}>{rollup.scans}</div>
+                      <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>scans</div>
                     </div>
-                  ) : allowCancel && (c.status === 'scheduled' || c.status === 'active') ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }} onClick={e => e.preventDefault()}>
-                      <Badge status={badgeStatus} />
-                      <Btn variant="danger" size="sm" onClick={async e => {
-                        e.preventDefault(); e.stopPropagation();
-                        if (!window.confirm(`Cancel campaign "${c.advertiser}"? This cannot be undone.`)) return;
-                        const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', c.id);
-                        if (!error) setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: 'cancelled' } : x));
-                      }}>✕ Cancel</Btn>
-                    </div>
-                  ) : (
-                    <Badge status={badgeStatus} />
-                  )}
+                  </div>
                 </div>
+                {expanded && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12, background: C.bg }}>
+                    {withBadge.map(c => (
+                      <CampaignRow key={c.id} c={c} screenCount={c.screenCount} displayCity={c.displayCity}
+                        isMobile={isMobile} allowCancel={allowCancel} canReview={canReview} setDetail={setDetail} setCampaigns={setCampaigns} />
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
