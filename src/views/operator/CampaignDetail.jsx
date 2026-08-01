@@ -14,7 +14,7 @@ import { ShareReportModal } from '../../components/shared/ShareReportModal.jsx';
 import { ApproveBtn } from '../../lib/campaignActions.jsx';
 import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
 
-export function CampaignDetail({ campaign, onBack, onUpdate, canReview = false, setCampaigns }) {
+export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, canReview = false, setCampaigns }) {
   const toast = useToast();
   const [tab, setTab] = useState('overview');
   const [rejecting, setRejecting] = useState(false);
@@ -98,7 +98,12 @@ export function CampaignDetail({ campaign, onBack, onUpdate, canReview = false, 
         title={c.advertiser}
         subtitle={`${c.screen} · ${c.city} · ${c.category}`}
         back="All Campaigns" onBack={onBack}
-        actions={<>{statusAction(c.status)}<Btn variant="secondary" size="sm" onClick={() => setSharing(true)}>Share report</Btn><Btn variant="secondary" size="sm" onClick={() => { setEditForm({ budget: c.budget, start: c.start, end: c.end }); setEditing(true); }}>✏ Edit</Btn></>}
+        actions={<>
+          {onAddTargeting && <Btn variant="secondary" size="sm" onClick={() => onAddTargeting(c)}>+ Add targeting group</Btn>}
+          {statusAction(c.status)}
+          <Btn variant="secondary" size="sm" onClick={() => setSharing(true)}>Share report</Btn>
+          <Btn variant="secondary" size="sm" onClick={() => { setEditForm({ budget: c.budget, start: c.start, end: c.end }); setEditing(true); }}>✏ Edit</Btn>
+        </>}
       />
 
       {c.status === 'pending_review' && (
