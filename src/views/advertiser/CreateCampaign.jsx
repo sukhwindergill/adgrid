@@ -5,745 +5,22 @@ import { supabase } from '../../lib/supabase.js';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
-import { Inp } from '../../components/primitives/Inp.jsx';
-import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { ErrorBanner } from '../../components/primitives/ErrorBanner.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
-import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
-import { getMediaDimensions } from '../../lib/mediaDimensions.js';
-import { checkCreativeFit } from '../../lib/creativeFit.js';
-import { CreativeFitPanel } from '../../components/shared/CreativeFitPanel.jsx';
-import { checkReadability, distinctTiers } from '../../lib/creativeReadability.js';
-import { ReadabilityPanel } from '../../components/shared/ReadabilityPanel.jsx';
-import { splitMessage } from '../../lib/creativeMessageSplit.js';
-import { CATEGORIES } from '../../lib/data.js';
-import { VENUE_TAXONOMY, COUNTRIES } from '../../lib/venueTypes.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { formatCurrency } from '../../lib/formatCurrency.js';
 import { haversineKm } from '../../lib/geo.js';
 import { isValidDestinationUrl, normalizeDestinationUrl } from '../../lib/destinationUrl.js';
 import { buildPreviewCampaign } from '../../lib/buildPreviewCampaign.js';
-import { PillGroup } from './createCampaign/PillGroup.jsx';
 import { Stepper } from './createCampaign/Stepper.jsx';
-import { ScreenMap } from './createCampaign/ScreenMap.jsx';
-import { ScreenPickerCard } from './createCampaign/ScreenPickerCard.jsx';
-import { MediaUpload } from './createCampaign/MediaUpload.jsx';
+import { StepTargeting } from './createCampaign/StepTargeting.jsx';
+import { StepCreative } from './createCampaign/StepCreative.jsx';
+import { StepBudgetReview } from './createCampaign/StepBudgetReview.jsx';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-const STEP_LABELS = ['Area', 'Screens', 'Creative', 'Budget & Schedule', 'Review'];
-
-const CITY_CENTERS = {
-  'Toronto':      [43.6532,  -79.3832],
-  'Vancouver':    [49.2827, -123.1207],
-  'Montreal':     [45.5017,  -73.5673],
-  'Calgary':      [51.0447, -114.0719],
-  'Ottawa':       [45.4215,  -75.6972],
-  'Edmonton':     [53.5461, -113.4938],
-  'Winnipeg':     [49.8951,  -97.1384],
-  'Quebec City':  [46.8139,  -71.2080],
-  'Hamilton':     [43.2557,  -79.8711],
-  'Kitchener':    [43.4516,  -80.4925],
-};
-
-// ─── Step 1: Area ─────────────────────────────────────────────────────────────
-
-function StepArea({ form, setForm, reachSummary, allScreens, onPrevCampaigns }) {
-  const [geocoding, setGeocoding] = useState(false);
-
-  const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
-
-  const geocodeCenter = async (query) => {
-    if (!query.trim()) return;
-    // Fast path: known city
-    if (CITY_CENTERS[query]) {
-      setForm(s => ({ ...s, radius_center_lat: CITY_CENTERS[query][0], radius_center_lon: CITY_CENTERS[query][1] }));
-      return;
-    }
-    setGeocoding(true);
-    try {
-      const token = import.meta.env.VITE_MAPBOX_TOKEN;
-      if (!token) throw new Error('VITE_MAPBOX_TOKEN not set');
-      const res = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?country=ca&limit=1&access_token=${token}`
-      );
-      const data = await res.json();
-      const feature = data.features?.[0];
-      if (feature) {
-        // Mapbox returns [longitude, latitude] — reversed vs Nominatim
-        const [lon, lat] = feature.center;
-        setForm(s => ({ ...s, radius_center_lat: lat, radius_center_lon: lon }));
-      }
-    } catch {
-      // leave center unchanged — CITY_CENTERS fast path already handles known cities
-    }
-    setGeocoding(false);
-  };
-
-  const radiusCenter = form.radius_center_lat && form.radius_center_lon
-    ? [form.radius_center_lat, form.radius_center_lon]
-    : CITY_CENTERS['Toronto'];
-
-  const radiusScreens = allScreens.filter(s => s.lat != null && s.lon != null);
-
-  return (
-    <div style={{ maxWidth: 620, margin: '0 auto' }}>
-      <Card style={{ padding: 32 }}>
-        <div style={{ marginBottom: 24 }}>
-          <Inp
-            label="Campaign name"
-            placeholder="e.g. Summer Promo 2026"
-            value={form.name}
-            onChange={e => setField('name', e.target.value)}
-          />
-        </div>
-
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 4px' }}>Where do you want to advertise?</h2>
-        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 20px' }}>Choose an area and we'll find matching screens for you.</p>
-
-        {onPrevCampaigns && (
-          <div style={{ marginBottom: 20 }}>
-            <button onClick={onPrevCampaigns} style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans, padding: 0 }}>
-              ↩ Start from a previous campaign →
-            </button>
-          </div>
-        )}
-
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Area type</div>
-          <PillGroup
-            options={[
-              { value: 'country', label: 'Country' },
-              { value: 'state',   label: 'State / Province' },
-              { value: 'city',    label: 'City' },
-              { value: 'radius',  label: 'Radius' },
-            ]}
-            value={form.area_type}
-            onChange={v => setField('area_type', v)}
-          />
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <SelInput label="Country" value={form.country} onChange={e => setField('country', e.target.value)}>
-            {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
-          </SelInput>
-
-          {(form.area_type === 'state' || form.area_type === 'city' || form.area_type === 'radius') && (
-            <Inp label="State / Province" placeholder="e.g. Ontario" value={form.state} onChange={e => setField('state', e.target.value)} />
-          )}
-
-          {(form.area_type === 'city' || form.area_type === 'radius') && (
-            <Inp label="City" placeholder="e.g. Toronto" value={form.city} onChange={e => setField('city', e.target.value)} />
-          )}
-
-          {form.area_type === 'radius' && (
-            <div>
-              <Inp
-                label="Center location"
-                placeholder="e.g. King St W, Toronto"
-                value={form.radius_center}
-                onChange={e => setField('radius_center', e.target.value)}
-                onBlur={e => geocodeCenter(e.target.value)}
-              />
-              {geocoding && <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 4 }}>Locating…</div>}
-              <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>
-                  Radius: {form.radius_km} km
-                </div>
-                <PillGroup
-                  options={[5, 10, 25, 50, 100].map(v => ({ value: v, label: `${v}km` }))}
-                  value={form.radius_km}
-                  onChange={v => setField('radius_km', v)}
-                />
-              </div>
-              <div style={{ marginTop: 16 }}>
-                <ScreenMap
-                  center={radiusCenter}
-                  radius={form.radius_km}
-                  screens={radiusScreens}
-                  selected={form.selected_screen_ids}
-                  onToggle={id => setForm(s => ({
-                    ...s,
-                    selected_screen_ids: s.selected_screen_ids.includes(id)
-                      ? s.selected_screen_ids.filter(x => x !== id)
-                      : [...s.selected_screen_ids, id],
-                  }))}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {reachSummary && (
-          <div style={{ marginTop: 16, padding: '10px 14px', background: C.purpleSoft, borderRadius: 8, fontSize: 13, color: C.purple, fontFamily: F.sans }}>
-            {reachSummary}
-          </div>
-        )}
-      </Card>
-    </div>
-  );
-}
-
-// ─── Steps 3-7: Placeholders ─────────────────────────────────────────────────
-
-function StepScreens({ form, setForm, matchedScreens }) {
-  const [showFilters, setShowFilters] = useState(false);
-
-  const toggleScreen = (id) => setForm(s => ({
-    ...s,
-    selected_screen_ids: s.selected_screen_ids.includes(id)
-      ? s.selected_screen_ids.filter(x => x !== id)
-      : [...s.selected_screen_ids, id],
-  }));
-
-  const selectAll = () => setForm(s => ({ ...s, selected_screen_ids: matchedScreens.map(sc => sc.id) }));
-  const deselectAll = () => setForm(s => ({ ...s, selected_screen_ids: [] }));
-
-  const selectedCount = form.selected_screen_ids.length;
-  const totalImpr = matchedScreens.filter(s => form.selected_screen_ids.includes(s.id)).reduce((a, s) => a + (s.impressions || 0), 0);
-
-  return (
-    <div style={{ maxWidth: 700, margin: '0 auto' }}>
-      <Card style={{ padding: 28 }}>
-        <button
-          onClick={() => setShowFilters(f => !f)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '6px 12px', borderRadius: 8, border: `1px solid ${C.border}`,
-            background: showFilters ? C.purpleSoft : C.surface,
-            color: showFilters ? C.purple : C.textSub,
-            fontSize: 12, fontWeight: 500, fontFamily: F.sans,
-            cursor: 'pointer', transition: 'all 0.15s', marginBottom: 12,
-          }}
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-          Filters {showFilters ? '▲' : '▼'}
-        </button>
-
-        {showFilters && (
-          <div style={{ marginBottom: 16, padding: 16, background: C.surfaceAlt, borderRadius: 10, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>Environment</div>
-              <PillGroup
-                options={[{ value: 'any', label: 'Any' }, { value: 'indoor', label: 'Indoor' }, { value: 'outdoor', label: 'Outdoor' }]}
-                value={form.env_filter}
-                onChange={v => setForm(s => ({ ...s, env_filter: v }))}
-              />
-            </div>
-            <SelInput label="Venue Category" value={form.venue_filter} onChange={e => setForm(s => ({ ...s, venue_filter: e.target.value }))}>
-              <option value="">Any venue type</option>
-              {Object.entries(VENUE_TAXONOMY).map(([key, { label }]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
-            </SelInput>
-          </div>
-        )}
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: 0 }}>Select screens</h2>
-            <div style={{ fontSize: 12, color: C.purple, fontFamily: F.sans, marginTop: 4 }}>
-              {selectedCount} of {matchedScreens.length} selected · ~{(totalImpr / 1000).toFixed(0)}K impressions/mo
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={selectAll} style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans }}>Select all</button>
-            <button onClick={deselectAll} style={{ background: 'none', border: 'none', fontSize: 12, color: C.textMuted, cursor: 'pointer', fontFamily: F.sans }}>Deselect all</button>
-          </div>
-        </div>
-
-        {matchedScreens.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '32px 24px', color: C.textSub, fontFamily: F.sans, fontSize: 13 }}>
-            No screens match your filters. Try widening your area or removing filters.
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-            {matchedScreens.map(s => (
-              <ScreenPickerCard key={s.id} screen={s} selected={form.selected_screen_ids} onToggle={toggleScreen} />
-            ))}
-          </div>
-        )}
-      </Card>
-    </div>
-  );
-}
-
-// TEMPLATES/TemplateSwatch/TemplatePicker/MessageQuickFill below are temporarily
-// duplicated in createCampaign/TemplatePicker.jsx and createCampaign/MessageQuickFill.jsx
-// for the new multi-creative StepCreative. Edit both until this file's StepCreative
-// is rewritten to use those files directly and these copies are deleted.
-const TEMPLATES = [
-  { id: 'bottom_bar', label: 'Bottom Bar' },
-  { id: 'full_bleed', label: 'Full Bleed' },
-  { id: 'split_panel', label: 'Split Panel' },
-];
-
-function TemplateSwatch({ id, active, onClick }) {
-  const inner = {
-    bottom_bar: (
-      <div style={{ position: 'absolute', bottom: 6, left: 6, right: 6 }}>
-        <div style={{ height: 4, width: '70%', background: '#fff', borderRadius: 1, marginBottom: 3 }} />
-        <div style={{ height: 3, width: '35%', background: C.purple, borderRadius: 1 }} />
-      </div>
-    ),
-    full_bleed: (
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-        <div style={{ height: 4, width: '60%', background: '#fff', borderRadius: 1 }} />
-        <div style={{ height: 6, width: '30%', background: C.purple, borderRadius: 3 }} />
-      </div>
-    ),
-    split_panel: (
-      <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
-        <div style={{ width: '40%', background: C.purple, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 3, padding: 4 }}>
-          <div style={{ height: 3, width: '80%', background: '#fff', borderRadius: 1 }} />
-          <div style={{ height: 3, width: '50%', background: '#fff', borderRadius: 1 }} />
-        </div>
-        <div style={{ flex: 1, background: C.surfaceAlt }} />
-      </div>
-    ),
-  }[id];
-
-  return (
-    <button type="button" onClick={onClick} style={{
-      position: 'relative', width: 60, height: 34, borderRadius: 6, overflow: 'hidden',
-      background: '#0d1520', cursor: 'pointer', padding: 0,
-      border: `2px solid ${active ? C.purple : C.border}`,
-    }}>
-      {inner}
-    </button>
-  );
-}
-
-function TemplatePicker({ value, onChange }) {
-  return (
-    <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-      {TEMPLATES.map(t => (
-        <div key={t.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-          <TemplateSwatch id={t.id} active={value === t.id} onClick={() => onChange(t.id)} />
-          <span style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>{t.label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function MessageQuickFill({ onFill }) {
-  const [message, setMessage] = useState('');
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 4 }}>
-        Describe your ad in one line <span style={{ color: C.textMuted, fontWeight: 400 }}>(optional)</span>
-      </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <input
-          type="text"
-          value={message}
-          maxLength={120}
-          placeholder="e.g. Fresh cold brew, delivered daily, Order now"
-          onChange={e => setMessage(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); onFill(message); } }}
-          style={{
-            flex: 1, padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8,
-            fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface,
-          }}
-        />
-        <button type="button" onClick={() => onFill(message)} disabled={!message.trim()} style={{
-          padding: '9px 16px', borderRadius: 8, border: 'none',
-          background: message.trim() ? C.purple : C.border, color: '#fff',
-          cursor: message.trim() ? 'pointer' : 'default', fontFamily: F.sans, fontSize: 13, fontWeight: 500,
-        }}>Fill in →</button>
-      </div>
-    </div>
-  );
-}
-
-function StepCreative({ form, setForm, matchedScreens = [], profile }) {
-  const { user } = useAuth();
-  const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
-  const setOverride = (screenId, k, v) => setForm(s => ({
-    ...s,
-    per_screen_overrides: {
-      ...s.per_screen_overrides,
-      [screenId]: { ...(s.per_screen_overrides[screenId] || {}), [k]: v },
-    },
-  }));
-
-  const [overrideUploading, setOverrideUploading] = useState(() => new Set()); // screenIds currently uploading
-  const [overrideErrors, setOverrideErrors] = useState({}); // screenId -> error message
-
-  const setOverrideErr = (screenId, msg) => setOverrideErrors(s => ({ ...s, [screenId]: msg }));
-
-  const handleMessageFill = (message) => {
-    if (!message.trim()) return;
-    const { headline, cta } = splitMessage(message);
-    setField('headline', headline);
-    setField('cta_text', cta);
-  };
-
-  const handleOverrideFile = async (screenId, file) => {
-    if (!file) return;
-    const ALLOWED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime'];
-    const isVid = file.type.startsWith('video/');
-    if (!ALLOWED.includes(file.type)) { setOverrideErr(screenId, 'Use JPG, PNG, GIF, WEBP, or MP4/WEBM/MOV video.'); return; }
-    const maxMB = isVid ? 100 : 15;
-    if (file.size > maxMB * 1024 * 1024) { setOverrideErr(screenId, `File too large — max ${maxMB} MB for ${isVid ? 'video' : 'images'}.`); return; }
-    setOverrideErr(screenId, null);
-    setOverrideUploading(s => new Set(s).add(screenId));
-    const ext = (file.name.split('.').pop() || (isVid ? 'mp4' : 'jpg')).toLowerCase();
-    const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from('creatives').upload(path, file, { contentType: file.type, upsert: false });
-    if (error) {
-      setOverrideErr(screenId, error.message);
-      setOverrideUploading(s => { const n = new Set(s); n.delete(screenId); return n; });
-      return;
-    }
-    const { data } = supabase.storage.from('creatives').getPublicUrl(path);
-    let width = null, height = null;
-    try {
-      const dims = await getMediaDimensions(file);
-      width = dims.width;
-      height = dims.height;
-    } catch {
-      // Dimensions are best-effort. A read failure must not block the upload
-      // — the creative is still usable, it just won't be fit-checked until
-      // dimensions are known (checkCreativeFit reports 'unknown' without them).
-    }
-    setOverride(screenId, 'media_url', data.publicUrl);
-    setOverride(screenId, 'media_type', isVid ? 'video' : 'image');
-    setOverride(screenId, 'media_width', width);
-    setOverride(screenId, 'media_height', height);
-    setOverrideUploading(s => { const n = new Set(s); n.delete(screenId); return n; });
-  };
-
-  const previewCampaign = buildPreviewCampaign(form, profile);
-
-  const fitMismatches = form.media_url
-    ? matchedScreens
-        .map(s => {
-          const { status, reasons } = checkCreativeFit(
-            { widthPx: form.media_width, heightPx: form.media_height, fileType: form.media_type === 'video' ? 'video/mp4' : 'image/png', fileSizeMb: 0 },
-            { resolution_w: s.resolution_w, resolution_h: s.resolution_h, accepted_formats: s.accepted_formats, max_file_mb: s.max_file_mb },
-          );
-          return status === 'mismatch' ? { screenId: s.id, screenName: s.name, reasons, resolution_w: s.resolution_w, resolution_h: s.resolution_h } : null;
-        })
-        .filter(Boolean)
-    : [];
-
-  const readability = checkReadability({
-    headline: form.headline,
-    ctaText: form.cta_text,
-    accentColor: form.accent_color,
-    durationSeconds: parseInt(form.duration, 10) || 15,
-    creativeTemplate: form.creative_template,
-    secondaryColor: form.secondary_color,
-  });
-  const readabilityTiers = distinctTiers(matchedScreens);
-
-  const selectedScreenIds = form.selected_screen_ids;
-
-  return (
-    <div style={{ maxWidth: 700, margin: '0 auto' }}>
-      <Card style={{ padding: 32 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 24px' }}>Create your ad</h2>
-
-        <MediaUpload form={form} setForm={setForm} />
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 28 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <MessageQuickFill onFill={handleMessageFill} />
-            <Inp label="Headline" placeholder="e.g. Start Your Morning Right"
-              value={form.headline} onChange={e => setField('headline', e.target.value)} />
-            <Inp label="CTA Text" placeholder="e.g. Learn More"
-              value={form.cta_text} onChange={e => setField('cta_text', e.target.value)} />
-            <Inp label="Destination URL" placeholder="https://example.com" type="url"
-              value={form.destination_url} onChange={e => setField('destination_url', e.target.value)} />
-            {form.destination_url.trim() !== '' && !isValidDestinationUrl(form.destination_url) && (
-              <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, marginTop: -8 }}>
-                Enter a full web address, like https://example.com — this is where your QR code sends people.
-              </div>
-            )}
-            <SelInput label="Category" value={form.category} onChange={e => setField('category', e.target.value)}>
-              {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-            </SelInput>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>Accent Colour</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <input type="color" value={form.accent_color} onChange={e => setField('accent_color', e.target.value)}
-                  style={{ width: 40, height: 36, border: `1px solid ${C.border}`, borderRadius: 6, cursor: 'pointer', padding: 2 }} />
-                <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.mono }}>{form.accent_color}</span>
-              </div>
-            </div>
-
-            {form.creative_template === 'split_panel' && (
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>Secondary Colour</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <input type="color" value={form.secondary_color || form.accent_color} onChange={e => setField('secondary_color', e.target.value)}
-                    style={{ width: 40, height: 36, border: `1px solid ${C.border}`, borderRadius: 6, cursor: 'pointer', padding: 2 }} />
-                  <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.mono }}>{form.secondary_color || form.accent_color}</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Preview</div>
-            <TemplatePicker value={form.creative_template} onChange={v => setField('creative_template', v)} />
-            <CreativePreview campaign={previewCampaign} />
-            <CreativeFitPanel campaign={previewCampaign} mismatches={fitMismatches} />
-            <ReadabilityPanel campaign={previewCampaign} score={readability.score} issues={readability.issues} tiers={readabilityTiers} />
-          </div>
-        </div>
-
-        {selectedScreenIds.length > 0 && (
-          <div style={{ marginTop: 24, borderTop: `1px solid ${C.border}`, paddingTop: 20 }}>
-            <button
-              type="button"
-              onClick={() => setField('show_overrides', !form.show_overrides)}
-              style={{ background: 'none', border: 'none', fontSize: 13, color: C.purple, cursor: 'pointer', fontFamily: F.sans, padding: 0 }}
-            >
-              {form.show_overrides ? '▾' : '▸'} Customise creative per screen ({selectedScreenIds.length} screens)
-            </button>
-            {form.show_overrides && (
-              <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans }}>Leave blank to use the campaign creative above.</div>
-                {selectedScreenIds.map(screenId => {
-                  const ov = form.per_screen_overrides[screenId] || {};
-                  return (
-                    <div key={screenId} style={{ padding: 16, background: C.surfaceAlt, borderRadius: 8 }}>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
-                        Screen {screenId.slice(0, 8)}…
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                        <Inp label="Headline override" placeholder="Leave blank for default"
-                          value={ov.headline || ''} onChange={e => setOverride(screenId, 'headline', e.target.value)} />
-                        <Inp label="CTA override" placeholder="Leave blank for default"
-                          value={ov.cta_text || ''} onChange={e => setOverride(screenId, 'cta_text', e.target.value)} />
-                      </div>
-                      <div style={{ marginTop: 10 }}>
-                        <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginBottom: 6 }}>
-                          Creative override <span style={{ color: C.textMuted }}>(leave blank to use the campaign creative)</span>
-                        </div>
-                        {ov.media_url ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontSize: 11, color: C.text, fontFamily: F.sans }}>{ov.media_type === 'video' ? 'Video' : 'Image'} uploaded ✓</span>
-                            <button type="button" onClick={() => { setOverride(screenId, 'media_url', ''); setOverride(screenId, 'media_type', ''); setOverride(screenId, 'media_width', null); setOverride(screenId, 'media_height', null); setOverrideErr(screenId, null); }}
-                              style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, padding: '2px 8px', fontSize: 11, color: C.textSub, cursor: 'pointer', fontFamily: F.sans }}>Remove</button>
-                          </div>
-                        ) : (
-                          <label style={{ display: 'inline-block', border: `1px dashed ${C.border}`, borderRadius: 6, padding: '6px 12px', fontSize: 11, color: C.textSub, cursor: overrideUploading.has(screenId) ? 'default' : 'pointer', fontFamily: F.sans }}>
-                            <input type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime" style={{ display: 'none' }}
-                              disabled={overrideUploading.has(screenId)}
-                              onChange={e => handleOverrideFile(screenId, e.target.files?.[0])} />
-                            {overrideUploading.has(screenId) ? 'Uploading…' : '+ Upload replacement'}
-                          </label>
-                        )}
-                        {overrideErrors[screenId] && <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, marginTop: 6 }}>{overrideErrors[screenId]}</div>}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-      </Card>
-    </div>
-  );
-}
-
-function StepBudget({ form, setForm, matchedScreens, profile }) {
-  const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
-
-  const days = form.start_date && form.end_date
-    ? Math.max(1, Math.round((new Date(form.end_date) - new Date(form.start_date)) / (1000 * 60 * 60 * 24)))
-    : 30;
-  const totalImpr = matchedScreens.reduce((a, s) => a + (s.impressions || 0), 0);
-  const budgetMin = Math.round((totalImpr / 1000) * 3 * (days / 30));
-  const budgetMax = Math.round((totalImpr / 1000) * 8 * (days / 30));
-  const budget = parseFloat(form.budget) || 0;
-  const tooLow = budget > 0 && matchedScreens.length > 0 && days > 0
-    && (budget / matchedScreens.length / days) < 0.50;
-
-  return (
-    <div style={{ maxWidth: 580, margin: '0 auto' }}>
-      <Card style={{ padding: 32 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 24px' }}>Budget & Schedule</h2>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Budget type</div>
-            <PillGroup
-              options={[{ value: 'total', label: 'Total budget' }, { value: 'daily', label: 'Daily limit' }]}
-              value={form.budget_mode}
-              onChange={v => setField('budget_mode', v)}
-            />
-          </div>
-
-          <Inp
-            label={form.budget_mode === 'daily' ? `Daily limit (${(profile?.preferred_currency || 'cad').toUpperCase()})` : `Total budget (${(profile?.preferred_currency || 'cad').toUpperCase()})`}
-            type="number" step="1" placeholder="e.g. 200"
-            value={form.budget} onChange={e => setField('budget', e.target.value)}
-            hint={totalImpr > 0 && days > 0 ? `Suggested for ${matchedScreens.length} screens over ${days} days: ${formatCurrency(budgetMin, profile?.preferred_currency)}–${formatCurrency(budgetMax, profile?.preferred_currency)}` : undefined}
-          />
-
-          {tooLow && (
-            <div style={{ padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: 12, color: C.amber, fontFamily: F.sans }}>
-              ⚠ Budget may be too low to run consistently across all selected screens. Consider increasing your budget or reducing screen count.
-            </div>
-          )}
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Inp label="Start date" type="date" value={form.start_date} onChange={e => setField('start_date', e.target.value)} />
-            <Inp label="End date" type="date" value={form.end_date} onChange={e => setField('end_date', e.target.value)} />
-          </div>
-
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Days of week</div>
-            <PillGroup
-              options={DAYS}
-              value={form.schedule_days}
-              onChange={v => setField('schedule_days', v)}
-              multi={true}
-            />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Inp label="From" type="time" value={form.time_start} onChange={e => setField('time_start', e.target.value)} />
-            <Inp label="Until" type="time" value={form.time_end} onChange={e => setField('time_end', e.target.value)} />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Inp label="Ad play duration (seconds)" type="number" min="5" max="60" step="1"
-              value={form.duration} onChange={e => setField('duration', e.target.value)}
-              hint="How long your ad plays each time it's shown" />
-            <Inp label="Slot share (% of screen airtime)" type="number" min="1" max="100" step="1"
-              value={form.slots} onChange={e => setField('slots', e.target.value)}
-              hint="Your ad's share of each screen's rotation" />
-          </div>
-
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Launch mode</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {[
-                { value: 'partial', title: 'Go live as screens approve', desc: "Your campaign starts running on each screen as soon as that screen's owner approves." },
-                { value: 'all', title: 'Wait for all screens', desc: 'Campaign stays pending until every targeted screen owner has approved.' },
-              ].map(opt => (
-                <button key={opt.value} type="button" onClick={() => setField('start_when', opt.value)} style={{
-                  padding: '14px 16px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
-                  border: `2px solid ${form.start_when === opt.value ? C.purple : C.border}`,
-                  background: form.start_when === opt.value ? C.purpleSoft : C.surface,
-                  transition: 'all 0.15s',
-                }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{opt.title}</div>
-                  <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, lineHeight: 1.4 }}>{opt.desc}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-        </div>
-      </Card>
-    </div>
-  );
-}
-
-function StepReview({ form, matchedScreens, onSubmit, submitting, err, profile, canChooseBilling, billedTo, setBilledTo }) {
-  const days = form.start_date && form.end_date
-    ? Math.max(1, Math.round((new Date(form.end_date) - new Date(form.start_date)) / (1000 * 60 * 60 * 24)))
-    : null;
-  const totalImpr = matchedScreens.reduce((a, s) => a + (s.impressions || 0), 0);
-
-  // Duration is only editable in StepBudget, which comes after StepCreative
-  // (where the readability score first appears) -- an advertiser who adjusts
-  // duration and never navigates back to step 2 would otherwise submit
-  // without ever seeing the score recomputed against the value they actually
-  // ended up with. Re-check here with the final form state, right before
-  // submission, so the number always matches what actually gets persisted.
-  const readability = checkReadability({
-    headline: form.headline,
-    ctaText: form.cta_text,
-    accentColor: form.accent_color,
-    durationSeconds: parseInt(form.duration, 10) || 15,
-    creativeTemplate: form.creative_template,
-    secondaryColor: form.secondary_color,
-  });
-  const readabilityTiers = distinctTiers(matchedScreens);
-
-  const previewCampaign = buildPreviewCampaign(form, profile);
-
-  const rows = [
-    ['Area', `${form.area_type === 'radius' ? `${form.radius_km}km radius` : form.city || form.state || form.country}`],
-    ['Screens', `${form.selected_screen_ids.length} selected · ~${(totalImpr / 1000).toFixed(0)}K impr/mo`],
-    ['Headline', form.headline || '—'],
-    ['Budget', `${form.budget ? formatCurrency(form.budget, profile?.preferred_currency) : '—'} (${form.budget_mode === 'daily' ? 'daily' : 'total'})`],
-    ['Dates', form.start_date && form.end_date ? `${form.start_date} → ${form.end_date}${days ? ` (${days} days)` : ''}` : '—'],
-    ['Time', `${form.time_start} – ${form.time_end}`],
-    ['Days', form.schedule_days.join(', ')],
-    ['Ad Duration', `${form.duration}s per play`],
-    ['Slot Share', `${form.slots}% of airtime`],
-    ['Launch', form.start_when === 'partial' ? 'Go live as screens approve' : 'Wait for all screens'],
-  ];
-
-  return (
-    <div style={{ maxWidth: 580, margin: '0 auto' }}>
-      <Card style={{ padding: 32 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 8px' }}>Review your campaign</h2>
-        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>Check everything looks right before submitting.</p>
-
-        <div style={{ display: 'flex', gap: 24, marginBottom: 24, flexWrap: 'wrap' }}>
-          <div style={{ width: 180, flexShrink: 0 }}>
-            <CreativePreview campaign={previewCampaign} />
-            <ReadabilityPanel campaign={previewCampaign} score={readability.score} issues={readability.issues} tiers={readabilityTiers} />
-          </div>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            {rows.map(([label, value]) => (
-              <div key={label} style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.04em', minWidth: 70, paddingTop: 1 }}>{label}</div>
-                <div style={{ fontSize: 13, color: C.text, fontFamily: F.sans }}>{value}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {canChooseBilling && (
-          <div style={{ marginBottom: 20, padding: '16px', background: C.bg, borderRadius: 10, border: `1px solid ${C.border}` }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
-              Bill to
-            </div>
-            {[
-              { value: 'client', label: 'Client account', desc: "Uses client's payment method" },
-              { value: 'agency', label: 'Agency account', desc: 'Uses your payment method' },
-            ].map(opt => (
-              <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="billedTo"
-                  value={opt.value}
-                  checked={billedTo === opt.value}
-                  onChange={() => setBilledTo(opt.value)}
-                />
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{opt.label}</div>
-                  <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans }}>{opt.desc}</div>
-                </div>
-              </label>
-            ))}
-          </div>
-        )}
-
-        {err && <ErrorBanner message={err} onDismiss={() => {}} />}
-
-        <Btn onClick={onSubmit} disabled={submitting} style={{ width: '100%', fontSize: 15, padding: '14px 24px' }}>
-          {submitting ? 'Submitting…' : 'Submit Campaign →'}
-        </Btn>
-      </Card>
-    </div>
-  );
-}
+const STEP_LABELS = ['Targeting', 'Creative', 'Budget & Schedule'];
 
 function StepPay({ campaign, onPay, onSkip, paying, err, requiresAction, onGoToBilling }) {
   return (
@@ -814,19 +91,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     env_filter: 'any',
     venue_filter: '',
     selected_screen_ids: [],
-    headline: '',
-    cta_text: '',
-    destination_url: '',
-    accent_color: '#7c3aed',
-    secondary_color: '',
-    creative_template: 'bottom_bar',
-    category: 'Food & Beverage',
-    media_url: '',
-    media_type: '',
-    media_width: null,
-    media_height: null,
-    per_screen_overrides: {},
-    show_overrides: false,
+    creatives: [],  // StepCreative lazily seeds a blank one; see BLANK_CREATIVE there
+    budget_level: 'unified',
     budget_mode: 'total',
     budget: '',
     start_date: '',
@@ -836,7 +102,6 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     time_end: '22:00',
     duration: 15,
     slots: 10,
-
     start_when: 'partial',
   });
 
@@ -875,20 +140,37 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     setForm(s => ({ ...s, selected_screen_ids: matchedScreens.map(sc => sc.id) }));
   }, [matchedKey]);
 
-  // Seeds a brand-new draft's colors from the advertiser's brand kit, once
-  // profile finishes loading (it starts null in AuthContext until its own
-  // fetch resolves, so this can't be done in the initial useState above).
-  // Only overwrites while the fields still hold their just-mounted hardcoded
-  // defaults, so it never clobbers an edit the advertiser already made.
+  // Seeds a brand-new draft's first creative from the advertiser's brand kit,
+  // once profile finishes loading (it starts null in AuthContext until its
+  // own fetch resolves, so this can't be done in the initial useState
+  // above). form.creatives starts empty and StepCreative would otherwise
+  // lazily seed a blank creative with hardcoded defaults (not the profile's
+  // brand colors) on first edit -- so instead this seeds the first creative
+  // here, once, so the brand-kit colors are already in place before the
+  // advertiser types anything. Only runs while form.creatives is still
+  // empty, so it never clobbers an edit the advertiser already made.
   const brandKitSeeded = useRef(false);
   useEffect(() => {
     if (!profile || brandKitSeeded.current) return;
     brandKitSeeded.current = true;
-    setForm(s => ({
-      ...s,
-      accent_color: s.accent_color === '#7c3aed' && profile.brand_color_1 ? profile.brand_color_1 : s.accent_color,
-      secondary_color: s.secondary_color === '' && profile.brand_color_2 ? profile.brand_color_2 : s.secondary_color,
-    }));
+    setForm(s => {
+      if (s.creatives.length > 0) return s;
+      return {
+        ...s,
+        creatives: [{
+          id: crypto.randomUUID(),
+          label: '',
+          headline: '', cta_text: '', destination_url: '',
+          accent_color: profile.brand_color_1 || '#7c3aed',
+          category: 'Food & Beverage',
+          media_url: '', media_type: '', media_width: null, media_height: null,
+          creative_template: 'bottom_bar',
+          secondary_color: profile.brand_color_2 || '',
+          assigned_screen_ids: [],
+          weight: 100,
+        }],
+      };
+    });
   }, [profile]);
 
   const selectedScreens = matchedScreens.filter(s => form.selected_screen_ids.includes(s.id));
@@ -906,13 +188,20 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
   const loadDuplicate = (c) => {
     setForm(s => ({
       ...s,
-      headline: c.headline || '',
-      cta_text: c.cta_text || c.cta || '',
-      destination_url: c.destination_url || c.destination || '',
-      accent_color: c.accent_color || c.color || '#7c3aed',
-      secondary_color: c.secondary_color || '',
-      creative_template: c.creative_template || 'bottom_bar',
-      category: c.category || 'Food & Beverage',
+      creatives: [{
+        id: crypto.randomUUID(),
+        label: '',
+        headline: c.headline || '',
+        cta_text: c.cta_text || c.cta || '',
+        destination_url: c.destination_url || c.destination || '',
+        accent_color: c.accent_color || c.color || '#7c3aed',
+        secondary_color: c.secondary_color || '',
+        creative_template: c.creative_template || 'bottom_bar',
+        category: c.category || 'Food & Beverage',
+        media_url: '', media_type: '', media_width: null, media_height: null,
+        assigned_screen_ids: [],
+        weight: 100,
+      }],
       budget: String(c.budget || ''),
       budget_mode: c.budget_mode || 'total',
       start_date: '',
@@ -936,11 +225,24 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     setSubmitting(true);
     setSubmitErr(null);
     try {
+      const creatives = form.creatives.length > 0 ? form.creatives : [];
+      const primary = creatives[0] ?? {};
+      const isMulti = creatives.length > 1;
+      const preview = buildPreviewCampaign(primary, profile);
+
+      const { data: campaignRow, error: campaignErr } = await supabase
+        .from('campaigns')
+        .insert({ advertiser_id: user.id, name: form.name || 'Untitled Campaign' })
+        .select('id')
+        .single();
+      if (campaignErr) throw new Error(campaignErr.message);
+
       const campaignId = crypto.randomUUID();
       const firstScreen = selectedScreens[0];
-      const preview = buildPreviewCampaign(form, profile);
       const { error: bookingErr } = await supabase.from('bookings').insert({
         id:                    campaignId,
+        campaign_id:           campaignRow.id,
+        budget_level:          isMulti ? form.budget_level : 'unified',
         advertiser_id:         user.id,
         campaign_name:         form.name || null,
         advertiser_name:       profile?.name || user.email?.split('@')[0] || 'Advertiser',
@@ -951,8 +253,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         // encodes this value verbatim.
         destination_url:       normalizeDestinationUrl(preview.destination_url),
         secondary_color:       preview.secondary_color || null,
-        media_width:           form.media_width,
-        media_height:          form.media_height,
+        media_width:           primary.media_width ?? null,
+        media_height:          primary.media_height ?? null,
         budget:                parseFloat(form.budget) || 0,
         currency:              profile?.preferred_currency || 'cad',
         budget_mode:           form.budget_mode,
@@ -964,7 +266,6 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         time_end:              form.time_end,
         duration:              parseInt(form.duration, 10) || 15,
         slots:                 parseInt(form.slots, 10) || 10,
-
         billed_to_profile_id:  canChooseBilling && billedTo === 'agency' ? user.id : null,
         status:                'pending_review',
         payment_status:        'unpaid',
@@ -974,25 +275,43 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       });
       if (bookingErr) throw new Error(bookingErr.message);
 
-      const screenRows = form.selected_screen_ids.map(screen_id => {
-        const screen = matchedScreens.find(s => s.id === screen_id);
-        const ov = form.per_screen_overrides[screen_id] || {};
-        return {
-          campaign_id:     campaignId,
-          screen_id,
-          status:          screen?.auto_approve ? 'auto_approved' : 'pending',
-          headline:        ov.headline || null,
-          cta_text:        ov.cta_text || null,
-          accent_color:    ov.accent_color || null,
-          destination_url: ov.destination_url || null,
-          media_url:       ov.media_url || null,
-          media_type:      ov.media_type || null,
-          media_width:     ov.media_width || null,
-          media_height:    ov.media_height || null,
-        };
-      });
+      const screenRows = form.selected_screen_ids.map(screen_id => ({
+        campaign_id: campaignId,
+        screen_id,
+        status: matchedScreens.find(s => s.id === screen_id)?.auto_approve ? 'auto_approved' : 'pending',
+      }));
       const { error: screenErr } = await supabase.from('campaign_screens').insert(screenRows);
       if (screenErr) throw new Error(screenErr.message);
+
+      if (isMulti) {
+        const { data: creativeRows, error: creativesErr } = await supabase
+          .from('campaign_creatives')
+          .insert(creatives.map(c => ({
+            targeting_id: campaignId,
+            label: c.label || 'Creative',
+            media_url: c.media_url || null,
+            media_type: c.media_type || null,
+            headline: c.headline || null,
+            cta_text: c.cta_text || null,
+            destination_url: c.destination_url ? normalizeDestinationUrl(c.destination_url) : null,
+            accent_color: c.accent_color || null,
+            budget: form.budget_level === 'per_creative' ? (parseFloat(c.budget) || null) : null,
+          })))
+          .select('id');
+        if (creativesErr) throw new Error(creativesErr.message);
+
+        const assignedScreenIds = new Set(creatives.flatMap(c => c.assigned_screen_ids));
+        const unassigned = form.selected_screen_ids.filter(id => !assignedScreenIds.has(id));
+
+        const creativeScreenRows = creatives.flatMap((c, i) => {
+          const ids = i === 0 ? [...c.assigned_screen_ids, ...unassigned] : c.assigned_screen_ids;
+          return ids.map(screen_id => ({ creative_id: creativeRows[i].id, screen_id, weight: c.weight || 100 }));
+        });
+        if (creativeScreenRows.length > 0) {
+          const { error: assignErr } = await supabase.from('campaign_creative_screens').insert(creativeScreenRows);
+          if (assignErr) throw new Error(assignErr.message);
+        }
+      }
 
       // Booking status moves to 'scheduled' server-side (charge-campaign) once
       // payment succeeds — clients cannot write status, by design.
@@ -1025,19 +344,27 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       setSubmitting(false);
       setCreated({
         id: campaignId,
+        campaign_id: campaignRow.id,
         advertiser: profile?.name || user.email?.split('@')[0] || 'Advertiser',
         advertiser_id: user.id,
         screen: firstScreen?.name || '',
         city: form.city || '',
-        headline: form.headline,
-        cta: form.cta_text,
-        color: form.accent_color,
+        headline: preview.headline || '',
+        cta: preview.cta_text || '',
+        color: preview.accent_color || '#7c3aed',
         creative_template: preview.creative_template,
         secondary_color: preview.secondary_color,
-        destination: normalizeDestinationUrl(form.destination_url),
-        category: form.category,
+        destination: normalizeDestinationUrl(preview.destination_url || ''),
+        category: preview.category || 'Food & Beverage',
         budget: parseFloat(form.budget) || 0,
         budget_mode: form.budget_mode,
+        budget_level: isMulti ? form.budget_level : 'unified',
+        currency: profile?.preferred_currency || 'cad',
+        // Mirrors the camelCase aliases App.jsx's own bookings-load mapper
+        // applies (start/end/days/timeStart/timeEnd) — this object is
+        // prepended straight into the campaigns list via onSave, bypassing
+        // that mapper, so CampaignDetail/DisplayView (which read these
+        // camelCase fields) need them present here too.
         start: form.start_date,
         end: form.end_date,
         days: form.schedule_days,
@@ -1048,7 +375,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         spent: 0, impressions: 0, scans: 0,
         status: 'pending_review',
       });
-      setStep(5);
+      setStep(3);
     } catch (e) {
       setSubmitErr(e.message || 'Failed to submit campaign');
       setSubmitting(false);
@@ -1108,7 +435,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
           }}>Set up billing →</a>
         </div>
       )}
-      {step < 5 && <Stepper step={step} labels={STEP_LABELS} onCancel={onCancel} />}
+      {step < 3 && <Stepper step={step} labels={STEP_LABELS} onCancel={onCancel} />}
 
       {showDupModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
@@ -1134,26 +461,29 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         </div>
       )}
 
-      {step === 0 && <StepArea form={form} setForm={setForm} reachSummary={reachSummary} allScreens={dbScreens} onPrevCampaigns={campaigns.length > 0 ? () => setShowDupModal(true) : null} />}
-      {step === 1 && <StepScreens form={form} setForm={setForm} matchedScreens={matchedScreens} />}
-      {step === 2 && <StepCreative form={form} setForm={setForm} matchedScreens={selectedScreens} profile={profile} />}
-      {step === 3 && <StepBudget form={form} setForm={setForm} matchedScreens={selectedScreens} profile={profile} />}
-      {step === 4 && <StepReview form={form} matchedScreens={selectedScreens} onSubmit={handleSubmit} submitting={submitting} err={submitErr} profile={profile} canChooseBilling={canChooseBilling} billedTo={billedTo} setBilledTo={setBilledTo} />}
-      {step === 5 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} requiresAction={requiresAction} onGoToBilling={() => navigate('/app/adv-billing')} />}
+      {step === 0 && <StepTargeting form={form} setForm={setForm} reachSummary={reachSummary} allScreens={dbScreens} onPrevCampaigns={campaigns.length > 0 ? () => setShowDupModal(true) : null} />}
+      {step === 1 && <StepCreative form={form} setForm={setForm} matchedScreens={matchedScreens} profile={profile} />}
+      {step === 2 && <StepBudgetReview form={form} setForm={setForm} matchedScreens={selectedScreens} profile={profile} onSubmit={handleSubmit} submitting={submitting} err={submitErr} canChooseBilling={canChooseBilling} billedTo={billedTo} setBilledTo={setBilledTo} />}
+      {step === 3 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} requiresAction={requiresAction} onGoToBilling={() => navigate('/app/adv-billing')} />}
 
-      {step < 4 && (
+      {step < 2 && (
         <div style={{ maxWidth: 620, margin: '20px auto 0', display: 'flex', gap: 10 }}>
           {step > 0 && <Btn variant="secondary" onClick={back} style={{ flex: 1 }}>← Back</Btn>}
           <Btn onClick={next} style={{ flex: 1 }}
             disabled={
               (step === 0 && form.area_type === 'radius' && !form.radius_center_lat) ||
+              (step === 0 && form.selected_screen_ids.length === 0 && form.area_type !== 'radius') ||
               (step === 1 && form.selected_screen_ids.length === 0) ||
               // Creative step: a campaign with no valid destination goes live
-              // with a QR code that sends every scanner to an error.
-              (step === 2 && !isValidDestinationUrl(form.destination_url))
+              // with a QR code that sends every scanner to an error. A
+              // never-touched creatives array (blank, lazily seeded by
+              // StepCreative on first edit) is treated the same as a blank
+              // destination — .some() over [] is always false and would
+              // otherwise silently permit advancing past a wholly blank ad.
+              (step === 1 && (form.creatives.length === 0 || form.creatives.some(c => !isValidDestinationUrl(c.destination_url))))
             }
           >
-            {step === 3 ? 'Review →' : 'Next →'}
+            Next →
           </Btn>
         </div>
       )}
