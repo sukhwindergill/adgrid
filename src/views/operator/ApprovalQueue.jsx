@@ -331,12 +331,31 @@ export function ApprovalQueue({ campaigns, dbScreens = [] }) {
     setAutoApprove(myScreens[0]?.auto_approve || false);
   }, [myScreens.map(s => s.id).join(',')]);
 
-  const pending = campaigns.filter(c => c.status === 'pending_review');
+  const [relevantCampaignIds, setRelevantCampaignIds] = useState([]);
 
+  // Which campaigns actually have a pending screen among mine -- queried
+  // directly against campaign_screens, not gated by the booking's own
+  // status. A booking can be 'scheduled' overall (another screen already
+  // approved under start_when: 'partial') while this specific screen was
+  // just reset to 'pending' by a creative reassignment; gating on booking
+  // status would silently hide it forever.
   useEffect(() => {
-    if (pending.length === 0) return;
-    const ids = pending.map(c => c.id);
-    supabase.from('campaign_screens').select('*').in('campaign_id', ids).then(({ data }) => {
+    if (myScreens.length === 0) { setRelevantCampaignIds([]); return; }
+    supabase.from('campaign_screens')
+      .select('campaign_id')
+      .in('screen_id', myScreens.map(s => s.id))
+      .eq('status', 'pending')
+      .then(({ data }) => {
+        setRelevantCampaignIds([...new Set((data || []).map(r => r.campaign_id))]);
+      });
+  }, [myScreens.map(s => s.id).join(',')]);
+
+  // Full row set (every status, not just pending) for those campaigns --
+  // MultiScreenCampaignCard needs approved/rejected rows too, e.g. to
+  // compute totalScreens for the earnings estimate.
+  useEffect(() => {
+    if (relevantCampaignIds.length === 0) { setCampaignScreens({}); return; }
+    supabase.from('campaign_screens').select('*').in('campaign_id', relevantCampaignIds).then(({ data }) => {
       if (!data) return;
       const grouped = {};
       data.forEach(row => {
@@ -345,12 +364,9 @@ export function ApprovalQueue({ campaigns, dbScreens = [] }) {
       });
       setCampaignScreens(grouped);
     });
-  }, [pending.map(c => c.id).join(',')]);
+  }, [relevantCampaignIds.join(',')]);
 
-  const myPendingCampaigns = pending.filter(c => {
-    const rows = campaignScreens[c.id] || [];
-    return rows.some(row => myScreens.some(s => s.id === row.screen_id) && row.status === 'pending');
-  });
+  const myPendingCampaigns = campaigns.filter(c => relevantCampaignIds.includes(c.id));
 
   const enriched = myPendingCampaigns.map(c => ({
     ...c,
