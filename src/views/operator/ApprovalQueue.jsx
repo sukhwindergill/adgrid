@@ -366,6 +366,38 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [] }) {
     });
   }, [relevantCampaignIds.join(',')]);
 
+  const [creativesByScreen, setCreativesByScreen] = useState({}); // `${campaignId}:${screenId}` -> [{ ...creative, weight }]
+
+  // Per-screen creative assignments (Phase 1 schema) -- mirrors display-feed's
+  // Phase 2 two-step lookup: campaign_creative_screens (this screen's explicit
+  // assignments) then campaign_creatives (the creative rows themselves),
+  // grouped by targeting_id -- which is the same bookings.id space as
+  // campaignScreens' campaign_id / campaign.id above, so the keys line up.
+  useEffect(() => {
+    if (myScreens.length === 0) { setCreativesByScreen({}); return; }
+    supabase.from('campaign_creative_screens')
+      .select('screen_id, weight, creative_id')
+      .in('screen_id', myScreens.map(s => s.id))
+      .then(async ({ data: ccsRows }) => {
+        if (!ccsRows || ccsRows.length === 0) { setCreativesByScreen({}); return; }
+        const creativeIds = [...new Set(ccsRows.map(r => r.creative_id))];
+        const { data: creatives } = await supabase
+          .from('campaign_creatives')
+          .select('id, targeting_id, label, headline, media_url, media_type, accent_color')
+          .in('id', creativeIds);
+        const creativeById = new Map((creatives || []).map(c => [c.id, c]));
+        const grouped = {};
+        ccsRows.forEach(row => {
+          const cr = creativeById.get(row.creative_id);
+          if (!cr) return;
+          const key = `${cr.targeting_id}:${row.screen_id}`;
+          if (!grouped[key]) grouped[key] = [];
+          grouped[key].push({ ...cr, weight: row.weight });
+        });
+        setCreativesByScreen(grouped);
+      });
+  }, [myScreens.map(s => s.id).join(',')]);
+
   // Derived from the live campaignScreens state (not relevantCampaignIds
   // directly) so that approving/rejecting a campaign's last pending screen
   // drops it from the queue immediately. relevantCampaignIds only decides
@@ -507,6 +539,7 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [] }) {
             campaign={c}
             myScreens={myScreens}
             allScreens={dbScreens}
+            creativesByScreen={creativesByScreen}
             onApproved={handleApproved}
             onRejected={handleRejected}
             setCampaigns={setCampaigns}
