@@ -3,6 +3,23 @@
 
 import { aspectOrientation } from './creativeFit.js';
 
+// The one shared shape for a wizard creative object -- used for a freshly
+// added blank creative, a brand-kit-seeded first creative, and a creative
+// duplicated from a previous campaign, so a future field addition can't be
+// added to one call site and silently missed by the other two.
+export function makeBlankCreative(overrides = {}) {
+  return {
+    id: crypto.randomUUID(),
+    label: '',
+    headline: '', cta_text: '', destination_url: '', accent_color: '#7c3aed', category: 'Food & Beverage',
+    media_url: '', media_type: '', media_width: null, media_height: null,
+    creative_template: 'bottom_bar', secondary_color: '',
+    assigned_screen_ids: [],
+    weight: 100,
+    ...overrides,
+  };
+}
+
 // Pool screens no creative has explicitly claimed yet. Surfaced so the
 // wizard can show "3 of 20 screens unassigned" rather than silently
 // dropping them — at submit time, an unassigned screen falls back to the

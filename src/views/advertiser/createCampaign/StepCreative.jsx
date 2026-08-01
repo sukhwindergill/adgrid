@@ -6,18 +6,10 @@ import { SelInput } from '../../../components/primitives/SelInput.jsx';
 import { PillGroup } from './PillGroup.jsx';
 import { ScreenPickerCard } from './ScreenPickerCard.jsx';
 import { CreativeCard } from './CreativeCard.jsx';
-import { unassignedScreenIds, splitScreenIdsByOrientation } from '../../../lib/creativeAssignment.js';
+import { unassignedScreenIds, splitScreenIdsByOrientation, makeBlankCreative } from '../../../lib/creativeAssignment.js';
 import { VENUE_TAXONOMY } from '../../../lib/venueTypes.js';
 
-const BLANK_CREATIVE = () => ({
-  id: crypto.randomUUID(),
-  label: '',
-  headline: '', cta_text: '', destination_url: '', accent_color: '#7c3aed', category: 'Food & Beverage',
-  media_url: '', media_type: '', media_width: null, media_height: null,
-  creative_template: 'bottom_bar', secondary_color: '',
-  assigned_screen_ids: [],
-  weight: 100,
-});
+const BLANK_CREATIVE = makeBlankCreative;
 
 export function StepCreative({ form, setForm, matchedScreens, profile }) {
   const [showFilters, setShowFilters] = useState(false);

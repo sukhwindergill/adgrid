@@ -13,6 +13,7 @@ import { formatCurrency } from '../../lib/formatCurrency.js';
 import { haversineKm } from '../../lib/geo.js';
 import { isValidDestinationUrl, normalizeDestinationUrl } from '../../lib/destinationUrl.js';
 import { buildPreviewCampaign } from '../../lib/buildPreviewCampaign.js';
+import { makeBlankCreative } from '../../lib/creativeAssignment.js';
 import { Stepper } from './createCampaign/Stepper.jsx';
 import { StepTargeting } from './createCampaign/StepTargeting.jsx';
 import { StepCreative } from './createCampaign/StepCreative.jsx';
@@ -157,18 +158,10 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       if (s.creatives.length > 0) return s;
       return {
         ...s,
-        creatives: [{
-          id: crypto.randomUUID(),
-          label: '',
-          headline: '', cta_text: '', destination_url: '',
+        creatives: [makeBlankCreative({
           accent_color: profile.brand_color_1 || '#7c3aed',
-          category: 'Food & Beverage',
-          media_url: '', media_type: '', media_width: null, media_height: null,
-          creative_template: 'bottom_bar',
           secondary_color: profile.brand_color_2 || '',
-          assigned_screen_ids: [],
-          weight: 100,
-        }],
+        })],
       };
     });
   }, [profile]);
@@ -188,9 +181,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
   const loadDuplicate = (c) => {
     setForm(s => ({
       ...s,
-      creatives: [{
-        id: crypto.randomUUID(),
-        label: '',
+      creatives: [makeBlankCreative({
         headline: c.headline || '',
         cta_text: c.cta_text || c.cta || '',
         destination_url: c.destination_url || c.destination || '',
@@ -198,10 +189,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         secondary_color: c.secondary_color || '',
         creative_template: c.creative_template || 'bottom_bar',
         category: c.category || 'Food & Beverage',
-        media_url: '', media_type: '', media_width: null, media_height: null,
-        assigned_screen_ids: [],
-        weight: 100,
-      }],
+      })],
       budget: String(c.budget || ''),
       budget_mode: c.budget_mode || 'total',
       start_date: '',
@@ -286,9 +274,9 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       if (isMulti) {
         const { data: creativeRows, error: creativesErr } = await supabase
           .from('campaign_creatives')
-          .insert(creatives.map(c => ({
+          .insert(creatives.map((c, i) => ({
             targeting_id: campaignId,
-            label: c.label || 'Creative',
+            label: c.label || `Creative ${i + 1}`,
             media_url: c.media_url || null,
             media_type: c.media_type || null,
             headline: c.headline || null,

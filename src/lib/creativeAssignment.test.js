@@ -1,7 +1,29 @@
 import { describe, it, expect } from 'vitest';
-import { unassignedScreenIds, splitScreenIdsByOrientation, reconcileAssignments } from './creativeAssignment.js';
+import { unassignedScreenIds, splitScreenIdsByOrientation, reconcileAssignments, makeBlankCreative } from './creativeAssignment.js';
 
 const creatives = (assignments) => assignments.map((ids, i) => ({ id: `cr-${i}`, assigned_screen_ids: ids }));
+
+describe('makeBlankCreative', () => {
+  it('returns a complete creative shape with sane defaults', () => {
+    const c = makeBlankCreative();
+    expect(c.id).toBeTruthy();
+    expect(c.assigned_screen_ids).toEqual([]);
+    expect(c.weight).toBe(100);
+    expect(c.creative_template).toBe('bottom_bar');
+    expect(c.accent_color).toBe('#7c3aed');
+  });
+
+  it('applies overrides on top of the defaults', () => {
+    const c = makeBlankCreative({ accent_color: '#00ff00', headline: 'Hi' });
+    expect(c.accent_color).toBe('#00ff00');
+    expect(c.headline).toBe('Hi');
+    expect(c.weight).toBe(100);
+  });
+
+  it('generates a distinct id per call', () => {
+    expect(makeBlankCreative().id).not.toBe(makeBlankCreative().id);
+  });
+});
 
 describe('unassignedScreenIds', () => {
   it('returns every pool screen when no creative has claimed any', () => {
