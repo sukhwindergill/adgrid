@@ -317,7 +317,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
   );
 }
 
-export function ApprovalQueue({ campaigns, dbScreens = [] }) {
+export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [] }) {
   const { user } = useAuth();
   const confirm = useConfirm();
   const [autoApprove, setAutoApprove] = useState(false);
