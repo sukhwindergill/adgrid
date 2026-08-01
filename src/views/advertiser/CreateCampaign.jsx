@@ -13,7 +13,7 @@ import { formatCurrency } from '../../lib/formatCurrency.js';
 import { haversineKm } from '../../lib/geo.js';
 import { isValidDestinationUrl, normalizeDestinationUrl } from '../../lib/destinationUrl.js';
 import { buildPreviewCampaign } from '../../lib/buildPreviewCampaign.js';
-import { makeBlankCreative } from '../../lib/creativeAssignment.js';
+import { makeBlankCreative, reconcileAssignments } from '../../lib/creativeAssignment.js';
 import { Stepper } from './createCampaign/Stepper.jsx';
 import { StepTargeting } from './createCampaign/StepTargeting.jsx';
 import { StepCreative } from './createCampaign/StepCreative.jsx';
@@ -135,10 +135,22 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     return screens;
   })();
 
-  // Auto-select all matched screens when the matched set changes
+  // Auto-select all matched screens when the matched set changes. Also
+  // reconciles each creative's assigned_screen_ids against the new selection
+  // -- StepCreative's own screen-refinement filters can shrink the matched
+  // set after an advertiser has already assigned specific screens to
+  // specific creatives, and without this, a creative could keep pointing at
+  // a screen id that's no longer part of the campaign at all.
   const matchedKey = matchedScreens.map(s => s.id).join(',');
   useEffect(() => {
-    setForm(s => ({ ...s, selected_screen_ids: matchedScreens.map(sc => sc.id) }));
+    setForm(s => {
+      const nextSelectedIds = matchedScreens.map(sc => sc.id);
+      return {
+        ...s,
+        selected_screen_ids: nextSelectedIds,
+        creatives: reconcileAssignments(s.creatives, nextSelectedIds),
+      };
+    });
   }, [matchedKey]);
 
   // Seeds a brand-new draft's first creative from the advertiser's brand kit,
@@ -213,7 +225,14 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     setSubmitting(true);
     setSubmitErr(null);
     try {
-      const creatives = form.creatives.length > 0 ? form.creatives : [];
+      // Defensive second reconcile right at the submit choke point -- the
+      // effect above keeps this in sync during normal editing, but this
+      // guarantees no assignment referencing a since-removed screen can ever
+      // reach the database, regardless of render timing.
+      const creatives = reconcileAssignments(
+        form.creatives.length > 0 ? form.creatives : [],
+        form.selected_screen_ids,
+      );
       const primary = creatives[0] ?? {};
       const isMulti = creatives.length > 1;
       const preview = buildPreviewCampaign(primary, profile);
