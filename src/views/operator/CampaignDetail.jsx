@@ -99,7 +99,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, can
         subtitle={`${c.screen} · ${c.city} · ${c.category}`}
         back="All Campaigns" onBack={onBack}
         actions={<>
-          {onAddTargeting && <Btn variant="secondary" size="sm" onClick={() => onAddTargeting(c)}>+ Add targeting group</Btn>}
+          {onAddTargeting && c.campaign_id && <Btn variant="secondary" size="sm" onClick={() => onAddTargeting(c)}>+ Add targeting group</Btn>}
           {statusAction(c.status)}
           <Btn variant="secondary" size="sm" onClick={() => setSharing(true)}>Share report</Btn>
           <Btn variant="secondary" size="sm" onClick={() => { setEditForm({ budget: c.budget, start: c.start, end: c.end }); setEditing(true); }}>✏ Edit</Btn>
