@@ -87,6 +87,6 @@ describe('ApprovalCard', () => {
 
   it('shows no creative-mix section when the row has no explicit creatives', () => {
     const { queryByText } = render(<ApprovalCard row={mockRow} onApprove={jest.fn()} onReject={jest.fn()} />);
-    expect(queryByText(/%\)/)).toBeNull();
+    expect(queryByText(/ · \d+%/)).toBeNull();
   });
 });
