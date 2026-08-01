@@ -73,6 +73,16 @@ export function ApprovalCard({ row, onApprove, onReject }) {
           )}
         </View>
 
+        {row.creatives?.length > 0 && (
+          <View style={styles.creativeMix}>
+            {row.creatives.map(cr => (
+              <Text key={cr.id} style={[styles.creativeMixText, { fontFamily: F.sans }]}>
+                {cr.label || cr.headline || 'Untitled creative'} · {cr.weight}%
+              </Text>
+            ))}
+          </View>
+        )}
+
         {!rejecting ? (
           <View style={styles.actions}>
             <Btn variant="danger" onPress={() => setRejecting(true)} style={{ flex: 1 }}>Reject</Btn>
@@ -108,6 +118,8 @@ const styles = StyleSheet.create({
   advertiser: { fontSize: 12, color: C.textSub },
   meta: { gap: 4, marginBottom: 14 },
   metaText: { fontSize: 12, color: C.textMuted },
+  creativeMix: { gap: 2, marginBottom: 10 },
+  creativeMixText: { fontSize: 11, color: C.textMuted },
   actions: { flexDirection: 'row', gap: 10, marginTop: 4 },
   rejectSection: { marginTop: 4 },
   rejectLabel: { fontSize: 13, color: C.textMid, marginBottom: 8 },

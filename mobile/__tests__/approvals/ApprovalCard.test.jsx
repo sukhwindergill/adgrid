@@ -71,4 +71,22 @@ describe('ApprovalCard', () => {
     fireEvent.press(getByText('Competitor brand'));
     expect(otherReason.props.accessibilityState).toEqual({ selected: true });
   });
+
+  it('shows each assigned creative with its share when the row has explicit creatives', () => {
+    const rowWithCreatives = {
+      ...mockRow,
+      creatives: [
+        { id: 'cr-1', label: 'Landscape version', weight: 70 },
+        { id: 'cr-2', label: 'Portrait version', weight: 30 },
+      ],
+    };
+    const { getByText } = render(<ApprovalCard row={rowWithCreatives} onApprove={jest.fn()} onReject={jest.fn()} />);
+    expect(getByText(/Landscape version.*70%/)).toBeTruthy();
+    expect(getByText(/Portrait version.*30%/)).toBeTruthy();
+  });
+
+  it('shows no creative-mix section when the row has no explicit creatives', () => {
+    const { queryByText } = render(<ApprovalCard row={mockRow} onApprove={jest.fn()} onReject={jest.fn()} />);
+    expect(queryByText(/%\)/)).toBeNull();
+  });
 });
