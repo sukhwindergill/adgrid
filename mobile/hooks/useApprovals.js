@@ -28,20 +28,29 @@ export function useApprovals(operatorId, screenIds) {
     if (err) { setError(err.message); setLoading(false); return; }
 
     const rows = data || [];
-    const { data: ccsRows } = await supabase
+    let creativeError = null;
+
+    // campaign_creatives.targeting_id and campaign_screens.campaign_id (the
+    // latter aliased as row.campaign_id below) are both bookings.id -- the
+    // same identifier space -- so grouping creatives by
+    // `${targeting_id}:${screen_id}` and looking them up by
+    // `${campaign_id}:${screen_id}` correctly matches.
+    const { data: ccsRows, error: ccsErr } = await supabase
       .from('campaign_creative_screens')
       .select('screen_id, weight, creative_id')
       .in('screen_id', screenIds);
+    if (ccsErr) creativeError = ccsErr.message;
 
+    const byKey = new Map();
     if (ccsRows && ccsRows.length > 0) {
       const creativeIds = [...new Set(ccsRows.map(r => r.creative_id))];
-      const { data: creatives } = await supabase
+      const { data: creatives, error: crErr } = await supabase
         .from('campaign_creatives')
         .select('id, targeting_id, label, headline, media_url, media_type, media_width, media_height, accent_color, status')
         .eq('status', 'active')
         .in('id', creativeIds);
+      if (crErr) creativeError = crErr.message;
       const creativeById = new Map((creatives || []).map(c => [c.id, c]));
-      const byKey = new Map();
       ccsRows.forEach(row => {
         const cr = creativeById.get(row.creative_id);
         if (!cr) return;
@@ -50,15 +59,18 @@ export function useApprovals(operatorId, screenIds) {
         list.push({ ...cr, weight: row.weight });
         byKey.set(key, list);
       });
-      rows.forEach(row => {
-        row.creatives = byKey.get(`${row.campaign_id}:${row.screen_id}`) ?? [];
-      });
-    } else {
-      rows.forEach(row => { row.creatives = []; });
     }
 
-    setError(null);
-    setPending(rows);
+    // A failed creative-mix lookup shouldn't block the primary approval
+    // queue from rendering -- surface the error but still populate `pending`
+    // (with `creatives: []` on the affected rows).
+    const enriched = rows.map(row => ({
+      ...row,
+      creatives: byKey.get(`${row.campaign_id}:${row.screen_id}`) ?? [],
+    }));
+
+    setError(creativeError);
+    setPending(enriched);
     setLoading(false);
   }, [operatorId, JSON.stringify(screenIds)]);
 
