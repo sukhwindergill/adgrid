@@ -60,7 +60,7 @@ function healthLabel(screen) {
   return { label: 'Offline', color: C.red };
 }
 
-function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, onRejected, setCampaigns }) {
+function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByScreen, onApproved, onRejected, setCampaigns }) {
   const { isMobile } = useBreakpoint();
   const confirm = useConfirm();
   const [rejectScreenId, setRejectScreenId] = useState(null);
@@ -246,35 +246,71 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, onApproved, 
               {myRows.map(row => {
                 const screen = allScreens.find(s => s.id === row.screen_id);
                 const health = screen ? healthLabel(screen) : null;
-                // fileSizeMb is a representative value only, not the real file size —
-                // real MIME subtype/file size aren't captured today, so format/size
-                // checks are approximate. Same deliberate simplification as
-                // CreateCampaign.jsx's wizard-side fit check (Task 9); not fixed here.
-                const rowMedia = {
-                  widthPx: row.media_width ?? campaign.media_width,
-                  heightPx: row.media_height ?? campaign.media_height,
-                  fileType: (row.media_type ?? campaign.media_type) === 'video' ? 'video/mp4' : 'image/png',
-                  fileSizeMb: 0,
-                };
-                const fit = screen ? checkCreativeFit(rowMedia, {
-                  resolution_w: screen.resolution_w,
-                  resolution_h: screen.resolution_h,
-                  accepted_formats: screen.accepted_formats,
-                  max_file_mb: screen.max_file_mb,
-                }) : { status: 'unknown', reasons: [] };
+                const screenCreatives = creativesByScreen[`${campaign.id}:${row.screen_id}`] ?? [];
+
+                // Fit-check scope: one check per explicitly assigned creative when
+                // there are any, otherwise the single campaign-level check exactly
+                // as before this phase.
+                const fitChecks = screen
+                  ? (screenCreatives.length > 0
+                      ? screenCreatives.map(cr => ({
+                          creative: cr,
+                          ...checkCreativeFit(
+                            { widthPx: cr.media_width, heightPx: cr.media_height, fileType: cr.media_type === 'video' ? 'video/mp4' : 'image/png', fileSizeMb: 0 },
+                            { resolution_w: screen.resolution_w, resolution_h: screen.resolution_h, accepted_formats: screen.accepted_formats, max_file_mb: screen.max_file_mb },
+                          ),
+                        }))
+                      // fileSizeMb is a representative value only, not the real file size —
+                      // real MIME subtype/file size aren't captured today, so format/size
+                      // checks are approximate. Same deliberate simplification as
+                      // CreateCampaign.jsx's wizard-side fit check (Task 9); not fixed here.
+                      : [{
+                          creative: null,
+                          ...checkCreativeFit(
+                            {
+                              widthPx: row.media_width ?? campaign.media_width,
+                              heightPx: row.media_height ?? campaign.media_height,
+                              fileType: (row.media_type ?? campaign.media_type) === 'video' ? 'video/mp4' : 'image/png',
+                              fileSizeMb: 0,
+                            },
+                            { resolution_w: screen?.resolution_w, resolution_h: screen?.resolution_h, accepted_formats: screen?.accepted_formats, max_file_mb: screen?.max_file_mb },
+                          ),
+                        }])
+                  : [];
+
                 return (
-                  <div key={row.screen_id} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <div style={{ flex: 1, minWidth: 120 }}>
-                      <div style={{ fontSize: 12, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{screen?.name || row.screen_id}</div>
-                      {health && <span style={{ fontSize: 10, color: health.color, fontFamily: F.sans }}>⚠ {health.label}</span>}
-                      {fit.status === 'mismatch' && (
-                        <span style={{ fontSize: 10, color: C.amber, fontFamily: F.sans, marginLeft: health ? 8 : 0 }}>
-                          ⚠ Creative may not fit ({fit.reasons.map(r => REASON_LABEL[r] ?? r).join(', ')})
-                        </span>
-                      )}
+                  <div key={row.screen_id} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <div style={{ flex: 1, minWidth: 120 }}>
+                        <div style={{ fontSize: 12, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{screen?.name || row.screen_id}</div>
+                        {health && <span style={{ fontSize: 10, color: health.color, fontFamily: F.sans }}>⚠ {health.label}</span>}
+                      </div>
+                      <Btn size="sm" onClick={() => approveScreen(row.screen_id)} disabled={acting}>✓ Approve</Btn>
+                      <Btn variant="danger" size="sm" onClick={() => setRejectScreenId(row.screen_id)} disabled={acting}>✗ Reject</Btn>
                     </div>
-                    <Btn size="sm" onClick={() => approveScreen(row.screen_id)} disabled={acting}>✓ Approve</Btn>
-                    <Btn variant="danger" size="sm" onClick={() => setRejectScreenId(row.screen_id)} disabled={acting}>✗ Reject</Btn>
+
+                    {screenCreatives.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, paddingLeft: 4 }}>
+                        {screenCreatives.map(cr => {
+                          const check = fitChecks.find(f => f.creative?.id === cr.id);
+                          return (
+                            <div key={cr.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: C.textSub, fontFamily: F.sans }}>
+                              <div style={{ width: 6, height: 6, borderRadius: '50%', background: cr.accent_color || C.purple, flexShrink: 0 }} />
+                              <span>{cr.label || cr.headline || 'Untitled creative'} · {cr.weight}%</span>
+                              {check?.status === 'mismatch' && (
+                                <span style={{ color: C.amber }}>⚠ {check.reasons.map(r => REASON_LABEL[r] ?? r).join(', ')}</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {screenCreatives.length === 0 && fitChecks[0]?.status === 'mismatch' && (
+                      <span style={{ fontSize: 10, color: C.amber, fontFamily: F.sans, paddingLeft: 4 }}>
+                        ⚠ Creative may not fit ({fitChecks[0].reasons.map(r => REASON_LABEL[r] ?? r).join(', ')})
+                      </span>
+                    )}
                   </div>
                 );
               })}
