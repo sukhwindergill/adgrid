@@ -366,7 +366,17 @@ export function ApprovalQueue({ campaigns, dbScreens = [] }) {
     });
   }, [relevantCampaignIds.join(',')]);
 
-  const myPendingCampaigns = campaigns.filter(c => relevantCampaignIds.includes(c.id));
+  // Derived from the live campaignScreens state (not relevantCampaignIds
+  // directly) so that approving/rejecting a campaign's last pending screen
+  // drops it from the queue immediately. relevantCampaignIds only decides
+  // which campaigns to fetch rows for above; it's a one-shot snapshot that
+  // handleApproved/handleRejected/bulkApproveAll never prune, so treating
+  // it as the source of truth for "is this still pending" would leave
+  // fully-resolved campaigns rendering as ghost cards until remount.
+  const myPendingCampaigns = campaigns.filter(c => {
+    const rows = campaignScreens[c.id] || [];
+    return rows.some(row => myScreens.some(s => s.id === row.screen_id) && row.status === 'pending');
+  });
 
   const enriched = myPendingCampaigns.map(c => ({
     ...c,
