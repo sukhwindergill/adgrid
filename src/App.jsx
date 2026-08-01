@@ -229,6 +229,19 @@ function AppInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, activeMode]);
 
+  // Clear a stale "add targeting group" target whenever the route moves away
+  // from the create-campaign screen, no matter how that navigation happened —
+  // Cancel/Save (which already clear it explicitly), the sidebar's nav
+  // handler (which calls react-router's navigate() directly, bypassing
+  // navTo()), browser back/forward, or any future entry point. Without this,
+  // a leftover { id, name } from a previous "+ Add targeting group" click
+  // could silently scope a brand-new campaign under the wrong parent.
+  useEffect(() => {
+    if (active !== 'adv-create' && addingToCampaign) {
+      setAddingToCampaign(null);
+    }
+  }, [active, addingToCampaign]);
+
   // Redirect to account hub when user has grants and no active account chosen
   useEffect(() => {
     if (!user || !profile || !grants) return
