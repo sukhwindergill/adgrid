@@ -298,6 +298,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
             label: c.label || `Creative ${i + 1}`,
             media_url: c.media_url || null,
             media_type: c.media_type || null,
+            media_width: c.media_width ?? null,
+            media_height: c.media_height ?? null,
             headline: c.headline || null,
             cta_text: c.cta_text || null,
             destination_url: c.destination_url ? normalizeDestinationUrl(c.destination_url) : null,

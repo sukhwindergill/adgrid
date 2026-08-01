@@ -430,7 +430,7 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [] }) {
         const creativeIds = [...new Set(ccsRows.map(r => r.creative_id))];
         const { data: creatives } = await supabase
           .from('campaign_creatives')
-          .select('id, targeting_id, label, headline, media_url, media_type, accent_color, status')
+          .select('id, targeting_id, label, headline, media_url, media_type, media_width, media_height, accent_color, status')
           .in('id', creativeIds)
           .eq('status', 'active');
         const creativeById = new Map((creatives || []).map(c => [c.id, c]));
