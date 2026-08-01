@@ -366,25 +366,37 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [] }) {
     });
   }, [relevantCampaignIds.join(',')]);
 
-  const [creativesByScreen, setCreativesByScreen] = useState({}); // `${campaignId}:${screenId}` -> [{ ...creative, weight }]
+  const [creativesByScreen, setCreativesByScreen] = useState({}); // `${targeting_id}:${screenId}` -> [{ ...creative, weight }]
 
   // Per-screen creative assignments (Phase 1 schema) -- mirrors display-feed's
   // Phase 2 two-step lookup: campaign_creative_screens (this screen's explicit
   // assignments) then campaign_creatives (the creative rows themselves),
   // grouped by targeting_id -- which is the same bookings.id space as
   // campaignScreens' campaign_id / campaign.id above, so the keys line up.
+  // Scoped to relevantCampaignIds (via campaign_creative_screens' own
+  // denormalized targeting_id column, see migration
+  // 20260731000009_fix_creative_screens_cascade_delete_trigger.sql) so this
+  // doesn't pull every creative assignment ever made on these screens across
+  // the account's lifetime -- only the ones the queue will actually render,
+  // matching how relevantCampaignIds already scopes campaignScreens above.
+  // campaign_creatives itself is filtered to status = 'active' to match
+  // display-feed's serving path (supabase/functions/display-feed/index.ts) --
+  // nothing sets a non-active status today, but a paused/archived creative
+  // should never surface in the approval queue once something does.
   useEffect(() => {
-    if (myScreens.length === 0) { setCreativesByScreen({}); return; }
+    if (myScreens.length === 0 || relevantCampaignIds.length === 0) { setCreativesByScreen({}); return; }
     supabase.from('campaign_creative_screens')
       .select('screen_id, weight, creative_id')
       .in('screen_id', myScreens.map(s => s.id))
+      .in('targeting_id', relevantCampaignIds)
       .then(async ({ data: ccsRows }) => {
         if (!ccsRows || ccsRows.length === 0) { setCreativesByScreen({}); return; }
         const creativeIds = [...new Set(ccsRows.map(r => r.creative_id))];
         const { data: creatives } = await supabase
           .from('campaign_creatives')
-          .select('id, targeting_id, label, headline, media_url, media_type, accent_color')
-          .in('id', creativeIds);
+          .select('id, targeting_id, label, headline, media_url, media_type, accent_color, status')
+          .in('id', creativeIds)
+          .eq('status', 'active');
         const creativeById = new Map((creatives || []).map(c => [c.id, c]));
         const grouped = {};
         ccsRows.forEach(row => {
@@ -396,7 +408,7 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [] }) {
         });
         setCreativesByScreen(grouped);
       });
-  }, [myScreens.map(s => s.id).join(',')]);
+  }, [myScreens.map(s => s.id).join(','), relevantCampaignIds.join(',')]);
 
   // Derived from the live campaignScreens state (not relevantCampaignIds
   // directly) so that approving/rejecting a campaign's last pending screen
