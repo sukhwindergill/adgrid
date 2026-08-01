@@ -94,6 +94,7 @@ function AppInner() {
   const [dbScreens,        setDbScreens]     = useState([]); // advertiser-safe: live screens, no revenue/cpm
   const [myScreens,        setMyScreens]     = useState([]); // operator's own screens, full columns
   const [detail,           setDetail]        = useState(null);
+  const [addingToCampaign, setAddingToCampaign] = useState(null); // { id, name } | null
   const [dataLoading,      setDataLoading]   = useState(false);
   const [loadError,        setLoadError]     = useState(null);
   const [selectedScreenId, setSelectedScreenId] = useState(null);
@@ -334,7 +335,27 @@ function AppInner() {
   // ── View routing ───────────────────────────────────────────────────────────
   const view = () => {
     if (detail && (active === 'campaigns' || active === 'analytics' || active === 'adv-campaigns' || active === 'approval')) {
-      return <CampaignDetail campaign={detail} onBack={() => setDetail(null)} onUpdate={updateCampaign} canReview={canReview} setCampaigns={setCampaigns} />;
+      // Of these four routes, only 'adv-campaigns' is actually reachable with
+      // `detail` set on the advertiser side — 'analytics' here is the
+      // operator's own Analytics route (see the 'analytics' branch below,
+      // outside the isAdv block); nothing ever calls setDetail from it or
+      // from the advertiser's Analytics view ('adv-analytics'). So this is
+      // the only condition that correctly gates the advertiser-only
+      // "+ Add targeting group" affordance.
+      const isAdvertiserDetail = active === 'adv-campaigns';
+      return (
+        <CampaignDetail
+          campaign={detail}
+          onBack={() => setDetail(null)}
+          onUpdate={updateCampaign}
+          canReview={canReview}
+          setCampaigns={setCampaigns}
+          onAddTargeting={isAdvertiserDetail ? (c) => {
+            setAddingToCampaign({ id: c.campaign_id, name: c.campaign_name || c.advertiser });
+            navTo('adv-create');
+          } : undefined}
+        />
+      );
     }
 
     if (isAdv) {
@@ -343,11 +364,13 @@ function AppInner() {
         <CreateCampaign
           dbScreens={dbScreens}
           campaigns={campaigns}
+          existingCampaign={addingToCampaign}
           onSave={c => {
             setCampaigns(p => [c, ...p]);
+            setAddingToCampaign(null);
             navTo('adv-campaigns');
           }}
-          onCancel={() => navTo('adv-overview')}
+          onCancel={() => { setAddingToCampaign(null); navTo('adv-overview'); }}
         />
       );
       if (active === 'adv-campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} allowCancel />;
