@@ -25,8 +25,40 @@ export function useApprovals(operatorId, screenIds) {
       .select(SELECT)
       .eq('status', 'pending')
       .in('screen_id', screenIds);
-    if (err) setError(err.message);
-    else setPending(data || []);
+    if (err) { setError(err.message); setLoading(false); return; }
+
+    const rows = data || [];
+    const { data: ccsRows } = await supabase
+      .from('campaign_creative_screens')
+      .select('screen_id, weight, creative_id')
+      .in('screen_id', screenIds);
+
+    if (ccsRows && ccsRows.length > 0) {
+      const creativeIds = [...new Set(ccsRows.map(r => r.creative_id))];
+      const { data: creatives } = await supabase
+        .from('campaign_creatives')
+        .select('id, targeting_id, label, headline, media_url, media_type, media_width, media_height, accent_color, status')
+        .eq('status', 'active')
+        .in('id', creativeIds);
+      const creativeById = new Map((creatives || []).map(c => [c.id, c]));
+      const byKey = new Map();
+      ccsRows.forEach(row => {
+        const cr = creativeById.get(row.creative_id);
+        if (!cr) return;
+        const key = `${cr.targeting_id}:${row.screen_id}`;
+        const list = byKey.get(key) ?? [];
+        list.push({ ...cr, weight: row.weight });
+        byKey.set(key, list);
+      });
+      rows.forEach(row => {
+        row.creatives = byKey.get(`${row.campaign_id}:${row.screen_id}`) ?? [];
+      });
+    } else {
+      rows.forEach(row => { row.creatives = []; });
+    }
+
+    setError(null);
+    setPending(rows);
     setLoading(false);
   }, [operatorId, JSON.stringify(screenIds)]);
 
