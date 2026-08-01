@@ -221,7 +221,13 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
                 if (hasPending && hasApproved) badgeStatus = 'partially_approved';
               }
               const cities = [...new Set(screens.map(s => screenData[s.screen_id]?.city).filter(Boolean))];
-              return { ...c, badgeStatus, screenCount: screens.length, displayCity: cities.length === 1 ? cities[0] : (c.city || '') };
+              // Resolved from the fetched campaigns-parent row, not the booking's
+              // own campaign_name -- a booking added via "+ Add targeting group"
+              // never has campaign_name set (its name field is hidden), so that
+              // column can't be trusted as the parent name once a campaign has
+              // more than one targeting group.
+              const parentName = campaignParents[c.campaign_id]?.name;
+              return { ...c, badgeStatus, screenCount: screens.length, displayCity: cities.length === 1 ? cities[0] : (c.city || ''), parentName };
             });
 
             if (withBadge.length === 1) {
@@ -232,7 +238,7 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
               );
             }
 
-            const parentName = campaignParents[groupId]?.name || withBadge[0].advertiser;
+            const parentName = withBadge[0].parentName || withBadge[0].advertiser;
             const rollup = rollupGroup(withBadge);
             const totalScreens = withBadge.reduce((a, c) => a + c.screenCount, 0);
             const expanded = expandedGroups.has(groupId);

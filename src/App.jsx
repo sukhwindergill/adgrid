@@ -364,7 +364,7 @@ function AppInner() {
           canReview={canReview}
           setCampaigns={setCampaigns}
           onAddTargeting={isAdvertiserDetail ? (c) => {
-            setAddingToCampaign({ id: c.campaign_id, name: c.campaign_name || c.advertiser });
+            setAddingToCampaign({ id: c.campaign_id, name: c.parentName || c.campaign_name || c.advertiser });
             navTo('adv-create');
           } : undefined}
         />
