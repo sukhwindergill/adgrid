@@ -17,8 +17,18 @@ ALTER TABLE public.bookings
   ADD COLUMN IF NOT EXISTS qr_size_pct numeric;
 
 ALTER TABLE public.bookings
-  ADD CONSTRAINT bookings_qr_x_range CHECK (qr_x IS NULL OR (qr_x >= 0 AND qr_x <= 100)),
-  ADD CONSTRAINT bookings_qr_y_range CHECK (qr_y IS NULL OR (qr_y >= 0 AND qr_y <= 100)),
+  DROP CONSTRAINT IF EXISTS bookings_qr_x_range;
+ALTER TABLE public.bookings
+  ADD CONSTRAINT bookings_qr_x_range CHECK (qr_x IS NULL OR (qr_x >= 0 AND qr_x <= 100));
+
+ALTER TABLE public.bookings
+  DROP CONSTRAINT IF EXISTS bookings_qr_y_range;
+ALTER TABLE public.bookings
+  ADD CONSTRAINT bookings_qr_y_range CHECK (qr_y IS NULL OR (qr_y >= 0 AND qr_y <= 100));
+
+ALTER TABLE public.bookings
+  DROP CONSTRAINT IF EXISTS bookings_qr_size_pct_range;
+ALTER TABLE public.bookings
   ADD CONSTRAINT bookings_qr_size_pct_range CHECK (qr_size_pct IS NULL OR (qr_size_pct >= 0.08 AND qr_size_pct <= 0.3));
 
 ALTER TABLE public.campaign_creatives
@@ -27,6 +37,16 @@ ALTER TABLE public.campaign_creatives
   ADD COLUMN IF NOT EXISTS qr_size_pct numeric;
 
 ALTER TABLE public.campaign_creatives
-  ADD CONSTRAINT campaign_creatives_qr_x_range CHECK (qr_x IS NULL OR (qr_x >= 0 AND qr_x <= 100)),
-  ADD CONSTRAINT campaign_creatives_qr_y_range CHECK (qr_y IS NULL OR (qr_y >= 0 AND qr_y <= 100)),
+  DROP CONSTRAINT IF EXISTS campaign_creatives_qr_x_range;
+ALTER TABLE public.campaign_creatives
+  ADD CONSTRAINT campaign_creatives_qr_x_range CHECK (qr_x IS NULL OR (qr_x >= 0 AND qr_x <= 100));
+
+ALTER TABLE public.campaign_creatives
+  DROP CONSTRAINT IF EXISTS campaign_creatives_qr_y_range;
+ALTER TABLE public.campaign_creatives
+  ADD CONSTRAINT campaign_creatives_qr_y_range CHECK (qr_y IS NULL OR (qr_y >= 0 AND qr_y <= 100));
+
+ALTER TABLE public.campaign_creatives
+  DROP CONSTRAINT IF EXISTS campaign_creatives_qr_size_pct_range;
+ALTER TABLE public.campaign_creatives
   ADD CONSTRAINT campaign_creatives_qr_size_pct_range CHECK (qr_size_pct IS NULL OR (qr_size_pct >= 0.08 AND qr_size_pct <= 0.3));
