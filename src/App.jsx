@@ -234,13 +234,19 @@ function AppInner() {
     if (user) loadData()
   }, [user, activeAccount, loadData])
 
-  // Update nav when mode changes
+  // Update nav when mode changes. Depends on user?.id, not the user object
+  // itself -- Supabase's onAuthStateChange fires a fresh session.user object
+  // on every event, including the automatic hourly TOKEN_REFRESHED, even
+  // when the signed-in user hasn't changed. Depending on the object would
+  // re-run this navigate-away on every background token refresh, silently
+  // kicking anyone out of a mid-flow screen (e.g. the campaign wizard) back
+  // to the overview and discarding their in-progress form state.
   useEffect(() => {
     if (user && activeMode) {
       navTo(activeMode === 'advertiser' ? 'adv-overview' : 'overview');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, activeMode]);
+  }, [user?.id, activeMode]);
 
   // Clear a stale "add targeting group" target whenever the route moves away
   // from the create-campaign screen, no matter how that navigation happened —
