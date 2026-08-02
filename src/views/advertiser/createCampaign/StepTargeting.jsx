@@ -21,7 +21,7 @@ const CITY_CENTERS = {
   'Kitchener':    [43.4516,  -80.4925],
 };
 
-export function StepTargeting({ form, setForm, reachSummary, allScreens, onPrevCampaigns }) {
+export function StepTargeting({ form, setForm, reachSummary, allScreens, onPrevCampaigns, existingCampaign = null }) {
   const [geocoding, setGeocoding] = useState(false);
 
   const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
@@ -62,14 +62,20 @@ export function StepTargeting({ form, setForm, reachSummary, allScreens, onPrevC
   return (
     <div style={{ maxWidth: 620, margin: '0 auto' }}>
       <Card style={{ padding: 32 }}>
-        <div style={{ marginBottom: 24 }}>
-          <Inp
-            label="Campaign name"
-            placeholder="e.g. Summer Promo 2026"
-            value={form.name}
-            onChange={e => setField('name', e.target.value)}
-          />
-        </div>
+        {existingCampaign ? (
+          <div style={{ marginBottom: 24, padding: '10px 14px', background: C.purpleSoft, borderRadius: 8, fontSize: 13, color: C.purple, fontFamily: F.sans }}>
+            Adding a new targeting group to <strong>{existingCampaign.name}</strong>
+          </div>
+        ) : (
+          <div style={{ marginBottom: 24 }}>
+            <Inp
+              label="Campaign name"
+              placeholder="e.g. Summer Promo 2026"
+              value={form.name}
+              onChange={e => setField('name', e.target.value)}
+            />
+          </div>
+        )}
 
         <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 4px' }}>Where do you want to advertise?</h2>
         <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 20px' }}>Choose an area and, optionally, the kind of screens you're after — we'll find matching screens for you.</p>

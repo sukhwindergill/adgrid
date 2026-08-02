@@ -64,7 +64,7 @@ function StepPay({ campaign, onPay, onSkip, paying, err, requiresAction, onGoToB
 
 // ─── Main Wizard ─────────────────────────────────────────────────────────────
 
-export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [] }) {
+export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [], existingCampaign = null }) {
   const { user, profile, activeAccount } = useAuth();
   const navigate = useNavigate();
   const isDelegate = activeAccount && !activeAccount.isOwn;
@@ -237,18 +237,24 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       const isMulti = creatives.length > 1;
       const preview = buildPreviewCampaign(primary, profile);
 
-      const { data: campaignRow, error: campaignErr } = await supabase
-        .from('campaigns')
-        .insert({ advertiser_id: user.id, name: form.name || 'Untitled Campaign' })
-        .select('id')
-        .single();
-      if (campaignErr) throw new Error(campaignErr.message);
+      // When adding a targeting group to an existing campaign, reuse its id
+      // as the parent instead of inserting a brand-new `campaigns` row.
+      let parentCampaignId = existingCampaign?.id;
+      if (!parentCampaignId) {
+        const { data: campaignRow, error: campaignErr } = await supabase
+          .from('campaigns')
+          .insert({ advertiser_id: user.id, name: form.name || 'Untitled Campaign' })
+          .select('id')
+          .single();
+        if (campaignErr) throw new Error(campaignErr.message);
+        parentCampaignId = campaignRow.id;
+      }
 
       const campaignId = crypto.randomUUID();
       const firstScreen = selectedScreens[0];
       const { error: bookingErr } = await supabase.from('bookings').insert({
         id:                    campaignId,
-        campaign_id:           campaignRow.id,
+        campaign_id:           parentCampaignId,
         budget_level:          isMulti ? form.budget_level : 'unified',
         advertiser_id:         user.id,
         campaign_name:         form.name || null,
@@ -353,7 +359,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       setSubmitting(false);
       setCreated({
         id: campaignId,
-        campaign_id: campaignRow.id,
+        campaign_id: parentCampaignId,
         advertiser: profile?.name || user.email?.split('@')[0] || 'Advertiser',
         advertiser_id: user.id,
         screen: firstScreen?.name || '',
@@ -470,7 +476,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         </div>
       )}
 
-      {step === 0 && <StepTargeting form={form} setForm={setForm} reachSummary={reachSummary} allScreens={dbScreens} onPrevCampaigns={campaigns.length > 0 ? () => setShowDupModal(true) : null} />}
+      {step === 0 && <StepTargeting form={form} setForm={setForm} reachSummary={reachSummary} allScreens={dbScreens} onPrevCampaigns={campaigns.length > 0 ? () => setShowDupModal(true) : null} existingCampaign={existingCampaign} />}
       {step === 1 && <StepCreative form={form} setForm={setForm} matchedScreens={matchedScreens} profile={profile} />}
       {step === 2 && <StepBudgetReview form={form} setForm={setForm} matchedScreens={selectedScreens} profile={profile} onSubmit={handleSubmit} submitting={submitting} err={submitErr} canChooseBilling={canChooseBilling} billedTo={billedTo} setBilledTo={setBilledTo} />}
       {step === 3 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} requiresAction={requiresAction} onGoToBilling={() => navigate('/app/adv-billing')} />}

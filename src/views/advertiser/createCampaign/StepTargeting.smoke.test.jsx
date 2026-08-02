@@ -54,4 +54,34 @@ describe('StepTargeting', () => {
   // rejection under jsdom. That is a pre-existing quirk of ScreenMap in this
   // test environment, unrelated to StepTargeting's own correctness (its
   // imports, including ScreenMap, already resolve fine per the tests above).
+
+  it('renders the campaign name input when no existingCampaign is passed', () => {
+    render(
+      <StepTargeting
+        form={baseForm}
+        setForm={() => {}}
+        reachSummary={null}
+        allScreens={[]}
+        onPrevCampaigns={null}
+      />
+    );
+    expect(screen.getByPlaceholderText('e.g. Summer Promo 2026')).toBeInTheDocument();
+    expect(screen.queryByText('Adding a new targeting group to')).not.toBeInTheDocument();
+  });
+
+  it('renders a banner instead of the name input when existingCampaign is passed', () => {
+    render(
+      <StepTargeting
+        form={baseForm}
+        setForm={() => {}}
+        reachSummary={null}
+        allScreens={[]}
+        onPrevCampaigns={null}
+        existingCampaign={{ id: 'abc123', name: 'Summer Promo 2026' }}
+      />
+    );
+    expect(screen.queryByPlaceholderText('e.g. Summer Promo 2026')).not.toBeInTheDocument();
+    expect(screen.getByText('Adding a new targeting group to')).toBeInTheDocument();
+    expect(screen.getByText('Summer Promo 2026')).toBeInTheDocument();
+  });
 });
