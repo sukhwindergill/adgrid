@@ -21,4 +21,12 @@ describe('buildPreviewCampaign', () => {
     expect(result.qr_y).toBeNull();
     expect(result.qr_size_pct).toBeNull();
   });
+
+  it('preserves qr_x/qr_y/qr_size_pct of exactly 0 rather than defaulting them', () => {
+    const form = { accent_color: '', destination_url: '', category: '', media_url: '', media_type: '', qr_x: 0, qr_y: 0, qr_size_pct: 0 };
+    const result = buildPreviewCampaign(form);
+    expect(result.qr_x).toBe(0);
+    expect(result.qr_y).toBe(0);
+    expect(result.qr_size_pct).toBe(0);
+  });
 });
