@@ -27,6 +27,23 @@ describe('clampQrCenter', () => {
     const result = clampQrCenter(50, 100, 0.2, 16 / 9);
     expect(result.y).toBeCloseTo(82.22, 1);
   });
+
+  it('handles a portrait frame (frameAspect < 1), scaling y clamping down instead of up', () => {
+    const result = clampQrCenter(50, 0, 0.2, 9 / 16);
+    // halfHeightPct = 0.2 * 100 * (9/16) / 2 = 5.625
+    expect(result.y).toBeCloseTo(5.625, 2);
+    expect(result.x).toBe(50);
+  });
+
+  it('does not invert on a wide frame + near-max size where halfHeightPct would exceed 50', () => {
+    const wideAspect = 3840 / 900; // ~4.27:1
+    const top = clampQrCenter(50, 10, QR_SIZE_PCT_MAX, wideAspect);
+    const bottom = clampQrCenter(50, 90, QR_SIZE_PCT_MAX, wideAspect);
+    // Both should degrade to the same sane center fallback (halfHeightPct capped at 50),
+    // and both directions should agree rather than silently inverting.
+    expect(top.y).toBe(50);
+    expect(bottom.y).toBe(50);
+  });
 });
 
 describe('clampQrSizePct', () => {
@@ -40,6 +57,14 @@ describe('clampQrSizePct', () => {
 
   it('ceils above the maximum', () => {
     expect(clampQrSizePct(0.9)).toBe(QR_SIZE_PCT_MAX);
+  });
+
+  it('leaves the minimum boundary unchanged', () => {
+    expect(clampQrSizePct(QR_SIZE_PCT_MIN)).toBe(QR_SIZE_PCT_MIN);
+  });
+
+  it('leaves the maximum boundary unchanged', () => {
+    expect(clampQrSizePct(QR_SIZE_PCT_MAX)).toBe(QR_SIZE_PCT_MAX);
   });
 });
 

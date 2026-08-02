@@ -24,8 +24,8 @@ export const QR_CORNER_PRESETS = {
 // of two different axis lengths, so the box's height-as-percent-of-frame-
 // height is not the same number as its width-as-percent-of-frame-width.
 export function clampQrCenter(x, y, sizePct, frameAspect) {
-  const halfWidthPct = (sizePct * 100) / 2;
-  const halfHeightPct = (sizePct * 100 * frameAspect) / 2;
+  const halfWidthPct = Math.min(50, (sizePct * 100) / 2);
+  const halfHeightPct = Math.min(50, (sizePct * 100 * frameAspect) / 2);
   return {
     x: Math.min(100 - halfWidthPct, Math.max(halfWidthPct, x)),
     y: Math.min(100 - halfHeightPct, Math.max(halfHeightPct, y)),
