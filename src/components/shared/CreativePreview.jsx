@@ -116,8 +116,13 @@ function QrOverlay({ url, x, y, sizePct, frameAspect, editable, onChange }) {
     } else {
       const centerXPx = rect.left + (x / 100) * rect.width;
       const centerYPx = rect.top + (y / 100) * rect.height;
+      // The resize handle sits at the box's corner, and the box is always
+      // rendered square (CSS aspect-ratio:1) regardless of frame aspect --
+      // the corner sits at a diagonal distance of half-side*sqrt(2) from
+      // center, so dividing by sqrt(2) (not 2) makes the corner track the
+      // cursor along the drag direction instead of overshooting by ~41%.
       const distPx = Math.max(Math.hypot(e.clientX - centerXPx, e.clientY - centerYPx), 1);
-      const nextSizePct = clampQrSizePct((distPx * 2) / rect.width);
+      const nextSizePct = clampQrSizePct((distPx * Math.SQRT2) / rect.width);
       const clamped = clampQrCenter(x, y, nextSizePct, frameAspect);
       onChange({ x: clamped.x, y: clamped.y, sizePct: nextSizePct });
     }
@@ -149,6 +154,7 @@ function QrOverlay({ url, x, y, sizePct, frameAspect, editable, onChange }) {
           padding: '8%', boxSizing: 'border-box', pointerEvents: editable ? 'auto' : 'none',
           cursor: editable ? 'grab' : 'default',
           boxShadow: editable ? '0 0 0 2px rgba(124,58,237,0.6)' : 'none',
+          touchAction: editable ? 'none' : 'auto',
         }}
       >
         <QRCode value={url} size={256} style={{ width: '100%', height: '100%' }} level="M" />
@@ -159,7 +165,7 @@ function QrOverlay({ url, x, y, sizePct, frameAspect, editable, onChange }) {
             style={{
               position: 'absolute', right: -6, bottom: -6, width: 14, height: 14,
               borderRadius: '50%', background: '#7c3aed', border: '2px solid #fff',
-              cursor: 'nwse-resize',
+              cursor: 'nwse-resize', touchAction: 'none',
             }}
           />
         )}
