@@ -31,7 +31,7 @@ export function CreativeCard({
   // survive the update, not just the four media fields.
   const setMediaForm = (updater) => onChange(updater(creative));
 
-  const hasDestination = isValidDestinationUrl(creative.destination_url);
+  const hasDestination = Boolean(creative.destination_url?.trim());
 
   const setQr = ({ x, y, sizePct }) => onChange({ ...creative, qr_x: x, qr_y: y, qr_size_pct: sizePct });
   const snapQrTo = (corner) => {
