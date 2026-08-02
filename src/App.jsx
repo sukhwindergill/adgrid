@@ -4,6 +4,7 @@ import { useAuth } from './context/AuthContext.jsx';
 import { supabase } from './lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from './lib/constants.js';
 import { useToast } from './components/primitives/Toast.jsx';
+import { usePendingApprovalCount } from './hooks/usePendingApprovalCount.js';
 
 import { LoginPage } from './components/login/LoginPage.jsx';
 import { GlobalHeader } from './components/layout/GlobalHeader.jsx';
@@ -97,9 +98,21 @@ function AppInner() {
   const [dataLoading,      setDataLoading]   = useState(false);
   const [loadError,        setLoadError]     = useState(null);
   const [selectedScreenId, setSelectedScreenId] = useState(null);
+  const [approvalRefreshKey, setApprovalRefreshKey] = useState(0);
+  const bumpApprovalRefresh = useCallback(() => setApprovalRefreshKey(k => k + 1), []);
+  const pendingCount = usePendingApprovalCount(myScreens.map(s => s.id), approvalRefreshKey);
 
   // Derive active from current URL path
   const active = location.pathname.replace(/^\/app\/?/, '') || 'overview';
+
+  // Badge fallback: also refetch on navigation into/out of the approval
+  // route, in case a screen was approved/rejected in another tab or session
+  // -- bumpApprovalRefresh (passed to ApprovalQueue) already covers actions
+  // taken in this session.
+  useEffect(() => {
+    if (active === 'approval') bumpApprovalRefresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
 
   // ── Impersonation audit trail ─────────────────────────────────────────────
   useEffect(() => {
@@ -285,7 +298,6 @@ function AppInner() {
   // Approve/Reject is a screen owner's call, not the advertiser's — gate it on mode.
   const canReview = !isAdv;
   const displayUser = { name: profile?.name || user.email?.split('@')[0] || 'User', email: user.email };
-  const pendingCount = campaigns.filter(c => c.status === 'pending_review').length;
 
   // ── Navigation helper ──────────────────────────────────────────────────────
   const navTo = v => {
@@ -390,7 +402,7 @@ function AppInner() {
         onStartOnboard={() => navTo('screen-onboard')}
       />
     );
-    if (active === 'approval')      return <ApprovalQueue campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} dbScreens={myScreens} />;
+    if (active === 'approval')      return <ApprovalQueue campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} dbScreens={myScreens} onApprovalChange={bumpApprovalRefresh} />;
     if (active === 'screen-detail') {
       if (!selectedScreenId) { navTo('screens'); return null; }
       return <ScreenDetailView screenId={selectedScreenId} onBack={() => navTo('screens')} profile={profile} onScreenUpdated={updated => setMyScreens(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s))} />;

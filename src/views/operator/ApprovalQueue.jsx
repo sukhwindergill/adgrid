@@ -353,7 +353,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
   );
 }
 
-export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [] }) {
+export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [], onApprovalChange }) {
   const { user } = useAuth();
   const confirm = useConfirm();
   const [autoApprove, setAutoApprove] = useState(false);
@@ -470,6 +470,7 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [] }) {
         r.screen_id === screenId ? { ...r, status: 'approved' } : r
       ),
     }));
+    onApprovalChange?.();
   };
 
   const handleRejected = (campaignId, screenId) => {
@@ -479,6 +480,7 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [] }) {
         r.screen_id === screenId ? { ...r, status: 'rejected' } : r
       ),
     }));
+    onApprovalChange?.();
   };
 
   const bulkApproveAll = async () => {
