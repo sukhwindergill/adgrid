@@ -30,7 +30,7 @@ export function StepBudgetReview({
   const rows = [
     ['Area', `${form.area_type === 'radius' ? `${form.radius_km}km radius` : form.city || form.state || form.country}`],
     ['Screens', `${form.selected_screen_ids.length} selected · ~${(totalImpr / 1000).toFixed(0)}K impr/mo`],
-    ['Creatives', isMulti ? form.creatives.map((c, i) => creativeLabel(i)).join(', ') : (form.creatives[0]?.headline || '—')],
+    ['Creatives', isMulti ? form.creatives.map((c, i) => creativeLabel(i)).join(', ') : creativeLabel(0)],
     ['Budget', `${form.budget ? formatCurrency(form.budget, profile?.preferred_currency) : '—'} (${form.budget_mode === 'daily' ? 'daily' : 'total'})`],
     ['Dates', form.start_date && form.end_date ? `${form.start_date} → ${form.end_date} (${days} days)` : '—'],
     ['Time', `${form.time_start} – ${form.time_end}`],

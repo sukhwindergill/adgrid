@@ -172,7 +172,6 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         ...s,
         creatives: [makeBlankCreative({
           accent_color: profile.brand_color_1 || '#7c3aed',
-          secondary_color: profile.brand_color_2 || '',
         })],
       };
     });
@@ -193,14 +192,16 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
   const loadDuplicate = (c) => {
     setForm(s => ({
       ...s,
+      // Media is intentionally NOT carried forward -- every campaign needs
+      // its own uploaded creative, so duplicating a past campaign still
+      // requires a fresh upload before the wizard lets it advance.
       creatives: [makeBlankCreative({
-        headline: c.headline || '',
-        cta_text: c.cta_text || c.cta || '',
         destination_url: c.destination_url || c.destination || '',
         accent_color: c.accent_color || c.color || '#7c3aed',
-        secondary_color: c.secondary_color || '',
-        creative_template: c.creative_template || 'bottom_bar',
         category: c.category || 'Food & Beverage',
+        qr_x: c.qr_x ?? null,
+        qr_y: c.qr_y ?? null,
+        qr_size_pct: c.qr_size_pct ?? null,
       })],
       budget: String(c.budget || ''),
       budget_mode: c.budget_mode || 'total',
@@ -235,7 +236,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       );
       const primary = creatives[0] ?? {};
       const isMulti = creatives.length > 1;
-      const preview = buildPreviewCampaign(primary, profile);
+      const preview = buildPreviewCampaign(primary);
 
       // When adding a targeting group to an existing campaign, reuse its id
       // as the parent instead of inserting a brand-new `campaigns` row.
@@ -265,7 +266,6 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         // Normalized so a typed bare domain is stored as a real URL — the QR
         // encodes this value verbatim.
         destination_url:       normalizeDestinationUrl(preview.destination_url),
-        secondary_color:       preview.secondary_color || null,
         media_width:           primary.media_width ?? null,
         media_height:          primary.media_height ?? null,
         budget:                parseFloat(form.budget) || 0,
@@ -306,10 +306,11 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
             media_type: c.media_type || null,
             media_width: c.media_width ?? null,
             media_height: c.media_height ?? null,
-            headline: c.headline || null,
-            cta_text: c.cta_text || null,
             destination_url: c.destination_url ? normalizeDestinationUrl(c.destination_url) : null,
             accent_color: c.accent_color || null,
+            qr_x: c.qr_x ?? null,
+            qr_y: c.qr_y ?? null,
+            qr_size_pct: c.qr_size_pct ?? null,
             budget: form.budget_level === 'per_creative' ? (parseFloat(c.budget) || null) : null,
           })))
           .select('id');
@@ -364,11 +365,10 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         advertiser_id: user.id,
         screen: firstScreen?.name || '',
         city: form.city || '',
-        headline: preview.headline || '',
-        cta: preview.cta_text || '',
         color: preview.accent_color || '#7c3aed',
-        creative_template: preview.creative_template,
-        secondary_color: preview.secondary_color,
+        qr_x: preview.qr_x,
+        qr_y: preview.qr_y,
+        qr_size_pct: preview.qr_size_pct,
         destination: normalizeDestinationUrl(preview.destination_url || ''),
         category: preview.category || 'Food & Beverage',
         budget: parseFloat(form.budget) || 0,
@@ -477,7 +477,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       )}
 
       {step === 0 && <StepTargeting form={form} setForm={setForm} reachSummary={reachSummary} allScreens={dbScreens} onPrevCampaigns={campaigns.length > 0 ? () => setShowDupModal(true) : null} existingCampaign={existingCampaign} />}
-      {step === 1 && <StepCreative form={form} setForm={setForm} matchedScreens={matchedScreens} profile={profile} />}
+      {step === 1 && <StepCreative form={form} setForm={setForm} matchedScreens={matchedScreens} />}
       {step === 2 && <StepBudgetReview form={form} setForm={setForm} matchedScreens={selectedScreens} profile={profile} onSubmit={handleSubmit} submitting={submitting} err={submitErr} canChooseBilling={canChooseBilling} billedTo={billedTo} setBilledTo={setBilledTo} />}
       {step === 3 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} requiresAction={requiresAction} onGoToBilling={() => navigate('/app/adv-billing')} />}
 
@@ -490,12 +490,19 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
               (step === 0 && form.selected_screen_ids.length === 0 && form.area_type !== 'radius') ||
               (step === 1 && form.selected_screen_ids.length === 0) ||
               // Creative step: a campaign with no valid destination goes live
-              // with a QR code that sends every scanner to an error. A
+              // with a QR code that sends every scanner to an error, and a
+              // creative with no uploaded media has no ad to show at all
+              // (there's no generated text-card fallback anymore). A
               // never-touched creatives array (blank, lazily seeded by
               // StepCreative on first edit) is treated the same as a blank
-              // destination — .some() over [] is always false and would
-              // otherwise silently permit advancing past a wholly blank ad.
-              (step === 1 && (form.creatives.length === 0 || form.creatives.some(c => !isValidDestinationUrl(c.destination_url))))
+              // destination/missing media — .some() over [] is always false
+              // and would otherwise silently permit advancing past a wholly
+              // blank ad.
+              (step === 1 && (
+                form.creatives.length === 0 ||
+                form.creatives.some(c => !isValidDestinationUrl(c.destination_url)) ||
+                form.creatives.some(c => !c.media_url)
+              ))
             }
           >
             Next →
