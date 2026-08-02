@@ -16,6 +16,11 @@ vi.mock('../../../context/AuthContext.jsx', () => ({
 
 import { CreativeCard } from './CreativeCard.jsx';
 import { makeBlankCreative } from '../../../lib/creativeAssignment.js';
+import { QR_CORNER_PRESETS, clampQrCenter } from '../../../lib/creativeQrPosition.js';
+
+// Matches CreativeCard.jsx's own FRAME_ASPECT constant (not exported) --
+// the preview frame is always rendered at 16:9.
+const FRAME_ASPECT = 16 / 9;
 
 const SCREEN_ONE = {
   id: 'scr-1', name: 'Screen One', city: 'London', environment: 'indoor',
@@ -157,5 +162,131 @@ describe('CreativeCard', () => {
       />
     );
     expect(screen.getByText(/Share of plays on shared screens/)).toBeInTheDocument();
+  });
+});
+
+describe('CreativeCard QR corner-snap buttons', () => {
+  it('does not render corner-snap buttons when destination_url is empty', () => {
+    const creative = makeBlankCreative({ id: 'c1', label: 'A', destination_url: '' });
+    render(
+      <CreativeCard
+        creative={creative}
+        onChange={() => {}}
+        onRemove={() => {}}
+        poolScreens={POOL_SCREENS}
+        allCreatives={[creative]}
+        showAssignment={false}
+        duration={15}
+        onSplitByType={() => {}}
+        profile={null}
+      />
+    );
+    expect(screen.queryByRole('button', { name: /top left/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /top right/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /bottom left/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /bottom right/i })).not.toBeInTheDocument();
+  });
+
+  it('renders corner-snap buttons based on presence, not validity, of destination_url', () => {
+    // CreativeCard's hasDestination gate (`Boolean(creative.destination_url?.trim())`)
+    // only checks for a non-empty string -- it does not call isValidDestinationUrl.
+    // A non-empty-but-invalid destination still shows the corner-snap buttons (the
+    // inline "enter a full web address" warning handles invalidity separately).
+    // This test documents that real behavior so a future tightening of the gate
+    // to require validity is a deliberate, visible change here.
+    const creative = makeBlankCreative({ id: 'c1', label: 'A', destination_url: 'not-a-url' });
+    render(
+      <CreativeCard
+        creative={creative}
+        onChange={() => {}}
+        onRemove={() => {}}
+        poolScreens={POOL_SCREENS}
+        allCreatives={[creative]}
+        showAssignment={false}
+        duration={15}
+        onSplitByType={() => {}}
+        profile={null}
+      />
+    );
+    expect(screen.getByRole('button', { name: /top left/i })).toBeInTheDocument();
+  });
+
+  it('renders all four corner-snap buttons when destination_url is a valid URL', () => {
+    const creative = makeBlankCreative({ id: 'c1', label: 'A', destination_url: 'https://example.com' });
+    render(
+      <CreativeCard
+        creative={creative}
+        onChange={() => {}}
+        onRemove={() => {}}
+        poolScreens={POOL_SCREENS}
+        allCreatives={[creative]}
+        showAssignment={false}
+        duration={15}
+        onSplitByType={() => {}}
+        profile={null}
+      />
+    );
+    expect(screen.getByRole('button', { name: /top left/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /top right/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /bottom left/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /bottom right/i })).toBeInTheDocument();
+  });
+
+  it('clicking a corner-snap button calls onChange with qr_x/qr_y clamped to that corner preset', () => {
+    const creative = makeBlankCreative({ id: 'c1', label: 'A', destination_url: 'https://example.com' });
+    const onChange = vi.fn();
+    render(
+      <CreativeCard
+        creative={creative}
+        onChange={onChange}
+        onRemove={() => {}}
+        poolScreens={POOL_SCREENS}
+        allCreatives={[creative]}
+        showAssignment={false}
+        duration={15}
+        onSplitByType={() => {}}
+        profile={null}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /top left/i }));
+
+    const preset = QR_CORNER_PRESETS.top_left;
+    // creative.qr_size_pct is null on a blank creative -- CreativeCard falls
+    // back to 0.12 (`creative.qr_size_pct ?? 0.12`) before clamping.
+    const sizePct = 0.12;
+    const expected = clampQrCenter(preset.x, preset.y, sizePct, FRAME_ASPECT);
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ qr_x: expected.x, qr_y: expected.y, qr_size_pct: sizePct })
+    );
+  });
+
+  it('clicking bottom right snaps to the bottom-right preset, distinct from top-left', () => {
+    const creative = makeBlankCreative({ id: 'c1', label: 'A', destination_url: 'https://example.com' });
+    const onChange = vi.fn();
+    render(
+      <CreativeCard
+        creative={creative}
+        onChange={onChange}
+        onRemove={() => {}}
+        poolScreens={POOL_SCREENS}
+        allCreatives={[creative]}
+        showAssignment={false}
+        duration={15}
+        onSplitByType={() => {}}
+        profile={null}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /bottom right/i }));
+
+    const preset = QR_CORNER_PRESETS.bottom_right;
+    const sizePct = 0.12;
+    const expected = clampQrCenter(preset.x, preset.y, sizePct, FRAME_ASPECT);
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ qr_x: expected.x, qr_y: expected.y, qr_size_pct: sizePct })
+    );
   });
 });

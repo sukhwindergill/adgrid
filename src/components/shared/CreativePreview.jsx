@@ -1,6 +1,9 @@
 // src/components/shared/CreativePreview.jsx
+import { useRef } from 'react';
 import QRCode from 'react-qr-code';
 import { F } from '../../design/tokens.js';
+import { getCreativeRenderPlan } from '../../lib/getCreativeRenderPlan.js';
+import { clampQrCenter, clampQrSizePct } from '../../lib/creativeQrPosition.js';
 
 const FONT_STACKS = { sans: F.sans, serif: 'Georgia, serif', mono: F.mono };
 const fontFor = (creativeFont) => FONT_STACKS[creativeFont] || FONT_STACKS.serif;
@@ -97,27 +100,95 @@ function SplitPanelBody({ headline, cta, bg, secondaryBg, category, headlineFont
 
 const BODIES = { full_bleed: FullBleedBody, split_panel: SplitPanelBody, bottom_bar: BottomBarBody };
 
+function QrOverlay({ url, x, y, sizePct, frameAspect, editable, onChange }) {
+  const frameRef = useRef(null);
+  const dragMode = useRef(null);
+
+  const onPointerMove = (e) => {
+    const frame = frameRef.current;
+    if (!frame || !dragMode.current) return;
+    const rect = frame.getBoundingClientRect();
+    if (dragMode.current === 'move') {
+      const nx = ((e.clientX - rect.left) / rect.width) * 100;
+      const ny = ((e.clientY - rect.top) / rect.height) * 100;
+      const clamped = clampQrCenter(nx, ny, sizePct, frameAspect);
+      onChange({ x: clamped.x, y: clamped.y, sizePct });
+    } else {
+      const centerXPx = rect.left + (x / 100) * rect.width;
+      const centerYPx = rect.top + (y / 100) * rect.height;
+      // The resize handle sits at the box's corner, and the box is always
+      // rendered square (CSS aspect-ratio:1) regardless of frame aspect --
+      // the corner sits at a diagonal distance of half-side*sqrt(2) from
+      // center, so dividing by sqrt(2) (not 2) makes the corner track the
+      // cursor along the drag direction instead of overshooting by ~41%.
+      const distPx = Math.max(Math.hypot(e.clientX - centerXPx, e.clientY - centerYPx), 1);
+      const nextSizePct = clampQrSizePct((distPx * Math.SQRT2) / rect.width);
+      const clamped = clampQrCenter(x, y, nextSizePct, frameAspect);
+      onChange({ x: clamped.x, y: clamped.y, sizePct: nextSizePct });
+    }
+  };
+
+  const onPointerUp = () => {
+    dragMode.current = null;
+    window.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('pointerup', onPointerUp);
+  };
+
+  const startDrag = (mode) => (e) => {
+    if (!editable) return;
+    e.preventDefault();
+    if (mode === 'resize') e.stopPropagation();
+    dragMode.current = mode;
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  };
+
+  return (
+    <div ref={frameRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+      <div
+        data-qr-overlay
+        onPointerDown={startDrag('move')}
+        style={{
+          position: 'absolute', left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)',
+          width: `${sizePct * 100}%`, aspectRatio: '1', background: '#fff', borderRadius: '10%',
+          padding: '8%', boxSizing: 'border-box', pointerEvents: editable ? 'auto' : 'none',
+          cursor: editable ? 'grab' : 'default',
+          boxShadow: editable ? '0 0 0 2px rgba(124,58,237,0.6)' : 'none',
+          touchAction: editable ? 'none' : 'auto',
+        }}
+      >
+        <QRCode value={url} size={256} style={{ width: '100%', height: '100%' }} level="M" />
+        {editable && (
+          <div
+            data-qr-resize-handle
+            onPointerDown={startDrag('resize')}
+            style={{
+              position: 'absolute', right: -6, bottom: -6, width: 14, height: 14,
+              borderRadius: '50%', background: '#7c3aed', border: '2px solid #fff',
+              cursor: 'nwse-resize', touchAction: 'none',
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
 /**
- * Props: campaign — object with any of:
- *   color, accent_color, destination, destination_url,
- *   category, headline, advertiser, cta, cta_text,
- *   creative_template ('bottom_bar' | 'full_bleed' | 'split_panel'),
- *   secondary_color, creative_font ('sans' | 'serif' | 'mono')
- * Normalises both old (color, cta, destination) and new (accent_color, cta_text, destination_url) field names.
+ * Props: campaign — see getCreativeRenderPlan.js for the accepted field
+ * shapes/fallback chains. editableQr/onQrChange enable wizard-only
+ * drag-to-reposition and drag-to-resize of the QR code; every other
+ * (read-only) consumer omits them.
  */
-export function CreativePreview({ campaign, aspectRatio = '16/9', blurPx = 0 }) {
-  const bg = campaign.accent_color || campaign.color || '#7c3aed';
-  const headline = campaign.headline || campaign.advertiser || '';
-  const cta = campaign.cta_text || campaign.cta || '';
-  const destination = campaign.destination_url || campaign.destination || 'https://adgrid.io';
-  const mediaUrl = campaign.media_url || null;
-  const isVideo = campaign.media_type === 'video';
-  const template = campaign.creative_template || 'bottom_bar';
+export function CreativePreview({ campaign, aspectRatio = '16/9', blurPx = 0, editableQr = false, onQrChange }) {
+  const plan = getCreativeRenderPlan(campaign);
+  const { mediaUrl, isVideo, showTextOverlay, template, headline, cta, bg, secondaryBg, category, destination, showQr, qrX, qrY, qrSizePct } = plan;
   const Body = BODIES[template] || BottomBarBody;
+  const [wRatio, hRatio] = String(aspectRatio).split('/').map(Number);
+  const frameAspect = wRatio && hRatio ? wRatio / hRatio : 16 / 9;
 
   // split_panel confines media to its right 60% (the left 40% is an opaque
-  // brand-color block); the other two templates fill the whole frame, same
-  // as before templates existed.
+  // brand-color block); the other two templates fill the whole frame.
   const mediaStyle = template === 'split_panel'
     ? { position: 'absolute', top: 0, bottom: 0, left: '40%', right: 0, objectFit: 'cover' }
     : { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' };
@@ -129,14 +200,11 @@ export function CreativePreview({ campaign, aspectRatio = '16/9', blurPx = 0 }) 
       background: `linear-gradient(160deg, #050a10 0%, #0d1520 60%, ${bg}22 100%)`,
       borderRadius: 8, overflow: 'hidden', flexShrink: 0,
     }}>
-      {/* Uploaded creative (image/video) fills its layout region when present */}
       {mediaUrl && (isVideo ? (
         <video src={mediaUrl} muted loop autoPlay playsInline style={mediaStyle} />
       ) : (
         <img src={mediaUrl} alt="" style={mediaStyle} />
       ))}
-      {/* Scrim for text legibility over uploaded media -- split_panel's text
-          sits on its own opaque block, never over the media, so it's skipped there. */}
       {mediaUrl && template !== 'split_panel' && (
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 55%)', pointerEvents: 'none' }} />
       )}
@@ -152,13 +220,18 @@ export function CreativePreview({ campaign, aspectRatio = '16/9', blurPx = 0 }) 
         fontSize: 8, fontWeight: 700, letterSpacing: '2px',
         color: 'rgba(255,255,255,0.2)', fontFamily: F.sans, textTransform: 'uppercase',
       }}>ADGRID</div>
-      <div style={{
-        position: 'absolute', top: 8, right: 8,
-        background: '#fff', borderRadius: 6, padding: 5,
-      }}>
-        <QRCode value={destination} size={36} level="M" />
-      </div>
-      <Body headline={headline} cta={cta} bg={bg} secondaryBg={campaign.secondary_color} category={campaign.category} headlineFont={fontFor(campaign.creative_font)} />
+      {showQr && (
+        <QrOverlay
+          url={destination}
+          x={qrX} y={qrY} sizePct={qrSizePct}
+          frameAspect={frameAspect}
+          editable={editableQr}
+          onChange={onQrChange || (() => {})}
+        />
+      )}
+      {showTextOverlay && (
+        <Body headline={headline} cta={cta} bg={bg} secondaryBg={secondaryBg} category={category} headlineFont={fontFor(campaign?.creative_font)} />
+      )}
     </div>
   );
 }
