@@ -4,37 +4,42 @@ import { Inp } from '../../../components/primitives/Inp.jsx';
 import { SelInput } from '../../../components/primitives/SelInput.jsx';
 import { CreativePreview } from '../../../components/shared/CreativePreview.jsx';
 import { CreativeFitPanel } from '../../../components/shared/CreativeFitPanel.jsx';
-import { ReadabilityPanel } from '../../../components/shared/ReadabilityPanel.jsx';
 import { checkCreativeFit } from '../../../lib/creativeFit.js';
-import { checkReadability, distinctTiers } from '../../../lib/creativeReadability.js';
 import { isValidDestinationUrl } from '../../../lib/destinationUrl.js';
 import { CATEGORIES } from '../../../lib/data.js';
+import { QR_CORNER_PRESETS, clampQrCenter } from '../../../lib/creativeQrPosition.js';
 import { MediaUpload } from './MediaUpload.jsx';
-import { TemplatePicker } from './TemplatePicker.jsx';
-import { MessageQuickFill } from './MessageQuickFill.jsx';
-import { buildPreviewCampaign } from '../../../lib/buildPreviewCampaign.js';
-import { splitMessage } from '../../../lib/creativeMessageSplit.js';
+
+const FRAME_ASPECT = 16 / 9;
 
 // One creative's authoring fields + preview + screen assignment, used both
 // for the single default creative (no assignment UI shown — it implicitly
 // covers every pool screen) and for each of 2+ creatives (assignment UI shown).
+//
+// Advertisers upload their own fully-designed creative — AdGrid no longer
+// generates a text-card from a headline/CTA/template, since that duplicated
+// (and could visually clash with) whatever the advertiser already designed
+// into their upload. The only remaining authored fields are the destination
+// (for the QR), category (for targeting), and an accent colour used only for
+// the thin brand strip along the frame's bottom edge.
 export function CreativeCard({
-  creative, onChange, onRemove, poolScreens, allCreatives, showAssignment, duration, onSplitByType, profile,
+  creative, onChange, onRemove, poolScreens, allCreatives, showAssignment, onSplitByType,
 }) {
   const setField = (k, v) => onChange({ ...creative, [k]: v });
   // MediaUpload calls setForm(s => ({ ...s, media_url, media_type, media_width, media_height })) --
-  // it needs the *whole* creative as "previous state" so headline/cta_text/label/etc
+  // it needs the *whole* creative as "previous state" so destination_url/accent_color/etc
   // survive the update, not just the four media fields.
   const setMediaForm = (updater) => onChange(updater(creative));
 
-  const handleMessageFill = (message) => {
-    if (!message.trim()) return;
-    const { headline, cta } = splitMessage(message);
-    setField('headline', headline);
-    setField('cta_text', cta);
-  };
+  const hasDestination = isValidDestinationUrl(creative.destination_url);
 
-  const previewCampaign = buildPreviewCampaign(creative, profile);
+  const setQr = ({ x, y, sizePct }) => onChange({ ...creative, qr_x: x, qr_y: y, qr_size_pct: sizePct });
+  const snapQrTo = (corner) => {
+    const preset = QR_CORNER_PRESETS[corner];
+    const sizePct = creative.qr_size_pct ?? 0.12;
+    const clamped = clampQrCenter(preset.x, preset.y, sizePct, FRAME_ASPECT);
+    setQr({ x: clamped.x, y: clamped.y, sizePct });
+  };
 
   const assignedScreens = poolScreens.filter(s => creative.assigned_screen_ids.includes(s.id));
   const screensForFitCheck = showAssignment ? assignedScreens : poolScreens;
@@ -51,14 +56,6 @@ export function CreativeCard({
         .filter(Boolean)
     : [];
 
-  const readability = checkReadability({
-    headline: creative.headline, ctaText: creative.cta_text, accentColor: creative.accent_color,
-    durationSeconds: parseInt(duration, 10) || 15,
-    creativeTemplate: creative.creative_template,
-    secondaryColor: creative.secondary_color,
-  });
-  const readabilityTiers = distinctTiers(screensForFitCheck);
-
   const otherCreatives = allCreatives.filter(c => c.id !== creative.id);
   const overlapsAnother = showAssignment && otherCreatives.some(c => c.assigned_screen_ids.some(id => creative.assigned_screen_ids.includes(id)));
 
@@ -74,12 +71,14 @@ export function CreativeCard({
       </div>
 
       <MediaUpload form={creative} setForm={setMediaForm} />
+      {!creative.media_url && (
+        <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginTop: -14, marginBottom: 14 }}>
+          Upload your ad creative to continue — every campaign needs its own designed image or video.
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 28 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <MessageQuickFill onFill={handleMessageFill} />
-          <Inp label="Headline" placeholder="e.g. Start Your Morning Right" value={creative.headline} onChange={e => setField('headline', e.target.value)} />
-          <Inp label="CTA Text" placeholder="e.g. Learn More" value={creative.cta_text} onChange={e => setField('cta_text', e.target.value)} />
           <Inp label="Destination URL" placeholder="https://example.com" type="url" value={creative.destination_url} onChange={e => setField('destination_url', e.target.value)} />
           {creative.destination_url.trim() !== '' && !isValidDestinationUrl(creative.destination_url) && (
             <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, marginTop: -8 }}>
@@ -97,25 +96,29 @@ export function CreativeCard({
               <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.mono }}>{creative.accent_color}</span>
             </div>
           </div>
-
-          {creative.creative_template === 'split_panel' && (
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>Secondary Colour</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <input type="color" value={creative.secondary_color || creative.accent_color} onChange={e => setField('secondary_color', e.target.value)}
-                  style={{ width: 40, height: 36, border: `1px solid ${C.border}`, borderRadius: 6, cursor: 'pointer', padding: 2 }} />
-                <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.mono }}>{creative.secondary_color || creative.accent_color}</span>
-              </div>
-            </div>
-          )}
         </div>
 
         <div>
           <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Preview</div>
-          <TemplatePicker value={creative.creative_template} onChange={v => setField('creative_template', v)} />
-          <CreativePreview campaign={previewCampaign} />
-          <CreativeFitPanel campaign={previewCampaign} mismatches={fitMismatches} />
-          <ReadabilityPanel campaign={previewCampaign} score={readability.score} issues={readability.issues} tiers={readabilityTiers} />
+          <CreativePreview campaign={creative} editableQr={hasDestination} onQrChange={setQr} />
+          {hasDestination && (
+            <>
+              <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                {Object.keys(QR_CORNER_PRESETS).map(corner => (
+                  <button key={corner} type="button" onClick={() => snapQrTo(corner)} style={{
+                    flex: 1, padding: '6px 4px', borderRadius: 6, border: `1px solid ${C.border}`,
+                    background: C.surface, color: C.textSub, fontSize: 10, fontFamily: F.sans, cursor: 'pointer', textTransform: 'capitalize',
+                  }}>
+                    {corner.replace('_', ' ')}
+                  </button>
+                ))}
+              </div>
+              <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 6 }}>
+                Drag the QR code to reposition it, or drag its corner handle to resize.
+              </div>
+            </>
+          )}
+          <CreativeFitPanel campaign={creative} mismatches={fitMismatches} />
         </div>
       </div>
 
