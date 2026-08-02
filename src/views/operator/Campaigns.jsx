@@ -10,7 +10,7 @@ import { groupByCampaignId, rollupGroup } from '../../lib/campaignRollup.js';
 import { CampaignRow } from './CampaignRow.jsx';
 
 
-export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, loadError, loading = false, onNewCampaign, allowCancel = false, canReview = false }) {
+export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, loadError, loading = false, onNewCampaign, allowCancel = false, canReview = false, onApprovalChange }) {
   const [filter, setFilter] = useState('all');
   const [city, setCity]     = useState('All');
   const [campaignScreens, setCampaignScreens] = useState({});
@@ -234,7 +234,7 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
               const c = withBadge[0];
               return (
                 <CampaignRow key={c.id} c={c} screenCount={c.screenCount} displayCity={c.displayCity}
-                  isMobile={isMobile} allowCancel={allowCancel} canReview={canReview} setDetail={setDetail} setCampaigns={setCampaigns} />
+                  isMobile={isMobile} allowCancel={allowCancel} canReview={canReview} setDetail={setDetail} setCampaigns={setCampaigns} onApprovalChange={onApprovalChange} />
               );
             }
 
@@ -270,7 +270,7 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12, background: C.bg }}>
                     {withBadge.map(c => (
                       <CampaignRow key={c.id} c={c} screenCount={c.screenCount} displayCity={c.displayCity}
-                        isMobile={isMobile} allowCancel={allowCancel} canReview={canReview} setDetail={setDetail} setCampaigns={setCampaigns} />
+                        isMobile={isMobile} allowCancel={allowCancel} canReview={canReview} setDetail={setDetail} setCampaigns={setCampaigns} onApprovalChange={onApprovalChange} />
                     ))}
                   </div>
                 )}

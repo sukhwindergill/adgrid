@@ -14,7 +14,7 @@ import { ShareReportModal } from '../../components/shared/ShareReportModal.jsx';
 import { ApproveBtn } from '../../lib/campaignActions.jsx';
 import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
 
-export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, canReview = false, setCampaigns }) {
+export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, canReview = false, setCampaigns, onApprovalChange }) {
   const toast = useToast();
   const [tab, setTab] = useState('overview');
   const [rejecting, setRejecting] = useState(false);
@@ -54,6 +54,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, can
     if (error) { setRejectErr(error.message); return; }
     toast.success('Campaign rejected.');
     onBack();
+    onApprovalChange?.();
   };
 
   const statusAction = (s) => {
@@ -83,7 +84,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, can
           </>
         ) : (
           <>
-            <ApproveBtn campaign={c} setCampaigns={setCampaigns} onSuccess={onBack} />
+            <ApproveBtn campaign={c} setCampaigns={setCampaigns} onSuccess={() => { onBack(); onApprovalChange?.(); }} />
             <Btn variant="danger" size="sm" onClick={() => setRejecting(true)}>✗ Reject</Btn>
           </>
         )}

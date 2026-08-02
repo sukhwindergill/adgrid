@@ -353,7 +353,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
   );
 }
 
-export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [] }) {
+export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [], onApprovalChange }) {
   const { user } = useAuth();
   const confirm = useConfirm();
   const [autoApprove, setAutoApprove] = useState(false);
@@ -463,13 +463,18 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [] }) {
     campaign_screens: campaignScreens[c.id] || [],
   }));
 
-  const handleApproved = (campaignId, screenId) => {
+  const applyApproved = (campaignId, screenId) => {
     setCampaignScreens(prev => ({
       ...prev,
       [campaignId]: (prev[campaignId] || []).map(r =>
         r.screen_id === screenId ? { ...r, status: 'approved' } : r
       ),
     }));
+  };
+
+  const handleApproved = (campaignId, screenId) => {
+    applyApproved(campaignId, screenId);
+    onApprovalChange?.();
   };
 
   const handleRejected = (campaignId, screenId) => {
@@ -479,6 +484,7 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [] }) {
         r.screen_id === screenId ? { ...r, status: 'rejected' } : r
       ),
     }));
+    onApprovalChange?.();
   };
 
   const bulkApproveAll = async () => {
@@ -500,7 +506,7 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [] }) {
           .eq('campaign_id', campaign.id)
           .eq('screen_id', row.screen_id)
       ));
-      rows.forEach(row => handleApproved(campaign.id, row.screen_id));
+      rows.forEach(row => applyApproved(campaign.id, row.screen_id));
       const { data: remaining } = await supabase
         .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
       const allClear = campaign.start_when === 'partial' || !remaining || remaining.length === 0;
@@ -532,6 +538,7 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [] }) {
         }
       }
     }));
+    onApprovalChange?.();
   };
 
   const toggleAutoApprove = async () => {

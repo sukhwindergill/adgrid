@@ -5,7 +5,7 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { ApproveBtn } from '../../lib/campaignActions.jsx';
 
-export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel, canReview, setDetail, setCampaigns }) {
+export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel, canReview, setDetail, setCampaigns, onApprovalChange }) {
   const pct = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
   const isPending = c.status === 'pending_review';
   // The partially_approved derivation needs campaignScreens data, which this
@@ -51,7 +51,7 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
         <div style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub, whiteSpace: 'nowrap' }}>{c.start} →<br />{c.end}</div>
         {isPending && canReview ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }} onClick={e => e.preventDefault()}>
-            <ApproveBtn campaign={c} setCampaigns={setCampaigns} />
+            <ApproveBtn campaign={c} setCampaigns={setCampaigns} onSuccess={onApprovalChange} />
             <Btn variant="danger" size="sm" onClick={e => { e.preventDefault(); e.stopPropagation(); setDetail(c); }}>✗ Reject…</Btn>
           </div>
         ) : allowCancel && (c.status === 'scheduled' || c.status === 'active') ? (
