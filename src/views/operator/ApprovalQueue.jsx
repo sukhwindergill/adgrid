@@ -463,13 +463,17 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [], onAppro
     campaign_screens: campaignScreens[c.id] || [],
   }));
 
-  const handleApproved = (campaignId, screenId) => {
+  const applyApproved = (campaignId, screenId) => {
     setCampaignScreens(prev => ({
       ...prev,
       [campaignId]: (prev[campaignId] || []).map(r =>
         r.screen_id === screenId ? { ...r, status: 'approved' } : r
       ),
     }));
+  };
+
+  const handleApproved = (campaignId, screenId) => {
+    applyApproved(campaignId, screenId);
     onApprovalChange?.();
   };
 
@@ -502,7 +506,7 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [], onAppro
           .eq('campaign_id', campaign.id)
           .eq('screen_id', row.screen_id)
       ));
-      rows.forEach(row => handleApproved(campaign.id, row.screen_id));
+      rows.forEach(row => applyApproved(campaign.id, row.screen_id));
       const { data: remaining } = await supabase
         .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
       const allClear = campaign.start_when === 'partial' || !remaining || remaining.length === 0;
@@ -534,6 +538,7 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [], onAppro
         }
       }
     }));
+    onApprovalChange?.();
   };
 
   const toggleAutoApprove = async () => {

@@ -11,7 +11,7 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
 
-export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, loadError, loading = false, onNewCampaign, allowCancel = false, canReview = false }) {
+export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, loadError, loading = false, onNewCampaign, allowCancel = false, canReview = false, onApprovalChange }) {
   const [filter, setFilter] = useState('all');
   const [city, setCity]     = useState('All');
   const [campaignScreens, setCampaignScreens] = useState({});
@@ -253,7 +253,7 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
                   <div style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub, whiteSpace: 'nowrap' }}>{c.start} →<br />{c.end}</div>
                   {isPending && canReview ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }} onClick={e => e.preventDefault()}>
-                      <ApproveBtn campaign={c} setCampaigns={setCampaigns} />
+                      <ApproveBtn campaign={c} setCampaigns={setCampaigns} onSuccess={onApprovalChange} />
                       <Btn variant="danger"  size="sm" onClick={e => { e.preventDefault(); e.stopPropagation(); setDetail(c); }}>✗ Reject…</Btn>
                     </div>
                   ) : allowCancel && (c.status === 'scheduled' || c.status === 'active') ? (

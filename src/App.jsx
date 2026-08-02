@@ -105,10 +105,10 @@ function AppInner() {
   // Derive active from current URL path
   const active = location.pathname.replace(/^\/app\/?/, '') || 'overview';
 
-  // Badge fallback: also refetch on navigation into/out of the approval
-  // route, in case a screen was approved/rejected in another tab or session
-  // -- bumpApprovalRefresh (passed to ApprovalQueue) already covers actions
-  // taken in this session.
+  // Badge fallback: also refetch on navigation into the approval route, in
+  // case a screen was approved/rejected in another tab or session --
+  // bumpApprovalRefresh (passed to ApprovalQueue/Campaigns/CampaignDetail)
+  // already covers actions taken in this session.
   useEffect(() => {
     if (active === 'approval') bumpApprovalRefresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -346,7 +346,7 @@ function AppInner() {
   // ── View routing ───────────────────────────────────────────────────────────
   const view = () => {
     if (detail && (active === 'campaigns' || active === 'analytics' || active === 'adv-campaigns' || active === 'approval')) {
-      return <CampaignDetail campaign={detail} onBack={() => setDetail(null)} onUpdate={updateCampaign} canReview={canReview} setCampaigns={setCampaigns} />;
+      return <CampaignDetail campaign={detail} onBack={() => setDetail(null)} onUpdate={updateCampaign} canReview={canReview} setCampaigns={setCampaigns} onApprovalChange={bumpApprovalRefresh} />;
     }
 
     if (isAdv) {
@@ -408,7 +408,7 @@ function AppInner() {
       return <ScreenDetailView screenId={selectedScreenId} onBack={() => navTo('screens')} profile={profile} onScreenUpdated={updated => setMyScreens(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s))} />;
     }
     if (active === 'notif-prefs')   return <NotificationPrefsView />;
-    if (active === 'campaigns')    return <Campaigns campaigns={campaigns} dbScreens={myScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} canReview={canReview} />;
+    if (active === 'campaigns')    return <Campaigns campaigns={campaigns} dbScreens={myScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} canReview={canReview} onApprovalChange={bumpApprovalRefresh} />;
     if (active === 'analytics')    return <Analytics campaigns={campaigns} loading={dataLoading} />;
     if (active === 'audience')     return <Audience campaigns={campaigns} />;
     if (active === 'revenue')      return <Revenue campaigns={campaigns} loading={dataLoading} />;
