@@ -6,6 +6,7 @@ import { AdRenderPreview } from './AdRenderPreview.jsx';
 // a screen's marked photos (if it has more than one) while previewing.
 export function AdRenderPreviewModal({ screenName, markedPhotos, mediaUrl, mediaType, onClose }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  if (!markedPhotos || markedPhotos.length === 0) return null;
   const active = markedPhotos[activeIndex];
 
   return (
