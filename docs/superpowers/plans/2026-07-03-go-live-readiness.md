@@ -643,10 +643,10 @@ factory-reset / re-pair path if the token is rotated.
 >   `stripe.transfers.createReversal` for every affected `operator_transfers` row, with an
 >   idempotency key tied to the cumulative target so redeliveries are safe. New column
 >   `operator_transfers.reversed_amount` (migration `20260807000001`).
-> - 459/459 tests pass on this branch (excludes B14's `screenGoLive.test.js`, still on its own
->   unmerged branch/PR #31; combined total will be 468 once both merge). Not yet re-verified live
->   against prod (still 0 real transfers exist to
->   reverse) — worth a synthetic disposable-row test the day the first real Connect transfer fires.
+> - 459/459 tests pass on this branch pre-merge (PR #31/B14 merged to `main` separately, PR #32/
+>   S17-S18 merged right after — combined `main` has 468 passing once both land). Not yet
+>   re-verified live against prod (still 0 real transfers exist to reverse) — worth a synthetic
+>   disposable-row test the day the first real Connect transfer fires.
 
 ## Next pass — focus areas
 
