@@ -73,8 +73,8 @@ export function ScreenPickerCard({ screen, selected, onToggle, creative }) {
         <AdRenderPreviewModal
           screenName={screen.name}
           markedPhotos={markedPhotos}
-          mediaUrl={creative.media_url}
-          mediaType={creative.media_type}
+          mediaUrl={creative?.media_url}
+          mediaType={creative?.media_type}
           onClose={() => setShowPreview(false)}
         />
       )}
