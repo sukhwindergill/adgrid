@@ -1,63 +1,52 @@
 // src/views/advertiser/createCampaign/StepTargeting.jsx
-import { useState } from 'react';
+import { useMemo, useEffect } from 'react';
 import { C, F } from '../../../design/tokens.js';
 import { Card } from '../../../components/primitives/Card.jsx';
 import { Inp } from '../../../components/primitives/Inp.jsx';
 import { SelInput } from '../../../components/primitives/SelInput.jsx';
 import { VENUE_TAXONOMY, COUNTRIES } from '../../../lib/venueTypes.js';
+import { buildLocationIndex, distinctCountries, distinctStates } from '../../../lib/locationIndex.js';
 import { PillGroup } from './PillGroup.jsx';
+import { LocationSearch } from './LocationSearch.jsx';
 import { ScreenMap } from './ScreenMap.jsx';
 
-const CITY_CENTERS = {
-  'Toronto':      [43.6532,  -79.3832],
-  'Vancouver':    [49.2827, -123.1207],
-  'Montreal':     [45.5017,  -73.5673],
-  'Calgary':      [51.0447, -114.0719],
-  'Ottawa':       [45.4215,  -75.6972],
-  'Edmonton':     [53.5461, -113.4938],
-  'Winnipeg':     [49.8951,  -97.1384],
-  'Quebec City':  [46.8139,  -71.2080],
-  'Hamilton':     [43.2557,  -79.8711],
-  'Kitchener':    [43.4516,  -80.4925],
-};
+const countryLabel = code => COUNTRIES.find(c => c.code === code)?.label ?? code;
 
 export function StepTargeting({ form, setForm, reachSummary, allScreens, onPrevCampaigns, existingCampaign = null }) {
-  const [geocoding, setGeocoding] = useState(false);
-
   const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
 
-  const geocodeCenter = async (query) => {
-    if (!query.trim()) return;
-    // Fast path: known city
-    if (CITY_CENTERS[query]) {
-      setForm(s => ({ ...s, radius_center_lat: CITY_CENTERS[query][0], radius_center_lon: CITY_CENTERS[query][1] }));
-      return;
-    }
-    setGeocoding(true);
-    try {
-      const token = import.meta.env.VITE_MAPBOX_TOKEN;
-      if (!token) throw new Error('VITE_MAPBOX_TOKEN not set');
-      const res = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?country=ca&limit=1&access_token=${token}`
-      );
-      const data = await res.json();
-      const feature = data.features?.[0];
-      if (feature) {
-        // Mapbox returns [longitude, latitude] — reversed vs Nominatim
-        const [lon, lat] = feature.center;
-        setForm(s => ({ ...s, radius_center_lat: lat, radius_center_lon: lon }));
-      }
-    } catch {
-      // leave center unchanged — CITY_CENTERS fast path already handles known cities
-    }
-    setGeocoding(false);
-  };
+  const loading = allScreens.length === 0;
+  const locationIndex = useMemo(() => buildLocationIndex(allScreens), [allScreens]);
+  const countryOptions = useMemo(() => distinctCountries(locationIndex), [locationIndex]);
+  const stateOptions = useMemo(() => distinctStates(locationIndex, form.country), [locationIndex, form.country]);
+  // Radius mode can only center on a city with at least one geocoded screen —
+  // a city index entry with no coordinates has nothing to average into a
+  // centroid, so it's excluded here rather than offered and then failing silently.
+  const radiusLocations = useMemo(() => locationIndex.filter(e => e.hasCoords), [locationIndex]);
 
-  const radiusCenter = form.radius_center_lat && form.radius_center_lon
-    ? [form.radius_center_lat, form.radius_center_lon]
-    : CITY_CENTERS['Toronto'];
+  // Memoized so ScreenMap's effect (which recreates the draggable center
+  // marker and radius circle) only re-runs when these values actually
+  // change, not on every StepTargeting re-render — an inline array literal
+  // or unmemoized filter here would get a fresh reference every render and
+  // interrupt an in-progress pin drag on an unrelated state update
+  // elsewhere in this component (e.g. typing the campaign name).
+  const radiusScreens = useMemo(() => allScreens.filter(s => s.lat != null && s.lon != null), [allScreens]);
+  const radiusCenter = useMemo(
+    () => [form.radius_center_lat, form.radius_center_lon],
+    [form.radius_center_lat, form.radius_center_lon]
+  );
+  const radiusResolved = form.area_type === 'radius' && form.radius_center_lat != null && form.radius_center_lon != null;
 
-  const radiusScreens = allScreens.filter(s => s.lat != null && s.lon != null);
+  useEffect(() => {
+    if (loading || countryOptions.length === 0) return;
+    if (!countryOptions.includes(form.country)) {
+      setField('country', countryOptions[0]);
+    }
+    // Only re-check when the available options actually change (inventory
+    // loads / changes) or when country itself changes — not on every
+    // keystroke elsewhere in the form.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, countryOptions, form.country]);
 
   return (
     <div style={{ maxWidth: 620, margin: '0 auto' }}>
@@ -103,52 +92,79 @@ export function StepTargeting({ form, setForm, reachSummary, allScreens, onPrevC
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <SelInput label="Country" value={form.country} onChange={e => setField('country', e.target.value)}>
-            {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+          <SelInput label="Country" value={form.country} disabled={loading} onChange={e => setForm(s => ({ ...s, country: e.target.value, radius_center_lat: null, radius_center_lon: null }))}>
+            {countryOptions.length > 0
+              ? countryOptions.map(code => <option key={code} value={code}>{countryLabel(code)}</option>)
+              : <option value={form.country}>{loading ? 'Loading…' : countryLabel(form.country)}</option>}
           </SelInput>
 
           {(form.area_type === 'state' || form.area_type === 'city' || form.area_type === 'radius') && (
-            <Inp label="State / Province" placeholder="e.g. Ontario" value={form.state} onChange={e => setField('state', e.target.value)} />
+            <SelInput label="State / Province" value={form.state} disabled={loading} onChange={e => setForm(s => ({ ...s, state: e.target.value, radius_center_lat: null, radius_center_lon: null }))}>
+              <option value="">Select…</option>
+              {stateOptions.map(s => <option key={s} value={s}>{s}</option>)}
+            </SelInput>
           )}
 
-          {(form.area_type === 'city' || form.area_type === 'radius') && (
-            <Inp label="City" placeholder="e.g. Toronto" value={form.city} onChange={e => setField('city', e.target.value)} />
+          {form.area_type === 'city' && (
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 5 }}>City</div>
+              <LocationSearch
+                locations={locationIndex}
+                scopeCountry={form.country}
+                scopeState={form.state || undefined}
+                value={form.city}
+                loading={loading}
+                placeholder="Search a city…"
+                onSelect={entry => setForm(s => ({ ...s, country: entry.country, state: entry.state, city: entry.city, radius_center_lat: null, radius_center_lon: null }))}
+              />
+            </div>
           )}
 
           {form.area_type === 'radius' && (
             <div>
-              <Inp
-                label="Center location"
-                placeholder="e.g. King St W, Toronto"
-                value={form.radius_center}
-                onChange={e => setField('radius_center', e.target.value)}
-                onBlur={e => geocodeCenter(e.target.value)}
+              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 5 }}>City</div>
+              <LocationSearch
+                locations={radiusLocations}
+                value={form.city}
+                loading={loading}
+                placeholder="Search a city to center the radius on…"
+                onSelect={entry => setForm(s => ({
+                  ...s,
+                  country: entry.country,
+                  state: entry.state,
+                  city: entry.city,
+                  radius_center_lat: entry.centroidLat,
+                  radius_center_lon: entry.centroidLon,
+                }))}
               />
-              {geocoding && <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 4 }}>Locating…</div>}
-              <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>
-                  Radius: {form.radius_km} km
+              {radiusResolved && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>
+                    Radius: {form.radius_km} km — drag the pin to narrow to a specific part of {form.city}
+                  </div>
+                  <PillGroup
+                    options={[5, 10, 25, 50, 100].map(v => ({ value: v, label: `${v}km` }))}
+                    value={form.radius_km}
+                    onChange={v => setField('radius_km', v)}
+                  />
+                  <div style={{ marginTop: 16 }}>
+                    <ScreenMap
+                      center={radiusCenter}
+                      radius={form.radius_km}
+                      screens={radiusScreens}
+                      selected={form.selected_screen_ids}
+                      onToggle={id => setForm(s => ({
+                        ...s,
+                        selected_screen_ids: s.selected_screen_ids.includes(id)
+                          ? s.selected_screen_ids.filter(x => x !== id)
+                          : [...s.selected_screen_ids, id],
+                      }))}
+                      draggableCenter
+                      onCenterChange={({ lat, lon }) => setForm(s => ({ ...s, radius_center_lat: lat, radius_center_lon: lon }))}
+                    />
+                  </div>
                 </div>
-                <PillGroup
-                  options={[5, 10, 25, 50, 100].map(v => ({ value: v, label: `${v}km` }))}
-                  value={form.radius_km}
-                  onChange={v => setField('radius_km', v)}
-                />
-              </div>
-              <div style={{ marginTop: 16 }}>
-                <ScreenMap
-                  center={radiusCenter}
-                  radius={form.radius_km}
-                  screens={radiusScreens}
-                  selected={form.selected_screen_ids}
-                  onToggle={id => setForm(s => ({
-                    ...s,
-                    selected_screen_ids: s.selected_screen_ids.includes(id)
-                      ? s.selected_screen_ids.filter(x => x !== id)
-                      : [...s.selected_screen_ids, id],
-                  }))}
-                />
-              </div>
+              )}
             </div>
           )}
         </div>

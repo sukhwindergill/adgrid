@@ -82,3 +82,47 @@ describe('CreativePreview font', () => {
     expect(mono.querySelector('[data-headline]').style.fontFamily).toContain('JetBrains Mono');
   });
 });
+
+describe('CreativePreview text-overlay/media divergence fix', () => {
+  it('suppresses the headline/CTA overlay once media is uploaded, even if headline/cta_text are still set', () => {
+    const { container } = render(<CreativePreview campaign={{ headline: 'Cold Brew', cta_text: 'Order now', media_url: 'https://x/y.jpg', media_type: 'image' }} />);
+    expect(container.querySelector('[data-headline]')).toBeNull();
+  });
+
+  it('still shows the headline/CTA overlay when there is no uploaded media', () => {
+    const { container } = render(<CreativePreview campaign={{ headline: 'Cold Brew', cta_text: 'Order now' }} />);
+    expect(container.querySelector('[data-headline]')).not.toBeNull();
+  });
+});
+
+describe('CreativePreview QR', () => {
+  it('hides the QR entirely when no destination is set', () => {
+    const { container } = render(<CreativePreview campaign={{ headline: 'Test' }} />);
+    expect(container.querySelector('[data-qr-overlay]')).toBeNull();
+  });
+
+  it('shows the QR at the default top-right position/size when a destination is set', () => {
+    const { container } = render(<CreativePreview campaign={{ destination_url: 'https://example.com' }} />);
+    const qr = container.querySelector('[data-qr-overlay]');
+    expect(qr).not.toBeNull();
+    expect(qr.style.left).toBe('90%');
+    expect(qr.style.top).toBe('14%');
+    expect(qr.style.width).toBe('12%');
+  });
+
+  it('positions the QR at a stored qr_x/qr_y/qr_size_pct', () => {
+    const { container } = render(<CreativePreview campaign={{ destination_url: 'https://example.com', qr_x: 20, qr_y: 30, qr_size_pct: 0.2 }} />);
+    const qr = container.querySelector('[data-qr-overlay]');
+    expect(qr.style.left).toBe('20%');
+    expect(qr.style.top).toBe('30%');
+    expect(qr.style.width).toBe('20%');
+  });
+
+  it('only renders the resize handle when editableQr is true', () => {
+    const { container: readOnly } = render(<CreativePreview campaign={{ destination_url: 'https://example.com' }} />);
+    expect(readOnly.querySelector('[data-qr-resize-handle]')).toBeNull();
+
+    const { container: editable } = render(<CreativePreview campaign={{ destination_url: 'https://example.com' }} editableQr onQrChange={() => {}} />);
+    expect(editable.querySelector('[data-qr-resize-handle]')).not.toBeNull();
+  });
+});

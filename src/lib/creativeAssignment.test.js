@@ -9,14 +9,16 @@ describe('makeBlankCreative', () => {
     expect(c.id).toBeTruthy();
     expect(c.assigned_screen_ids).toEqual([]);
     expect(c.weight).toBe(100);
-    expect(c.creative_template).toBe('bottom_bar');
     expect(c.accent_color).toBe('#7c3aed');
+    expect(c.qr_x).toBeNull();
+    expect(c.qr_y).toBeNull();
+    expect(c.qr_size_pct).toBeNull();
   });
 
   it('applies overrides on top of the defaults', () => {
-    const c = makeBlankCreative({ accent_color: '#00ff00', headline: 'Hi' });
+    const c = makeBlankCreative({ accent_color: '#00ff00', label: 'Hi' });
     expect(c.accent_color).toBe('#00ff00');
-    expect(c.headline).toBe('Hi');
+    expect(c.label).toBe('Hi');
     expect(c.weight).toBe(100);
   });
 

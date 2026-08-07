@@ -1,3 +1,4 @@
+// src/views/advertiser/createCampaign/StepCreative.smoke.test.jsx
 // Throwaway smoke test — confirms StepCreative.jsx and CreativeCard.jsx are
 // syntactically valid and resolvable (imports exist, renders without
 // throwing) before they are wired into CreateCampaign.jsx's render switch in
@@ -37,7 +38,7 @@ const baseForm = {
 describe('StepCreative', () => {
   it('renders the default single-creative flow without assignment UI', () => {
     render(
-      <StepCreative form={baseForm} setForm={() => {}} matchedScreens={[SCREEN_A, SCREEN_B]} profile={null} />
+      <StepCreative form={baseForm} setForm={() => {}} matchedScreens={[SCREEN_A, SCREEN_B]} />
     );
     expect(screen.getByText('Screens')).toBeInTheDocument();
     expect(screen.getByText('Creative')).toBeInTheDocument();
@@ -48,12 +49,12 @@ describe('StepCreative', () => {
     const form = {
       ...baseForm,
       creatives: [
-        { id: 'c1', label: 'A', headline: '', cta_text: '', destination_url: '', accent_color: '#7c3aed', category: 'Food & Beverage', media_url: '', media_type: '', media_width: null, media_height: null, assigned_screen_ids: [SCREEN_A.id], weight: 100 },
-        { id: 'c2', label: 'B', headline: '', cta_text: '', destination_url: '', accent_color: '#7c3aed', category: 'Food & Beverage', media_url: '', media_type: '', media_width: null, media_height: null, assigned_screen_ids: [], weight: 100 },
+        { id: 'c1', label: 'A', destination_url: '', accent_color: '#7c3aed', category: 'Food & Beverage', media_url: '', media_type: '', media_width: null, media_height: null, qr_x: null, qr_y: null, qr_size_pct: null, assigned_screen_ids: [SCREEN_A.id], weight: 100 },
+        { id: 'c2', label: 'B', destination_url: '', accent_color: '#7c3aed', category: 'Food & Beverage', media_url: '', media_type: '', media_width: null, media_height: null, qr_x: null, qr_y: null, qr_size_pct: null, assigned_screen_ids: [], weight: 100 },
       ],
     };
     render(
-      <StepCreative form={form} setForm={() => {}} matchedScreens={[SCREEN_A, SCREEN_B]} profile={{ brand_font: 'sans' }} />
+      <StepCreative form={form} setForm={() => {}} matchedScreens={[SCREEN_A, SCREEN_B]} />
     );
     expect(screen.getByText('Creatives')).toBeInTheDocument();
     expect(screen.getAllByText(/Split by screen type/).length).toBe(2);
@@ -65,14 +66,14 @@ describe('StepCreative', () => {
     let capturedUpdater;
     const setForm = (updater) => { capturedUpdater = updater; };
     render(
-      <StepCreative form={baseForm} setForm={setForm} matchedScreens={[SCREEN_A, SCREEN_B]} profile={null} />
+      <StepCreative form={baseForm} setForm={setForm} matchedScreens={[SCREEN_A, SCREEN_B]} />
     );
-    const headlineInput = screen.getByPlaceholderText('e.g. Start Your Morning Right');
-    fireEvent.change(headlineInput, { target: { value: 'H' } });
+    const destinationInput = screen.getByPlaceholderText('https://example.com');
+    fireEvent.change(destinationInput, { target: { value: 'https://example.com' } });
 
     expect(capturedUpdater).toBeTypeOf('function');
     const next = capturedUpdater(baseForm);
     expect(next.creatives).toHaveLength(1);
-    expect(next.creatives[0].headline).toBe('H');
+    expect(next.creatives[0].destination_url).toBe('https://example.com');
   });
 });

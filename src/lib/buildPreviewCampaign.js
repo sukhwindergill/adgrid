@@ -1,15 +1,13 @@
 // src/lib/buildPreviewCampaign.js
-export function buildPreviewCampaign(form, profile) {
+export function buildPreviewCampaign(form) {
   return {
-    headline: form.headline,
-    cta_text: form.cta_text,
-    accent_color: form.accent_color,
     destination_url: form.destination_url,
+    accent_color: form.accent_color,
     category: form.category,
     media_url: form.media_url,
     media_type: form.media_type,
-    creative_template: form.creative_template,
-    secondary_color: form.secondary_color,
-    creative_font: profile?.brand_font || 'sans',
+    qr_x: form.qr_x ?? null,
+    qr_y: form.qr_y ?? null,
+    qr_size_pct: form.qr_size_pct ?? null,
   };
 }

@@ -11,7 +11,7 @@ import { VENUE_TAXONOMY } from '../../../lib/venueTypes.js';
 
 const BLANK_CREATIVE = makeBlankCreative;
 
-export function StepCreative({ form, setForm, matchedScreens, profile }) {
+export function StepCreative({ form, setForm, matchedScreens }) {
   const [showFilters, setShowFilters] = useState(false);
 
   const toggleScreen = (id) => setForm(s => ({
@@ -149,9 +149,7 @@ export function StepCreative({ form, setForm, matchedScreens, profile }) {
             poolScreens={selectedScreens}
             allCreatives={creatives}
             showAssignment={isMulti}
-            duration={form.duration}
             onSplitByType={() => splitByType(c.id)}
-            profile={profile}
           />
         ))}
 

@@ -65,18 +65,23 @@ function CreativeSlide({ campaign, screenId }) {
         ADGRID
       </div>
 
-      {/* QR code — top right */}
-      <div style={{
-        position: 'absolute', top: 'clamp(20px, 3vw, 48px)', right: 'clamp(20px, 3vw, 48px)',
-        background: '#fff', borderRadius: 12, padding: 'clamp(8px, 1.2vw, 16px)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-      }}>
-        <QRCode value={qrUrl} size={Math.max(64, Math.floor(window.innerWidth * 0.12))} level="M" />
+      {/* QR code — advertiser-positioned via qr_x/qr_y/qr_size_pct, hidden
+          entirely when the campaign has no real destination_url */}
+      {plan.showQr && (
         <div style={{
-          fontSize: 'clamp(8px, 0.8vw, 12px)', color: '#555', textAlign: 'center',
-          marginTop: 6, fontFamily: "'Inter', sans-serif", fontWeight: 500,
-        }}>Scan to learn more</div>
-      </div>
+          position: 'absolute',
+          left: `${plan.qrX}%`, top: `${plan.qrY}%`, transform: 'translate(-50%, -50%)',
+          width: `${plan.qrSizePct * 100}%`,
+          background: '#fff', borderRadius: 12, padding: 'clamp(8px, 1.2vw, 16px)',
+          boxSizing: 'border-box', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+        }}>
+          <QRCode value={qrUrl} size={256} style={{ width: '100%', height: 'auto', display: 'block' }} level="M" />
+          <div style={{
+            fontSize: 'clamp(8px, 0.8vw, 12px)', color: '#555', textAlign: 'center',
+            marginTop: 6, fontFamily: "'Inter', sans-serif", fontWeight: 500,
+          }}>Scan to learn more</div>
+        </div>
+      )}
 
       {/* Category tag */}
       {showTextOverlay && category && (

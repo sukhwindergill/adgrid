@@ -66,3 +66,29 @@ describe('getCreativeRenderPlan', () => {
     expect(getCreativeRenderPlan(null).headline).toBe('');
   });
 });
+
+describe('getCreativeRenderPlan QR', () => {
+  it('shows the QR when a destination is set', () => {
+    expect(getCreativeRenderPlan({ destination_url: 'https://a.com' }).showQr).toBe(true);
+    expect(getCreativeRenderPlan({ destination: 'https://a.com' }).showQr).toBe(true);
+  });
+
+  it('hides the QR when no destination is set at all', () => {
+    expect(getCreativeRenderPlan({}).showQr).toBe(false);
+    expect(getCreativeRenderPlan({ destination_url: '' }).showQr).toBe(false);
+  });
+
+  it('defaults qr position and size when unset', () => {
+    const plan = getCreativeRenderPlan({});
+    expect(plan.qrX).toBe(90);
+    expect(plan.qrY).toBe(14);
+    expect(plan.qrSizePct).toBe(0.12);
+  });
+
+  it('uses a stored qr position and size when present, including zero', () => {
+    const plan = getCreativeRenderPlan({ qr_x: 0, qr_y: 30, qr_size_pct: 0.2 });
+    expect(plan.qrX).toBe(0);
+    expect(plan.qrY).toBe(30);
+    expect(plan.qrSizePct).toBe(0.2);
+  });
+});

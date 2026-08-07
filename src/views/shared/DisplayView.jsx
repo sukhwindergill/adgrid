@@ -31,8 +31,10 @@ function NowPlayingCard({ campaign }) {
       <div style={{ height: 4, background: campaign.color || C.purple }} />
       <div style={{ padding: '14px 16px' }}>
         <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Now Playing</div>
-        <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{campaign.headline}</div>
-        <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 10 }}>{campaign.advertiser} · {campaign.category}</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{campaign.headline || campaign.advertiser || campaign.advertiser_name || ''}</div>
+        {/* When there's no headline, the title above already shows the advertiser name --
+            repeating it here would read as "Nike / Nike · Fashion", so drop it from the subtitle. */}
+        <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 10 }}>{campaign.headline ? `${campaign.advertiser} · ${campaign.category}` : campaign.category}</div>
         <div style={{ display: 'flex', gap: 16, fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>
           <span>🕐 {timeLabel(campaign.timeStart)} – {timeLabel(campaign.timeEnd)}</span>
           <span>⏱ {campaign.duration}s slots</span>

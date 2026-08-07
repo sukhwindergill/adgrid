@@ -26,7 +26,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, can
   const [sharing, setSharing] = useState(false);
   const [editForm, setEditForm] = useState({ budget: campaign.budget, start: campaign.start, end: campaign.end });
   const [editingCreative, setEditingCreative] = useState(false);
-  const [creativeForm, setCreativeForm] = useState({ headline: campaign.headline ?? '', cta: campaign.cta ?? '', accent_color: campaign.color ?? '#7c3aed' });
+  const [creativeForm, setCreativeForm] = useState({ accent_color: campaign.color ?? '#7c3aed' });
   const c = campaign;
   const pct      = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
   const daysLeft = Math.max(0, Math.round((new Date(c.end) - new Date()) / (1000 * 60 * 60 * 24)));
@@ -183,7 +183,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, can
           <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 24, alignItems: 'start' }}>
             <CreativePreview campaign={c} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {[['Headline', c.headline], ['Category', c.category], ['Accent Colour', c.color || '—'], ['QR Destination', c.destination || '—']].map(([l, v]) => (
+              {[['Headline', c.headline || '—'], ['Category', c.category], ['Accent Colour', c.color || '—'], ['QR Destination', c.destination || '—']].map(([l, v]) => (
                 <div key={l}>
                   <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 3 }}>{l}</div>
                   <div style={{ fontSize: 13, color: C.text, fontFamily: l === 'Accent Colour' ? F.mono : F.sans, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -192,30 +192,12 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, can
                   </div>
                 </div>
               ))}
-              <Btn variant="secondary" size="sm" style={{ alignSelf: 'flex-start' }} onClick={() => { setTab('creative'); setCreativeForm({ headline: c.headline ?? '', cta: c.cta ?? '', accent_color: c.color ?? '#7c3aed' }); setEditingCreative(true); }}>✏ Edit Creative</Btn>
+              <Btn variant="secondary" size="sm" style={{ alignSelf: 'flex-start' }} onClick={() => { setTab('creative'); setCreativeForm({ accent_color: c.color ?? '#7c3aed' }); setEditingCreative(true); }}>✏ Edit Creative</Btn>
             </div>
           </div>
           {editingCreative && (
             <div style={{ marginTop: 20, padding: 20, background: C.surface, borderRadius: 12, border: `1px solid ${C.border}` }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 16 }}>Edit Creative</div>
-              {[
-                { label: 'Headline', key: 'headline', type: 'text' },
-                { label: 'Call to Action', key: 'cta', type: 'text' },
-              ].map(({ label, key, type }) => (
-                <div key={key} style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 12, color: C.textSub, marginBottom: 4 }}>{label}</div>
-                  <input
-                    type={type}
-                    value={creativeForm[key]}
-                    onChange={e => setCreativeForm(f => ({ ...f, [key]: e.target.value }))}
-                    style={{
-                      width: '100%', padding: '8px 12px', borderRadius: 8,
-                      border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 13,
-                      outline: 'none', boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
-              ))}
               <div style={{ marginBottom: 12 }}>
                 <div style={{ fontSize: 12, color: C.textSub, marginBottom: 4 }}>Accent Colour</div>
                 <input
@@ -229,12 +211,10 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, can
                 <Btn variant="secondary" size="sm" onClick={() => setEditingCreative(false)}>Cancel</Btn>
                 <Btn size="sm" onClick={async () => {
                   const { error } = await supabase.from('bookings').update({
-                    headline: creativeForm.headline,
-                    cta: creativeForm.cta,
                     accent_color: creativeForm.accent_color,
                   }).eq('id', c.id);
                   if (error) { toast.error(`Save failed: ${error.message}`); return; }
-                  onUpdate({ ...c, headline: creativeForm.headline, cta: creativeForm.cta, color: creativeForm.accent_color });
+                  onUpdate({ ...c, color: creativeForm.accent_color });
                   setEditingCreative(false);
                 }}>Save Creative</Btn>
               </div>

@@ -42,10 +42,10 @@ export function MediaUpload({ form, setForm }) {
   return (
     <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: `1px solid ${C.border}` }}>
       <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 4 }}>
-        Ad creative <span style={{ color: C.textMuted, fontWeight: 400 }}>(optional — image or video)</span>
+        Ad creative <span style={{ color: C.textMuted, fontWeight: 400 }}>(required)</span>
       </div>
       <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 10, lineHeight: 1.5 }}>
-        Upload your own designed ad. Landscape 16:9 works best. Leave empty to use the generated card from your headline & colour.
+        Upload your own designed ad — image or video, landscape 16:9 works best.
       </div>
       {form.media_url ? (
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
