@@ -1,5 +1,6 @@
 import Stripe from "https://esm.sh/stripe@14?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { computeReversalDelta } from "../_shared/transferReversal.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
   apiVersion: "2023-10-16",
@@ -33,6 +34,65 @@ async function bookingForPaymentIntent(paymentIntentId: string) {
     .eq("payment_intent_id", paymentIntentId)
     .maybeSingle();
   return data;
+}
+
+// S18 fix: distributeOperatorCuts (charge-campaign) fires an operator Stripe
+// Transfer immediately on successful charge, before a campaign even airs.
+// Neither charge.refunded nor charge.dispute.created ever clawed any of that
+// back. `refundedOrDisputedCents` is the total refunded/disputed so far (not
+// a delta — Stripe reports cumulative amounts on both charge.amount_refunded
+// and dispute.amount), so the ratio-based delta math in
+// computeReversalDelta is what keeps repeated/redelivered webhooks for the
+// same booking from over-reversing.
+async function reverseOperatorTransfers(bookingId: string, budget: number, refundedOrDisputedCents: number) {
+  const bookingCents = Math.round(budget * 100);
+  if (bookingCents <= 0) return;
+  const refundRatio = refundedOrDisputedCents / bookingCents;
+
+  const { data: transfers } = await supabase
+    .from("operator_transfers")
+    .select("id, amount, reversed_amount, stripe_transfer_id, status")
+    .eq("booking_id", bookingId)
+    .not("status", "eq", "failed");
+
+  if (!transfers || transfers.length === 0) return;
+
+  for (const t of transfers as {
+    id: string; amount: number; reversed_amount: number | null;
+    stripe_transfer_id: string | null; status: string;
+  }[]) {
+    if (!t.stripe_transfer_id) continue;
+
+    const { delta, newReversedAmount, newStatus } = computeReversalDelta({
+      transferAmount: t.amount,
+      alreadyReversed: t.reversed_amount ?? 0,
+      refundRatio,
+    });
+
+    if (delta <= 0) continue; // already covered by a prior delivery of this same cumulative amount
+
+    try {
+      await stripe.transfers.createReversal(t.stripe_transfer_id, {
+        amount: Math.round(delta * 100),
+        metadata: { booking_id: bookingId, operator_transfer_id: t.id, reason: "refund_or_dispute" },
+      }, {
+        // Tied to the cumulative target, not this event's id — a webhook
+        // redelivery recomputes the same target and lands on the same key.
+        idempotencyKey: `reverse:${t.id}:${newReversedAmount}`,
+      });
+
+      await supabase.from("operator_transfers")
+        .update({ reversed_amount: newReversedAmount, status: newStatus })
+        .eq("id", t.id);
+    } catch (e) {
+      console.error(
+        `[stripe-webhook] transfer reversal failed for operator_transfers ${t.id}:`,
+        e instanceof Error ? e.message : e,
+      );
+      // Leave the row as-is — it still shows the pre-reversal state, which
+      // reads as "needs manual attention" rather than silently succeeding.
+    }
+  }
 }
 
 async function pauseAndAlert(paymentIntentId: string, amount: number, currency?: string) {
@@ -103,6 +163,9 @@ Deno.serve(async (req: Request) => {
             .from("bookings")
             .update({ payment_status: "refunded", status: "paused" })
             .eq("id", booking.id);
+          // amount_refunded is cumulative (Stripe convention), matching what
+          // reverseOperatorTransfers/computeReversalDelta expect.
+          await reverseOperatorTransfers(booking.id, booking.budget, charge.amount_refunded);
         }
       }
       break;
@@ -113,6 +176,10 @@ Deno.serve(async (req: Request) => {
       const paymentIntentId = typeof dispute.payment_intent === "string" ? dispute.payment_intent : dispute.payment_intent?.id;
       if (paymentIntentId) {
         await pauseAndAlert(paymentIntentId, dispute.amount / 100, dispute.currency);
+        const booking = await bookingForPaymentIntent(paymentIntentId);
+        if (booking) {
+          await reverseOperatorTransfers(booking.id, booking.budget, dispute.amount);
+        }
       }
       break;
     }

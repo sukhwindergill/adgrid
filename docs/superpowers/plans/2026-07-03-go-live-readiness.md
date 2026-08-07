@@ -492,6 +492,162 @@ factory-reset / re-pair path if the token is rotated.
 
 ---
 
+> **Update — session 9 (2026-08-07, go-live-review pass):** No live click-through this session
+> (no credentials/device). Verified in code whether the three ICP-sweep blockers (B12–B14) and
+> four should-fixes (S13–S16) from `2026-07-14-icp-sweep-findings.md` actually got fixed in the
+> three weeks of feature work since (mobile plans 1-4, operator payout pipeline, campaign
+> hierarchy phases 1-5, location targeting picker) — none of that work mentioned them, and this
+> file was never updated to close them out.
+>
+> **All seven are fixed in current code:**
+> - **B12** (QR bypassed scan-redirect) — `DisplayPlayer.jsx:13-19` `buildQrUrl` now builds a
+>   `scan-redirect?c=&s=&cr=` URL; `destinationUrl.js` validation comment explicitly documents why.
+> - **B13** (advertiser reads operator `monthly_revenue`) — migration `20260714000000` dropped the
+>   row-level advertiser policy on `screens` and added an `advertiser_screens` view with
+>   `monthly_revenue` excluded; `App.jsx:164` confirms the advertiser-facing query now reads the
+>   view, `owner_own_screens`/`screens_grant_select` are the only remaining base-table policies.
+> - **B14** (no Connect onboarding, silent payout skip) — `ScreenOnboard.jsx` `StepConnect` and
+>   `OperatorSettingsView.jsx` both wire `startConnect()`; a "Set up payouts" banner exists.
+>   `charge-campaign` still skips non-active Connect accounts by design, but operators now have a
+>   real path to get out of that state instead of no path at all.
+> - **S13** (advertiser→operator notify 403) — `send-notification/index.ts:306-309` now allows
+>   `campaign_submitted` to an operator and `grant_invite` explicitly.
+> - **S14** (no status gate/dedup on scan-redirect) — `scan-redirect/index.ts:32` 410s unless
+>   `status in (scheduled,active) AND payment_status='paid'`; bot/dedup via `_shared/scanQuality.ts`.
+> - **S15** (city column actually holds country) — column renamed to `country`, comment at
+>   `scan-redirect/index.ts:57` documents it explicitly.
+> - **S16** (`monthly_traffic_estimate` never collected) — `ScreenOnboard.jsx:147/166/204/337` now
+>   collects and requires it.
+>
+> **New, previously-unflagged item checked and cleared, not a bug:** the campaign-hierarchy
+> per-creative budget split (`StepBudgetReview.jsx:73-93`) looked at first read like it might let
+> per-creative amounts diverge from the top-level `bookings.budget` actually charged by
+> `charge-campaign`. It's by design — the UI copy at line 75 states per-creative amounts are a
+> reporting split of the total, not additive — and `charge-campaign` only ever reads
+> `booking.budget`, never sums creative-level numbers. No fix needed.
+>
+> **Approval queue at scale (partial look):** `ApprovalQueue.jsx:500-503` fans out one
+> `campaign_creative_screens` + `campaign_creatives` lookup per pending campaign via nested
+> `Promise.all` — parallel, not serial, so not a correctness bug, but worth a real load test if the
+> queue ever holds hundreds of pending items concurrently. Not elevated to should-fix without an
+> observed slowdown.
+>
+> **Go/No-Go this session:** areas 2 (payments), 5 (security/RLS), 6 (notifications) all move from
+> the 07-14 NO-GO back to 🟢 GO — every blocker and should-fix from that sweep is closed in code.
+> Unable to re-verify live (no credentials this session) — recommend one real click-through as
+> confirmation before treating this as fully closed.
+>
+> **Still open, unchanged, all manual/external (not code):** Google OAuth client secret invalid in
+> prod; Supabase leaked-password-protection toggle (S2); Resend sending domain unowned (all
+> transactional email still in-app-only); operator mobile app never run on a real device/simulator.
+>
+> **Next pass should go deeper on:** payment edge cases (refunds/disputes/3DS re-auth, and — now
+> that B14 gives operators a real Connect path — whether `distributeOperatorCuts` has actually
+> fired successfully for a real transfer yet); display-player resilience on real hardware; approval
+> queue under real bulk/adversarial volume; and a live click-through of the new campaign-hierarchy
+> wizard + location-targeting picker (shipped Aug 1-6, never exercised by any go-live pass).
+
+> **Update — session 10 (2026-08-07, same day, live verification):** Confirmed session 9's
+> code-read findings against live production — Supabase project `hkqiuwnppxkkztacwicj`, Vercel
+> deployment `dpl_8Ty411yFAaaNcMzKaz4TfbLanvdq` (matches HEAD `88eb1c3`, so prod is current — no
+> stale-deploy risk this time). No user login credentials available, so verification used direct
+> DB access (Supabase MCP) + the public `/display/<token>` route (no auth) rather than a full
+> authenticated click-through.
+>
+> - **B12 — confirmed live, with one caveat.** `curl`'d `scan-redirect` directly against a real
+>   `completed`/`paid` booking (`bkg-002`): correctly returned `410 Gone` (S14's status gate
+>   working against real data, not just in source); missing-id → `400`, bogus-id → `404`. The
+>   public display route for a real live screen (`/display/4e3e95b8-…`) renders correctly and shows
+>   "No active campaigns scheduled" + "QR code scans are recorded anonymously." **Caveat: could not
+>   see an actual QR → 302 round-trip live**, because production currently has **zero** bookings in
+>   `scheduled`/`active` + `paid` state — every real campaign is either `completed` or still
+>   `pending_review`/unpaid. Nothing is actually airing right now, so there's no live QR to point a
+>   phone at. Did not fabricate a live paid campaign to force this (one attempted disposable-row
+>   insert was rolled back cleanly by a failing check constraint mid-transaction — verified no
+>   duplicate/orphan row remains). Recommend confirming the actual 302 the next time a real
+>   advertiser campaign goes live+paid.
+> - **B13 — fully confirmed live.** Ran a real Postgres session under the exact RLS the app uses
+>   (`set local role authenticated; set local request.jwt.claims` to a real advertiser's `sub`):
+>   base `screens` table returned **0 rows** (no policy grants advertisers direct access anymore),
+>   `advertiser_screens` view returned **8 rows** (matches the live-screen count), and
+>   `information_schema.columns` confirms the view has no `monthly_revenue` column at all. The leak
+>   is closed in the live database, not just in the migration file.
+> - **B14 — code path is live but the real-world problem is unchanged.** `ScreenOnboard`'s
+>   `StepConnect` and the Settings Stripe Connect card both exist and are deployed. But live data:
+>   **0 of 2 real operators have `connect_status = 'active'`, 0 rows ever in `payouts`**, and **8
+>   screens are currently `status = 'live'`** (bookable today) under the operator with
+>   `connect_status: null`. Confirmed "live" is still not gated on Connect being set up — an
+>   advertiser could book one of those 8 screens right now and `distributeOperatorCuts` would
+>   silently skip the transfer, same risk flagged 07-14. The fix gives operators a path to fix this
+>   themselves; nobody has taken it yet.
+>
+> **Net: B13 is done, for real. B12 is done in code/function but unexercised live (nothing's
+> airing to test against). B14 is the one still actually open in practice — onboarding UI shipped,
+> but zero operators are payout-ready and going-live isn't blocked on it.**
+
+> **Update — session 11 (2026-08-07, payments edge cases):** Went deep on area 2 (payments) per
+> session 10's "next pass" list, now that B14's Connect gate is live (PR #31). Read
+> `charge-campaign`, `stripe-webhook`, `stripe-refund`, `trigger-payout` in full. 3DS handling is
+> solid (`requires_action`/`requires_payment_method` fails cleanly with a clear advertiser-facing
+> message, no silent hang); idempotency keys present on both the PaymentIntent and the operator
+> Transfer. Found two real, previously-unflagged should-fix items — both **landmines, not live
+> incidents**, because `operator_transfers` has 0 rows in production (confirmed) — nobody has ever
+> completed a real transfer yet, so neither has fired for real. Both matter *because* B14 just made
+> real transfers possible for the first time.
+>
+> - **S17 — `trigger-payout` (admin backfill path) double-pays.** Per
+>   `2026-06-30-operator-payout-pipeline.md`, this function is explicitly "no longer the primary
+>   path but kept for admin backfills of failed transfers." But its implementation
+>   ([trigger-payout/index.ts:67-75](supabase/functions/trigger-payout/index.ts:67)) sums **every**
+>   `payment_status='paid'` booking's budget across the operator's screens in the given date range —
+>   it never excludes bookings that already have a successful row in `operator_transfers` (the table
+>   `distributeOperatorCuts` writes to). Its only dedup check is "have I already transferred this
+>   exact currency for this exact period" against its own `payouts` table
+>   ([trigger-payout/index.ts:101-115](supabase/functions/trigger-payout/index.ts:101)) — it has no
+>   awareness of `operator_transfers` at all. Run it today "to backfill one failed campaign" and it
+>   pays out that campaign *plus every other campaign in the period that already transferred
+>   successfully*, a second time. **Currently zero live risk** — not called from any `src/` code,
+>   unreachable without a raw authenticated `curl`/future admin UI — but it's a real bug sitting in
+>   a function whose entire documented purpose is "the safety net for when something went wrong,"
+>   and building an admin backfill button on top of it as-is would be a launch-blocker the day it
+>   shipped. Fix direction: before summing, exclude `booking_id`s that already have an
+>   `operator_transfers` row with `status='transferred'` for that operator.
+> - **S18 — refund/dispute never reverses an already-sent operator transfer.**
+>   `distributeOperatorCuts` fires immediately on successful charge — before the campaign has even
+>   started airing. `stripe-webhook`'s `charge.refunded` and `charge.dispute.created` handlers
+>   ([stripe-webhook/index.ts:96-118](supabase/functions/stripe-webhook/index.ts:96)) only update the
+>   `bookings` row (`payment_status`/`status`); neither calls `stripe.transfers.createReversal` or
+>   flags the `operator_transfers` row for reversal — confirmed zero references to `reversal`
+>   anywhere in `supabase/functions/`. A chargeback filed weeks after a campaign both started and
+>   was paid out leaves the operator holding funds the platform already lost, with no automated or
+>   even admin-UI clawback path. Same "landmine, not incident" status as S17 — 0 real transfers
+>   exist yet. Fix direction: on `charge.refunded`/`charge.dispute.created`, look up the booking's
+>   `operator_transfers` rows and attempt `stripe.transfers.createReversal` for each, logging
+>   success/failure the same way `distributeOperatorCuts` already does.
+>
+> **Go/No-Go:** payments stays 🟢 GO for launch — both findings are pre-existing-condition bugs in
+> code paths that haven't fired yet (0 rows in `operator_transfers`), not something broken for a
+> real user today. Worth fixing before the first real operator payout happens, not before launch.
+>
+> **Not yet gone deep on:** display-player resilience on real hardware, approval queue under real
+> bulk volume, and a live click-through of the campaign-hierarchy wizard + location-targeting
+> picker (shipped Aug 1-6, still never exercised by any go-live pass) — carry forward.
+
+> **Update — session 12 (2026-08-07, same day, S17/S18 fixed):** Fixed both same-day.
+> - **S17** — `trigger-payout` now excludes any booking with a non-`failed` `operator_transfers`
+>   row for that operator before summing, so a backfill only pays what genuinely never transferred.
+> - **S18** — new `supabase/functions/_shared/transferReversal.ts` (`computeReversalDelta`, 8 unit
+>   tests) tracks cumulative `reversed_amount` per transfer so partial refunds, later topped up to
+>   full, and redelivered webhooks all land on the correct delta instead of over-reversing.
+>   `stripe-webhook`'s `charge.refunded`/`charge.dispute.created` now call
+>   `stripe.transfers.createReversal` for every affected `operator_transfers` row, with an
+>   idempotency key tied to the cumulative target so redeliveries are safe. New column
+>   `operator_transfers.reversed_amount` (migration `20260807000001`).
+> - 459/459 tests pass on this branch (excludes B14's `screenGoLive.test.js`, still on its own
+>   unmerged branch/PR #31; combined total will be 468 once both merge). Not yet re-verified live
+>   against prod (still 0 real transfers exist to
+>   reverse) — worth a synthetic disposable-row test the day the first real Connect transfer fires.
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).

@@ -67,19 +67,38 @@ Deno.serve(async (req: Request) => {
   const { data: campaigns } = campaignIds.length > 0
     ? await supabase
         .from("bookings")
-        .select("budget, currency")
+        .select("id, budget, currency")
         .in("id", campaignIds)
         .gte("start_date", periodStart)
         .lte("end_date", periodEnd)
         .eq("payment_status", "paid")
     : { data: [] };
 
+  // S17 fix: this function is documented as a backfill safety net for
+  // transfers distributeOperatorCuts (charge-campaign) failed to send — not
+  // a second payout for everything in the period. Without this exclusion it
+  // re-sums every booking's budget regardless of whether charge-campaign
+  // already transferred it, double-paying the operator for anything that
+  // already succeeded. Only bookings with no successful/reversed transfer
+  // row (i.e. genuinely never paid, or explicitly 'failed') are eligible.
+  const bookingIds = (campaigns ?? []).map((c: { id: string }) => c.id);
+  const { data: alreadyHandled } = bookingIds.length > 0
+    ? await supabase
+        .from("operator_transfers")
+        .select("booking_id")
+        .eq("operator_id", user.id)
+        .in("booking_id", bookingIds)
+        .not("status", "eq", "failed")
+    : { data: [] };
+  const handledIds = new Set((alreadyHandled ?? []).map((r: { booking_id: string }) => r.booking_id));
+  const unhandledCampaigns = (campaigns ?? []).filter((c: { id: string }) => !handledIds.has(c.id));
+
   const PLATFORM_FEE_RATE = 0.12;
   const revenueShare = profile.owner_revenue_share ?? 0.40;
 
   // Group by currency to avoid cross-currency aggregation
   const byCurrency = new Map<string, number>();
-  for (const c of (campaigns ?? []) as { budget: number; currency?: string }[]) {
+  for (const c of unhandledCampaigns as { budget: number; currency?: string }[]) {
     const cur = (c.currency ?? "cad").toLowerCase();
     byCurrency.set(cur, (byCurrency.get(cur) ?? 0) + (c.budget ?? 0));
   }
