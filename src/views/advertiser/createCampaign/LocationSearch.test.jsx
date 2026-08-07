@@ -83,6 +83,15 @@ describe('LocationSearch', () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
+  it('closes on Escape even when there are no matches', () => {
+    render(<LocationSearch locations={LOCATIONS} value="" onSelect={() => {}} />);
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'zzz' } });
+    expect(screen.getByText('No screens in that area yet')).toBeInTheDocument();
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(screen.queryByText('No screens in that area yet')).not.toBeInTheDocument();
+  });
+
   it('closes the dropdown when clicking outside', () => {
     render(<LocationSearch locations={LOCATIONS} value="" onSelect={() => {}} />);
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'tor' } });

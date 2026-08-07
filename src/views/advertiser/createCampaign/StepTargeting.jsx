@@ -1,5 +1,5 @@
 // src/views/advertiser/createCampaign/StepTargeting.jsx
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { C, F } from '../../../design/tokens.js';
 import { Card } from '../../../components/primitives/Card.jsx';
 import { Inp } from '../../../components/primitives/Inp.jsx';
@@ -36,6 +36,17 @@ export function StepTargeting({ form, setForm, reachSummary, allScreens, onPrevC
     [form.radius_center_lat, form.radius_center_lon]
   );
   const radiusResolved = form.area_type === 'radius' && form.radius_center_lat != null && form.radius_center_lon != null;
+
+  useEffect(() => {
+    if (loading || countryOptions.length === 0) return;
+    if (!countryOptions.includes(form.country)) {
+      setField('country', countryOptions[0]);
+    }
+    // Only re-check when the available options actually change (inventory
+    // loads / changes) or when country itself changes — not on every
+    // keystroke elsewhere in the form.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, countryOptions, form.country]);
 
   return (
     <div style={{ maxWidth: 620, margin: '0 auto' }}>

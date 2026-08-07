@@ -52,11 +52,12 @@ export function LocationSearch({ locations, value, onSelect, placeholder = 'Sear
   };
 
   const onKeyDown = (e) => {
-    if (!open || matches.length === 0) return;
+    if (!open) return;
+    if (e.key === 'Escape') { setOpen(false); return; }
+    if (matches.length === 0) return;
     if (e.key === 'ArrowDown') { e.preventDefault(); setHighlight(h => Math.min(h + 1, matches.length - 1)); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setHighlight(h => Math.max(h - 1, 0)); }
     else if (e.key === 'Enter') { e.preventDefault(); if (matches[highlight]) selectEntry(matches[highlight]); }
-    else if (e.key === 'Escape') { setOpen(false); }
   };
 
   return (
