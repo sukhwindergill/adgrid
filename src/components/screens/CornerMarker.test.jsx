@@ -70,14 +70,20 @@ describe('CornerMarker', () => {
     }).not.toThrow();
   });
 
-  // Note: a corresponding regression test for pointerId-scoping (two
-  // simultaneous pointers on two different handles must not cross-wire) is
-  // deliberately omitted -- jsdom in this project has no native
-  // `PointerEvent` constructor, so @testing-library's `fireEvent.pointer*`
-  // helpers fall back to a plain `Event` and silently drop non-standard
-  // init fields including `pointerId` (confirmed empirically: dispatched
-  // events always report `pointerId: undefined`, regardless of what's
-  // passed to `fireEvent`). There's no way to simulate two distinct
-  // pointers through this harness, so the scoping fix is verified by
-  // reading, not by a test.
+  it('ignores pointermove events from a different pointer than the one that started the drag', () => {
+    render(<CornerMarker photoUrl="https://example.com/p.jpg" initialCorners={null} onSave={() => {}} onSkip={() => {}} />);
+    const topLeftHandle = screen.getByTitle('Top-left');
+
+    fireEvent.pointerDown(topLeftHandle, { pointerId: 1 });
+    // A second, unrelated pointer moving (e.g. a stray second touch, or a
+    // different handle's own drag) must not affect this handle.
+    fireEvent.pointerMove(window, { clientX: 150, clientY: 80, pointerId: 2 });
+    expect(topLeftHandle.style.left).toBe('20%'); // unchanged from the default seed
+    expect(topLeftHandle.style.top).toBe('20%');
+
+    // The pointer that actually owns this drag must still work.
+    fireEvent.pointerMove(window, { clientX: 60, clientY: 30, pointerId: 1 });
+    expect(topLeftHandle.style.left).toBe('30%');
+    expect(topLeftHandle.style.top).toBe('30%');
+  });
 });
