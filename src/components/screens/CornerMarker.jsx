@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { C, F } from '../../design/tokens.js';
 import { Btn } from '../primitives/Btn.jsx';
 import { validateQuadOrientation } from '../../lib/quadWarp.js';
@@ -13,6 +13,10 @@ export function CornerMarker({ photoUrl, initialCorners, onSave, onSkip }) {
   const containerRef = useRef(null);
   const [corners, setCorners] = useState(initialCorners ?? DEFAULT_CORNERS);
   const [draggingIndex, setDraggingIndex] = useState(null);
+  // Teardown for whichever drag is currently in progress, if any -- lets
+  // the unmount effect below remove window listeners even when pointerup/
+  // pointercancel never gets a chance to fire (see effect comment).
+  const activeDragTeardownRef = useRef(null);
 
   const clamp01 = (n) => Math.min(1, Math.max(0, n));
 
@@ -25,16 +29,52 @@ export function CornerMarker({ photoUrl, initialCorners, onSave, onSkip }) {
 
   const handlePointerDown = (index) => (e) => {
     e.preventDefault();
+    const pointerId = e.pointerId;
     setDraggingIndex(index);
-    const onMove = (moveEvent) => moveHandle(index, moveEvent.clientX, moveEvent.clientY);
-    const onUp = () => {
-      setDraggingIndex(null);
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
+
+    // Scope this drag to the pointer that started it. Every handle's
+    // listeners live on `window` (so the drag keeps tracking even once the
+    // cursor leaves the handle/photo), which means without this check a
+    // second pointer going down on a different handle before the first one
+    // releases -- two-finger touch, or a stray extra touch -- would
+    // cross-wire both handles to whichever finger moves.
+    const onMove = (moveEvent) => {
+      if (moveEvent.pointerId !== pointerId) return;
+      moveHandle(index, moveEvent.clientX, moveEvent.clientY);
     };
+    const removeListeners = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onEnd);
+      window.removeEventListener('pointercancel', onEnd);
+      activeDragTeardownRef.current = null;
+    };
+    // Shared by pointerup and pointercancel: a cancelled gesture (e.g. the
+    // OS interrupts the touch for a system gesture) should release the
+    // drag exactly like a normal release.
+    const onEnd = (endEvent) => {
+      if (endEvent.pointerId !== pointerId) return;
+      removeListeners();
+      setDraggingIndex(null);
+    };
+
     window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointerup', onEnd);
+    window.addEventListener('pointercancel', onEnd);
+    activeDragTeardownRef.current = removeListeners;
   };
+
+  // If the component unmounts mid-drag (parent navigates away, wizard step
+  // changes), pointerup/pointercancel never fires, so the listeners above
+  // would otherwise stay attached to `window` forever -- and the next
+  // stray pointermove would call moveHandle() -> containerRef.current
+  // .getBoundingClientRect() on a now-null ref and throw. Only remove the
+  // listeners here (no setDraggingIndex): the component is already gone,
+  // so there's no state left to update.
+  useEffect(() => {
+    return () => {
+      activeDragTeardownRef.current?.();
+    };
+  }, []);
 
   const valid = validateQuadOrientation(corners);
 

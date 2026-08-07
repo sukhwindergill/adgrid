@@ -49,4 +49,35 @@ describe('CornerMarker', () => {
     expect(screen.getByRole('button', { name: 'Save corners' })).toBeDisabled();
     expect(screen.getByText(/Corners cross over each other/)).toBeInTheDocument();
   });
+
+  it('does not leak window listeners when unmounted mid-drag', () => {
+    const { unmount } = render(
+      <CornerMarker photoUrl="https://example.com/p.jpg" initialCorners={null} onSave={() => {}} onSkip={() => {}} />
+    );
+    const topLeftHandle = screen.getByTitle('Top-left');
+    fireEvent.pointerDown(topLeftHandle);
+    // Unmount while the drag is still in progress -- pointerup/pointercancel
+    // never fires, so the only thing that can remove the window listeners
+    // is the component's own unmount cleanup.
+    unmount();
+
+    // Without that cleanup, this stray pointermove would still be handled
+    // by the leaked listener, which calls moveHandle() ->
+    // containerRef.current.getBoundingClientRect() on a now-null ref and
+    // throws.
+    expect(() => {
+      fireEvent.pointerMove(window, { clientX: 50, clientY: 50 });
+    }).not.toThrow();
+  });
+
+  // Note: a corresponding regression test for pointerId-scoping (two
+  // simultaneous pointers on two different handles must not cross-wire) is
+  // deliberately omitted -- jsdom in this project has no native
+  // `PointerEvent` constructor, so @testing-library's `fireEvent.pointer*`
+  // helpers fall back to a plain `Event` and silently drop non-standard
+  // init fields including `pointerId` (confirmed empirically: dispatched
+  // events always report `pointerId: undefined`, regardless of what's
+  // passed to `fireEvent`). There's no way to simulate two distinct
+  // pointers through this harness, so the scoping fix is verified by
+  // reading, not by a test.
 });
