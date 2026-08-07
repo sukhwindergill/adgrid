@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { C, F } from '../../design/tokens.js';
 import { CornerMarker } from './CornerMarker.jsx';
+import { ErrorBanner } from '../primitives/ErrorBanner.jsx';
 
 // Owns a screen's photos (screen_photos) and the corner-marking overlay
 // that produces screen_photo_frames. Used both by the registration wizard
@@ -12,6 +13,7 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
   const [frames, setFrames] = useState(initialFrames || []);
   const [uploading, setUploading] = useState(false);
   const [markingUrl, setMarkingUrl] = useState(null);
+  const [error, setError] = useState(null);
 
   const frameFor = (url) => frames.find(f => f.url === url);
 
@@ -25,15 +27,21 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
     const newUrls = [];
     for (const file of toUpload) {
       const path = `${screenId}/${crypto.randomUUID()}`;
-      const { error } = await supabase.storage.from('screen-photos').upload(path, file);
-      if (!error) {
+      const { error: uploadError } = await supabase.storage.from('screen-photos').upload(path, file);
+      if (!uploadError) {
         const { data } = supabase.storage.from('screen-photos').getPublicUrl(path);
         newUrls.push(data.publicUrl);
       }
     }
     const updated = [...photos, ...newUrls];
+    const { error: persistError } = await persistPhotos(updated);
+    if (persistError) {
+      setError(persistError.message);
+      setUploading(false);
+      return;
+    }
+    setError(null);
     setPhotos(updated);
-    await persistPhotos(updated);
     onChange({ photos: updated, frames });
     setUploading(false);
     // Prompt for corners on the first newly uploaded photo -- if several
@@ -44,17 +52,28 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
   const removePhoto = async (url) => {
     const updatedPhotos = photos.filter(p => p !== url);
     const updatedFrames = frames.filter(f => f.url !== url);
+    const { error: persistError } = await supabase.from('screens')
+      .update({ screen_photos: updatedPhotos, screen_photo_frames: updatedFrames }).eq('id', screenId);
+    if (persistError) {
+      setError(persistError.message);
+      return;
+    }
+    setError(null);
     setPhotos(updatedPhotos);
     setFrames(updatedFrames);
-    await supabase.from('screens').update({ screen_photos: updatedPhotos, screen_photo_frames: updatedFrames }).eq('id', screenId);
     onChange({ photos: updatedPhotos, frames: updatedFrames });
     if (markingUrl === url) setMarkingUrl(null);
   };
 
   const saveFrame = async (url, corners) => {
     const updated = [...frames.filter(f => f.url !== url), { url, corners }];
+    const { error: persistError } = await persistFrames(updated);
+    if (persistError) {
+      setError(persistError.message);
+      return;
+    }
+    setError(null);
     setFrames(updated);
-    await persistFrames(updated);
     onChange({ photos, frames: updated });
     setMarkingUrl(null);
   };
@@ -67,6 +86,8 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
       <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>
         Advertisers use these to verify placement before booking, and can preview their ad on any photo with marked corners. Up to 4 photos.
       </div>
+
+      <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
       {photos.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>

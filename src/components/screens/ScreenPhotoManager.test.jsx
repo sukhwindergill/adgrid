@@ -3,7 +3,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 const uploadMock = vi.fn(() => Promise.resolve({ error: null }));
 const getPublicUrlMock = vi.fn((path) => ({ data: { publicUrl: `https://cdn.test/${path}` } }));
-const eqMock = vi.fn(() => Promise.resolve({ error: null }));
+let eqImpl = () => Promise.resolve({ error: null });
+const eqMock = vi.fn((...args) => eqImpl(...args));
 const updateMock = vi.fn(() => ({ eq: eqMock }));
 
 vi.mock('../../lib/supabase.js', () => ({
@@ -20,6 +21,7 @@ beforeEach(() => {
   getPublicUrlMock.mockClear();
   updateMock.mockClear();
   eqMock.mockClear();
+  eqImpl = () => Promise.resolve({ error: null });
 });
 
 const EXISTING_URL = 'https://cdn.test/scr-1/existing.jpg';
@@ -71,5 +73,44 @@ describe('ScreenPhotoManager', () => {
     render(<ScreenPhotoManager screenId="scr-1" photos={[EXISTING_URL]} frames={frames} onChange={() => {}} />);
     expect(screen.getByTitle('Edit corners')).toBeInTheDocument();
     expect(screen.queryByTitle('Mark corners')).not.toBeInTheDocument();
+  });
+
+  it('surfaces the error and keeps the marker modal open when saving corners fails', async () => {
+    eqImpl = () => Promise.resolve({ error: { message: 'some db error' } });
+    const onChange = vi.fn();
+    render(<ScreenPhotoManager screenId="scr-1" photos={[EXISTING_URL]} frames={[]} onChange={onChange} />);
+    fireEvent.click(screen.getByTitle('Mark corners'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Save corners' }));
+
+    await waitFor(() => expect(screen.getByText('some db error')).toBeInTheDocument());
+    // Modal stays open, corners were not marked as saved, onChange never fired.
+    expect(screen.getByRole('button', { name: 'Save corners' })).toBeInTheDocument();
+    expect(screen.queryByTitle('Edit corners')).not.toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('surfaces the error and does not remove the photo locally when removePhoto persist fails', async () => {
+    eqImpl = () => Promise.resolve({ error: { message: 'some db error' } });
+    const onChange = vi.fn();
+    render(<ScreenPhotoManager screenId="scr-1" photos={[EXISTING_URL]} frames={[]} onChange={onChange} />);
+    fireEvent.click(screen.getByText('×'));
+
+    await waitFor(() => expect(screen.getByText('some db error')).toBeInTheDocument());
+    expect(screen.getByAltText('Screen photo 1')).toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('surfaces the error and does not show upload success when handleFiles persist fails', async () => {
+    eqImpl = () => Promise.resolve({ error: { message: 'some db error' } });
+    const onChange = vi.fn();
+    render(<ScreenPhotoManager screenId="scr-1" photos={[]} frames={[]} onChange={onChange} />);
+    const file = new File(['x'], 'photo.jpg', { type: 'image/jpeg' });
+    const input = document.querySelector('input[type="file"]');
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => expect(screen.getByText('some db error')).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: 'Save corners' })).not.toBeInTheDocument();
+    expect(screen.getByText('+ Add photos')).toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
   });
 });
