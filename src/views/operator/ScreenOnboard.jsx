@@ -10,6 +10,7 @@ import { ErrorBanner } from '../../components/primitives/ErrorBanner.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS, STATE_TIMEZONE } from '../../lib/venueTypes.js';
 import { ScreenLocationPicker } from '../../components/ScreenLocationPicker.jsx';
+import { checkAndGoLive } from '../../lib/screenGoLive.js';
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
@@ -614,27 +615,20 @@ function StepSetup({ screen, onNext, onBack, onSkip }) {
 }
 
 function StepConnect({ screen, onDone, onSkip, onBack }) {
-  const [status, setStatus] = useState('idle'); // 'idle' | 'checking' | 'connected' | 'none'
+  // 'idle' | 'checking' | 'connected' | 'none' | 'needs_payout'
+  const [status, setStatus] = useState('idle');
+  const { profile } = useAuth();
 
   const check = async () => {
     setStatus('checking');
-    try {
-      const since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      const { data, error } = await supabase
-        .from('display_heartbeats')
-        .select('id')
-        .eq('screen_id', screen.id)
-        .gte('created_at', since)
-        .limit(1);
-      if (error) throw error;
-      if (data && data.length > 0) {
-        await supabase.from('screens').update({ status: 'live' }).eq('id', screen.id);
-        setStatus('connected');
-      } else {
-        setStatus('none');
-      }
-    } catch {
-      setStatus('none');
+    const { eligible, reason } = await checkAndGoLive(supabase, screen.id, profile?.connect_status);
+    if (eligible) {
+      setStatus('connected');
+    } else {
+      // 'needs_payout' still means the heartbeat worked — the screen just
+      // can't go live until Stripe Connect is set up (next step). Don't
+      // report it as a connection failure.
+      setStatus(reason === 'needs_payout' ? 'needs_payout' : 'none');
     }
   };
 
@@ -642,20 +636,22 @@ function StepConnect({ screen, onDone, onSkip, onBack }) {
     <div style={{ maxWidth: 520, margin: '0 auto' }}>
       <Card style={{ padding: 40, textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 20 }}>
-          {status === 'connected' ? '✅' : status === 'none' ? '⚠️' : '📡'}
+          {status === 'connected' ? '✅' : status === 'needs_payout' ? '💳' : status === 'none' ? '⚠️' : '📡'}
         </div>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 12px' }}>
-          {status === 'connected' ? 'Screen is live!' : 'Test your connection'}
+          {status === 'connected' ? 'Screen is live!' : status === 'needs_payout' ? 'Heartbeat confirmed' : 'Test your connection'}
         </h2>
         <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, margin: '0 0 28px' }}>
           {status === 'connected'
             ? `${screen.name} is connected and sending heartbeats. You're all set.`
+            : status === 'needs_payout'
+            ? `${screen.name} is online. One more step before it can go live: set up payouts so you actually get paid when it's booked.`
             : status === 'none'
             ? 'No heartbeat detected yet. Make sure your display is running and try again.'
             : "Click the button below after your display is running. We'll check if it's sending a heartbeat to our servers."}
         </p>
 
-        {status !== 'connected' && (
+        {status !== 'connected' && status !== 'needs_payout' && (
           <Btn
             onClick={check}
             disabled={status === 'checking'}
@@ -665,9 +661,9 @@ function StepConnect({ screen, onDone, onSkip, onBack }) {
           </Btn>
         )}
 
-        {status === 'connected' && (
+        {(status === 'connected' || status === 'needs_payout') && (
           <Btn onClick={onDone} style={{ width: '100%', marginBottom: 12 }}>
-            Go to my screen →
+            {status === 'needs_payout' ? 'Set up payouts →' : 'Go to my screen →'}
           </Btn>
         )}
 

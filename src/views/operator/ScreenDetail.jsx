@@ -14,6 +14,7 @@ import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS } from '../../lib/venueTypes.js';
 import { healthSignal } from '../../lib/screenHealth.js';
+import { checkAndGoLive } from '../../lib/screenGoLive.js';
 
 async function startStripeConnect(setConnecting) {
   setConnecting(true);
@@ -234,7 +235,8 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   const [cvLoading, setCvLoading] = useState(false);
   const [hwType, setHwType] = useState('kiosk');
   const [downtime, setDowntime] = useState([]);
-  const [connStatus, setConnStatus] = useState(null); // null | 'checking' | 'ok' | 'none'
+  const [connStatus, setConnStatus] = useState(null); // null | 'checking' | 'ok' | 'no_heartbeat' | 'needs_payout'
+  const [reactivateError, setReactivateError] = useState(null);
   const [screenToken, setScreenToken] = useState('');
 
   // Fetch screen record. screen_token is no longer column-readable (it is a
@@ -410,9 +412,18 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
                 variant={screen.status === 'live' ? 'danger' : 'primary'}
                 size="sm"
                 onClick={async () => {
+                  setReactivateError(null);
                   const newStatus = screen.status === 'live' ? 'inactive' : 'live';
                   const { error } = await supabase.from('screens').update({ status: newStatus }).eq('id', screen.id);
-                  if (!error) { setScreen(s => ({ ...s, status: newStatus })); onScreenUpdated?.({ ...screen, status: newStatus }); }
+                  if (!error) {
+                    setScreen(s => ({ ...s, status: newStatus }));
+                    onScreenUpdated?.({ ...screen, status: newStatus });
+                  } else if (newStatus === 'live') {
+                    // Most likely require_connect_active_for_live_screen — this
+                    // screen was deactivated and Connect isn't (or is no longer)
+                    // active. Same fix either way: the Payout Setup card below.
+                    setReactivateError('Set up payouts (below) before reactivating this screen.');
+                  }
                 }}
               >
                 {screen.status === 'live' ? '⏸ Deactivate' : '▶ Reactivate'}
@@ -421,6 +432,12 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
           </>
         }
       />
+
+      {reactivateError && (
+        <div style={{ marginBottom: 16, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder ?? '#fde68a'}`, borderRadius: 8, fontSize: 12, color: '#92400e', fontFamily: F.sans }}>
+          {reactivateError}
+        </div>
+      )}
 
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: `1px solid ${C.border}`, paddingBottom: 0 }}>
@@ -820,20 +837,25 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       </Card>
     )}
 
-    {/* Test connection */}
+    {/* Test connection — for a screen that isn't live yet, a successful
+        heartbeat also attempts to go live (gated on Stripe Connect; see
+        checkAndGoLive / the require_connect_active_for_live_screen trigger).
+        For an already-live screen this is a plain diagnostic check. */}
     <Card>
       <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Test Connection</div>
       <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>
-        After completing setup, click below to verify your screen is sending heartbeats.
+        {screen.status === 'live'
+          ? 'Verify your screen is still sending heartbeats.'
+          : 'After completing setup, click below to verify your screen is sending heartbeats and go live.'}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <Btn
           variant="secondary"
           size="sm"
           disabled={connStatus === 'checking'}
           onClick={async () => {
             setConnStatus('checking');
-            try {
+            if (screen.status === 'live') {
               const since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
               const { data } = await supabase
                 .from('display_heartbeats')
@@ -841,19 +863,33 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
                 .eq('screen_id', screen.id)
                 .gte('created_at', since)
                 .limit(1);
-              setConnStatus(data && data.length > 0 ? 'ok' : 'none');
-            } catch {
-              setConnStatus('none');
+              setConnStatus(data && data.length > 0 ? 'ok' : 'no_heartbeat');
+              return;
+            }
+            const { eligible, reason, updated } = await checkAndGoLive(supabase, screen.id, profile?.connect_status);
+            if (updated) {
+              setScreen(s => ({ ...s, status: 'live' }));
+              onScreenUpdated?.({ ...screen, status: 'live' });
+              setConnStatus('ok');
+            } else {
+              setConnStatus(eligible ? 'ok' : reason);
             }
           }}
         >
           {connStatus === 'checking' ? 'Checking…' : 'Check Connection'}
         </Btn>
         {connStatus === 'ok' && (
-          <span style={{ fontSize: 13, color: C.green, fontFamily: F.sans }}>✓ Connected — heartbeat received</span>
+          <span style={{ fontSize: 13, color: C.green, fontFamily: F.sans }}>
+            {screen.status === 'live' ? '✓ Connected — heartbeat received' : '✓ Screen is now live'}
+          </span>
         )}
-        {connStatus === 'none' && (
+        {connStatus === 'no_heartbeat' && (
           <span style={{ fontSize: 13, color: C.amber, fontFamily: F.sans }}>No heartbeat in last 5 minutes — check your setup</span>
+        )}
+        {connStatus === 'needs_payout' && (
+          <span style={{ fontSize: 13, color: C.amber, fontFamily: F.sans }}>
+            Heartbeat received — set up payouts below before this screen can go live.
+          </span>
         )}
       </div>
     </Card>

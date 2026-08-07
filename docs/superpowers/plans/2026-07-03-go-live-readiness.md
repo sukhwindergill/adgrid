@@ -492,6 +492,99 @@ factory-reset / re-pair path if the token is rotated.
 
 ---
 
+> **Update — session 9 (2026-08-07, go-live-review pass):** No live click-through this session
+> (no credentials/device). Verified in code whether the three ICP-sweep blockers (B12–B14) and
+> four should-fixes (S13–S16) from `2026-07-14-icp-sweep-findings.md` actually got fixed in the
+> three weeks of feature work since (mobile plans 1-4, operator payout pipeline, campaign
+> hierarchy phases 1-5, location targeting picker) — none of that work mentioned them, and this
+> file was never updated to close them out.
+>
+> **All seven are fixed in current code:**
+> - **B12** (QR bypassed scan-redirect) — `DisplayPlayer.jsx:13-19` `buildQrUrl` now builds a
+>   `scan-redirect?c=&s=&cr=` URL; `destinationUrl.js` validation comment explicitly documents why.
+> - **B13** (advertiser reads operator `monthly_revenue`) — migration `20260714000000` dropped the
+>   row-level advertiser policy on `screens` and added an `advertiser_screens` view with
+>   `monthly_revenue` excluded; `App.jsx:164` confirms the advertiser-facing query now reads the
+>   view, `owner_own_screens`/`screens_grant_select` are the only remaining base-table policies.
+> - **B14** (no Connect onboarding, silent payout skip) — `ScreenOnboard.jsx` `StepConnect` and
+>   `OperatorSettingsView.jsx` both wire `startConnect()`; a "Set up payouts" banner exists.
+>   `charge-campaign` still skips non-active Connect accounts by design, but operators now have a
+>   real path to get out of that state instead of no path at all.
+> - **S13** (advertiser→operator notify 403) — `send-notification/index.ts:306-309` now allows
+>   `campaign_submitted` to an operator and `grant_invite` explicitly.
+> - **S14** (no status gate/dedup on scan-redirect) — `scan-redirect/index.ts:32` 410s unless
+>   `status in (scheduled,active) AND payment_status='paid'`; bot/dedup via `_shared/scanQuality.ts`.
+> - **S15** (city column actually holds country) — column renamed to `country`, comment at
+>   `scan-redirect/index.ts:57` documents it explicitly.
+> - **S16** (`monthly_traffic_estimate` never collected) — `ScreenOnboard.jsx:147/166/204/337` now
+>   collects and requires it.
+>
+> **New, previously-unflagged item checked and cleared, not a bug:** the campaign-hierarchy
+> per-creative budget split (`StepBudgetReview.jsx:73-93`) looked at first read like it might let
+> per-creative amounts diverge from the top-level `bookings.budget` actually charged by
+> `charge-campaign`. It's by design — the UI copy at line 75 states per-creative amounts are a
+> reporting split of the total, not additive — and `charge-campaign` only ever reads
+> `booking.budget`, never sums creative-level numbers. No fix needed.
+>
+> **Approval queue at scale (partial look):** `ApprovalQueue.jsx:500-503` fans out one
+> `campaign_creative_screens` + `campaign_creatives` lookup per pending campaign via nested
+> `Promise.all` — parallel, not serial, so not a correctness bug, but worth a real load test if the
+> queue ever holds hundreds of pending items concurrently. Not elevated to should-fix without an
+> observed slowdown.
+>
+> **Go/No-Go this session:** areas 2 (payments), 5 (security/RLS), 6 (notifications) all move from
+> the 07-14 NO-GO back to 🟢 GO — every blocker and should-fix from that sweep is closed in code.
+> Unable to re-verify live (no credentials this session) — recommend one real click-through as
+> confirmation before treating this as fully closed.
+>
+> **Still open, unchanged, all manual/external (not code):** Google OAuth client secret invalid in
+> prod; Supabase leaked-password-protection toggle (S2); Resend sending domain unowned (all
+> transactional email still in-app-only); operator mobile app never run on a real device/simulator.
+>
+> **Next pass should go deeper on:** payment edge cases (refunds/disputes/3DS re-auth, and — now
+> that B14 gives operators a real Connect path — whether `distributeOperatorCuts` has actually
+> fired successfully for a real transfer yet); display-player resilience on real hardware; approval
+> queue under real bulk/adversarial volume; and a live click-through of the new campaign-hierarchy
+> wizard + location-targeting picker (shipped Aug 1-6, never exercised by any go-live pass).
+
+> **Update — session 10 (2026-08-07, same day, live verification):** Confirmed session 9's
+> code-read findings against live production — Supabase project `hkqiuwnppxkkztacwicj`, Vercel
+> deployment `dpl_8Ty411yFAaaNcMzKaz4TfbLanvdq` (matches HEAD `88eb1c3`, so prod is current — no
+> stale-deploy risk this time). No user login credentials available, so verification used direct
+> DB access (Supabase MCP) + the public `/display/<token>` route (no auth) rather than a full
+> authenticated click-through.
+>
+> - **B12 — confirmed live, with one caveat.** `curl`'d `scan-redirect` directly against a real
+>   `completed`/`paid` booking (`bkg-002`): correctly returned `410 Gone` (S14's status gate
+>   working against real data, not just in source); missing-id → `400`, bogus-id → `404`. The
+>   public display route for a real live screen (`/display/4e3e95b8-…`) renders correctly and shows
+>   "No active campaigns scheduled" + "QR code scans are recorded anonymously." **Caveat: could not
+>   see an actual QR → 302 round-trip live**, because production currently has **zero** bookings in
+>   `scheduled`/`active` + `paid` state — every real campaign is either `completed` or still
+>   `pending_review`/unpaid. Nothing is actually airing right now, so there's no live QR to point a
+>   phone at. Did not fabricate a live paid campaign to force this (one attempted disposable-row
+>   insert was rolled back cleanly by a failing check constraint mid-transaction — verified no
+>   duplicate/orphan row remains). Recommend confirming the actual 302 the next time a real
+>   advertiser campaign goes live+paid.
+> - **B13 — fully confirmed live.** Ran a real Postgres session under the exact RLS the app uses
+>   (`set local role authenticated; set local request.jwt.claims` to a real advertiser's `sub`):
+>   base `screens` table returned **0 rows** (no policy grants advertisers direct access anymore),
+>   `advertiser_screens` view returned **8 rows** (matches the live-screen count), and
+>   `information_schema.columns` confirms the view has no `monthly_revenue` column at all. The leak
+>   is closed in the live database, not just in the migration file.
+> - **B14 — code path is live but the real-world problem is unchanged.** `ScreenOnboard`'s
+>   `StepConnect` and the Settings Stripe Connect card both exist and are deployed. But live data:
+>   **0 of 2 real operators have `connect_status = 'active'`, 0 rows ever in `payouts`**, and **8
+>   screens are currently `status = 'live'`** (bookable today) under the operator with
+>   `connect_status: null`. Confirmed "live" is still not gated on Connect being set up — an
+>   advertiser could book one of those 8 screens right now and `distributeOperatorCuts` would
+>   silently skip the transfer, same risk flagged 07-14. The fix gives operators a path to fix this
+>   themselves; nobody has taken it yet.
+>
+> **Net: B13 is done, for real. B12 is done in code/function but unexercised live (nothing's
+> airing to test against). B14 is the one still actually open in practice — onboarding UI shipped,
+> but zero operators are payout-ready and going-live isn't blocked on it.**
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
