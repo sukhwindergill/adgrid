@@ -72,6 +72,11 @@ export function StepCreative({ form, setForm, matchedScreens }) {
 
   const unassigned = isMulti ? unassignedScreenIds(form.selected_screen_ids, creatives) : [];
 
+  const creativeForScreen = (screenId) => {
+    if (!isMulti) return creatives[0];
+    return creatives.find(c => c.assigned_screen_ids.includes(screenId)) ?? creatives[0];
+  };
+
   return (
     <div style={{ maxWidth: 760, margin: '0 auto' }}>
       <Card style={{ padding: 28 }}>
@@ -127,7 +132,7 @@ export function StepCreative({ form, setForm, matchedScreens }) {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, marginBottom: 28 }}>
             {matchedScreens.map(s => (
-              <ScreenPickerCard key={s.id} screen={s} selected={form.selected_screen_ids} onToggle={toggleScreen} />
+              <ScreenPickerCard key={s.id} screen={s} selected={form.selected_screen_ids} onToggle={toggleScreen} creative={creativeForScreen(s.id)} />
             ))}
           </div>
         )}
