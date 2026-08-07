@@ -85,7 +85,6 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     country: 'CA',
     state: '',
     city: '',
-    radius_center: '',
     radius_center_lat: null,
     radius_center_lon: null,
     radius_km: 10,

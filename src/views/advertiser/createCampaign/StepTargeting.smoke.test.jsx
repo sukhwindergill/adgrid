@@ -1,8 +1,9 @@
+// src/views/advertiser/createCampaign/StepTargeting.smoke.test.jsx
 // Throwaway smoke test — confirms StepTargeting.jsx is syntactically valid and
 // resolvable (imports exist, renders without throwing) before it is wired
 // into CreateCampaign.jsx's render switch in a later task.
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { StepTargeting } from './StepTargeting.jsx';
 
 const baseForm = {
@@ -11,7 +12,6 @@ const baseForm = {
   country: 'CA',
   state: '',
   city: '',
-  radius_center: '',
   radius_center_lat: null,
   radius_center_lon: null,
   radius_km: 10,
@@ -19,6 +19,10 @@ const baseForm = {
   venue_filter: '',
   selected_screen_ids: [],
 };
+
+const SCREENS = [
+  { id: 's1', country: 'CA', state: 'Ontario', city: 'Toronto', lat: 43.65, lon: -79.38 },
+];
 
 describe('StepTargeting', () => {
   it('renders without throwing for the default (city) area type', () => {
@@ -46,6 +50,25 @@ describe('StepTargeting', () => {
       />
     );
     expect(screen.getByText('↩ Start from a previous campaign →')).toBeInTheDocument();
+  });
+
+  it('fills country/state/city when a city search result is selected', () => {
+    const setForm = vi.fn();
+    render(
+      <StepTargeting
+        form={baseForm}
+        setForm={setForm}
+        reachSummary={null}
+        allScreens={SCREENS}
+        onPrevCampaigns={null}
+      />
+    );
+    const [, cityInput] = screen.getAllByRole('textbox'); // [campaign name, city search]
+    fireEvent.change(cityInput, { target: { value: 'tor' } });
+    fireEvent.click(screen.getByText('Toronto'));
+    expect(setForm).toHaveBeenCalled();
+    const updater = setForm.mock.calls[0][0];
+    expect(updater(baseForm)).toMatchObject({ country: 'CA', state: 'Ontario', city: 'Toronto' });
   });
 
   // Note: area_type === 'radius' is intentionally not exercised here — it

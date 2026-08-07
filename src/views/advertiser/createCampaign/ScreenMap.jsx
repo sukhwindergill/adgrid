@@ -3,11 +3,12 @@ import { useEffect, useRef } from 'react';
 import { C } from '../../../design/tokens.js';
 import { haversineKm } from '../../../lib/geo.js';
 
-export function ScreenMap({ center, radius, screens, selected, onToggle }) {
+export function ScreenMap({ center, radius, screens, selected, onToggle, draggableCenter = false, onCenterChange }) {
   const mapRef    = useRef(null);
   const leafletRef = useRef(null);
   const markersRef = useRef([]);
   const circleRef  = useRef(null);
+  const centerMarkerRef = useRef(null);
 
   useEffect(() => {
     async function init() {
@@ -35,6 +36,16 @@ export function ScreenMap({ center, radius, screens, selected, onToggle }) {
       if (circleRef.current) circleRef.current.remove();
       circleRef.current = Lf.circle(center, { radius: radius * 1000, color: '#7c3aed', fillColor: '#7c3aed', fillOpacity: 0.06, weight: 2, dashArray: '6 4' }).addTo(m);
       m.setView(center, 12);
+
+      if (centerMarkerRef.current) centerMarkerRef.current.remove();
+      if (draggableCenter) {
+        centerMarkerRef.current = Lf.marker(center, { draggable: true }).addTo(m);
+        centerMarkerRef.current.on('dragend', () => {
+          const { lat, lng } = centerMarkerRef.current.getLatLng();
+          onCenterChange?.({ lat, lon: lng });
+        });
+      }
+
       markersRef.current.forEach(mk => mk.remove());
       markersRef.current = screens.filter(s => s.lat != null && s.lon != null).map(s => {
         // A screen with unknown coordinates is excluded, not treated as
@@ -53,7 +64,7 @@ export function ScreenMap({ center, radius, screens, selected, onToggle }) {
         return marker.addTo(m);
       });
     });
-  }, [center, radius, screens, selected]);
+  }, [center, radius, screens, selected, draggableCenter]);
 
   useEffect(() => () => {
     if (leafletRef.current?.map) { leafletRef.current.map.remove(); leafletRef.current = null; }
