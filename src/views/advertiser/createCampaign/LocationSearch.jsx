@@ -7,11 +7,18 @@ import { C, F } from '../../../design/tokens.js';
 // screen — there is no network call here, filtering is instant.
 export function LocationSearch({ locations, value, onSelect, placeholder = 'Search a city…', scopeCountry, scopeState, loading = false }) {
   const [query, setQuery] = useState(value ?? '');
+  // Track the last external `value` we synced from, so we can detect an
+  // external reset (e.g. parent clearing the field) and re-sync `query`
+  // during render, without mirroring it through a useEffect.
+  const [prevValue, setPrevValue] = useState(value ?? '');
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
   const rootRef = useRef(null);
 
-  useEffect(() => { setQuery(value ?? ''); }, [value]);
+  if ((value ?? '') !== prevValue) {
+    setPrevValue(value ?? '');
+    setQuery(value ?? '');
+  }
 
   useEffect(() => {
     function onDocMouseDown(e) {
@@ -48,7 +55,7 @@ export function LocationSearch({ locations, value, onSelect, placeholder = 'Sear
     if (!open || matches.length === 0) return;
     if (e.key === 'ArrowDown') { e.preventDefault(); setHighlight(h => Math.min(h + 1, matches.length - 1)); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setHighlight(h => Math.max(h - 1, 0)); }
-    else if (e.key === 'Enter') { e.preventDefault(); selectEntry(matches[highlight]); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (matches[highlight]) selectEntry(matches[highlight]); }
     else if (e.key === 'Escape') { setOpen(false); }
   };
 
@@ -61,6 +68,7 @@ export function LocationSearch({ locations, value, onSelect, placeholder = 'Sear
         placeholder={loading ? 'Loading locations…' : placeholder}
         onChange={e => { setQuery(e.target.value); setOpen(true); setHighlight(0); }}
         onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
         onKeyDown={onKeyDown}
         style={{
           padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8,
