@@ -52,20 +52,34 @@ export function AdRenderPreview({ photoUrl, corners, mediaUrl, mediaType }) {
     objectFit: 'fill', transformOrigin: '0 0', transform: warpTransform, pointerEvents: 'none',
   };
 
+  const handleCreativeError = () => {
+    console.error('AdRenderPreview: failed to load creative', mediaUrl);
+    setCreativeFailed(true);
+  };
+
   return (
     <div style={{ position: 'relative', width: '100%', lineHeight: 0 }}>
       <img ref={imgRef} src={photoUrl} alt="Screen placement"
         style={{ width: '100%', display: 'block', borderRadius: 8 }} />
       {ready && mediaType === 'image' && !creativeFailed && (
         <img src={mediaUrl} alt="Ad creative preview"
-          onError={() => setCreativeFailed(true)}
+          onError={handleCreativeError}
           style={overlayStyle} />
       )}
-      {ready && mediaType === 'video' && (
+      {ready && mediaType === 'video' && !creativeFailed && (
         <video
           src={mediaUrl} muted loop autoPlay playsInline
+          onError={handleCreativeError}
           style={overlayStyle}
         />
+      )}
+      {ready && creativeFailed && (
+        <div style={{
+          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 12, color: C.textMuted, fontFamily: F.sans, textAlign: 'center', padding: '0 12px',
+        }}>
+          Couldn't load creative preview
+        </div>
       )}
       {!ready && (
         <div style={{
