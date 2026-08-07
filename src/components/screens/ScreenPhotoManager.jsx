@@ -25,22 +25,44 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
     const toUpload = Array.from(files).slice(0, 4 - photos.length);
     setUploading(true);
     const newUrls = [];
+    const newPaths = []; // parallel to newUrls -- storage paths, kept so a
+    // failed persist below can best-effort clean the blobs back up without
+    // having to reverse-engineer a path from its public URL.
+    let failedUploads = 0;
     for (const file of toUpload) {
       const path = `${screenId}/${crypto.randomUUID()}`;
       const { error: uploadError } = await supabase.storage.from('screen-photos').upload(path, file);
       if (!uploadError) {
         const { data } = supabase.storage.from('screen-photos').getPublicUrl(path);
         newUrls.push(data.publicUrl);
+        newPaths.push(path);
+      } else {
+        failedUploads += 1;
       }
     }
     const updated = [...photos, ...newUrls];
     const { error: persistError } = await persistPhotos(updated);
     if (persistError) {
       setError(persistError.message);
+      // Best-effort cleanup: the files above already landed in storage, but
+      // the DB row that would reference them never got written, so they'd
+      // otherwise become permanently orphaned. A cleanup failure here must
+      // not throw or replace the persistError message the operator needs.
+      if (newPaths.length > 0) {
+        try {
+          await supabase.storage.from('screen-photos').remove(newPaths);
+        } catch {
+          // swallow -- best-effort only, original persistError already shown
+        }
+      }
       setUploading(false);
       return;
     }
-    setError(null);
+    if (failedUploads > 0) {
+      setError(`${failedUploads} of ${toUpload.length} photo${toUpload.length === 1 ? '' : 's'} failed to upload.`);
+    } else {
+      setError(null);
+    }
     setPhotos(updated);
     onChange({ photos: updated, frames });
     setUploading(false);

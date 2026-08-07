@@ -1,15 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
-const uploadMock = vi.fn(() => Promise.resolve({ error: null }));
+let uploadImpl = () => Promise.resolve({ error: null });
+const uploadMock = vi.fn((...args) => uploadImpl(...args));
 const getPublicUrlMock = vi.fn((path) => ({ data: { publicUrl: `https://cdn.test/${path}` } }));
+const removeMock = vi.fn(() => Promise.resolve({ error: null }));
 let eqImpl = () => Promise.resolve({ error: null });
 const eqMock = vi.fn((...args) => eqImpl(...args));
 const updateMock = vi.fn(() => ({ eq: eqMock }));
 
 vi.mock('../../lib/supabase.js', () => ({
   supabase: {
-    storage: { from: () => ({ upload: uploadMock, getPublicUrl: getPublicUrlMock }) },
+    storage: { from: () => ({ upload: uploadMock, getPublicUrl: getPublicUrlMock, remove: removeMock }) },
     from: () => ({ update: updateMock }),
   },
 }));
@@ -19,8 +21,10 @@ import { ScreenPhotoManager } from './ScreenPhotoManager.jsx';
 beforeEach(() => {
   uploadMock.mockClear();
   getPublicUrlMock.mockClear();
+  removeMock.mockClear();
   updateMock.mockClear();
   eqMock.mockClear();
+  uploadImpl = () => Promise.resolve({ error: null });
   eqImpl = () => Promise.resolve({ error: null });
 });
 
@@ -112,5 +116,37 @@ describe('ScreenPhotoManager', () => {
     expect(screen.queryByRole('button', { name: 'Save corners' })).not.toBeInTheDocument();
     expect(screen.getByText('+ Add photos')).toBeInTheDocument();
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('surfaces a failed-upload count without masking it as success, for a partially-failed batch', async () => {
+    let call = 0;
+    uploadImpl = () => {
+      call += 1;
+      return Promise.resolve(call === 1 ? { error: { message: 'storage upload failed' } } : { error: null });
+    };
+    render(<ScreenPhotoManager screenId="scr-1" photos={[]} frames={[]} onChange={() => {}} />);
+    const file1 = new File(['x'], 'a.jpg', { type: 'image/jpeg' });
+    const file2 = new File(['y'], 'b.jpg', { type: 'image/jpeg' });
+    const input = document.querySelector('input[type="file"]');
+    fireEvent.change(input, { target: { files: [file1, file2] } });
+
+    await waitFor(() => expect(screen.getByText('1 of 2 photos failed to upload.')).toBeInTheDocument());
+    // The one file that did succeed should still have been persisted.
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({
+      screen_photos: expect.arrayContaining([expect.stringContaining('https://cdn.test/')]),
+    }));
+  });
+
+  it('best-effort cleans up orphaned storage objects when the persist after a successful upload fails', async () => {
+    eqImpl = () => Promise.resolve({ error: { message: 'some db error' } });
+    render(<ScreenPhotoManager screenId="scr-1" photos={[]} frames={[]} onChange={() => {}} />);
+    const file = new File(['x'], 'photo.jpg', { type: 'image/jpeg' });
+    const input = document.querySelector('input[type="file"]');
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => expect(screen.getByText('some db error')).toBeInTheDocument());
+    expect(removeMock).toHaveBeenCalledTimes(1);
+    expect(removeMock.mock.calls[0][0]).toHaveLength(1);
+    expect(removeMock.mock.calls[0][0][0]).toMatch(/^scr-1\//);
   });
 });
