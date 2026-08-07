@@ -105,10 +105,6 @@ function DetailsTab({ screen, onSaved }) {
     <div>
       {/* Photos */}
       <Card style={{ padding: 24, marginBottom: 20 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Photos</div>
-        <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 16 }}>
-          Advertisers see these before booking, and can preview their ad on any photo with marked corners. Up to 4 photos.
-        </div>
         <ScreenPhotoManager
           screenId={screen.id}
           photos={screen.screen_photos || []}
