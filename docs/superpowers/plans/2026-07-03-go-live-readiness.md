@@ -585,6 +585,69 @@ factory-reset / re-pair path if the token is rotated.
 > airing to test against). B14 is the one still actually open in practice — onboarding UI shipped,
 > but zero operators are payout-ready and going-live isn't blocked on it.**
 
+> **Update — session 11 (2026-08-07, payments edge cases):** Went deep on area 2 (payments) per
+> session 10's "next pass" list, now that B14's Connect gate is live (PR #31). Read
+> `charge-campaign`, `stripe-webhook`, `stripe-refund`, `trigger-payout` in full. 3DS handling is
+> solid (`requires_action`/`requires_payment_method` fails cleanly with a clear advertiser-facing
+> message, no silent hang); idempotency keys present on both the PaymentIntent and the operator
+> Transfer. Found two real, previously-unflagged should-fix items — both **landmines, not live
+> incidents**, because `operator_transfers` has 0 rows in production (confirmed) — nobody has ever
+> completed a real transfer yet, so neither has fired for real. Both matter *because* B14 just made
+> real transfers possible for the first time.
+>
+> - **S17 — `trigger-payout` (admin backfill path) double-pays.** Per
+>   `2026-06-30-operator-payout-pipeline.md`, this function is explicitly "no longer the primary
+>   path but kept for admin backfills of failed transfers." But its implementation
+>   ([trigger-payout/index.ts:67-75](supabase/functions/trigger-payout/index.ts:67)) sums **every**
+>   `payment_status='paid'` booking's budget across the operator's screens in the given date range —
+>   it never excludes bookings that already have a successful row in `operator_transfers` (the table
+>   `distributeOperatorCuts` writes to). Its only dedup check is "have I already transferred this
+>   exact currency for this exact period" against its own `payouts` table
+>   ([trigger-payout/index.ts:101-115](supabase/functions/trigger-payout/index.ts:101)) — it has no
+>   awareness of `operator_transfers` at all. Run it today "to backfill one failed campaign" and it
+>   pays out that campaign *plus every other campaign in the period that already transferred
+>   successfully*, a second time. **Currently zero live risk** — not called from any `src/` code,
+>   unreachable without a raw authenticated `curl`/future admin UI — but it's a real bug sitting in
+>   a function whose entire documented purpose is "the safety net for when something went wrong,"
+>   and building an admin backfill button on top of it as-is would be a launch-blocker the day it
+>   shipped. Fix direction: before summing, exclude `booking_id`s that already have an
+>   `operator_transfers` row with `status='transferred'` for that operator.
+> - **S18 — refund/dispute never reverses an already-sent operator transfer.**
+>   `distributeOperatorCuts` fires immediately on successful charge — before the campaign has even
+>   started airing. `stripe-webhook`'s `charge.refunded` and `charge.dispute.created` handlers
+>   ([stripe-webhook/index.ts:96-118](supabase/functions/stripe-webhook/index.ts:96)) only update the
+>   `bookings` row (`payment_status`/`status`); neither calls `stripe.transfers.createReversal` or
+>   flags the `operator_transfers` row for reversal — confirmed zero references to `reversal`
+>   anywhere in `supabase/functions/`. A chargeback filed weeks after a campaign both started and
+>   was paid out leaves the operator holding funds the platform already lost, with no automated or
+>   even admin-UI clawback path. Same "landmine, not incident" status as S17 — 0 real transfers
+>   exist yet. Fix direction: on `charge.refunded`/`charge.dispute.created`, look up the booking's
+>   `operator_transfers` rows and attempt `stripe.transfers.createReversal` for each, logging
+>   success/failure the same way `distributeOperatorCuts` already does.
+>
+> **Go/No-Go:** payments stays 🟢 GO for launch — both findings are pre-existing-condition bugs in
+> code paths that haven't fired yet (0 rows in `operator_transfers`), not something broken for a
+> real user today. Worth fixing before the first real operator payout happens, not before launch.
+>
+> **Not yet gone deep on:** display-player resilience on real hardware, approval queue under real
+> bulk volume, and a live click-through of the campaign-hierarchy wizard + location-targeting
+> picker (shipped Aug 1-6, still never exercised by any go-live pass) — carry forward.
+
+> **Update — session 12 (2026-08-07, same day, S17/S18 fixed):** Fixed both same-day.
+> - **S17** — `trigger-payout` now excludes any booking with a non-`failed` `operator_transfers`
+>   row for that operator before summing, so a backfill only pays what genuinely never transferred.
+> - **S18** — new `supabase/functions/_shared/transferReversal.ts` (`computeReversalDelta`, 8 unit
+>   tests) tracks cumulative `reversed_amount` per transfer so partial refunds, later topped up to
+>   full, and redelivered webhooks all land on the correct delta instead of over-reversing.
+>   `stripe-webhook`'s `charge.refunded`/`charge.dispute.created` now call
+>   `stripe.transfers.createReversal` for every affected `operator_transfers` row, with an
+>   idempotency key tied to the cumulative target so redeliveries are safe. New column
+>   `operator_transfers.reversed_amount` (migration `20260807000001`).
+> - 459/459 tests pass on this branch pre-merge (PR #31/B14 merged to `main` separately, PR #32/
+>   S17-S18 merged right after — combined `main` has 468 passing once both land). Not yet
+>   re-verified live against prod (still 0 real transfers exist to reverse) — worth a synthetic
+>   disposable-row test the day the first real Connect transfer fires.
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
