@@ -1,7 +1,7 @@
 // src/components/shared/AdRenderPreview.jsx
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { C, F } from '../../design/tokens.js';
-import { drawWarpedImageToCanvas, computeHomography, cssMatrix3dString } from '../../lib/quadWarp.js';
+import { drawWarpedImageToCanvas, computeHomography, cssMatrix3dString, validateQuadOrientation } from '../../lib/quadWarp.js';
 
 // Composites an advertiser's creative onto an operator-uploaded photo of the
 // physical board, warped to the 4 corners the operator marked. Pure
@@ -14,7 +14,7 @@ export function AdRenderPreview({ photoUrl, corners, mediaUrl, mediaType }) {
   const canvasRef = useRef(null);
   const [box, setBox] = useState({ width: 0, height: 0 });
 
-  const hasCorners = Array.isArray(corners) && corners.length === 4;
+  const hasCorners = Array.isArray(corners) && corners.length === 4 && validateQuadOrientation(corners);
 
   // Track the photo's rendered pixel size -- corners are normalized 0-1 and
   // must be scaled to whatever size the photo actually renders at.
@@ -42,24 +42,35 @@ export function AdRenderPreview({ photoUrl, corners, mediaUrl, mediaType }) {
     canvas.height = box.height;
     const ctx = canvas.getContext('2d');
     if (!ctx) return; // jsdom under test has no real canvas backend
+    let cancelled = false;
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
+      if (cancelled) return; // mediaUrl/corners changed again before this load finished
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawWarpedImageToCanvas(ctx, img, dstCorners);
     };
+    img.onerror = () => {
+      if (cancelled) return;
+      console.error('AdRenderPreview: failed to load creative image', mediaUrl);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
     img.src = mediaUrl;
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, mediaType, mediaUrl, dstCornersKey]);
 
   // Video creative: warp the live <video> element via a CSS matrix3d built
   // from the homography mapping the video's own box onto dstCorners. Pure
-  // derived value -- no imperative work needed, so no effect.
-  let videoTransform = null;
-  if (ready && mediaType === 'video') {
+  // derived value -- no imperative work needed, so no effect, just a memo
+  // keyed the same way as the image effect above to avoid recomputing on
+  // every render.
+  const videoTransform = useMemo(() => {
+    if (!ready || mediaType !== 'video') return null;
     const srcCorners = [[0, 0], [box.width, 0], [box.width, box.height], [0, box.height]];
-    videoTransform = cssMatrix3dString(computeHomography(srcCorners, dstCorners));
-  }
+    return cssMatrix3dString(computeHomography(srcCorners, dstCorners));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, mediaType, box.width, box.height, dstCornersKey]);
 
   return (
     <div style={{ position: 'relative', width: '100%', lineHeight: 0 }}>

@@ -57,4 +57,17 @@ describe('AdRenderPreview', () => {
     expect(container.querySelector('canvas')).not.toBeInTheDocument();
     expect(container.querySelector('video')).not.toBeInTheDocument();
   });
+
+  it('renders neither overlay when corners is length-4 but degenerate (non-convex/collinear)', () => {
+    // Same degenerate case validateQuadOrientation rejects in quadWarp.test.js:
+    // a repeated point collapses the quad.
+    const DEGENERATE = [[0.9, 0.9], [0.9, 0.1], [0.9, 0.9], [0.1, 0.9]];
+    const { container } = render(
+      <AdRenderPreview photoUrl="https://example.com/photo.jpg" corners={DEGENERATE}
+        mediaUrl="https://example.com/ad.mp4" mediaType="video" />
+    );
+    act(() => { roCallback([{ contentRect: { width: 400, height: 300 } }]); });
+    expect(container.querySelector('canvas')).not.toBeInTheDocument();
+    expect(container.querySelector('video')).not.toBeInTheDocument();
+  });
 });
