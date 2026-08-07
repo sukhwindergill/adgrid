@@ -1,7 +1,7 @@
 // src/components/shared/AdRenderPreview.jsx
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { C, F } from '../../design/tokens.js';
-import { drawWarpedImageToCanvas, computeHomography, cssMatrix3dString, validateQuadOrientation } from '../../lib/quadWarp.js';
+import { computeHomography, cssMatrix3dString, validateQuadOrientation } from '../../lib/quadWarp.js';
 
 // Composites an advertiser's creative onto an operator-uploaded photo of the
 // physical board, warped to the 4 corners the operator marked. Pure
@@ -11,8 +11,8 @@ import { drawWarpedImageToCanvas, computeHomography, cssMatrix3dString, validate
 // invalid array, in which case only the plain photo renders.
 export function AdRenderPreview({ photoUrl, corners, mediaUrl, mediaType }) {
   const imgRef = useRef(null);
-  const canvasRef = useRef(null);
   const [box, setBox] = useState({ width: 0, height: 0 });
+  const [creativeFailed, setCreativeFailed] = useState(false);
 
   const hasCorners = Array.isArray(corners) && corners.length === 4 && validateQuadOrientation(corners);
 
@@ -28,65 +28,43 @@ export function AdRenderPreview({ photoUrl, corners, mediaUrl, mediaType }) {
     return () => observer.disconnect();
   }, [photoUrl]);
 
+  // Reset the broken-creative flag whenever the creative itself changes, so
+  // a fresh mediaUrl gets a fresh chance to load.
+  useEffect(() => { setCreativeFailed(false); }, [mediaUrl]);
+
   const dstCorners = hasCorners ? corners.map(([nx, ny]) => [nx * box.width, ny * box.height]) : [];
   const ready = hasCorners && box.width > 0 && box.height > 0;
   const dstCornersKey = JSON.stringify(dstCorners);
 
-  // Image creative: draw the warped image into a canvas overlay whenever the
-  // image or the destination quad changes.
-  useEffect(() => {
-    if (!ready || mediaType !== 'image') return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    canvas.width = box.width;
-    canvas.height = box.height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return; // jsdom under test has no real canvas backend
-    let cancelled = false;
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      if (cancelled) return; // mediaUrl/corners changed again before this load finished
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawWarpedImageToCanvas(ctx, img, dstCorners);
-    };
-    img.onerror = () => {
-      if (cancelled) return;
-      console.error('AdRenderPreview: failed to load creative image', mediaUrl);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    };
-    img.src = mediaUrl;
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, mediaType, mediaUrl, dstCornersKey]);
-
-  // Video creative: warp the live <video> element via a CSS matrix3d built
-  // from the homography mapping the video's own box onto dstCorners. Pure
-  // derived value -- no imperative work needed, so no effect, just a memo
-  // keyed the same way as the image effect above to avoid recomputing on
-  // every render.
-  const videoTransform = useMemo(() => {
-    if (!ready || mediaType !== 'video') return null;
+  // Shared true-perspective warp for BOTH image and video creatives: a CSS
+  // matrix3d built from the homography mapping the creative's own box onto
+  // dstCorners. Pure derived value -- no imperative work needed, so no
+  // effect, just a memo keyed on the inputs that actually change it.
+  const warpTransform = useMemo(() => {
+    if (!ready) return null;
     const srcCorners = [[0, 0], [box.width, 0], [box.width, box.height], [0, box.height]];
     return cssMatrix3dString(computeHomography(srcCorners, dstCorners));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, mediaType, box.width, box.height, dstCornersKey]);
+  }, [ready, box.width, box.height, dstCornersKey]);
+
+  const overlayStyle = {
+    position: 'absolute', top: 0, left: 0, width: box.width, height: box.height,
+    objectFit: 'fill', transformOrigin: '0 0', transform: warpTransform, pointerEvents: 'none',
+  };
 
   return (
     <div style={{ position: 'relative', width: '100%', lineHeight: 0 }}>
       <img ref={imgRef} src={photoUrl} alt="Screen placement"
         style={{ width: '100%', display: 'block', borderRadius: 8 }} />
-      {ready && mediaType === 'image' && (
-        <canvas ref={canvasRef}
-          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
+      {ready && mediaType === 'image' && !creativeFailed && (
+        <img src={mediaUrl} alt="Ad creative preview"
+          onError={() => setCreativeFailed(true)}
+          style={overlayStyle} />
       )}
       {ready && mediaType === 'video' && (
         <video
           src={mediaUrl} muted loop autoPlay playsInline
-          style={{
-            position: 'absolute', top: 0, left: 0, width: box.width, height: box.height,
-            transformOrigin: '0 0', transform: videoTransform, pointerEvents: 'none',
-          }}
+          style={overlayStyle}
         />
       )}
       {!ready && (

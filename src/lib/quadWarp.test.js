@@ -3,10 +3,8 @@ import {
   solveLinearSystem,
   computeHomography,
   applyHomography,
-  affineFromTriangle,
   cssMatrix3dString,
   validateQuadOrientation,
-  drawWarpedImageToCanvas,
 } from './quadWarp.js';
 
 describe('solveLinearSystem', () => {
@@ -48,32 +46,6 @@ describe('computeHomography / applyHomography', () => {
   });
 });
 
-describe('affineFromTriangle', () => {
-  it('recovers a known scale (no rotation/skew)', () => {
-    const src = [[0, 0], [1, 0], [0, 1]];
-    const dst = [[0, 0], [2, 0], [0, 3]];
-    const { a, b, c, d, e, f } = affineFromTriangle(src, dst);
-    expect(a).toBeCloseTo(2, 6);
-    expect(b).toBeCloseTo(0, 6);
-    expect(c).toBeCloseTo(0, 6);
-    expect(d).toBeCloseTo(3, 6);
-    expect(e).toBeCloseTo(0, 6);
-    expect(f).toBeCloseTo(0, 6);
-  });
-
-  it('recovers a known translation', () => {
-    const src = [[0, 0], [1, 0], [0, 1]];
-    const dst = [[5, 8], [6, 8], [5, 9]];
-    const { a, b, c, d, e, f } = affineFromTriangle(src, dst);
-    expect(a).toBeCloseTo(1, 6);
-    expect(b).toBeCloseTo(0, 6);
-    expect(c).toBeCloseTo(0, 6);
-    expect(d).toBeCloseTo(1, 6);
-    expect(e).toBeCloseTo(5, 6);
-    expect(f).toBeCloseTo(8, 6);
-  });
-});
-
 describe('cssMatrix3dString', () => {
   it('places the homography terms in column-major matrix3d order', () => {
     const h = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -93,29 +65,5 @@ describe('validateQuadOrientation', () => {
 
   it('rejects anything that is not exactly 4 corners', () => {
     expect(validateQuadOrientation([[0, 0], [1, 0], [1, 1]])).toBe(false);
-  });
-});
-
-describe('drawWarpedImageToCanvas', () => {
-  it('clips and draws exactly two triangles covering the destination quad', () => {
-    const calls = { moveTo: [], clip: 0, drawImage: 0, transform: [] };
-    const ctx = {
-      save: () => {}, restore: () => {},
-      beginPath: () => {},
-      moveTo: (x, y) => calls.moveTo.push([x, y]),
-      lineTo: () => {}, closePath: () => {},
-      clip: () => { calls.clip += 1; },
-      transform: (a, b, c, d, e, f) => calls.transform.push([a, b, c, d, e, f]),
-      drawImage: () => { calls.drawImage += 1; },
-    };
-    const image = { naturalWidth: 200, naturalHeight: 100 };
-    const dstCorners = [[0, 0], [300, 0], [300, 150], [0, 150]];
-
-    drawWarpedImageToCanvas(ctx, image, dstCorners);
-
-    expect(calls.clip).toBe(2);
-    expect(calls.drawImage).toBe(2);
-    expect(calls.transform).toHaveLength(2);
-    expect(calls.moveTo).toEqual([[0, 0], [0, 0]]); // both triangles start at dstCorners[0] (TL)
   });
 });

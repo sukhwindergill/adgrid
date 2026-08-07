@@ -28,13 +28,18 @@ describe('AdRenderPreview', () => {
     expect(screen.getByText('Loading preview…')).toBeInTheDocument();
   });
 
-  it('renders a canvas overlay once sized, for an image creative', () => {
+  it('renders a warped <img> overlay once sized, for an image creative', () => {
     const { container } = render(
       <AdRenderPreview photoUrl="https://example.com/photo.jpg" corners={CORNERS}
         mediaUrl="https://example.com/ad.png" mediaType="image" />
     );
     act(() => { roCallback([{ contentRect: { width: 400, height: 300 } }]); });
-    expect(container.querySelector('canvas')).toBeInTheDocument();
+    const images = container.querySelectorAll('img');
+    // Two <img> elements: the underlying photo and the warped creative overlay.
+    expect(images).toHaveLength(2);
+    const overlay = images[1];
+    expect(overlay.src).toBe('https://example.com/ad.png');
+    expect(overlay.getAttribute('style')).toMatch(/matrix3d\(/);
   });
 
   it('renders a warped <video> element once sized, for a video creative', () => {
@@ -54,7 +59,8 @@ describe('AdRenderPreview', () => {
         mediaUrl="https://example.com/ad.png" mediaType="image" />
     );
     act(() => { roCallback([{ contentRect: { width: 400, height: 300 } }]); });
-    expect(container.querySelector('canvas')).not.toBeInTheDocument();
+    // Only the underlying photo <img> should be present -- no creative overlay.
+    expect(container.querySelectorAll('img')).toHaveLength(1);
     expect(container.querySelector('video')).not.toBeInTheDocument();
   });
 
@@ -67,7 +73,7 @@ describe('AdRenderPreview', () => {
         mediaUrl="https://example.com/ad.mp4" mediaType="video" />
     );
     act(() => { roCallback([{ contentRect: { width: 400, height: 300 } }]); });
-    expect(container.querySelector('canvas')).not.toBeInTheDocument();
+    expect(container.querySelectorAll('img')).toHaveLength(1);
     expect(container.querySelector('video')).not.toBeInTheDocument();
   });
 });
