@@ -81,14 +81,14 @@ export function StepTargeting({ form, setForm, reachSummary, allScreens, onPrevC
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <SelInput label="Country" value={form.country} disabled={loading} onChange={e => setField('country', e.target.value)}>
+          <SelInput label="Country" value={form.country} disabled={loading} onChange={e => setForm(s => ({ ...s, country: e.target.value, radius_center_lat: null, radius_center_lon: null }))}>
             {countryOptions.length > 0
               ? countryOptions.map(code => <option key={code} value={code}>{countryLabel(code)}</option>)
               : <option value={form.country}>{loading ? 'Loading…' : countryLabel(form.country)}</option>}
           </SelInput>
 
           {(form.area_type === 'state' || form.area_type === 'city' || form.area_type === 'radius') && (
-            <SelInput label="State / Province" value={form.state} disabled={loading} onChange={e => setField('state', e.target.value)}>
+            <SelInput label="State / Province" value={form.state} disabled={loading} onChange={e => setForm(s => ({ ...s, state: e.target.value, radius_center_lat: null, radius_center_lon: null }))}>
               <option value="">Select…</option>
               {stateOptions.map(s => <option key={s} value={s}>{s}</option>)}
             </SelInput>
@@ -104,7 +104,7 @@ export function StepTargeting({ form, setForm, reachSummary, allScreens, onPrevC
                 value={form.city}
                 loading={loading}
                 placeholder="Search a city…"
-                onSelect={entry => setForm(s => ({ ...s, country: entry.country, state: entry.state, city: entry.city }))}
+                onSelect={entry => setForm(s => ({ ...s, country: entry.country, state: entry.state, city: entry.city, radius_center_lat: null, radius_center_lon: null }))}
               />
             </div>
           )}
