@@ -10,3 +10,15 @@ if (typeof URL.createObjectURL !== 'function') {
 if (typeof URL.revokeObjectURL !== 'function') {
   URL.revokeObjectURL = () => {};
 }
+
+// jsdom has no ResizeObserver. AdRenderPreview (and everything that renders
+// it) needs one defined globally or it throws on mount. Individual tests
+// that need to *drive* it override global.ResizeObserver locally; this
+// default keeps every other test from crashing.
+if (typeof globalThis.ResizeObserver !== 'function') {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
