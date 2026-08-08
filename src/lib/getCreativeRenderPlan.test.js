@@ -92,3 +92,21 @@ describe('getCreativeRenderPlan QR', () => {
     expect(plan.qrSizePct).toBe(0.2);
   });
 });
+
+describe('getCreativeRenderPlan QR color', () => {
+  it('defaults the QR dots to the accent color and the background to white', () => {
+    const plan = getCreativeRenderPlan({ accent_color: '#123456' });
+    expect(plan.qrFgColor).toBe('#123456');
+    expect(plan.qrBgColor).toBe('#ffffff');
+  });
+
+  it('defaults the QR dots to the hardcoded accent fallback when no accent color is set', () => {
+    expect(getCreativeRenderPlan({}).qrFgColor).toBe('#7c3aed');
+  });
+
+  it('uses stored qr_fg_color/qr_bg_color when present, overriding the accent-color default', () => {
+    const plan = getCreativeRenderPlan({ accent_color: '#123456', qr_fg_color: '#ff0000', qr_bg_color: '#00ff00' });
+    expect(plan.qrFgColor).toBe('#ff0000');
+    expect(plan.qrBgColor).toBe('#00ff00');
+  });
+});

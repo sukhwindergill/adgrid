@@ -201,6 +201,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         qr_x: c.qr_x ?? null,
         qr_y: c.qr_y ?? null,
         qr_size_pct: c.qr_size_pct ?? null,
+        qr_fg_color: c.qr_fg_color ?? null,
+        qr_bg_color: c.qr_bg_color ?? null,
       })],
       budget: String(c.budget || ''),
       budget_mode: c.budget_mode || 'total',
@@ -311,6 +313,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
             qr_x: c.qr_x ?? null,
             qr_y: c.qr_y ?? null,
             qr_size_pct: c.qr_size_pct ?? null,
+            qr_fg_color: c.qr_fg_color ?? null,
+            qr_bg_color: c.qr_bg_color ?? null,
             budget: form.budget_level === 'per_creative' ? (parseFloat(c.budget) || null) : null,
           })))
           .select('id');
@@ -369,6 +373,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         qr_x: preview.qr_x,
         qr_y: preview.qr_y,
         qr_size_pct: preview.qr_size_pct,
+        qr_fg_color: preview.qr_fg_color,
+        qr_bg_color: preview.qr_bg_color,
         destination: preview.destination_url?.trim() ? normalizeDestinationUrl(preview.destination_url) : null,
         category: preview.category || 'Food & Beverage',
         budget: parseFloat(form.budget) || 0,
