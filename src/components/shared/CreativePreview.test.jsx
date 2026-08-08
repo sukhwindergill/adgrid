@@ -107,7 +107,7 @@ describe('CreativePreview QR', () => {
     expect(qr).not.toBeNull();
     expect(qr.style.left).toBe('90%');
     expect(qr.style.top).toBe('14%');
-    expect(qr.style.width).toBe('12%');
+    expect(qr.style.width).toBe('max(12%, 44px)');
   });
 
   it('positions the QR at a stored qr_x/qr_y/qr_size_pct', () => {
@@ -115,7 +115,13 @@ describe('CreativePreview QR', () => {
     const qr = container.querySelector('[data-qr-overlay]');
     expect(qr.style.left).toBe('20%');
     expect(qr.style.top).toBe('30%');
-    expect(qr.style.width).toBe('20%');
+    expect(qr.style.width).toBe('max(20%, 44px)');
+  });
+
+  it('never shrinks the QR box below a 44px floor, even at a tiny sizePct', () => {
+    const { container } = render(<CreativePreview campaign={{ destination_url: 'https://example.com', qr_size_pct: 0.01 }} />);
+    const qr = container.querySelector('[data-qr-overlay]');
+    expect(qr.style.width).toBe('max(1%, 44px)');
   });
 
   it('only renders the resize handle when editableQr is true', () => {
@@ -124,5 +130,23 @@ describe('CreativePreview QR', () => {
 
     const { container: editable } = render(<CreativePreview campaign={{ destination_url: 'https://example.com' }} editableQr onQrChange={() => {}} />);
     expect(editable.querySelector('[data-qr-resize-handle]')).not.toBeNull();
+  });
+});
+
+describe('CreativePreview QR color', () => {
+  it('defaults the QR box background to white and dots to the accent color', () => {
+    const { container } = render(<CreativePreview campaign={{ destination_url: 'https://example.com', accent_color: '#123456' }} />);
+    const qr = container.querySelector('[data-qr-overlay]');
+    expect(qr.style.background).toBe('rgb(255, 255, 255)');
+    const paths = [...qr.querySelectorAll('svg path')];
+    expect(paths.some(p => p.getAttribute('fill') === '#123456')).toBe(true);
+  });
+
+  it('uses stored qr_fg_color/qr_bg_color when set', () => {
+    const { container } = render(<CreativePreview campaign={{ destination_url: 'https://example.com', qr_fg_color: '#ff0000', qr_bg_color: '#00ff00' }} />);
+    const qr = container.querySelector('[data-qr-overlay]');
+    expect(qr.style.background).toBe('rgb(0, 255, 0)');
+    const paths = [...qr.querySelectorAll('svg path')];
+    expect(paths.some(p => p.getAttribute('fill') === '#ff0000')).toBe(true);
   });
 });

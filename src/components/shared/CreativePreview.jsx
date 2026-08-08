@@ -100,7 +100,7 @@ function SplitPanelBody({ headline, cta, bg, secondaryBg, category, headlineFont
 
 const BODIES = { full_bleed: FullBleedBody, split_panel: SplitPanelBody, bottom_bar: BottomBarBody };
 
-function QrOverlay({ url, x, y, sizePct, frameAspect, editable, onChange }) {
+function QrOverlay({ url, x, y, sizePct, frameAspect, editable, onChange, fgColor, bgColor }) {
   const frameRef = useRef(null);
   const dragMode = useRef(null);
 
@@ -150,14 +150,18 @@ function QrOverlay({ url, x, y, sizePct, frameAspect, editable, onChange }) {
         onPointerDown={startDrag('move')}
         style={{
           position: 'absolute', left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)',
-          width: `${sizePct * 100}%`, aspectRatio: '1', background: '#fff', borderRadius: '10%',
+          // 44px floor keeps the QR visually recognizable in small preview
+          // cards (CreativeFitPanel/ReadabilityPanel/CampaignDetail render
+          // this component at 180-240px wide, where sizePct alone shrinks
+          // the box to ~18-29px). max() scales normally above the floor.
+          width: `max(${sizePct * 100}%, 44px)`, aspectRatio: '1', background: bgColor, borderRadius: '10%',
           padding: '8%', boxSizing: 'border-box', pointerEvents: editable ? 'auto' : 'none',
           cursor: editable ? 'grab' : 'default',
           boxShadow: editable ? '0 0 0 2px rgba(124,58,237,0.6)' : 'none',
           touchAction: editable ? 'none' : 'auto',
         }}
       >
-        <QRCode value={url} size={256} style={{ width: '100%', height: '100%' }} level="M" />
+        <QRCode value={url} size={256} style={{ width: '100%', height: '100%' }} level="M" fgColor={fgColor} bgColor={bgColor} />
         {editable && (
           <div
             data-qr-resize-handle
@@ -182,7 +186,7 @@ function QrOverlay({ url, x, y, sizePct, frameAspect, editable, onChange }) {
  */
 export function CreativePreview({ campaign, aspectRatio = '16/9', blurPx = 0, editableQr = false, onQrChange }) {
   const plan = getCreativeRenderPlan(campaign);
-  const { mediaUrl, isVideo, showTextOverlay, template, headline, cta, bg, secondaryBg, category, destination, showQr, qrX, qrY, qrSizePct } = plan;
+  const { mediaUrl, isVideo, showTextOverlay, template, headline, cta, bg, secondaryBg, category, destination, showQr, qrX, qrY, qrSizePct, qrFgColor, qrBgColor } = plan;
   const Body = BODIES[template] || BottomBarBody;
   const [wRatio, hRatio] = String(aspectRatio).split('/').map(Number);
   const frameAspect = wRatio && hRatio ? wRatio / hRatio : 16 / 9;
@@ -227,6 +231,8 @@ export function CreativePreview({ campaign, aspectRatio = '16/9', blurPx = 0, ed
           frameAspect={frameAspect}
           editable={editableQr}
           onChange={onQrChange || (() => {})}
+          fgColor={qrFgColor}
+          bgColor={qrBgColor}
         />
       )}
       {showTextOverlay && (
