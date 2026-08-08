@@ -10,6 +10,7 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
 import { UptimeGrid } from '../../components/shared/UptimeGrid.jsx';
 import { EditScreenModal } from '../../components/screens/EditScreenModal.jsx';
+import { ScreenPhotoManager } from '../../components/screens/ScreenPhotoManager.jsx';
 import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS } from '../../lib/venueTypes.js';
@@ -62,8 +63,6 @@ function PillGroup({ options, value, onChange }) {
 }
 
 function DetailsTab({ screen, onSaved }) {
-  const [photos, setPhotos] = useState(screen.screen_photos || []);
-  const [uploading, setUploading] = useState(false);
   const [fields, setFields] = useState({
     country:         screen.country || 'CA',
     state:           screen.state || '',
@@ -102,71 +101,16 @@ function DetailsTab({ screen, onSaved }) {
     onSaved?.({ ...screen, ...fields, lat: fields.lat ? parseFloat(fields.lat) : null, lon: fields.lon ? parseFloat(fields.lon) : null });
   };
 
-  const handleUpload = async (files) => {
-    if (photos.length >= 4) return;
-    const toUpload = Array.from(files).slice(0, 4 - photos.length);
-    setUploading(true);
-    const newUrls = [];
-    for (const file of toUpload) {
-      const path = `${screen.id}/${crypto.randomUUID()}`;
-      const { error } = await supabase.storage.from('screen-photos').upload(path, file);
-      if (!error) {
-        const { data } = supabase.storage.from('screen-photos').getPublicUrl(path);
-        newUrls.push(data.publicUrl);
-      }
-    }
-    const updated = [...photos, ...newUrls];
-    setPhotos(updated);
-    await supabase.from('screens').update({ screen_photos: updated }).eq('id', screen.id);
-    setUploading(false);
-  };
-
-  const removePhoto = async (url) => {
-    const updated = photos.filter(p => p !== url);
-    setPhotos(updated);
-    await supabase.from('screens').update({ screen_photos: updated }).eq('id', screen.id);
-  };
-
   return (
     <div>
       {/* Photos */}
       <Card style={{ padding: 24, marginBottom: 20 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Photos</div>
-        <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 16 }}>
-          Advertisers see these before booking. Up to 4 photos.
-        </div>
-        {photos.length > 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 12 }}>
-            {photos.map((url, i) => (
-              <div key={url} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden' }}>
-                <img src={url} alt={`Screen photo ${i + 1}`}
-                  style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }} />
-                <button onClick={() => removePhoto(url)} style={{
-                  position: 'absolute', top: 6, right: 6,
-                  background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%',
-                  width: 24, height: 24, color: '#fff', cursor: 'pointer', fontSize: 14,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>×</button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, marginBottom: 12 }}>
-            No photos yet — add photos so advertisers can see your screen.
-          </div>
-        )}
-        {photos.length < 4 && (
-          <label style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            border: `2px dashed ${C.border}`, borderRadius: 10, padding: '16px',
-            cursor: uploading ? 'default' : 'pointer', background: C.surfaceAlt,
-            fontSize: 13, color: C.textSub, fontFamily: F.sans,
-          }}>
-            <input type="file" accept="image/*" multiple style={{ display: 'none' }}
-              disabled={uploading} onChange={e => handleUpload(e.target.files)} />
-            {uploading ? 'Uploading…' : '+ Add photos'}
-          </label>
-        )}
+        <ScreenPhotoManager
+          screenId={screen.id}
+          photos={screen.screen_photos || []}
+          frames={screen.screen_photo_frames || []}
+          onChange={({ photos, frames }) => onSaved?.({ ...screen, screen_photos: photos, screen_photo_frames: frames })}
+        />
       </Card>
 
       {/* Venue details */}
@@ -241,7 +185,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
 
   // Fetch screen record. screen_token is no longer column-readable (it is a
   // bearer secret); fetch it via the owner-scoped get_screen_token RPC.
-  const SCREEN_COLS = 'id, name, owner_id, owner_name, owner_type, city_id, city, location, status, lat, lon, monthly_revenue, impressions, own_slots, blocked_categories, max_ad_duration, min_dwell_time, allow_competitors, created_at, updated_at, operator_id, cpm_floor, display_size, monthly_traffic_estimate, content_categories_blocked, operating_hours_start, operating_hours_end, lng, last_seen, health_status, venue_category, venue_subtype, environment, screen_position, state, country, screen_photos, auto_approve, timezone, resolution_w, resolution_h, accepted_formats, max_file_mb';
+  const SCREEN_COLS = 'id, name, owner_id, owner_name, owner_type, city_id, city, location, status, lat, lon, monthly_revenue, impressions, own_slots, blocked_categories, max_ad_duration, min_dwell_time, allow_competitors, created_at, updated_at, operator_id, cpm_floor, display_size, monthly_traffic_estimate, content_categories_blocked, operating_hours_start, operating_hours_end, lng, last_seen, health_status, venue_category, venue_subtype, environment, screen_position, state, country, screen_photos, auto_approve, timezone, resolution_w, resolution_h, accepted_formats, max_file_mb, screen_photo_frames';
   useEffect(() => {
     if (!screenId) return;
     setLoading(true);
