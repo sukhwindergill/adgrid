@@ -290,3 +290,101 @@ describe('CreativeCard QR corner-snap buttons', () => {
     );
   });
 });
+
+describe('CreativeCard QR colours', () => {
+  it('does not render the QR Colours section when destination_url is empty', () => {
+    const creative = makeBlankCreative({ id: 'c1', label: 'A', destination_url: '' });
+    render(
+      <CreativeCard creative={creative} onChange={() => {}} onRemove={() => {}} poolScreens={POOL_SCREENS} allCreatives={[creative]} showAssignment={false} duration={15} onSplitByType={() => {}} profile={null} />
+    );
+    expect(screen.queryByText('QR Code Colours')).not.toBeInTheDocument();
+  });
+
+  it('renders Dots and Background color fields when destination_url is set', () => {
+    const creative = makeBlankCreative({ id: 'c1', label: 'A', destination_url: 'https://example.com' });
+    render(
+      <CreativeCard creative={creative} onChange={() => {}} onRemove={() => {}} poolScreens={POOL_SCREENS} allCreatives={[creative]} showAssignment={false} duration={15} onSplitByType={() => {}} profile={null} />
+    );
+    expect(screen.getByText('QR Code Colours')).toBeInTheDocument();
+    expect(screen.getByText('Dots')).toBeInTheDocument();
+    expect(screen.getByText('Background')).toBeInTheDocument();
+  });
+
+  it('shows a low-contrast warning when qr_fg_color and qr_bg_color are too close', () => {
+    const creative = makeBlankCreative({ id: 'c1', label: 'A', destination_url: 'https://example.com', qr_fg_color: '#ffffff', qr_bg_color: '#ffffff' });
+    render(
+      <CreativeCard creative={creative} onChange={() => {}} onRemove={() => {}} poolScreens={POOL_SCREENS} allCreatives={[creative]} showAssignment={false} duration={15} onSplitByType={() => {}} profile={null} />
+    );
+    expect(screen.getByText(/Low contrast/)).toBeInTheDocument();
+  });
+
+  it('does not show a low-contrast warning for the default accent-color/white pair', () => {
+    const creative = makeBlankCreative({ id: 'c1', label: 'A', destination_url: 'https://example.com', accent_color: '#7c3aed' });
+    render(
+      <CreativeCard creative={creative} onChange={() => {}} onRemove={() => {}} poolScreens={POOL_SCREENS} allCreatives={[creative]} showAssignment={false} duration={15} onSplitByType={() => {}} profile={null} />
+    );
+    expect(screen.queryByText(/Low contrast/)).not.toBeInTheDocument();
+  });
+
+  it('hides every "From creative" button when no media is uploaded', () => {
+    const creative = makeBlankCreative({ id: 'c1', label: 'A', destination_url: 'https://example.com', media_url: '' });
+    render(
+      <CreativeCard creative={creative} onChange={() => {}} onRemove={() => {}} poolScreens={POOL_SCREENS} allCreatives={[creative]} showAssignment={false} duration={15} onSplitByType={() => {}} profile={null} />
+    );
+    expect(screen.queryByText(/from creative/i)).not.toBeInTheDocument();
+  });
+
+  it('samples a color from the creative and applies it to the field that armed the pick', () => {
+    const creative = makeBlankCreative({ id: 'c1', label: 'A', destination_url: 'https://example.com', media_url: 'https://x/y.jpg', media_type: 'image' });
+    const onChange = vi.fn();
+
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: vi.fn(),
+      getImageData: () => ({ data: new Uint8ClampedArray([18, 52, 86, 255]) }),
+    });
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0, width: 100, height: 100 });
+
+    render(
+      <CreativeCard creative={creative} onChange={onChange} onRemove={() => {}} poolScreens={POOL_SCREENS} allCreatives={[creative]} showAssignment={false} duration={15} onSplitByType={() => {}} profile={null} />
+    );
+
+    // CreativeCard also renders MediaUpload's own upload-preview <img> (form.media_url
+    // truthy), which appears earlier in DOM order but has no click handler or ref wired
+    // to it -- scope to CreativePreview's root (`data-template`) to get the pickable one.
+    const img = document.querySelector('[data-template] img');
+    Object.defineProperty(img, 'naturalWidth', { value: 400, configurable: true });
+    Object.defineProperty(img, 'naturalHeight', { value: 300, configurable: true });
+
+    // First "From creative" button in DOM order belongs to Accent Colour.
+    fireEvent.click(screen.getAllByText(/from creative/i)[0]);
+    fireEvent.click(img, { clientX: 10, clientY: 10 });
+
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ accent_color: '#123456' }));
+
+    vi.restoreAllMocks();
+  });
+
+  it('shows a "couldn\'t sample" message when canvas sampling throws (e.g. a CORS-tainted canvas)', () => {
+    const creative = makeBlankCreative({ id: 'c1', label: 'A', destination_url: 'https://example.com', media_url: 'https://x/y.jpg', media_type: 'image' });
+
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: () => { throw new Error('SecurityError'); },
+    });
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0, width: 100, height: 100 });
+
+    render(
+      <CreativeCard creative={creative} onChange={() => {}} onRemove={() => {}} poolScreens={POOL_SCREENS} allCreatives={[creative]} showAssignment={false} duration={15} onSplitByType={() => {}} profile={null} />
+    );
+
+    // CreativeCard also renders MediaUpload's own upload-preview <img> (form.media_url
+    // truthy), which appears earlier in DOM order but has no click handler or ref wired
+    // to it -- scope to CreativePreview's root (`data-template`) to get the pickable one.
+    const img = document.querySelector('[data-template] img');
+    fireEvent.click(screen.getAllByText(/from creative/i)[0]);
+    fireEvent.click(img, { clientX: 10, clientY: 10 });
+
+    expect(screen.getByText(/Couldn't sample this image/)).toBeInTheDocument();
+
+    vi.restoreAllMocks();
+  });
+});

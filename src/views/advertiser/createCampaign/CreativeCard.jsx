@@ -1,16 +1,39 @@
 // src/views/advertiser/createCampaign/CreativeCard.jsx
+import { useRef, useState } from 'react';
 import { C, F } from '../../../design/tokens.js';
 import { Inp } from '../../../components/primitives/Inp.jsx';
 import { SelInput } from '../../../components/primitives/SelInput.jsx';
+import { ColorField } from '../../../components/primitives/ColorField.jsx';
 import { CreativePreview } from '../../../components/shared/CreativePreview.jsx';
 import { CreativeFitPanel } from '../../../components/shared/CreativeFitPanel.jsx';
 import { checkCreativeFit } from '../../../lib/creativeFit.js';
 import { isValidDestinationUrl } from '../../../lib/destinationUrl.js';
+import { contrastRatio } from '../../../lib/creativeReadability.js';
+import { QR_CONTRAST_MIN_RATIO } from '../../../lib/qrColor.js';
+import { mapCoverClickToNatural, rgbToHex } from '../../../lib/sampleMediaColor.js';
 import { CATEGORIES } from '../../../lib/data.js';
 import { QR_CORNER_PRESETS, clampQrCenter } from '../../../lib/creativeQrPosition.js';
 import { MediaUpload } from './MediaUpload.jsx';
 
 const FRAME_ASPECT = 16 / 9;
+
+// Reads the pixel the user clicked on the media element, in the element's
+// own natural (unscaled) pixel space, accounting for CSS object-fit: cover's
+// center-crop (mapCoverClickToNatural). Throws if the canvas is tainted by a
+// cross-origin media host with no CORS headers -- callers must catch this.
+function sampleColorAtClick(mediaEl, clickX, clickY) {
+  const rect = mediaEl.getBoundingClientRect();
+  const naturalWidth = mediaEl.naturalWidth ?? mediaEl.videoWidth;
+  const naturalHeight = mediaEl.naturalHeight ?? mediaEl.videoHeight;
+  const { x, y } = mapCoverClickToNatural(clickX, clickY, rect.width, rect.height, naturalWidth, naturalHeight);
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(mediaEl, x, y, 1, 1, 0, 0, 1, 1);
+  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+  return rgbToHex(r, g, b);
+}
 
 // One creative's authoring fields + preview + screen assignment, used both
 // for the single default creative (no assignment UI shown — it implicitly
@@ -20,8 +43,7 @@ const FRAME_ASPECT = 16 / 9;
 // generates a text-card from a headline/CTA/template, since that duplicated
 // (and could visually clash with) whatever the advertiser already designed
 // into their upload. The only remaining authored fields are the destination
-// (for the QR), category (for targeting), and an accent colour used only for
-// the thin brand strip along the frame's bottom edge.
+// (for the QR), category (for targeting), and accent/QR colours.
 export function CreativeCard({
   creative, onChange, onRemove, poolScreens, allCreatives, showAssignment, onSplitByType,
 }) {
@@ -40,6 +62,38 @@ export function CreativeCard({
     const clamped = clampQrCenter(preset.x, preset.y, sizePct, FRAME_ASPECT);
     setQr({ x: clamped.x, y: clamped.y, sizePct });
   };
+
+  // "Pick from creative" eyedropper: pickField names which creative field
+  // (accent_color / qr_fg_color / qr_bg_color) the next click on the media
+  // element should fill. Shared across all three ColorFields rather than
+  // one flag per field, since only one pick can be armed at a time.
+  const [pickField, setPickField] = useState(null);
+  const [pickError, setPickError] = useState('');
+  const mediaRef = useRef(null);
+
+  const startPick = (field) => {
+    setPickError('');
+    setPickField(field);
+  };
+
+  const handleMediaPick = (clickX, clickY) => {
+    if (!pickField || !mediaRef.current) return;
+    try {
+      const hex = sampleColorAtClick(mediaRef.current, clickX, clickY);
+      setField(pickField, hex);
+      setPickError('');
+    } catch {
+      setPickError("Couldn't sample this image — use the color picker instead.");
+    }
+    setPickField(null);
+  };
+
+  const qrFgColor = creative.qr_fg_color || creative.accent_color || '#7c3aed';
+  const qrBgColor = creative.qr_bg_color || '#ffffff';
+  const qrContrastRatioValue = contrastRatio(qrFgColor, qrBgColor);
+  const qrContrastWarning = qrContrastRatioValue < QR_CONTRAST_MIN_RATIO
+    ? `Low contrast — this QR may not scan reliably (${qrContrastRatioValue.toFixed(1)}:1, aim for ${QR_CONTRAST_MIN_RATIO}:1+).`
+    : null;
 
   const assignedScreens = poolScreens.filter(s => creative.assigned_screen_ids.includes(s.id));
   const screensForFitCheck = showAssignment ? assignedScreens : poolScreens;
@@ -92,19 +146,54 @@ export function CreativeCard({
           <SelInput label="Category" value={creative.category} onChange={e => setField('category', e.target.value)}>
             {CATEGORIES.map(c => <option key={c}>{c}</option>)}
           </SelInput>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>Accent Colour</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <input type="color" value={creative.accent_color} onChange={e => setField('accent_color', e.target.value)}
-                style={{ width: 40, height: 36, border: `1px solid ${C.border}`, borderRadius: 6, cursor: 'pointer', padding: 2 }} />
-              <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.mono }}>{creative.accent_color}</span>
+          <ColorField
+            label="Accent Colour"
+            value={creative.accent_color}
+            onChange={hex => setField('accent_color', hex)}
+            onPickFromCreative={creative.media_url ? () => startPick('accent_color') : null}
+          />
+          {hasDestination && (
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>QR Code Colours</div>
+              <div style={{ display: 'flex', gap: 16 }}>
+                <ColorField
+                  label="Dots"
+                  value={qrFgColor}
+                  onChange={hex => setField('qr_fg_color', hex)}
+                  onPickFromCreative={creative.media_url ? () => startPick('qr_fg_color') : null}
+                />
+                <ColorField
+                  label="Background"
+                  value={qrBgColor}
+                  onChange={hex => setField('qr_bg_color', hex)}
+                  onPickFromCreative={creative.media_url ? () => startPick('qr_bg_color') : null}
+                />
+              </div>
+              {pickField && (
+                <div style={{ fontSize: 11, color: C.purple, fontFamily: F.sans, marginTop: 6 }}>
+                  Click anywhere on your creative preview to sample that color.
+                </div>
+              )}
+              {pickError && (
+                <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, marginTop: 6 }}>{pickError}</div>
+              )}
+              {qrContrastWarning && (
+                <div style={{ fontSize: 11, color: C.amber, fontFamily: F.sans, marginTop: 6 }}>{qrContrastWarning}</div>
+              )}
             </div>
-          </div>
+          )}
         </div>
 
         <div>
           <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Preview</div>
-          <CreativePreview campaign={creative} editableQr={hasDestination} onQrChange={setQr} />
+          <CreativePreview
+            campaign={creative}
+            editableQr={hasDestination}
+            onQrChange={setQr}
+            mediaRef={mediaRef}
+            pickColorMode={Boolean(pickField)}
+            onPickColor={handleMediaPick}
+          />
           {hasDestination && (
             <>
               <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
