@@ -60,6 +60,13 @@ describe('ColorField', () => {
     await vi.waitFor(() => expect(onChange).toHaveBeenCalledWith('#abcdef'));
   });
 
+  it('syncs the native swatch input to the current value on click, before the OS picker opens', () => {
+    render(<ColorField label="Dots" value="#ff00ff" onChange={() => {}} />);
+    const swatch = document.querySelector('input[type="color"]');
+    fireEvent.click(swatch);
+    expect(swatch.value).toBe('#ff00ff');
+  });
+
   it('does not render the "from creative" button when onPickFromCreative is not passed', () => {
     render(<ColorField label="Dots" value="#7c3aed" onChange={() => {}} />);
     expect(screen.queryByText(/from creative/i)).not.toBeInTheDocument();

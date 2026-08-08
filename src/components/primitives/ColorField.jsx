@@ -54,11 +54,15 @@ export function ColorField({ label, value, onChange, onPickFromCreative }) {
             -- making the two fields indistinguishable to display-value-based
             queries/assistive tech. Keeping the native input uncontrolled
             (trigger + change source only) avoids that while the div stays
-            perfectly in sync via plain CSS. */}
+            perfectly in sync via plain CSS. Its DOM .value is instead synced
+            imperatively in onClick, right before the OS picker opens, so the
+            picker starts at the real current color without ever setting a
+            React `value`/`defaultValue` prop. */}
         <div style={{ position: 'relative', width: 40, height: 36, border: `1px solid ${C.border}`, borderRadius: 6, overflow: 'hidden', background: value }}>
           <input
             type="color"
             aria-label={`${label} swatch`}
+            onClick={e => { e.currentTarget.value = value; }}
             onChange={e => { setDraft(e.target.value); onChange(e.target.value); }}
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, border: 0, padding: 0, cursor: 'pointer' }}
           />
