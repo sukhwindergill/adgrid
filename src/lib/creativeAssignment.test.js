@@ -25,6 +25,12 @@ describe('makeBlankCreative', () => {
   it('generates a distinct id per call', () => {
     expect(makeBlankCreative().id).not.toBe(makeBlankCreative().id);
   });
+
+  it('defaults qr_fg_color/qr_bg_color to null', () => {
+    const c = makeBlankCreative();
+    expect(c.qr_fg_color).toBeNull();
+    expect(c.qr_bg_color).toBeNull();
+  });
 });
 
 describe('unassignedScreenIds', () => {

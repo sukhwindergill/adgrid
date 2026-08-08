@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, fireEvent } from '@testing-library/react';
 import { CreativePreview } from './CreativePreview.jsx';
 
 describe('CreativePreview', () => {
@@ -107,7 +107,7 @@ describe('CreativePreview QR', () => {
     expect(qr).not.toBeNull();
     expect(qr.style.left).toBe('90%');
     expect(qr.style.top).toBe('14%');
-    expect(qr.style.width).toBe('12%');
+    expect(qr.style.width).toBe('max(12%, 44px)');
   });
 
   it('positions the QR at a stored qr_x/qr_y/qr_size_pct', () => {
@@ -115,7 +115,13 @@ describe('CreativePreview QR', () => {
     const qr = container.querySelector('[data-qr-overlay]');
     expect(qr.style.left).toBe('20%');
     expect(qr.style.top).toBe('30%');
-    expect(qr.style.width).toBe('20%');
+    expect(qr.style.width).toBe('max(20%, 44px)');
+  });
+
+  it('never shrinks the QR box below a 44px floor, even at a tiny sizePct', () => {
+    const { container } = render(<CreativePreview campaign={{ destination_url: 'https://example.com', qr_size_pct: 0.01 }} />);
+    const qr = container.querySelector('[data-qr-overlay]');
+    expect(qr.style.width).toBe('max(1%, 44px)');
   });
 
   it('only renders the resize handle when editableQr is true', () => {
@@ -124,5 +130,56 @@ describe('CreativePreview QR', () => {
 
     const { container: editable } = render(<CreativePreview campaign={{ destination_url: 'https://example.com' }} editableQr onQrChange={() => {}} />);
     expect(editable.querySelector('[data-qr-resize-handle]')).not.toBeNull();
+  });
+});
+
+describe('CreativePreview QR color', () => {
+  it('defaults the QR box background to white and dots to the accent color', () => {
+    const { container } = render(<CreativePreview campaign={{ destination_url: 'https://example.com', accent_color: '#123456' }} />);
+    const qr = container.querySelector('[data-qr-overlay]');
+    expect(qr.style.background).toBe('rgb(255, 255, 255)');
+    const paths = [...qr.querySelectorAll('svg path')];
+    expect(paths.some(p => p.getAttribute('fill') === '#123456')).toBe(true);
+  });
+
+  it('uses stored qr_fg_color/qr_bg_color when set', () => {
+    const { container } = render(<CreativePreview campaign={{ destination_url: 'https://example.com', qr_fg_color: '#ff0000', qr_bg_color: '#00ff00' }} />);
+    const qr = container.querySelector('[data-qr-overlay]');
+    expect(qr.style.background).toBe('rgb(0, 255, 0)');
+    const paths = [...qr.querySelectorAll('svg path')];
+    expect(paths.some(p => p.getAttribute('fill') === '#ff0000')).toBe(true);
+  });
+});
+
+describe('CreativePreview media pick mode', () => {
+  it('forwards mediaRef to the rendered media element', () => {
+    const mediaRef = { current: null };
+    render(<CreativePreview campaign={{ headline: 'Test', media_url: 'https://x/y.jpg', media_type: 'image' }} mediaRef={mediaRef} />);
+    expect(mediaRef.current).not.toBeNull();
+    expect(mediaRef.current.tagName).toBe('IMG');
+  });
+
+  it('calls onPickColor with click coordinates relative to the media element when pickColorMode is true', () => {
+    const onPickColor = vi.fn();
+    const { container } = render(
+      <CreativePreview
+        campaign={{ headline: 'Test', media_url: 'https://x/y.jpg', media_type: 'image' }}
+        pickColorMode
+        onPickColor={onPickColor}
+      />
+    );
+    const img = container.querySelector('img');
+    vi.spyOn(img, 'getBoundingClientRect').mockReturnValue({ left: 10, top: 20, width: 100, height: 100 });
+    fireEvent.click(img, { clientX: 30, clientY: 50 });
+    expect(onPickColor).toHaveBeenCalledWith(20, 30);
+  });
+
+  it('does not call onPickColor when pickColorMode is false', () => {
+    const onPickColor = vi.fn();
+    const { container } = render(
+      <CreativePreview campaign={{ headline: 'Test', media_url: 'https://x/y.jpg', media_type: 'image' }} onPickColor={onPickColor} />
+    );
+    fireEvent.click(container.querySelector('img'), { clientX: 30, clientY: 50 });
+    expect(onPickColor).not.toHaveBeenCalled();
   });
 });
