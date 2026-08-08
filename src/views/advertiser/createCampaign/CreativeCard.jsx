@@ -1,5 +1,5 @@
 // src/views/advertiser/createCampaign/CreativeCard.jsx
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { C, F } from '../../../design/tokens.js';
 import { Inp } from '../../../components/primitives/Inp.jsx';
 import { SelInput } from '../../../components/primitives/SelInput.jsx';
@@ -74,15 +74,31 @@ export function CreativeCard({
   // A pick can be armed and then orphaned mid-flight if its preconditions
   // disappear -- the advertiser clears the destination URL (unmounting the
   // whole QR Colours section, including the "click to sample" advisory) or
-  // removes the uploaded media (leaving nothing to click). Without this,
-  // pickField stays set and CreativePreview keeps pickColorMode on with no
-  // visible explanation of why clicking the image does something.
-  useEffect(() => {
-    if (pickField && (!hasDestination || !creative.media_url)) {
+  // removes the uploaded media (leaving nothing to click). pickPreconditionsMet
+  // captures that live check; armedPickField is the derived "is a pick usable
+  // right now" value everything below should read instead of raw pickField.
+  const pickPreconditionsMet = hasDestination && Boolean(creative.media_url);
+
+  // Beyond just masking a stale pick with the derived value above, the
+  // underlying pickField state itself needs to actually reset once its
+  // preconditions go from met to unmet -- otherwise, if the preconditions
+  // later become true again (e.g. the destination URL is re-added) without
+  // the advertiser re-arming a pick, armedPickField would silently flip back
+  // to truthy and leave CreativePreview in pickColorMode with no visible
+  // advisory explaining it. This follows React's documented pattern for
+  // adjusting state during render (https://react.dev/learn/you-might-not-need-an-effect)
+  // rather than a useEffect, since it's a synchronous render-time correction,
+  // not a sync with an external system.
+  const [prevPickPreconditionsMet, setPrevPickPreconditionsMet] = useState(pickPreconditionsMet);
+  if (pickPreconditionsMet !== prevPickPreconditionsMet) {
+    setPrevPickPreconditionsMet(pickPreconditionsMet);
+    if (prevPickPreconditionsMet && !pickPreconditionsMet && pickField) {
       setPickField(null);
       setPickError('');
     }
-  }, [pickField, hasDestination, creative.media_url]);
+  }
+
+  const armedPickField = pickPreconditionsMet ? pickField : null;
 
   const startPick = (field) => {
     setPickError('');
@@ -90,10 +106,10 @@ export function CreativeCard({
   };
 
   const handleMediaPick = (clickX, clickY) => {
-    if (!pickField || !mediaRef.current) return;
+    if (!armedPickField || !mediaRef.current) return;
     try {
       const hex = sampleColorAtClick(mediaRef.current, clickX, clickY);
-      setField(pickField, hex);
+      setField(armedPickField, hex);
       setPickError('');
     } catch {
       setPickError("Couldn't sample this image — use the color picker instead.");
@@ -182,12 +198,12 @@ export function CreativeCard({
                   onPickFromCreative={creative.media_url ? () => startPick('qr_bg_color') : null}
                 />
               </div>
-              {pickField && (
+              {armedPickField && (
                 <div style={{ fontSize: 11, color: C.purple, fontFamily: F.sans, marginTop: 6 }}>
                   Click anywhere on your creative preview to sample that color.
                 </div>
               )}
-              {pickError && (
+              {pickError && creative.media_url && (
                 <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, marginTop: 6 }}>{pickError}</div>
               )}
               {qrContrastWarning && (
@@ -204,7 +220,7 @@ export function CreativeCard({
             editableQr={hasDestination}
             onQrChange={setQr}
             mediaRef={mediaRef}
-            pickColorMode={Boolean(pickField)}
+            pickColorMode={Boolean(armedPickField)}
             onPickColor={handleMediaPick}
           />
           {hasDestination && (
