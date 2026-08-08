@@ -182,9 +182,14 @@ function QrOverlay({ url, x, y, sizePct, frameAspect, editable, onChange, fgColo
  * Props: campaign — see getCreativeRenderPlan.js for the accepted field
  * shapes/fallback chains. editableQr/onQrChange enable wizard-only
  * drag-to-reposition and drag-to-resize of the QR code; every other
- * (read-only) consumer omits them.
+ * (read-only) consumer omits them. mediaRef/pickColorMode/onPickColor are
+ * likewise optional and only used by CreativeCard.jsx's "pick from
+ * creative" eyedropper.
  */
-export function CreativePreview({ campaign, aspectRatio = '16/9', blurPx = 0, editableQr = false, onQrChange }) {
+export function CreativePreview({
+  campaign, aspectRatio = '16/9', blurPx = 0, editableQr = false, onQrChange,
+  mediaRef, pickColorMode = false, onPickColor,
+}) {
   const plan = getCreativeRenderPlan(campaign);
   const { mediaUrl, isVideo, showTextOverlay, template, headline, cta, bg, secondaryBg, category, destination, showQr, qrX, qrY, qrSizePct, qrFgColor, qrBgColor } = plan;
   const Body = BODIES[template] || BottomBarBody;
@@ -197,6 +202,18 @@ export function CreativePreview({ campaign, aspectRatio = '16/9', blurPx = 0, ed
     ? { position: 'absolute', top: 0, bottom: 0, left: '40%', right: 0, objectFit: 'cover' }
     : { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' };
 
+  // "Pick from creative" mode -- CreativeCard.jsx sets pickColorMode true
+  // while an eyedropper's "from creative" button is armed. The click
+  // coordinates are relative to the media element itself (not the frame),
+  // since mediaStyle can confine media to less than the full frame
+  // (split_panel's right 60%) -- CreativeCard maps them to a natural-pixel
+  // color sample via sampleMediaColor.js's mapCoverClickToNatural.
+  const handleMediaClick = (e) => {
+    if (!pickColorMode || !onPickColor) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    onPickColor(e.clientX - rect.left, e.clientY - rect.top);
+  };
+
   return (
     <div data-template={template} style={{
       position: 'relative', width: '100%', aspectRatio,
@@ -205,9 +222,17 @@ export function CreativePreview({ campaign, aspectRatio = '16/9', blurPx = 0, ed
       borderRadius: 8, overflow: 'hidden', flexShrink: 0,
     }}>
       {mediaUrl && (isVideo ? (
-        <video src={mediaUrl} muted loop autoPlay playsInline style={mediaStyle} />
+        <video
+          ref={mediaRef} src={mediaUrl} muted loop autoPlay playsInline crossOrigin="anonymous"
+          onClick={pickColorMode ? handleMediaClick : undefined}
+          style={{ ...mediaStyle, cursor: pickColorMode ? 'crosshair' : undefined }}
+        />
       ) : (
-        <img src={mediaUrl} alt="" style={mediaStyle} />
+        <img
+          ref={mediaRef} src={mediaUrl} alt="" crossOrigin="anonymous"
+          onClick={pickColorMode ? handleMediaClick : undefined}
+          style={{ ...mediaStyle, cursor: pickColorMode ? 'crosshair' : undefined }}
+        />
       ))}
       {mediaUrl && template !== 'split_panel' && (
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 55%)', pointerEvents: 'none' }} />

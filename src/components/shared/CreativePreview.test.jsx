@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, fireEvent } from '@testing-library/react';
 import { CreativePreview } from './CreativePreview.jsx';
 
 describe('CreativePreview', () => {
@@ -148,5 +148,38 @@ describe('CreativePreview QR color', () => {
     expect(qr.style.background).toBe('rgb(0, 255, 0)');
     const paths = [...qr.querySelectorAll('svg path')];
     expect(paths.some(p => p.getAttribute('fill') === '#ff0000')).toBe(true);
+  });
+});
+
+describe('CreativePreview media pick mode', () => {
+  it('forwards mediaRef to the rendered media element', () => {
+    const mediaRef = { current: null };
+    render(<CreativePreview campaign={{ headline: 'Test', media_url: 'https://x/y.jpg', media_type: 'image' }} mediaRef={mediaRef} />);
+    expect(mediaRef.current).not.toBeNull();
+    expect(mediaRef.current.tagName).toBe('IMG');
+  });
+
+  it('calls onPickColor with click coordinates relative to the media element when pickColorMode is true', () => {
+    const onPickColor = vi.fn();
+    const { container } = render(
+      <CreativePreview
+        campaign={{ headline: 'Test', media_url: 'https://x/y.jpg', media_type: 'image' }}
+        pickColorMode
+        onPickColor={onPickColor}
+      />
+    );
+    const img = container.querySelector('img');
+    vi.spyOn(img, 'getBoundingClientRect').mockReturnValue({ left: 10, top: 20, width: 100, height: 100 });
+    fireEvent.click(img, { clientX: 30, clientY: 50 });
+    expect(onPickColor).toHaveBeenCalledWith(20, 30);
+  });
+
+  it('does not call onPickColor when pickColorMode is false', () => {
+    const onPickColor = vi.fn();
+    const { container } = render(
+      <CreativePreview campaign={{ headline: 'Test', media_url: 'https://x/y.jpg', media_type: 'image' }} onPickColor={onPickColor} />
+    );
+    fireEvent.click(container.querySelector('img'), { clientX: 30, clientY: 50 });
+    expect(onPickColor).not.toHaveBeenCalled();
   });
 });
