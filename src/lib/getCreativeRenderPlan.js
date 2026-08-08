@@ -4,7 +4,7 @@
  * and what does it say" -- shared between CreativePreview.jsx (wizard/
  * operator preview) and DisplayPlayer.jsx (actual physical screen playback),
  * so those two can no longer silently disagree about whether text overlays
- * an uploaded creative, or where/how big the QR code renders.
+ * an uploaded creative, or where/how big/what color the QR code renders.
  *
  * The dual fallback chains (advertiser/advertiser_name) exist because this
  * is called with two different data shapes: the App.jsx-aliased campaign
@@ -20,12 +20,15 @@
  * qrX/qrY/qrSizePct default to a top-right position/size matching the
  * pre-QR-positioning hardcoded values (see src/lib/creativeQrPosition.js's
  * QR_DEFAULT) so an existing row with no stored position renders identically
- * to before this feature existed.
+ * to before this feature existed. qrFgColor/qrBgColor default to the
+ * creative's own accent color and white -- react-qr-code's own black/white
+ * defaults are never reached in practice, since bg is always computed first.
  */
 export function getCreativeRenderPlan(campaign = {}) {
   campaign = campaign || {};
   const mediaUrl = campaign.media_url || null;
   const rawDestination = campaign.destination_url || campaign.destination || '';
+  const bg = campaign.accent_color || campaign.color || '#7c3aed';
   return {
     mediaUrl,
     isVideo: campaign.media_type === 'video',
@@ -33,7 +36,7 @@ export function getCreativeRenderPlan(campaign = {}) {
     template: campaign.creative_template || 'bottom_bar',
     headline: campaign.headline || campaign.advertiser || campaign.advertiser_name || '',
     cta: campaign.cta || campaign.cta_text || '',
-    bg: campaign.accent_color || campaign.color || '#7c3aed',
+    bg,
     secondaryBg: campaign.secondary_color || null,
     category: campaign.category || null,
     destination: rawDestination || 'https://adgrid.io',
@@ -43,5 +46,7 @@ export function getCreativeRenderPlan(campaign = {}) {
     qrX: typeof campaign.qr_x === 'number' ? campaign.qr_x : 90,
     qrY: typeof campaign.qr_y === 'number' ? campaign.qr_y : 14,
     qrSizePct: typeof campaign.qr_size_pct === 'number' ? campaign.qr_size_pct : 0.12,
+    qrFgColor: campaign.qr_fg_color || bg,
+    qrBgColor: campaign.qr_bg_color || '#ffffff',
   };
 }

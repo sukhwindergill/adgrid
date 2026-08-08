@@ -14,6 +14,7 @@ export function makeBlankCreative(overrides = {}) {
     destination_url: '', accent_color: '#7c3aed', category: 'Food & Beverage',
     media_url: '', media_type: '', media_width: null, media_height: null,
     qr_x: null, qr_y: null, qr_size_pct: null,
+    qr_fg_color: null, qr_bg_color: null,
     assigned_screen_ids: [],
     weight: 100,
     ...overrides,
