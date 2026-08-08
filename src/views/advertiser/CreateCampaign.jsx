@@ -201,6 +201,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         qr_x: c.qr_x ?? null,
         qr_y: c.qr_y ?? null,
         qr_size_pct: c.qr_size_pct ?? null,
+        qr_fg_color: c.qr_fg_color ?? null,
+        qr_bg_color: c.qr_bg_color ?? null,
       })],
       budget: String(c.budget || ''),
       budget_mode: c.budget_mode || 'total',
