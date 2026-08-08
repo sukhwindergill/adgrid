@@ -9,7 +9,7 @@ on:
 
 env:
   REGISTRY: docker.io
-  ORG: adgrid
+  ORG: sgill16
 
 jobs:
   build-and-push:
