@@ -1,14 +1,12 @@
 // Validation for a campaign's destination URL.
 //
 // This value is encoded into the QR code printed on a public screen, so it is
-// the one advertiser-supplied field that strangers interact with. Two rules:
-//
-//   1. It must exist. A campaign that goes live with no destination sends
-//      every scanner to a 400 from scan-redirect — the advertiser pays for
-//      plays and receives nothing. The wizard previously allowed this.
-//   2. It must be http(s). `javascript:` and `data:` URLs are rejected here as
-//      well as in scan-redirect, so a hostile destination cannot be stored in
-//      the first place.
+// the one advertiser-supplied field that strangers interact with. It's
+// optional — a campaign can run with no QR at all (getCreativeRenderPlan's
+// showQr is false when it's blank) — but *if* a value is typed, it must be
+// http(s). `javascript:` and `data:` URLs are rejected here as well as in
+// scan-redirect, so a hostile destination can't be stored in the first place,
+// and a malformed one can't go live silently pointing scanners at an error.
 
 const WEB_SCHEMES = ['http:', 'https:'];
 const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;

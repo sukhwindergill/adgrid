@@ -263,8 +263,9 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         city:                  form.city || form.state || form.country || '',
         ...preview,
         // Normalized so a typed bare domain is stored as a real URL — the QR
-        // encodes this value verbatim.
-        destination_url:       normalizeDestinationUrl(preview.destination_url),
+        // encodes this value verbatim. Null (not '') when left blank, since
+        // destination is optional now.
+        destination_url:       preview.destination_url?.trim() ? normalizeDestinationUrl(preview.destination_url) : null,
         media_width:           primary.media_width ?? null,
         media_height:          primary.media_height ?? null,
         budget:                parseFloat(form.budget) || 0,
@@ -368,7 +369,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         qr_x: preview.qr_x,
         qr_y: preview.qr_y,
         qr_size_pct: preview.qr_size_pct,
-        destination: normalizeDestinationUrl(preview.destination_url || ''),
+        destination: preview.destination_url?.trim() ? normalizeDestinationUrl(preview.destination_url) : null,
         category: preview.category || 'Food & Beverage',
         budget: parseFloat(form.budget) || 0,
         budget_mode: form.budget_mode,
@@ -480,32 +481,35 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       {step === 2 && <StepBudgetReview form={form} setForm={setForm} matchedScreens={selectedScreens} profile={profile} onSubmit={handleSubmit} submitting={submitting} err={submitErr} canChooseBilling={canChooseBilling} billedTo={billedTo} setBilledTo={setBilledTo} />}
       {step === 3 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} requiresAction={requiresAction} onGoToBilling={() => navigate('/app/adv-billing')} />}
 
-      {step < 2 && (
+      {step < 3 && (
         <div style={{ maxWidth: 620, margin: '20px auto 0', display: 'flex', gap: 10 }}>
-          {step > 0 && <Btn variant="secondary" onClick={back} style={{ flex: 1 }}>← Back</Btn>}
-          <Btn onClick={next} style={{ flex: 1 }}
-            disabled={
-              (step === 0 && form.area_type === 'radius' && !form.radius_center_lat) ||
-              (step === 0 && form.selected_screen_ids.length === 0 && form.area_type !== 'radius') ||
-              (step === 1 && form.selected_screen_ids.length === 0) ||
-              // Creative step: a campaign with no valid destination goes live
-              // with a QR code that sends every scanner to an error, and a
-              // creative with no uploaded media has no ad to show at all
-              // (there's no generated text-card fallback anymore). A
-              // never-touched creatives array (blank, lazily seeded by
-              // StepCreative on first edit) is treated the same as a blank
-              // destination/missing media — .some() over [] is always false
-              // and would otherwise silently permit advancing past a wholly
-              // blank ad.
-              (step === 1 && (
-                form.creatives.length === 0 ||
-                form.creatives.some(c => !isValidDestinationUrl(c.destination_url)) ||
-                form.creatives.some(c => !c.media_url)
-              ))
-            }
-          >
-            Next →
-          </Btn>
+          {step > 0 && <Btn variant="secondary" onClick={back} disabled={submitting} style={{ flex: 1 }}>← Back</Btn>}
+          {step < 2 && (
+            <Btn onClick={next} style={{ flex: 1 }}
+              disabled={
+                (step === 0 && form.area_type === 'radius' && !form.radius_center_lat) ||
+                (step === 0 && form.selected_screen_ids.length === 0 && form.area_type !== 'radius') ||
+                (step === 1 && form.selected_screen_ids.length === 0) ||
+                // Creative step: destination URL is optional (no QR is drawn
+                // when it's left blank — see getCreativeRenderPlan's showQr),
+                // but a *typed* value must be a real http(s) address, since a
+                // malformed one would still send scanners to an error. A
+                // creative with no uploaded media has no ad to show at all
+                // (there's no generated text-card fallback anymore). A
+                // never-touched creatives array (blank, lazily seeded by
+                // StepCreative on first edit) is treated the same as
+                // missing media — .some() over [] is always false and would
+                // otherwise silently permit advancing past a wholly blank ad.
+                (step === 1 && (
+                  form.creatives.length === 0 ||
+                  form.creatives.some(c => c.destination_url?.trim() && !isValidDestinationUrl(c.destination_url)) ||
+                  form.creatives.some(c => !c.media_url)
+                ))
+              }
+            >
+              Next →
+            </Btn>
+          )}
         </div>
       )}
     </div>
