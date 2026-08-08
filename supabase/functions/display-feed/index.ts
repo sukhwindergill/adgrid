@@ -74,7 +74,7 @@ Deno.serve(async (req: Request) => {
     // Step 2: fetch bookings for those campaigns filtered by date and live status
     const { data: bookings } = await supabase
       .from("bookings")
-      .select("id, advertiser_name, headline, cta_text, accent_color, destination_url, category, media_url, media_type, qr_x, qr_y, qr_size_pct, slots, duration, schedule_days, time_start, time_end")
+      .select("id, advertiser_name, headline, cta_text, accent_color, destination_url, category, media_url, media_type, qr_x, qr_y, qr_size_pct, qr_fg_color, qr_bg_color, slots, duration, schedule_days, time_start, time_end")
       .in("id", campaignIds)
       .in("status", ["scheduled", "active"])
       .eq("payment_status", "paid")
@@ -90,13 +90,13 @@ Deno.serve(async (req: Request) => {
       .select("creative_id, weight")
       .eq("screen_id", screen.id);
 
-    const creativesByTargeting = new Map<string, { creative_id: string; weight: number; media_url: string | null; media_type: string | null; headline: string | null; cta_text: string | null; destination_url: string | null; accent_color: string | null; qr_x: number | null; qr_y: number | null; qr_size_pct: number | null }[]>();
+    const creativesByTargeting = new Map<string, { creative_id: string; weight: number; media_url: string | null; media_type: string | null; headline: string | null; cta_text: string | null; destination_url: string | null; accent_color: string | null; qr_x: number | null; qr_y: number | null; qr_size_pct: number | null; qr_fg_color: string | null; qr_bg_color: string | null }[]>();
 
     if (ccsRows && ccsRows.length > 0) {
       const creativeIds = ccsRows.map((r) => r.creative_id);
       const { data: creatives } = await supabase
         .from("campaign_creatives")
-        .select("id, targeting_id, status, media_url, media_type, headline, cta_text, destination_url, accent_color, qr_x, qr_y, qr_size_pct")
+        .select("id, targeting_id, status, media_url, media_type, headline, cta_text, destination_url, accent_color, qr_x, qr_y, qr_size_pct, qr_fg_color, qr_bg_color")
         .in("id", creativeIds)
         .eq("status", "active");
 
@@ -115,6 +115,8 @@ Deno.serve(async (req: Request) => {
           qr_x: cr.qr_x as number | null,
           qr_y: cr.qr_y as number | null,
           qr_size_pct: cr.qr_size_pct as number | null,
+          qr_fg_color: cr.qr_fg_color as string | null,
+          qr_bg_color: cr.qr_bg_color as string | null,
         });
         creativesByTargeting.set(cr.targeting_id as string, list);
       }
@@ -168,6 +170,8 @@ Deno.serve(async (req: Request) => {
             qr_x: cr.qr_x ?? b.qr_x,
             qr_y: cr.qr_y ?? b.qr_y,
             qr_size_pct: cr.qr_size_pct ?? b.qr_size_pct,
+            qr_fg_color: cr.qr_fg_color ?? b.qr_fg_color,
+            qr_bg_color: cr.qr_bg_color ?? b.qr_bg_color,
           });
         }
       }
