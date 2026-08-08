@@ -29,7 +29,12 @@ export function ColorField({ label, value, onChange, onPickFromCreative }) {
   const hasNativeEyeDropper = typeof window !== 'undefined' && 'EyeDropper' in window;
 
   const commitDraft = () => {
-    if (isValidHexColor(draft)) onChange(draft);
+    // Lowercased on commit so a manually-typed #ABCDEF matches the case
+    // every other producer of this value already guarantees (the native
+    // swatch input normalizes on its own, EyeDropper's sRGBHex is spec-
+    // lowercase, and sampleMediaColor.js's rgbToHex() is explicit) -- keeps
+    // "#rrggbb lowercase" a real invariant, not just true by convention.
+    if (isValidHexColor(draft)) onChange(draft.toLowerCase());
     else setDraft(value); // reject: revert to the last valid value
   };
 
