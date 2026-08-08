@@ -79,10 +79,14 @@ export function CreativeCard({
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 28 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Inp label="Destination URL" placeholder="https://example.com" type="url" value={creative.destination_url} onChange={e => setField('destination_url', e.target.value)} />
-          {creative.destination_url.trim() !== '' && !isValidDestinationUrl(creative.destination_url) && (
+          <Inp label="Destination URL (optional)" placeholder="https://example.com" type="url" value={creative.destination_url} onChange={e => setField('destination_url', e.target.value)} />
+          {creative.destination_url.trim() !== '' && !isValidDestinationUrl(creative.destination_url) ? (
             <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, marginTop: -8 }}>
               Enter a full web address, like https://example.com — this is where your QR code sends people.
+            </div>
+          ) : (
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: -8 }}>
+              Add one to show a scannable QR code on the ad. Leave blank to run without one.
             </div>
           )}
           <SelInput label="Category" value={creative.category} onChange={e => setField('category', e.target.value)}>
