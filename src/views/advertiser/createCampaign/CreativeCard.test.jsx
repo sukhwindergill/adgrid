@@ -364,6 +364,55 @@ describe('CreativeCard QR colours', () => {
     vi.restoreAllMocks();
   });
 
+  it('clears an armed pick when the destination URL that gated it is cleared', () => {
+    const creative = makeBlankCreative({ id: 'c1', label: 'A', destination_url: 'https://example.com', media_url: 'https://x/y.jpg', media_type: 'image' });
+    const onChange = vi.fn();
+
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: vi.fn(),
+      getImageData: () => ({ data: new Uint8ClampedArray([18, 52, 86, 255]) }),
+    });
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0, width: 100, height: 100 });
+
+    const { rerender } = render(
+      <CreativeCard creative={creative} onChange={onChange} onRemove={() => {}} poolScreens={POOL_SCREENS} allCreatives={[creative]} showAssignment={false} duration={15} onSplitByType={() => {}} profile={null} />
+    );
+
+    // Arm a pick on the Dots field (first "From creative" button under QR Colours,
+    // after the Accent Colour one).
+    fireEvent.click(screen.getAllByText(/from creative/i)[1]);
+    expect(screen.getByText(/Click anywhere on your creative preview to sample/)).toBeInTheDocument();
+
+    // Simulate the parent clearing destination_url (e.g. the advertiser emptied the field) --
+    // CreativeCard is a controlled component, so this is how its own onChange would round-trip.
+    const cleared = { ...creative, destination_url: '' };
+    rerender(
+      <CreativeCard creative={cleared} onChange={onChange} onRemove={() => {}} poolScreens={POOL_SCREENS} allCreatives={[cleared]} showAssignment={false} duration={15} onSplitByType={() => {}} profile={null} />
+    );
+
+    // The whole QR Colours section (and its advisory) is gone, as expected.
+    expect(screen.queryByText('QR Code Colours')).not.toBeInTheDocument();
+
+    // Re-render with destination_url restored, WITHOUT re-arming the pick, to prove
+    // pickField itself was cleared (not just hidden behind the unmounted section) --
+    // if it had leaked through, CreativePreview would still be in pickColorMode and
+    // clicking the media element would fire onPickColor and call onChange again.
+    onChange.mockClear();
+    rerender(
+      <CreativeCard creative={creative} onChange={onChange} onRemove={() => {}} poolScreens={POOL_SCREENS} allCreatives={[creative]} showAssignment={false} duration={15} onSplitByType={() => {}} profile={null} />
+    );
+    expect(screen.queryByText(/Click anywhere on your creative preview to sample/)).not.toBeInTheDocument();
+
+    const img = document.querySelector('[data-template] img');
+    Object.defineProperty(img, 'naturalWidth', { value: 400, configurable: true });
+    Object.defineProperty(img, 'naturalHeight', { value: 300, configurable: true });
+    fireEvent.click(img, { clientX: 10, clientY: 10 });
+
+    expect(onChange).not.toHaveBeenCalled();
+
+    vi.restoreAllMocks();
+  });
+
   it('shows a "couldn\'t sample" message when canvas sampling throws (e.g. a CORS-tainted canvas)', () => {
     const creative = makeBlankCreative({ id: 'c1', label: 'A', destination_url: 'https://example.com', media_url: 'https://x/y.jpg', media_type: 'image' });
 

@@ -1,5 +1,5 @@
 // src/views/advertiser/createCampaign/CreativeCard.jsx
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { C, F } from '../../../design/tokens.js';
 import { Inp } from '../../../components/primitives/Inp.jsx';
 import { SelInput } from '../../../components/primitives/SelInput.jsx';
@@ -70,6 +70,19 @@ export function CreativeCard({
   const [pickField, setPickField] = useState(null);
   const [pickError, setPickError] = useState('');
   const mediaRef = useRef(null);
+
+  // A pick can be armed and then orphaned mid-flight if its preconditions
+  // disappear -- the advertiser clears the destination URL (unmounting the
+  // whole QR Colours section, including the "click to sample" advisory) or
+  // removes the uploaded media (leaving nothing to click). Without this,
+  // pickField stays set and CreativePreview keeps pickColorMode on with no
+  // visible explanation of why clicking the image does something.
+  useEffect(() => {
+    if (pickField && (!hasDestination || !creative.media_url)) {
+      setPickField(null);
+      setPickError('');
+    }
+  }, [pickField, hasDestination, creative.media_url]);
 
   const startPick = (field) => {
     setPickError('');
