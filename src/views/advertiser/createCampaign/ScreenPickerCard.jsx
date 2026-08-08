@@ -1,10 +1,17 @@
 // src/views/advertiser/createCampaign/ScreenPickerCard.jsx
+import { useState } from 'react';
 import { C, F } from '../../../design/tokens.js';
+import { AdRenderPreviewModal } from '../../../components/shared/AdRenderPreviewModal.jsx';
 
-export function ScreenPickerCard({ screen, selected, onToggle }) {
+export function ScreenPickerCard({ screen, selected, onToggle, creative }) {
+  const [showPreview, setShowPreview] = useState(false);
   const firstPhoto = screen.screen_photos?.[0];
   const venueLabel = screen.venue_subtype || screen.venue_category;
   const isSelected = selected.includes(screen.id);
+
+  const markedPhotos = (screen.screen_photo_frames ?? []).filter(f => screen.screen_photos?.includes(f.url));
+  const canPreview = markedPhotos.length > 0;
+  const hasCreativeMedia = Boolean(creative?.media_url);
 
   return (
     <div
@@ -17,7 +24,26 @@ export function ScreenPickerCard({ screen, selected, onToggle }) {
       }}
     >
       {firstPhoto && (
-        <img src={firstPhoto} alt={screen.name} style={{ width: '100%', height: 72, objectFit: 'cover', display: 'block' }} />
+        <div style={{ position: 'relative' }}>
+          <img src={firstPhoto} alt={screen.name} style={{ width: '100%', height: 72, objectFit: 'cover', display: 'block' }} />
+          {canPreview && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); if (hasCreativeMedia) setShowPreview(true); }}
+              disabled={!hasCreativeMedia}
+              title={hasCreativeMedia ? 'Preview your ad on this screen' : 'Upload your creative to preview'}
+              style={{
+                position: 'absolute', bottom: 6, right: 6,
+                padding: '4px 9px', borderRadius: 14, border: 'none',
+                background: hasCreativeMedia ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.35)',
+                color: '#fff', fontSize: 11, fontFamily: F.sans,
+                cursor: hasCreativeMedia ? 'pointer' : 'not-allowed',
+              }}
+            >
+              👁 Preview
+            </button>
+          )}
+        </div>
       )}
       <div style={{ padding: '10px 12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -42,6 +68,16 @@ export function ScreenPickerCard({ screen, selected, onToggle }) {
           ~{screen.impressions > 0 ? `${(screen.impressions / 1000).toFixed(0)}K impr/mo` : 'No data yet'}
         </div>
       </div>
+
+      {showPreview && (
+        <AdRenderPreviewModal
+          screenName={screen.name}
+          markedPhotos={markedPhotos}
+          mediaUrl={creative?.media_url}
+          mediaType={creative?.media_type}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
     </div>
   );
 }
