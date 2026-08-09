@@ -1,6 +1,34 @@
 packages:
   - 'packages/*'
   - 'mobile'
+# @expo/cli's require.resolve('metro-runtime/package.json') walks up from its
+# own nested .pnpm location and never reaches mobile/'s isolated node_modules
+# — a phantom-dependency it expects the consuming project to provide. Full
+# nodeLinker: hoisted "fixes" this but collapses root's React 19.2.7 (web)
+# and mobile's React 19.1.0 (Expo SDK 54) into one copy, breaking RN hooks in
+# tests. Hoist only the Metro/Expo-CLI family to root node_modules instead —
+# leaves React (and everything else) isolated per-workspace-package.
+publicHoistPattern:
+  - '*metro*'
+  - '@expo/cli'
+# @expo-google-fonts/* packages declare zero dependencies by design (they
+# expect to piggyback on the consuming app's react). Under pnpm's isolated
+# linker in a monorepo, phantom `import ... from 'react'` walks up from the
+# package's location in the SHARED root .pnpm store and hits root's own
+# react (19.2.7, the web app) before ever reaching mobile's react (19.1.0)
+# — two live React copies, Fabric's hook dispatcher on one, useFonts calling
+# useState on the other → "Cannot read property 'useState' of null".
+# Declaring the dependency here makes pnpm nest the correct (mobile's) copy.
+# NOTE: pinned to an exact version, not a range — must be bumped by hand
+# whenever mobile/package.json's own "react" version changes (next Expo SDK
+# upgrade), or this silently regresses back to the wrong copy.
+packageExtensions:
+  '@expo-google-fonts/space-grotesk':
+    dependencies:
+      react: '19.1.0'
+  '@expo-google-fonts/jetbrains-mono':
+    dependencies:
+      react: '19.1.0'
 allowBuilds:
   # esbuild is vitest's bundler; its install script links the platform binary.
   esbuild: true
