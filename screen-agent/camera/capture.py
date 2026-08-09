@@ -24,10 +24,27 @@ if not cap.isOpened():
 interval = 1.0 / CAPTURE_FPS
 print(f"[camera] Capturing at {CAPTURE_FPS} FPS → {FRAME_PATH}", flush=True)
 
+# If the camera is unplugged/fails mid-run, cap.read() just keeps returning
+# ret=False forever without cv2 raising — the container stays "up" but frames
+# stop updating and nothing ever surfaces that. Exit after sustained failure
+# so `restart: unless-stopped` cycles the container and retries cap.open();
+# this is the only way the camera reconnecting gets picked back up.
+CONSECUTIVE_FAIL_LIMIT = 30  # ~30-60s of failed reads depending on FPS
+consecutive_fails = 0
+
 while True:
     start = time.time()
     ret, frame = cap.read()
     if ret:
         cv2.imwrite(FRAME_PATH, frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        consecutive_fails = 0
+    else:
+        consecutive_fails += 1
+        print(f"[camera] WARN: frame read failed ({consecutive_fails}/{CONSECUTIVE_FAIL_LIMIT})", flush=True)
+        if consecutive_fails >= CONSECUTIVE_FAIL_LIMIT:
+            raise RuntimeError(
+                f"camera read failed {CONSECUTIVE_FAIL_LIMIT} times in a row — "
+                "camera likely disconnected. Exiting for restart."
+            )
     elapsed = time.time() - start
     time.sleep(max(0, interval - elapsed))
