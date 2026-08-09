@@ -73,13 +73,23 @@ export function AuthProvider({ children }) {
   }, [])
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const code   = params.get('code')
+    const params   = new URLSearchParams(window.location.search)
+    const code     = params.get('code')
+    // Supabase appends `type=recovery` to password-reset redirect URLs.
+    // Exchanging the code still gives the client a working session (needed
+    // for updatePassword()), but we must NOT surface it as a real login —
+    // otherwise clicking a reset-password email logs the user straight in
+    // without ever verifying/changing the password.
+    const isRecovery = params.get('type') === 'recovery'
 
     const init = async () => {
       if (code) {
         await supabase.auth.exchangeCodeForSession(code)
         window.history.replaceState({}, '', window.location.pathname)
+      }
+      if (isRecovery) {
+        setLoading(false)
+        return
       }
       const { data: { session } } = await supabase.auth.getSession()
       setUser(session?.user ?? null)
@@ -167,7 +177,12 @@ export function AuthProvider({ children }) {
 
   async function updatePassword(password) {
     const result = await supabase.auth.updateUser({ password })
-    if (!result.error) setPasswordRecovery(false)
+    if (!result.error) {
+      setPasswordRecovery(false)
+      // Never let a recovery-link session flow straight into the app —
+      // end it and require a fresh sign-in with the new password.
+      await signOut()
+    }
     return result
   }
 
