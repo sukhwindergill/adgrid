@@ -16,7 +16,7 @@ services:
     devices:
       - /dev/video0:/dev/video0   # USB camera — change index if needed
     environment:
-      CAPTURE_FPS: "1"            # 1 frame per second is sufficient
+      CAPTURE_FPS: "0.5"          # 1 frame every 2s — plenty for dwell/attention, cheap on CPU-only hosts
       FRAME_DIR: /frames
     restart: unless-stopped
 
@@ -28,8 +28,10 @@ services:
       - frame_data:/frames
     environment:
       FRAME_DIR: /frames
-      WINDOW_SECONDS: "30"        # Aggregate stats over 30s windows
+      WINDOW_SECONDS: "30"          # Aggregate stats over 30s windows
       RESULTS_DIR: /frames/results
+      FRAME_INTERVAL_S: "2"         # seconds between detection passes (mediapipe) — match CAPTURE_FPS cadence
+      DEMOGRAPHICS_FRAME_SKIP: "3"  # only run DeepFace age/gender (the expensive part) every Nth pass
     restart: unless-stopped
     depends_on:
       - camera
