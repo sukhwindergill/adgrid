@@ -25,6 +25,20 @@ RESULTS_DIR     = os.getenv("RESULTS_DIR", "/frames/results")
 WINDOW_SECONDS  = int(os.getenv("WINDOW_SECONDS", "30"))
 FRAME_PATH      = os.path.join(FRAME_DIR, "latest.jpg")
 
+# Perf knobs for low-power hardware (Pi 5 CPU-only). Face detection/mesh
+# (mediapipe) is cheap; DeepFace.analyze (tensorflow, age+gender) is the
+# expensive part — it's what falls behind first if the loop tries to run it
+# on every face, every second.
+#
+# FRAME_INTERVAL_S:    seconds between detection passes (decoupled from
+#                       CAPTURE_FPS — camera can capture faster than we
+#                       analyze; we just always read the latest frame).
+# DEMOGRAPHICS_SKIP:    only run DeepFace.analyze every Nth detection pass.
+#                       people_count/dwell/attention (mediapipe-only) still
+#                       update every pass; only age/gender sampling thins out.
+FRAME_INTERVAL_S  = float(os.getenv("FRAME_INTERVAL_S", "1"))
+DEMOGRAPHICS_SKIP = max(1, int(os.getenv("DEMOGRAPHICS_FRAME_SKIP", "3")))
+
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 mp_face = mp.solutions.face_detection
@@ -84,6 +98,7 @@ def run_window():
 
     face_tracker.clear()
     end_time = time.time() + WINDOW_SECONDS
+    frame_counter = 0
 
     with mp_face.FaceDetection(min_detection_confidence=0.5) as detector, \
          mp_mesh.FaceMesh(static_image_mode=True, max_num_faces=10, min_detection_confidence=0.4) as mesher:
@@ -92,12 +107,12 @@ def run_window():
             frame_time = time.time()
 
             if not Path(FRAME_PATH).exists():
-                time.sleep(1)
+                time.sleep(FRAME_INTERVAL_S)
                 continue
 
             frame = cv2.imread(FRAME_PATH)
             if frame is None:
-                time.sleep(1)
+                time.sleep(FRAME_INTERVAL_S)
                 continue
 
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -107,8 +122,11 @@ def run_window():
             mesh_result = mesher.process(rgb)
 
             if not detection_result.detections:
-                time.sleep(1)
+                time.sleep(FRAME_INTERVAL_S)
                 continue
+
+            frame_counter += 1
+            run_demographics = (frame_counter % DEMOGRAPHICS_SKIP == 0)
 
             faces_this_frame = []
             for det in detection_result.detections:
@@ -135,38 +153,42 @@ def run_window():
                         break
                 stats["attention_samples"].append(attention)
 
-                # Demographic estimation — crop face region
-                try:
-                    x1 = max(0, int(bb.xmin * w))
-                    y1 = max(0, int(bb.ymin * h))
-                    x2 = min(w, int((bb.xmin + bb.width) * w))
-                    y2 = min(h, int((bb.ymin + bb.height) * h))
-                    face_crop = frame[y1:y2, x1:x2]
-                    if face_crop.size > 0:
-                        analysis = DeepFace.analyze(
-                            face_crop, actions=["age", "gender"],
-                            enforce_detection=False, silent=True,
-                        )
-                        if isinstance(analysis, list):
-                            analysis = analysis[0]
-                        age_bracket = classify_age(analysis.get("age", 30))
-                        stats[f"age_{age_bracket}"] += 1
-                        gender = analysis.get("dominant_gender", "unknown").lower()
-                        if "man" in gender or gender == "male":
-                            stats["gender_male"] += 1
-                        elif "woman" in gender or gender == "female":
-                            stats["gender_female"] += 1
-                        else:
-                            stats["gender_unknown"] += 1
-                except Exception:
-                    stats["gender_unknown"] += 1
+                # Demographic estimation — crop face region. Skipped on most
+                # passes (DEMOGRAPHICS_SKIP): tensorflow inference is the
+                # heaviest step by far, and age/gender only needs a
+                # representative sample per window, not every frame.
+                if run_demographics:
+                    try:
+                        x1 = max(0, int(bb.xmin * w))
+                        y1 = max(0, int(bb.ymin * h))
+                        x2 = min(w, int((bb.xmin + bb.width) * w))
+                        y2 = min(h, int((bb.ymin + bb.height) * h))
+                        face_crop = frame[y1:y2, x1:x2]
+                        if face_crop.size > 0:
+                            analysis = DeepFace.analyze(
+                                face_crop, actions=["age", "gender"],
+                                enforce_detection=False, silent=True,
+                            )
+                            if isinstance(analysis, list):
+                                analysis = analysis[0]
+                            age_bracket = classify_age(analysis.get("age", 30))
+                            stats[f"age_{age_bracket}"] += 1
+                            gender = analysis.get("dominant_gender", "unknown").lower()
+                            if "man" in gender or gender == "male":
+                                stats["gender_male"] += 1
+                            elif "woman" in gender or gender == "female":
+                                stats["gender_female"] += 1
+                            else:
+                                stats["gender_unknown"] += 1
+                    except Exception:
+                        stats["gender_unknown"] += 1
 
             # Remove stale face tracks (not seen for >10s)
             stale = [k for k, t in face_tracker.items() if time.time() - t > 10]
             for k in stale:
                 del face_tracker[k]
 
-            time.sleep(1)
+            time.sleep(FRAME_INTERVAL_S)
 
     window_end = datetime.now(timezone.utc)
     avg_dwell = round(sum(stats["dwell_samples"]) / max(len(stats["dwell_samples"]), 1), 2)
