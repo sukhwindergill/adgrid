@@ -28,9 +28,13 @@ def load_pushed() -> set:
     with open(PUSHED_LOG) as f:
         return set(f.read().splitlines())
 
-def mark_pushed(filename: str):
-    with open(PUSHED_LOG, "a") as f:
-        f.write(filename + "\n")
+def save_pushed(pushed: set):
+    """Overwrite (not append) — result JSONs get pruned to the last 100
+    below, so .pushed should track that same bounded set instead of growing
+    by one line every push forever (an unattended device runs for years)."""
+    with open(PUSHED_LOG, "w") as f:
+        if pushed:
+            f.write("\n".join(sorted(pushed)) + "\n")
 
 def push_result(result: dict, filename: str) -> bool:
     payload = {
@@ -97,7 +101,7 @@ if __name__ == "__main__":
                 with open(path) as f:
                     result = json.load(f)
                 if push_result(result, filename):
-                    mark_pushed(filename)
+                    pushed.add(filename)
                     # Keep last 100 result files, delete older ones
                     all_files = sorted(glob.glob(os.path.join(RESULTS_DIR, "*.json")))
                     for old in all_files[:-100]:
@@ -107,5 +111,11 @@ if __name__ == "__main__":
                             pass
             except Exception as e:
                 print(f"[pusher] Error reading {filename}: {e}", flush=True)
+
+        # Bound .pushed to filenames still on disk instead of remembering
+        # every push since boot — keeps it in lockstep with the 100-file cap
+        # above on a device meant to run unattended for months/years.
+        existing = {os.path.basename(p) for p in glob.glob(os.path.join(RESULTS_DIR, "*.json"))}
+        save_pushed(pushed & existing)
 
         send_heartbeat()
