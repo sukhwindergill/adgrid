@@ -38,7 +38,7 @@ function WizardProgress({ step, total, onCancel }) {
         }} />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-        {['Welcome', 'Register', 'Setup', 'Connect'].map((label, i) => (
+        {['Welcome', 'Register', 'Setup', 'Connect', 'Payouts'].map((label, i) => (
           <div key={label} style={{
             fontSize: 11, fontFamily: F.sans,
             color: i + 1 <= step ? C.purple : C.textMuted,
