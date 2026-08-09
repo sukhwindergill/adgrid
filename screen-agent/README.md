@@ -19,6 +19,24 @@ Both are required. Set up the display first, then the screen agent below.
 
 ---
 
+## Quick Start (Bootstrap Script)
+
+On a fresh Raspberry Pi 5 / Debian mini PC, `bootstrap.sh` does everything below in one shot: installs Docker + Chromium, disables screen blanking, configures and starts the screen-agent Docker stack, and installs + starts the kiosk display service.
+
+```bash
+sudo ./screen-agent/bootstrap.sh
+```
+
+It'll prompt for `SCREEN_TOKEN` and `SUPABASE_ANON_KEY` (from the Setup Guide tab), or accept them non-interactively:
+
+```bash
+sudo SCREEN_TOKEN=xxx SUPABASE_ANON_KEY=yyy KIOSK_USER=pi ./screen-agent/bootstrap.sh
+```
+
+Prefer to do it by hand, or provisioning a non-Debian system? Manual steps below.
+
+---
+
 ## Display Setup (Kiosk Browser)
 
 The display player is a web page served from the AdGrid platform at:
