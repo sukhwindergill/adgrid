@@ -733,6 +733,68 @@ factory-reset / re-pair path if the token is rotated.
 > in code and one verified live. S20's systemd units remain unverified on real hardware; worth a
 > real crash-loop test (`sudo pkill -9 -f chromium` five times fast) the first time hardware exists.
 
+> **Update — session 14 (2026-08-10, approval queue at bulk volume):** Went deep on area 3 per
+> the carried-forward item, still only ever tested with 1-2 submissions since it first shipped. Read
+> `ApprovalQueue.jsx` in full (all three approve paths: single-screen, per-card "approve all my
+> screens," and the top-level bulk button) plus `charge-campaign`'s locking/idempotency, and the
+> existing `bulkApproveAll` test.
+>
+> - **S21 (should-fix) — none of the three approve/reject paths check `{ error }` on the
+>   `campaign_screens` UPDATE, and `bulkApproveAll` fires every write for every pending
+>   campaign-screen pair fully unthrottled.** `approveScreen`, `approveAll` (per-card), and
+>   `bulkApproveAll` (top-level) all do `await supabase.from('campaign_screens').update(...)` and
+>   discard the result entirely — no `{ error }` destructured, none checked
+>   ([ApprovalQueue.jsx:139](src/views/operator/ApprovalQueue.jsx:139),
+>   [:163-168](src/views/operator/ApprovalQueue.jsx:163),
+>   [:503-508](src/views/operator/ApprovalQueue.jsx:503)). Every path then calls
+>   `applyApproved`/`onApproved` **unconditionally**, regardless of whether the write actually
+>   succeeded — the UI removes the row from the pending list and reports success even if the DB
+>   update silently failed. `bulkApproveAll` compounds this: for C pending campaigns × R screens
+>   each, it fires a nested nothing-capped `Promise.all` — every `campaign_screens` UPDATE for
+>   every campaign, all at once, no batching (one query per row instead of one `.in()` per
+>   campaign), no concurrency limit — followed by up to C concurrent `charge-campaign` edge-function
+>   invocations, each doing a synchronous round trip to Stripe. This is exactly the "handful of
+>   submissions" vs "real bulk volume" gap the prior sessions flagged as unproven: with only a
+>   couple of pending items every write succeeds and nobody notices there's no error handling; with
+>   a real backlog (dozens of campaigns during a growth spurt, or an operator returning from a few
+>   days off), a connection-pool blip or a transient PostgREST/Stripe 5xx under that concurrency
+>   spike becomes statistically real, and when it hits, the affected campaign silently stays
+>   `pending` server-side forever while the operator's screen shows it as handled — no error banner,
+>   no retry path, nothing tells anyone until the advertiser asks why their campaign never went
+>   live. Confirmed the existing test (`ApprovalQueue.bulkApproveAll.test.jsx`) only mocks
+>   always-succeeding writes — a partial-failure scenario has never been exercised.
+>   Secondary, same root cause: the top-level "Approve all pending" button has no
+>   loading/disabled guard tied to the operation in flight, so a second click mid-batch doubles the
+>   concurrent write volume right when concurrency is already the risk — not a double-charge risk
+>   though: confirmed `charge-campaign` has both an atomic `payment_status` UPDATE-lock
+>   ([charge-campaign/index.ts:250](supabase/functions/charge-campaign/index.ts:250)) and a
+>   booking-id-keyed Stripe idempotency key, so a redundant charge call safely 409s or dedupes
+>   rather than double-billing an advertiser.
+>   **Fix direction:** check `{ error }` on every `campaign_screens` write; on failure, don't call
+>   `applyApproved`/`onApproved` for that row and surface which ones failed (a banner listing
+>   failed campaigns with a retry action) instead of silently reporting success. Batch each
+>   campaign's per-screen updates into one `.update(...).in('screen_id', [...])` call instead of one
+>   query per row, and cap `bulkApproveAll`'s campaign-level concurrency (process in chunks of ~5-10
+>   rather than all at once) so a real backlog doesn't fire dozens of simultaneous Stripe calls.
+>   Add a `bulkApproving` state to disable the button while in flight.
+> - Minor, not elevated: `App.jsx`'s `bookings` fetch that feeds `campaigns` (and therefore
+>   `ApprovalQueue`) has no `.limit()` — RLS already scopes it to the caller's own bookings /
+>   bookings touching their screens (not the whole platform table), but it also has no status
+>   filter, so every dashboard load pulls a tenant's **entire** booking history, not just pending
+>   ones. Fine at current volume; worth a status/date filter or pagination once any single
+>   advertiser or operator accumulates a few hundred historical bookings.
+>
+> **Go/No-Go:** area 3 stays 🟡, downgraded from the prior 🟢-by-default (never actually tested at
+> volume) — the queue works correctly today because nobody has hit it with real bulk volume yet,
+> not because it's been verified to handle it. Not a hard blocker (mitigated by the charge-side
+> idempotency, and today's actual pending-campaign counts are small), but should-fix before
+> depending on bulk-approve for a large backlog, and worth fixing before it causes a real "why did
+> my campaign never air" support ticket.
+>
+> **Not yet gone deep on:** a live click-through of the campaign-hierarchy wizard, location-
+> targeting picker, and ad-render-preview (shipped Aug 1-8, still code-read only); mobile app on a
+> real device (still blocked on hardware access); S20's systemd watchdog on real hardware.
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
