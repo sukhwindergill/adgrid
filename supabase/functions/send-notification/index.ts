@@ -198,6 +198,26 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
     body: `${d.advertiserName} submitted a new campaign for review.`,
     html: emailHtml("Campaign Submitted", `<strong>${d.advertiserName}</strong> submitted a new campaign. Review and approve it to get it live.`, "Review Campaign", d.appUrl ?? ""),
   }),
+  payout_transfer_failed: (d) => ({
+    title: "A payout transfer failed",
+    body: `Your ${fmtMoney(d.amount, d.currency)} share of a campaign couldn't be transferred. Check your Stripe Connect account.`,
+    html: emailHtml(
+      "A payout transfer failed",
+      `Your <strong>${fmtMoney(d.amount, d.currency)}</strong> share of a campaign's revenue couldn't be transferred to your bank account. This usually means Stripe needs more information from you. Check your Connect account status in Settings and complete any pending requirements — we'll retry once it's resolved.`,
+      "Check Payout Settings",
+      d.appUrl ?? "",
+    ),
+  }),
+  connect_account_restricted: (d) => ({
+    title: "Your payout account needs attention",
+    body: "Stripe has flagged your connected account — new payouts are on hold until it's resolved.",
+    html: emailHtml(
+      "Your payout account needs attention",
+      "Stripe has restricted your connected payout account — this usually means a document was rejected or more information is needed. New payouts are on hold until this is resolved. Check your Connect account status in Settings.",
+      "Check Payout Settings",
+      d.appUrl ?? "",
+    ),
+  }),
   payout_completed: (d) => ({
     title: `Payout of ${fmtMoney(d.amount, d.currency)} sent`,
     body: `Your payout of ${fmtMoney(d.amount, d.currency)} has been transferred to your bank.`,

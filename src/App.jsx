@@ -287,14 +287,20 @@ function AppInner() {
         window.location.replace(window.location.pathname);
         return;
       }
-      supabase
-        .from('profiles')
-        .update({ connect_status: 'active' })
-        .eq('id', user.id)
-        .then(({ error }) => {
-          if (error) console.error('Failed to update connect status:', error.message);
-          window.location.replace(window.location.pathname);
-        });
+      // B16: landing on this return_url only means Stripe's onboarding flow
+      // redirected back — Stripe's own docs say that happens whether or not
+      // the operator actually finished (e.g. closing the KYC form early
+      // still lands here). Don't trust that alone; ask the server to check
+      // the real account state with Stripe before calling this "active".
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) { window.location.replace(window.location.pathname); return; }
+        fetch(`${SUPABASE_FUNCTIONS_URL}/confirm-connect-account`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        })
+          .catch(err => console.error('Failed to confirm connect status:', err))
+          .finally(() => window.location.replace(window.location.pathname));
+      });
     }
   }, [user]);
 

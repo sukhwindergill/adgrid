@@ -228,6 +228,39 @@ Deno.serve(async (req: Request) => {
       break;
     }
 
+    case "account.updated": {
+      // B16: the client-side redirect handler can only make a one-time,
+      // unverified guess at whether Connect onboarding actually finished.
+      // This event is Stripe's own source of truth for the account's real
+      // state going forward — it fires both when an account newly qualifies
+      // (KYC completes async, after the operator already left the return
+      // page) and when a previously-active account gets restricted (a
+      // rejected document, a compliance hold). Sync connect_status from it
+      // either way instead of leaving a stale guess in place indefinitely.
+      const account = event.data.object as Stripe.Account;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, connect_status")
+        .eq("stripe_connect_account_id", account.id)
+        .maybeSingle();
+      if (!profile) break;
+
+      const active = !!(account.charges_enabled && account.payouts_enabled);
+      const newStatus = active ? "active" : account.details_submitted ? "restricted" : "pending";
+      if (newStatus === profile.connect_status) break;
+
+      await supabase.from("profiles").update({ connect_status: newStatus }).eq("id", profile.id);
+
+      // Only alert on a real regression an operator wouldn't otherwise
+      // notice — going active is a silent improvement, not a fire drill.
+      if (profile.connect_status === "active" && newStatus !== "active") {
+        await notifyAdvertiser(profile.id, "connect_account_restricted", {
+          appUrl: Deno.env.get("PUBLIC_APP_URL") ?? "",
+        });
+      }
+      break;
+    }
+
     default:
       break;
   }

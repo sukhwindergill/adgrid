@@ -35,12 +35,29 @@ function useBilling() {
   return { data, loading, error, refresh: fetch_ };
 }
 
+// B16: operator_transfers.status = 'failed' rows previously existed only in
+// the database — nothing on this page (or anywhere else) ever read them, so
+// a failed payout was invisible until someone happened to run raw SQL.
+function useFailedTransfers() {
+  const [failed, setFailed] = useState([]);
+  useEffect(() => {
+    supabase
+      .from('operator_transfers')
+      .select('id, booking_id, amount, currency, created_at')
+      .eq('status', 'failed')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => setFailed(data ?? []));
+  }, []);
+  return failed;
+}
+
 export function Billing() {
   const toast = useToast();
   const [tab, setTab]         = useState('overview');
   const [payingOut, setPaying] = useState(false);
   const { data, loading, error, refresh } = useBilling();
   const { isMobile } = useBreakpoint();
+  const failedTransfers = useFailedTransfers();
 
   const charges       = data?.charges ?? [];
   const payouts       = data?.payouts ?? [];
@@ -93,6 +110,15 @@ export function Billing() {
     <div>
       <PageHeader title="Billing & Payouts" subtitle="Stripe charges, owner revenue share, and payout management"
         actions={<a href="https://dashboard.stripe.com" target="_blank" rel="noreferrer"><Btn variant="secondary" size="sm">Stripe Dashboard ↗</Btn></a>} />
+
+      {failedTransfers.length > 0 && (
+        <div style={{ padding: '12px 16px', marginBottom: 20, background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`, borderRadius: 8, fontSize: 13, color: C.red, fontFamily: F.sans, lineHeight: 1.6 }}>
+          <strong>⚠ {failedTransfers.length} payout transfer{failedTransfers.length !== 1 ? 's' : ''} failed</strong> —
+          {' '}totalling ${failedTransfers.reduce((a, t) => a + Number(t.amount), 0).toLocaleString()}.
+          This usually means Stripe needs more information from your connected account.
+          Check your Connect status in Settings, then contact support if it's already active.
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
         <KPI label="Total Ad Spend"   value={`$${totalCharged.toLocaleString()}`}  sub="charged campaigns" trend={chargedTrend} trendLabel="vs prior 30 days" icon="💰" />

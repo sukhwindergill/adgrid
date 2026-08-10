@@ -132,6 +132,14 @@ async function distributeOperatorCuts(
         },
         { onConflict: "booking_id,operator_id" },
       );
+      // B16: this used to be logged nowhere an operator could ever see it —
+      // "connected" in Settings, then a payout that just never arrives with
+      // zero explanation. Tell them at the moment it happens.
+      await notifyAdvertiser(profile.id, "payout_transfer_failed", {
+        amount: (amountCents / 100).toFixed(2),
+        currency,
+        appUrl: Deno.env.get("PUBLIC_APP_URL") ?? "",
+      });
     }
   }
 }
