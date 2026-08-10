@@ -648,6 +648,65 @@ factory-reset / re-pair path if the token is rotated.
 >   re-verified live against prod (still 0 real transfers exist to reverse) — worth a synthetic
 >   disposable-row test the day the first real Connect transfer fires.
 
+> **Update — session 13 (2026-08-10, screen-agent/display resilience deep pass):** Went deep on
+> area 4 per session 12's carried-forward "next pass" item — display-player resilience on real
+> hardware. Nothing since session 12 had touched this (`device bootstrap script` #37, capture-rate
+> perf tuning #38, camera-read-failure exit fix in `910bed2` were all shipped but never audited by
+> a go-live pass). Read the full `screen-agent/` stack (`bootstrap.sh`, systemd unit,
+> `docker-compose.yml`, `capture.py`, `event_pusher.py`) plus `display-feed`, `screen-health-cron`,
+> and `screenHealth.js` end to end. Two real, previously-unflagged gaps, both specific to
+> unattended physical hardware — neither is "nothing works," both are silent-failure/recovery gaps:
+>
+> - **S19 (should-fix) — the "screen is online" signal can't tell "ads are showing" apart from
+>   "the CV box is alive."** `screens.last_seen` (the single column every health badge and
+>   `screen-health-cron`'s offline alert read — [screenHealth.js](src/lib/screenHealth.js:15),
+>   [screen-health-cron/index.ts:41](supabase/functions/screen-health-cron/index.ts:41)) is written
+>   from **two independent, uncoupled processes**: the Chromium kiosk page's own 30s poll
+>   ([display-feed/index.ts:191](supabase/functions/display-feed/index.ts:191)) and the Docker CV
+>   agent's separate 30s heartbeat ([event_pusher.py:61](screen-agent/pusher/event_pusher.py:61),
+>   posted via `ingest-impressions`' `heartbeat_only` branch). If Chromium dies or crash-loops out
+>   (see S20) but the camera/inference/pusher containers keep running — a very plausible split
+>   failure, e.g. a GPU/display-driver fault that has nothing to do with the USB webcam or network —
+>   the pusher keeps refreshing `last_seen` every 30s. The operator dashboard keeps showing "Live,"
+>   `screen-health-cron` never fires a `screen_offline` alert, and the screen keeps matching paid
+>   campaigns in `display-feed`'s targeting — a fully dark screen that advertisers are still being
+>   billed against, with no signal to anyone that it's dark. (The reverse case — display running,
+>   CV agent down — is fine: CV is documented as optional and `display-feed`'s own heartbeat alone
+>   keeps `last_seen` fresh.) Fix direction: track the kiosk-page and CV-agent heartbeats in separate
+>   columns (or a `source` field on `display_heartbeats`, which already exists and is unused for
+>   this) and have `screen-health-cron` require the kiosk-page signal specifically before calling a
+>   screen "online" — the CV heartbeat alone should never be sufficient.
+> - **S20 (should-fix) — a crash-looping kiosk browser goes dark permanently with no auto-recovery,
+>   and the runbook has no documented fix.** `adgrid-display.service` sets `Restart=always` but also
+>   `StartLimitBurst=5`/`StartLimitIntervalSec=60` — after 5 crashes in 60s, systemd marks the unit
+>   **failed** and stops restarting it, permanently, even after whatever caused the crash-loop (bad
+>   GPU driver init, corrupt Chromium profile, an OOM on a memory-constrained Pi) clears up. Recovery
+>   requires `systemctl reset-failed adgrid-display && systemctl start adgrid-display` — SSH access,
+>   not something a non-technical operator in a mall/cafe can do, and nothing in
+>   `screen-agent/bootstrap.sh`, the README, or a cron polls `systemctl is-failed` to auto-recover.
+>   Combined with S19, a screen that hits this on hardware with the recommended CV-agent tier
+>   installed would show "Live" in the dashboard indefinitely while actually dark, with no path back
+>   except someone physically or remotely (SSH) intervening. Fix direction: add a small watchdog —
+>   a systemd timer or cron entry every few minutes running
+>   `systemctl is-failed --quiet adgrid-display && systemctl reset-failed adgrid-display && systemctl start adgrid-display`
+>   — and document it in the bootstrap script / README as a required step, not optional.
+> - Minor, not elevated: `event_pusher.py`'s `PUSHED_LOG` (`.pushed`) is append-only and never
+>   trimmed — grows unbounded over the device's lifetime. At one line per 30s push it's ~1 MB/year
+>   of plain text, harmless on any SD card capacity in the buy list, not worth a fix before launch.
+>
+> **Go/No-Go this session:** area 4 stays 🟢 GO for a **pilot you're personally monitoring** — both
+> findings are monitoring/recovery blind spots on top of a stack that otherwise works (capture,
+> inference, push, kiosk render, and normal offline detection when only one signal is missing, are
+> all sound). Should-fix, not blocker, before handing hardware to **unattended** operators at scale —
+> S19+S20 together mean a real "screen is dark and nobody finds out" failure mode exists today with
+> the recommended (camera-equipped) hardware tier.
+>
+> **Not yet gone deep on:** approval queue under real bulk/adversarial volume (carried forward
+> again — still only ever tested with 1-2 submissions); a live click-through of the campaign-
+> hierarchy wizard, location-targeting picker, and ad-render-preview (all shipped Aug 1-8, still
+> never exercised by any go-live pass, code-read only); mobile app on a real device (still blocked
+> on hardware access).
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
