@@ -707,6 +707,32 @@ factory-reset / re-pair path if the token is rotated.
 > never exercised by any go-live pass, code-read only); mobile app on a real device (still blocked
 > on hardware access).
 
+> **Update — session 13 continued (2026-08-10, S19/S20 fixed same day):**
+> - **S19 — fixed.** New `screens.cv_last_seen` column (migration `20260810000000`); CV agent's
+>   `heartbeat_only` branch in `ingest-impressions` now writes there instead of `last_seen`
+>   (`event_pusher.py` needed no change — same payload, server-side routing changed). `last_seen`
+>   is now written only by `display-feed`'s kiosk poll, so `screen-health-cron` and `healthSignal()`
+>   needed **no code changes** — they automatically became kiosk-only signals once the CV agent
+>   stopped writing to the column they read. Added `cvAgentSignal()` to `screenHealth.js` and a
+>   small "Camera agent: last check-in …" readout to `ScreenDetail`'s Audience Measurement Camera
+>   card, deliberately separate from the main Live/Offline badge. **Verified live**: deployed
+>   `ingest-impressions` v7, POSTed a real `heartbeat_only` request against a real live screen row
+>   (`scr-brixton-001`) — `cv_last_seen` updated, `last_seen` stayed `null` (unchanged) — confirming
+>   the exact failure mode is closed: this same request before the fix would have made the screen
+>   read "online." Test mutation reverted after.
+> - **S20 — fixed.** New `adgrid-display-watchdog.service` + `.timer` (systemd, runs every 5 min):
+>   clears `adgrid-display.service`'s failed state and restarts it if down — both are no-ops on a
+>   healthy unit. Wired into `bootstrap.sh` (installed + enabled automatically) and the manual
+>   README path. **Not verified live** — no physical device/systemd host in this environment; the
+>   unit files are syntactically standard systemd oneshot+timer and follow the same pattern as
+>   `adgrid-display.service` itself, but the actual crash-loop-then-recover behavior needs a real
+>   Pi/mini-PC to confirm.
+> - 550/550 tests pass (`4cd6679`). Build clean.
+>
+> **Go/No-Go:** area 4 moves to 🟢 GO, including for unattended operators — both blind spots closed
+> in code and one verified live. S20's systemd units remain unverified on real hardware; worth a
+> real crash-loop test (`sudo pkill -9 -f chromium` five times fast) the first time hardware exists.
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
