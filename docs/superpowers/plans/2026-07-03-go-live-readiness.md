@@ -816,6 +816,69 @@ factory-reset / re-pair path if the token is rotated.
 > **Go/No-Go:** area 3 back to 🟢 GO — error handling and concurrency are now correct by
 > construction rather than by nobody having hit the edge case yet.
 
+> **Update — session 15 (2026-08-10, mobile app on a real device — attempted again):** Checked
+> for device access first: no `adb`, no emulator, no iOS simulator (Windows), no LAN path to a
+> physical phone — identical to session 7, this environment still cannot run the app on hardware.
+> Rather than stop there again, audited the actual **build pipeline** (`app.json`, `eas.json`,
+> `.gitignore`, every `process.env.EXPO_PUBLIC_*` read site) for what a real build would hit that
+> Jest/`expo start --web` never would — this is new ground; every prior pass tested app *code*
+> against a mocked Supabase client, never the config that turns that code into an installable app.
+> Two real, previously-unflagged findings, both invisible without a device precisely because
+> nothing has ever tried to actually build or install this app outside Metro:
+>
+> - **B15 (blocker for any real build) — preview/production EAS builds will ship with no backend
+>   connection at all.** `lib/supabase.js` and `hooks/useBilling.js` read
+>   `process.env.EXPO_PUBLIC_SUPABASE_URL`/`EXPO_PUBLIC_SUPABASE_ANON_KEY` directly — the standard
+>   Expo pattern, auto-inlined by Metro at bundle time from a local `.env`. That `.env` exists
+>   locally but is git-ignored ([mobile/.gitignore:5](mobile/.gitignore:5)) and there's no
+>   `.easignore` to override the default (EAS Build respects `.gitignore` for what it uploads), so
+>   it never reaches an EAS build. Confirmed `eas.json` has **no `env` block in any profile**
+>   ([eas.json](mobile/eas.json)) and no EAS project has ever been initialized (per the scaffolding
+>   commit's own note: "No EAS project linked yet... needs `eas login` + `eas init` run by hand"),
+>   so no EAS-side environment variables exist either. Net: `supabase.createClient(undefined,
+>   undefined, ...)` on any `preview`/`production` build — every screen, every query, everything
+>   fails from first launch, completely silently (no error boundary catches a malformed client at
+>   construction). The `development` profile is unaffected *as long as* it's always run via
+>   `expo start --dev-client` from a machine with the local `.env` — it's specifically the
+>   standalone builds (the ones meant for pilot testers and app stores) that are broken. Red
+>   herring ruled out: `app.json`'s `extra.supabaseUrl`/`extra.supabaseAnonKey` fields hold the
+>   literal strings `"EXPO_PUBLIC_SUPABASE_URL"`/`"EXPO_PUBLIC_SUPABASE_ANON_KEY"` (not real
+>   values) but nothing in the code reads `Constants.expoConfig.extra.supabaseUrl` — confirmed via
+>   a full-repo grep — so that dead config isn't itself the bug, just confusing leftover noise.
+>   **Fix direction:** once an EAS account/project exists, run
+>   `eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value <url> --environment preview,production`
+>   (and the anon key) rather than committing them into `eas.json`. Needs real EAS login — can't be
+>   done from this environment.
+> - **N11 (real gap, not a crash) — push notification registration is guaranteed to fail on any
+>   real device, silently.** `usePushNotifications.js` calls
+>   `Notifications.getExpoPushTokenAsync()` with no `projectId`
+>   ([usePushNotifications.js:28](mobile/hooks/usePushNotifications.js:28)) — required since no
+>   `extra.eas.projectId` exists in `app.json` (confirmed: no EAS project was ever created, same
+>   root cause as B15) and nothing passes one explicitly. This throws in current Expo SDK on a real
+>   device/build; it's caught by the surrounding `try/catch`
+>   ([usePushNotifications.js:35](mobile/hooks/usePushNotifications.js:35)) so the app doesn't
+>   crash — it just never registers a push token, `console.error`s once, and no operator ever
+>   receives a push notification. An entire built feature (`2026-06-21-mobile-plan-3-approvals-push`)
+>   is inert on real hardware, and nothing surfaces that to anyone. Not elevated to blocker since it
+>   fails safe and in-app notifications still work — but worth fixing at the same time as B15 since
+>   both need the same `eas init`.
+> - Confirmed (again) that no GitHub Actions workflow builds the mobile app, so this has never been
+>   caught by CI either — the only path to catching it has always been "build it for real," which
+>   has never happened.
+>
+> **Go/No-Go:** the operator mobile app itself (screens, hooks, schema) is 🟢 GO per sessions 3/6/7
+> — but the **build pipeline that turns it into something installable is 🔴 NO-GO**, and always has
+> been; this was just never checked before because no prior pass looked past `npm test`/`expo start
+> --web` at what an actual `eas build` would produce. Fixing B15/N11 both need one thing this
+> environment cannot provide: a logged-in `eas` session. Everything else about "checking the mobile
+> app on a real device" remains blocked exactly as in sessions 6/7 for the same reason.
+>
+> **What the user needs to do (nothing else can substitute for this):** `cd mobile && npx eas login
+> && npx eas init` (links the project, writes `extra.eas.projectId` into app config), then
+> `npx eas env:create` the two Supabase vars for `preview`+`production`, then `npx eas build
+> --profile preview --platform android` for a real installable APK. That's the actual "next pass" —
+> not something a further code-reading session can shortcut.
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
