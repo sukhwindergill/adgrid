@@ -897,6 +897,64 @@ factory-reset / re-pair path if the token is rotated.
 > this environment. The README now means the next person who does have one won't have to
 > rediscover any of this.
 
+> **Update — session 16 (2026-08-10, campaign-hierarchy wizard — live click-through):** Per the
+> carried-forward item, shipped Aug 1-8 and never exercised by any go-live pass (code-read only).
+> Created a real disposable advertiser account against production
+> (`golivereview.test.20260810@mailinator.com` — signup rejected `@example.com`/similar fake
+> domains, confirmed a real deliverable one is required; confirmed the account via direct SQL since
+> email confirmation delivery is the known-broken Resend path, not something this account needed to
+> wait on) and ran the **power case** (2 creatives, manually split across 2 real screens, per-creative
+> budget) through the real production wizard at `adgrid-mu.vercel.app`, then verified the writes
+> against the live database and cleaned everything up after. This is deeper than every prior
+> live-verification pass in this doc got for this feature — first time the multi-creative path has
+> been exercised end-to-end rather than only read as code.
+>
+> **Everything matched the design doc exactly, live:**
+> - Step 1 (Targeting): city search ("Toronto") correctly matched 2 real screens via the
+>   location-targeting picker (also carried-forward, unverified-live until now).
+> - Step 2 (Creative): uploaded a real image to Creative 1, clicked "+ Add another creative",
+>   uploaded a second image — the "2 of 2 screens aren't assigned to a creative yet — they'll show
+>   the first creative above by default" banner appeared exactly as designed, then correctly
+>   disappeared once both screens were manually assigned (King & Bay → Creative 1, Queen West →
+>   Creative 2). Per-creative accent-colour extraction from the uploaded image worked ("From
+>   creative").
+> - Step 3 (Budget): "Split per creative" toggle revealed per-creative budget fields with the exact
+>   design-doc copy ("budget above is still your overall spend cap — per-creative amounts track how
+>   that total is split, they don't add to it"); Review summary correctly showed both creative
+>   labels, total budget, and computed date range.
+> - Submitted successfully, reached the real Stripe pay screen ("Charge $500.00 CAD..."), used "Pay
+>   later" (no card on this disposable account, and entering one wasn't going to happen regardless).
+> - **Verified in the live database, not just the UI:** `campaigns` parent row created,
+>   `bookings.campaign_id`/`budget_level='per_creative'` set correctly; `campaign_creatives` has
+>   exactly 2 rows with the right budgets (300/200) and uploaded media; `campaign_creative_screens`
+>   correctly maps King & Bay → Creative 1 and Queen West → Creative 2, weight 100 each;
+>   `campaign_screens` created both rows as `pending`.
+> - **Verified the approval-reset trigger (design §4) live, not just by reading the migration:**
+>   approved one screen directly (simulating an operator), then reassigned that screen's creative
+>   (deleted + reinserted its `campaign_creative_screens` row, exactly what an advertiser edit would
+>   do) — `campaign_screens.status` flipped from `approved` back to `pending` automatically,
+>   confirming `campaign_creative_screens_reset_approval` fires correctly against real data.
+> - All test data (booking, campaign, creatives, screen assignments, advertiser profile, auth user)
+>   deleted after; confirmed zero rows remain.
+>
+> **No new findings — this is a clean bill of health, not a gap.** The three-tier hierarchy
+> (Campaign → Targeting → Creative) works correctly end-to-end in production, matching its design
+> doc precisely, for the power case that had never been tried before. The only pre-existing,
+> already-known item visible during this run was the `~0K impressions/mo` estimate (S16's backfill
+> gap on the seed screens, not a new bug — not re-flagging).
+>
+> **Not covered this pass, narrow and non-blocking:** the "Split by screen type" auto-split
+> convenience button (used manual assignment instead — both are the same underlying write path,
+> just a different UI entry point) and the ad-render-preview "see your creative warped onto the
+> screen" button specifically (needs a screen with operator-marked corner photos; the 2 real
+> Toronto screens used here don't have any, so the button likely didn't even render — separate,
+> narrower thing to check than what this pass covered).
+>
+> **Go/No-Go:** campaign-hierarchy wizard is 🟢 GO, now backed by a real live run instead of only a
+> design-doc read. Remaining carry-forwards: approval queue under genuine bulk volume (code-fixed
+> session 14, still never load-tested for real), mobile app on real hardware (blocked on `eas
+> login`), S20's watchdog on real hardware.
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
