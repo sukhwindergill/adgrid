@@ -87,4 +87,27 @@ describe('useApprovals', () => {
     expect(result.current.error).toBe('Update failed');
     expect(result.current.pending).toHaveLength(1);
   });
+
+  // Regression test for a real bug: reject() previously wrote
+  // `rejection_reason`, a column that doesn't exist on campaign_screens
+  // (the real column is `reject_reason`, matching web's ApprovalQueue.jsx).
+  // Postgres rejects the whole UPDATE for an unknown column, so this failed
+  // on every call in production -- but a mock that just returns a generic
+  // `{ error: {...} }` regardless of the update payload (as above) can't
+  // catch a wrong column name. Assert the actual payload shape instead.
+  it('writes reject_reason (not rejection_reason) to campaign_screens', async () => {
+    const updateSpy = jest.fn(() => ({ eq: jest.fn().mockResolvedValue({ error: null }) }));
+    mockSupabase.from.mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      in: jest.fn().mockResolvedValue({ data: [pendingRow], error: null }),
+      update: updateSpy,
+    });
+    const { result } = renderHook(() => useApprovals('op-1', ['s-1']));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => { await result.current.reject('cs-1', 'Inappropriate content'); });
+
+    expect(updateSpy).toHaveBeenCalledWith({ status: 'rejected', reject_reason: 'Inappropriate content' });
+  });
 });
