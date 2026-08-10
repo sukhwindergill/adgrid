@@ -25,12 +25,12 @@ export default function VenueScreen() {
   async function handleNext() {
     if (!form.name.trim()) { setError('Screen name is required'); return; }
     if (!form.venue_category) { setError('Venue category is required'); return; }
-    if (!form.address_city.trim()) { setError('City is required'); return; }
+    if (!form.city.trim()) { setError('City is required'); return; }
     setError('');
     setLoading(true);
     const { data, error: err } = await supabase
       .from('screens')
-      .insert({ operator_id: profile?.id, name: form.name.trim(), venue_category: form.venue_category, venue_subtype: form.venue_subtype || null, address_city: form.address_city.trim(), address_state: form.address_state.trim() || null, address_country: form.address_country, status: 'pending' })
+      .insert({ operator_id: profile?.id, name: form.name.trim(), venue_category: form.venue_category, venue_subtype: form.venue_subtype || null, city: form.city.trim(), state: form.state.trim() || null, country: form.country, status: 'pending' })
       .select().single();
     setLoading(false);
     if (err) { setError(err.message); return; }
@@ -45,8 +45,8 @@ export default function VenueScreen() {
         <Text style={[styles.title, { fontFamily: F.sansBold }]}>About your screen</Text>
         <ErrorBanner message={error} />
         <Inp label="Screen name" value={form.name} onChangeText={v => update({ name: v })} placeholder="e.g. Main Lobby Screen" autoCapitalize="words" />
-        <Inp label="City" value={form.address_city} onChangeText={v => update({ address_city: v })} placeholder="Toronto" autoCapitalize="words" />
-        <Inp label={STATE_LABEL[form.address_country] || 'Province'} value={form.address_state} onChangeText={v => update({ address_state: v })} placeholder="Ontario" autoCapitalize="words" />
+        <Inp label="City" value={form.city} onChangeText={v => update({ city: v })} placeholder="Toronto" autoCapitalize="words" />
+        <Inp label={STATE_LABEL[form.country] || 'Province'} value={form.state} onChangeText={v => update({ state: v })} placeholder="Ontario" autoCapitalize="words" />
         <Text style={[styles.fieldLabel, { fontFamily: F.sansMed }]}>Venue category</Text>
         <View style={styles.pills}>
           {categories.map(cat => (

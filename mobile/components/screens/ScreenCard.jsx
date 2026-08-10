@@ -18,7 +18,7 @@ export function ScreenCard({ screen, onPress }) {
           <HealthBadge screen={screen} />
         </View>
         <Text style={[styles.meta, { fontFamily: F.sans }]}>
-          {[venueLabel, screen.address_city].filter(Boolean).join(' · ')}
+          {[venueLabel, screen.city].filter(Boolean).join(' · ')}
         </Text>
       </View>
     </Card>

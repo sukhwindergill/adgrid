@@ -65,7 +65,7 @@ export default function ScreenDetailScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Btn variant="ghost" onPress={() => router.back()} style={styles.back}>← Back</Btn>
-        <PageHeader title={screen.name} subtitle={[venueLabel, screen.address_city].filter(Boolean).join(' · ')} />
+        <PageHeader title={screen.name} subtitle={[venueLabel, screen.city].filter(Boolean).join(' · ')} />
         <HealthBadge screen={screen} />
 
         {screen.screen_photos?.length > 0 && (
