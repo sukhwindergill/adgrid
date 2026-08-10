@@ -25,19 +25,32 @@ export default function AdvertisersScreen() {
       setLoading(true);
       const screenIds = screens.map(s => s.id);
       if (screenIds.length === 0) { setLoading(false); return; }
+      // campaign_screens.campaign_id references bookings(id), not the
+      // campaigns (parent) table -- confirmed against the live schema's FK
+      // constraints. Embedding `campaigns` here has no relationship for
+      // PostgREST to resolve at all, and `campaigns` has no budget column
+      // regardless (that's a bookings column). advertiser_name is already
+      // denormalized onto bookings (same field web's ApprovalQueue.jsx
+      // reads), so only email actually needs the profiles join -- and since
+      // bookings has two FKs into profiles (advertiser_id,
+      // billed_to_profile_id), that join must name which one to use or
+      // PostgREST can't disambiguate it either.
       const { data } = await supabase
         .from('campaign_screens')
-        .select('status, campaign:campaigns(id, name, budget, advertiser:profiles(id, full_name, email))')
+        .select('status, campaign:bookings(id, name:campaign_name, budget, advertiser_id, advertiser_name, advertiser:profiles!bookings_advertiser_id_fkey(email))')
         .in('screen_id', screenIds)
         .in('status', ['approved', 'pending']);
       const byAdvertiser = {};
       (data || []).forEach(cs => {
-        const adv = cs.campaign?.advertiser;
-        if (!adv) return;
-        if (!byAdvertiser[adv.id]) byAdvertiser[adv.id] = { ...adv, campaignNames: [], approved: 0, pending: 0 };
-        byAdvertiser[adv.id].campaignNames.push(cs.campaign?.name);
-        if (cs.status === 'approved') byAdvertiser[adv.id].approved++;
-        if (cs.status === 'pending') byAdvertiser[adv.id].pending++;
+        const campaign = cs.campaign;
+        const advId = campaign?.advertiser_id;
+        if (!advId) return;
+        if (!byAdvertiser[advId]) {
+          byAdvertiser[advId] = { id: advId, full_name: campaign.advertiser_name, email: campaign.advertiser?.email, campaignNames: [], approved: 0, pending: 0 };
+        }
+        byAdvertiser[advId].campaignNames.push(campaign.name);
+        if (cs.status === 'approved') byAdvertiser[advId].approved++;
+        if (cs.status === 'pending') byAdvertiser[advId].pending++;
       });
       setAdvertisers(Object.values(byAdvertiser));
       setLoading(false);
