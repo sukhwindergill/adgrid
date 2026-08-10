@@ -65,7 +65,9 @@ describe('StepTargeting', () => {
     );
     const [, cityInput] = screen.getAllByRole('textbox'); // [campaign name, city search]
     fireEvent.change(cityInput, { target: { value: 'tor' } });
-    fireEvent.click(screen.getByText('Toronto'));
+    // B20: LocationSearch now selects on mousedown, not click (fixes a real
+    // race against the input's onBlur-close timer) — see LocationSearch.jsx.
+    fireEvent.mouseDown(screen.getByText('Toronto'));
     expect(setForm).toHaveBeenCalled();
     const updater = setForm.mock.calls[0][0];
     expect(updater(baseForm)).toMatchObject({ country: 'CA', state: 'Ontario', city: 'Toronto' });

@@ -90,7 +90,16 @@ export function LocationSearch({ locations, value, onSelect, placeholder = 'Sear
           ) : matches.map((m, i) => (
             <div
               key={`${m.country}|${m.state}|${m.city}`}
-              onClick={() => selectEntry(m)}
+              // B20: the input's onBlur closes this list via setTimeout(150).
+              // A plain onClick fires after mousedown/blur/mouseup, so on any
+              // slow-enough click (assistive tech, touch, a laggy trackpad,
+              // automated interaction) the 150ms timer can win the race and
+              // unmount this row before the click ever lands -- the
+              // selection silently does nothing. onMouseDown + preventDefault
+              // stops the input from blurring in the first place, so the
+              // race can't happen at all rather than depending on being fast
+              // enough to win it.
+              onMouseDown={e => { e.preventDefault(); selectEntry(m); }}
               onMouseEnter={() => setHighlight(i)}
               style={{
                 padding: '8px 12px', fontSize: 13, fontFamily: F.sans, cursor: 'pointer',

@@ -21,7 +21,26 @@ describe('LocationSearch', () => {
     const onSelect = vi.fn();
     render(<LocationSearch locations={LOCATIONS} value="" onSelect={onSelect} />);
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'tor' } });
-    fireEvent.click(screen.getByText('Toronto'));
+    // B20: selection now fires on mousedown (preventDefault stops the
+    // input's onBlur from racing the click and closing the list first) --
+    // a real click is mousedown+mouseup+click, but mousedown alone is what
+    // the row actually listens for now.
+    fireEvent.mouseDown(screen.getByText('Toronto'));
+    expect(onSelect).toHaveBeenCalledWith(LOCATIONS[0]);
+  });
+
+  it('selects immediately on mousedown, before any click/mouseup fires', () => {
+    // B20 regression test: the old onClick handler waited for the full
+    // mousedown->mouseup->click sequence, leaving a 150ms window (the
+    // input's onBlur timer) in which the row could unmount first on any
+    // slow-enough interaction. Firing mousedown alone (no mouseup/click)
+    // is enough now -- proving the selection no longer depends on winning
+    // that race.
+    const onSelect = vi.fn();
+    render(<LocationSearch locations={LOCATIONS} value="" onSelect={onSelect} />);
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'tor' } });
+    fireEvent.mouseDown(screen.getByText('Toronto'));
+    expect(onSelect).toHaveBeenCalledTimes(1);
     expect(onSelect).toHaveBeenCalledWith(LOCATIONS[0]);
   });
 
