@@ -1163,6 +1163,56 @@ factory-reset / re-pair path if the token is rotated.
 > never been exercised live — only read as code and unit-tested; the operator-facing SLA/policy
 > settings UI in `OperatorSettingsView.jsx` has never been clicked through.
 
+> **Update — session 20 (2026-08-10):** Went deep on the auto-approve policy path
+> (`operator_approval_rules`), and found the platform's payment pipeline was more badly broken
+> than any prior session's write-up implied.
+>
+> - **B22 (blocker, found + fixed) — policy-driven auto-approve never charges.** A screen that
+>   clears via an operator's `operator_approval_rules` policy (category allowlist + advertiser
+>   history) flips straight to `auto_approved` inside `sweep-approvals`, but nothing in that path
+>   ever called `charge-campaign` — the same charge step a *human* clicking Approve already gets
+>   via `ApprovalQueue.jsx`'s `attemptCharge`. Confirmed live with disposable data: every screen on
+>   a Pay-later campaign reads `auto_approved` (looks fully done), `payment_status` sits at
+>   `unpaid` forever, `display-feed` never serves it (requires `payment_status='paid'` too), and
+>   the advertiser is never told anything happened. **Fixed**: after Pass 1's auto-approve loop,
+>   `sweep-approvals` now checks whether every screen on each newly-auto-approved campaign has
+>   cleared (or `start_when='partial'`), and if so sends the same `campaign_approved` notification
+>   and calls `charge-campaign` that a manual approval would. `sweep-approvals` is a service-role
+>   cron with no user session, so this needed a trusted-internal-caller bypass in `charge-campaign`
+>   (`x-internal-secret`, the same pattern already used to reach `send-notification` from every
+>   other cron) — deploying that bypass required flipping `charge-campaign` to `verify_jwt: false`,
+>   since the Supabase gateway 401s any request carrying no bearer JWT at all *before* function
+>   code runs, regardless of what other headers are present; all auth enforcement for non-internal
+>   callers is still fully reimplemented in code, matching how `send-notification` already works.
+> - **B23 (blocker, found + fixed) — charge-campaign's atomic payment lock has never actually
+>   worked, for any caller.** Chasing B22's fix through a live 401→409 loop turned up something
+>   much bigger: the lock step (`UPDATE bookings SET payment_status='charging' WHERE ... NOT IN
+>   ('paid','charging')`) hit a check-constraint violation on *every single call* —
+>   `bookings_payment_status_check` only ever allowed `unpaid`/`paid`/`failed`/`refunded`;
+>   `'charging'` was never a legal value. The handler destructured only `{ data }` off the Supabase
+>   response and never inspected `error`, so the constraint violation was silently swallowed and
+>   every caller — cron or a real advertiser clicking pay — just saw a false 409 "already paid or a
+>   payment is in progress" on the very first attempt. Corroborated against real (non-test)
+>   production data: of the bookings currently marked `payment_status='paid'`, **zero** have a
+>   `payment_intent_id` set, meaning none of them ever actually completed a Stripe charge through
+>   this function — whatever marked them paid was a different path entirely (manual/test data), not
+>   a real charge. **Fixed**: migration `20260810000002_bookings_payment_status_allow_charging.sql`
+>   adds `'charging'` to the constraint; `charge-campaign` now checks `error` from the lock update
+>   explicitly instead of only `data`, so a real failure there can never again be mistaken for
+>   "someone else already has the lock." Re-verified live end-to-end: identical disposable
+>   reproduction now reaches the real business-logic branch (`400` "no payment account", the
+>   correct outcome for a test advertiser with no card) instead of being blocked before ever
+>   getting there — did not push an actual Stripe charge as part of verification, since that moves
+>   real money and needs its own explicit authorization separate from bug verification. Both
+>   B22/B23 test rounds (operator, screen, policy, two campaigns/bookings, campaign_screens,
+>   notifications, advertiser account) fully cleaned up after.
+>
+> **Go/No-Go:** auto-approve policy path is 🟢 GO now that both bugs are fixed — but B23 means the
+> **entire charge-on-approval payment flow, for every caller, was silently non-functional until this
+> session**, not just the new auto-approve path. Worth a deliberate real-card smoke test (approving
+> a real Pay-later campaign end-to-end, an authorized live Stripe test-mode charge, not something
+> this session should do unilaterally) before wide launch, given how long this sat broken unnoticed.
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).

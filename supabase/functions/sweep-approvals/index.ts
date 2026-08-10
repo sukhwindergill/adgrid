@@ -41,7 +41,7 @@ Deno.serve(async (_req: Request) => {
 
   const { data: campaigns } = await supabase
     .from("bookings")
-    .select("id, advertiser_id, billed_to_profile_id, campaign_name, advertiser_name, category, budget, currency, status, payment_status")
+    .select("id, advertiser_id, billed_to_profile_id, campaign_name, advertiser_name, category, budget, currency, status, payment_status, start_when")
     .in("id", campaignIds);
 
   const { data: screens } = await supabase
@@ -81,6 +81,7 @@ Deno.serve(async (_req: Request) => {
   // Policies run BEFORE expiry so a row the operator would have auto-approved
   // is never dropped in the same sweep.
   const stillPending: typeof pending = [];
+  const autoApprovedCampaignIds = new Set<string>();
 
   let skippedNotInFlight = 0;
 
@@ -104,9 +105,46 @@ Deno.serve(async (_req: Request) => {
         .update({ status: "auto_approved", approved_at: now.toISOString() })
         .eq("id", row.id);
       autoApproved++;
+      autoApprovedCampaignIds.add(row.campaign_id as string);
     } else {
       stillPending.push(row);
     }
+  }
+
+  // B22: a policy-driven auto-approve must trigger the same "campaign is
+  // fully clear, go charge it" step a human's manual approve already gets
+  // in ApprovalQueue.jsx (attemptCharge, gated on all screens being
+  // approved/auto_approved or start_when === 'partial'). Without this, a
+  // Pay-later campaign whose screens all clear via policy alone sits
+  // forever: every screen reads "auto_approved" (looks done), but the
+  // booking is never charged and display-feed still refuses to serve it
+  // (requires payment_status = 'paid' too) -- and the advertiser is never
+  // told anything happened. Confirmed live with disposable data before this
+  // fix: exactly that silent stranding, zero notifications, payment_status
+  // stuck at 'unpaid' indefinitely.
+  for (const campaignId of autoApprovedCampaignIds) {
+    const campaign = campaignById.get(campaignId);
+    if (!campaign || campaign.payment_status === "paid") continue;
+
+    const { count: remaining } = await supabase
+      .from("campaign_screens")
+      .select("id", { count: "exact", head: true })
+      .eq("campaign_id", campaignId)
+      .eq("status", "pending");
+
+    const allClear = campaign.start_when === "partial" || !remaining;
+    if (!allClear) continue;
+
+    await notify(campaign.advertiser_id as string, "campaign_approved", {
+      campaignName: (campaign.campaign_name ?? campaign.advertiser_name ?? campaign.id) as string,
+      appUrl: APP_URL,
+    });
+
+    await fetch(`${FUNCTIONS_URL}/charge-campaign`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-internal-secret": INTERNAL_SECRET },
+      body: JSON.stringify({ campaign_id: campaignId }),
+    }).catch(() => {});
   }
 
   // ── Pass 2: warn, then expire what is past due ───────────────────────────

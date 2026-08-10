@@ -12,6 +12,7 @@ const supabase = createClient(
 );
 
 const FUNCTIONS_URL = `${Deno.env.get("SUPABASE_URL")!}/functions/v1`;
+const INTERNAL_SECRET = Deno.env.get("INTERNAL_NOTIFICATION_SECRET") ?? "";
 
 const PLATFORM_FEE_RATE = 0.12;
 
@@ -169,18 +170,33 @@ Deno.serve(async (req: Request) => {
     return new Response("Method Not Allowed", { status: 405 });
   }
 
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return new Response("Unauthorized", { status: 401 });
+  // B22: sweep-approvals' policy-driven auto-approve needs to trigger this
+  // same charge step a human's manual approve already gets from
+  // ApprovalQueue.jsx -- but it's a service-role cron with no user session
+  // to put in an Authorization header. Same trusted-internal-caller pattern
+  // already used to reach send-notification from every other cron here.
+  const internalHeader = req.headers.get("x-internal-secret");
+  const isInternal = !!INTERNAL_SECRET && internalHeader === INTERNAL_SECRET;
 
-  const token = authHeader.replace("Bearer ", "");
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) return new Response("Unauthorized", { status: 401 });
+  let callerUserId: string | null = null;
+  let callerRole: string | null = null;
 
-  const { data: callerProfile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
+  if (!isInternal) {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) return new Response("Unauthorized", { status: 401 });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) return new Response("Unauthorized", { status: 401 });
+    callerUserId = user.id;
+
+    const { data: callerProfile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    callerRole = callerProfile?.role ?? null;
+  }
 
   const { campaign_id } = await req.json();
   if (!campaign_id) {
@@ -206,27 +222,32 @@ Deno.serve(async (req: Request) => {
   // The advertiser who owns the campaign may trigger the charge.
   // Operators may also trigger it, but only if they own at least one screen
   // in this campaign — prevents any operator charging any advertiser's card.
-  const isOwner = booking.advertiser_id === user.id;
-  if (!isOwner) {
-    if (callerProfile?.role !== "operator") {
-      return new Response("Forbidden", { status: 403 });
-    }
-    const { data: opScreens } = await supabase
-      .from("screens")
-      .select("id")
-      .eq("operator_id", user.id);
-    const opScreenIds = (opScreens ?? []).map((s) => s.id);
-    const { data: operatorLink } = opScreenIds.length > 0
-      ? await supabase
-          .from("campaign_screens")
-          .select("id")
-          .eq("campaign_id", campaign_id)
-          .in("screen_id", opScreenIds)
-          .limit(1)
-          .maybeSingle()
-      : { data: null };
-    if (!operatorLink) {
-      return new Response("Forbidden", { status: 403 });
+  // Skipped entirely for a trusted internal caller (sweep-approvals) — it
+  // already verified every screen cleared via a real operator policy before
+  // ever calling here, which is a stronger check than "owns one screen".
+  if (!isInternal) {
+    const isOwner = booking.advertiser_id === callerUserId;
+    if (!isOwner) {
+      if (callerRole !== "operator") {
+        return new Response("Forbidden", { status: 403 });
+      }
+      const { data: opScreens } = await supabase
+        .from("screens")
+        .select("id")
+        .eq("operator_id", callerUserId);
+      const opScreenIds = (opScreens ?? []).map((s) => s.id);
+      const { data: operatorLink } = opScreenIds.length > 0
+        ? await supabase
+            .from("campaign_screens")
+            .select("id")
+            .eq("campaign_id", campaign_id)
+            .in("screen_id", opScreenIds)
+            .limit(1)
+            .maybeSingle()
+        : { data: null };
+      if (!operatorLink) {
+        return new Response("Forbidden", { status: 403 });
+      }
     }
   }
 
@@ -255,13 +276,32 @@ Deno.serve(async (req: Request) => {
 
   // Atomic lock: flip payment_status to 'charging' only if currently not paid/charging.
   // Concurrent requests both reading 'unpaid' would race; only one UPDATE wins.
-  const { data: locked } = await supabase
+  // B23: this UPDATE was dead code from day one -- bookings_payment_status_check
+  // never allowed 'charging' as a value, so every call hit a check-constraint
+  // violation on the UPDATE. The old code only destructured `data` (always
+  // null on that error) and never looked at `error`, so the violation was
+  // silently swallowed and every caller just saw a false 409 "already paid or
+  // in progress" -- meaning no campaign, from any caller, could ever actually
+  // be charged. Fixed the constraint itself (see migration
+  // 20260810000002_bookings_payment_status_allow_charging.sql) and now check
+  // `error` explicitly so a real failure here is never mistaken for "someone
+  // else already has the lock" again.
+  const { data: locked, error: lockError } = await supabase
     .from("bookings")
     .update({ payment_status: "charging" })
     .eq("id", campaign_id)
-    .not("payment_status", "in", '("paid","charging")')
+    .neq("payment_status", "paid")
+    .neq("payment_status", "charging")
     .select("id")
     .maybeSingle();
+
+  if (lockError) {
+    console.error("[charge-campaign] lock update failed:", lockError);
+    return new Response(
+      JSON.stringify({ error: "Could not start payment processing. Please try again." }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
+  }
 
   if (!locked) {
     // Either already paid or another request is mid-flight
