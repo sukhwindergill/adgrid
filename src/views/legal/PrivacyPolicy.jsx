@@ -1,3 +1,5 @@
+import { usePageMeta } from '../../lib/usePageMeta.js';
+
 const page = {
   minHeight: '100vh',
   background: '#0b0d12',
@@ -11,6 +13,10 @@ const h2 = { fontSize: 20, fontWeight: 600, color: '#fff', margin: '32px 0 8px' 
 const p = { fontSize: 15, lineHeight: 1.7, margin: '0 0 12px' };
 
 export function PrivacyPolicy() {
+  usePageMeta({
+    title: 'Privacy Policy — AdGrid',
+    description: 'How AdGrid collects, uses, and protects the data of advertisers, screen operators, and website visitors.',
+  });
   return (
     <div style={page}>
       <div style={inner}>
