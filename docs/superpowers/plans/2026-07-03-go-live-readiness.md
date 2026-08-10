@@ -879,6 +879,24 @@ factory-reset / re-pair path if the token is rotated.
 > --profile preview --platform android` for a real installable APK. That's the actual "next pass" —
 > not something a further code-reading session can shortcut.
 
+> **Update — session 15 continued (2026-08-10, fixed what didn't need EAS login):** Fixed the two
+> pieces that don't require a real EAS account:
+> - `usePushNotifications.js` now recognizes the specific "no projectId" failure (both in
+>   `register()` and `deregister()`) and logs one clear line — `Push notifications disabled: no
+>   EAS project is linked to this app…` — instead of a raw error dump. Still fails safe either way
+>   (the try/catch already prevented a crash); this only makes the cause diagnosable instead of
+>   looking like a random failure. New test forces the known error and asserts the clean message
+>   fires, plus a second case confirming genuinely unrelated failures still log their raw error.
+> - New `mobile/README.md` documents the exact `eas login` / `eas init` / `eas env:create` /
+>   `eas build` sequence needed before this app has ever produced a real installable build —
+>   previously undocumented anywhere in the repo. New `mobile/.env.example` (the README referenced
+>   one that didn't actually exist until now).
+> - 63/63 mobile tests pass, lint delta zero.
+>
+> **B15 itself remains open** — it needs a real, logged-in `eas` session, which cannot happen in
+> this environment. The README now means the next person who does have one won't have to
+> rediscover any of this.
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
