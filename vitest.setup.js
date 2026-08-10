@@ -23,6 +23,16 @@ if (typeof globalThis.ResizeObserver !== 'function') {
   };
 }
 
+// jsdom has no IntersectionObserver. useReveal() (and every section that
+// calls it, e.g. CtaBand) needs one defined globally or it throws on mount.
+if (typeof globalThis.IntersectionObserver !== 'function') {
+  globalThis.IntersectionObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
 // jsdom has no native PointerEvent constructor. Without one,
 // @testing-library's fireEvent.pointer* helpers fall back to a plain Event
 // and silently drop non-standard init fields (clientX, clientY, pointerId),

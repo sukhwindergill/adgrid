@@ -268,3 +268,20 @@ select.fi { appearance: none; cursor: pointer; }
 .mfooter .col a, .mfooter .col button { display: block; background: none; border: none; cursor: pointer; text-align: left; font: 400 14px/1 var(--inter); color: var(--sec); text-decoration: none; padding: 0; margin-bottom: 11px; transition: color .15s; }
 .mfooter .col a:hover, .mfooter .col button:hover { color: #fff; }
 .mfooter .base { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-top: 1px solid var(--border); margin-top: 44px; padding-top: 24px; font-size: 13px; color: var(--muted); }
+
+/* ── Sticky mobile CTA ── */
+.sticky-mobile-cta {
+  display: none;
+}
+@media (max-width: 768px) {
+  .sticky-mobile-cta {
+    display: flex; gap: 10px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: rgba(10,10,15,0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+  }
+  .sticky-mobile-cta .btn-s, .sticky-mobile-cta .btn-p { flex: 1; padding: 12px; }
+  /* Leave room at the very bottom of the page so the bar never covers the
+     footer's own links on small screens. */
+  .mfooter { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+}

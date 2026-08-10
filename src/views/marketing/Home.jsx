@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import './marketing.css';
+import { usePageMeta } from '../../lib/usePageMeta.js';
 import { Nav } from './sections/Nav.jsx';
 import { Hero } from './sections/Hero.jsx';
 import { ProofStrip } from './sections/ProofStrip.jsx';
@@ -11,8 +12,13 @@ import { MarketBand } from './sections/MarketBand.jsx';
 import { Faq } from './sections/Faq.jsx';
 import { CtaBand } from './sections/CtaBand.jsx';
 import { Footer } from './sections/Footer.jsx';
+import { StickyMobileCta } from './sections/StickyMobileCta.jsx';
 
 export function MarketingHome({ onLogin: onLoginProp }) {
+  usePageMeta({
+    title: "AdGrid — Canada's OOH Marketplace",
+    description: "AdGrid is the self-serve marketplace connecting Canadian digital screen operators with local advertisers. Real-time pricing, full control on both sides.",
+  });
   const navigate = useNavigate();
   const onLogin = onLoginProp ?? (() => navigate('/login'));
   const onOperatorSignup = () => navigate('/login?mode=signup&intent=operator');
@@ -36,6 +42,7 @@ export function MarketingHome({ onLogin: onLoginProp }) {
       <Faq />
       <CtaBand />
       <Footer onLogin={onLogin} onScrollTo={scrollTo} />
+      <StickyMobileCta onOperatorSignup={onOperatorSignup} onBookCampaign={() => scrollTo('advertisers')} />
     </div>
   );
 }

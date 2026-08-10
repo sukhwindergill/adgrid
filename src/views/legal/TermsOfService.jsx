@@ -1,3 +1,7 @@
+import { Link } from 'react-router-dom';
+import { usePageMeta } from '../../lib/usePageMeta.js';
+import { Breadcrumbs } from '../../components/shared/Breadcrumbs.jsx';
+
 const page = {
   minHeight: '100vh',
   background: '#0b0d12',
@@ -11,9 +15,14 @@ const h2 = { fontSize: 20, fontWeight: 600, color: '#fff', margin: '32px 0 8px' 
 const p = { fontSize: 15, lineHeight: 1.7, margin: '0 0 12px' };
 
 export function TermsOfService() {
+  usePageMeta({
+    title: 'Terms of Service — AdGrid',
+    description: "The terms governing use of AdGrid's digital out-of-home advertising marketplace.",
+  });
   return (
     <div style={page}>
       <div style={inner}>
+        <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Terms of Service' }]} />
         <h1 style={h1}>Terms of Service</h1>
         <p style={{ ...p, color: 'rgba(255,255,255,0.5)' }}>Last updated: June 29, 2026</p>
 
@@ -114,6 +123,10 @@ export function TermsOfService() {
         <p style={p}>
           Questions about these Terms:{' '}
           <a href="mailto:legal@adgrid.io" style={{ color: '#7c3aed' }}>legal@adgrid.io</a>
+        </p>
+
+        <p style={{ ...p, marginTop: 32, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 24 }}>
+          Also see our <Link to="/privacy" style={{ color: '#7c3aed' }}>Privacy Policy</Link>.
         </p>
       </div>
     </div>
