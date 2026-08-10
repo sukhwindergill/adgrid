@@ -47,11 +47,14 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "Invalid screen token" }), { status: 401, headers: CORS });
   }
 
-  // Heartbeat-only: update last_seen without inserting an impression_event
+  // Heartbeat-only: update cv_last_seen without inserting an impression_event.
+  // S19: this is the CV agent's own heartbeat, not the kiosk display's — it
+  // must never touch `last_seen` (kiosk-only), or a dead kiosk browser with a
+  // still-running CV container would keep reading "online" with no alert.
   if (heartbeat_only) {
     const { error: updateError } = await supabase
       .from("screens")
-      .update({ last_seen: new Date().toISOString() })
+      .update({ cv_last_seen: new Date().toISOString() })
       .eq("id", screen.id);
 
     if (updateError) {

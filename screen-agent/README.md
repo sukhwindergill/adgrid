@@ -86,9 +86,20 @@ sudo systemctl enable adgrid-display
 sudo systemctl start adgrid-display
 ```
 
-**4. Verify:**
+**4. Install the watchdog (recommended):**
+
+`adgrid-display.service` stops retrying after 5 crashes in 60 seconds and won't auto-restart again on its own, even once the fault clears — a crash-loop (bad GPU driver, corrupt profile, OOM) would otherwise leave the screen dark until someone SSHes in and runs `systemctl reset-failed`. This timer clears that failed state and restarts the service every 5 minutes if it's down:
+
+```bash
+sudo cp display/adgrid-display-watchdog.service display/adgrid-display-watchdog.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now adgrid-display-watchdog.timer
+```
+
+**5. Verify:**
 ```bash
 sudo systemctl status adgrid-display
+sudo systemctl status adgrid-display-watchdog.timer
 ```
 
 If it fails to start, check logs:
@@ -96,7 +107,7 @@ If it fails to start, check logs:
 journalctl -u adgrid-display -n 50
 ```
 
-The screen will show ads on boot, auto-recover if Chromium crashes, and refresh content every 30 seconds automatically.
+The screen will show ads on boot, auto-recover if Chromium crashes, refresh content every 30 seconds automatically, and self-heal within 5 minutes even if it crash-loops past systemd's own restart limit.
 
 ---
 

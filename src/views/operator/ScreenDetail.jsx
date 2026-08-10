@@ -14,7 +14,7 @@ import { ScreenPhotoManager } from '../../components/screens/ScreenPhotoManager.
 import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS } from '../../lib/venueTypes.js';
-import { healthSignal } from '../../lib/screenHealth.js';
+import { healthSignal, cvAgentSignal } from '../../lib/screenHealth.js';
 import { checkAndGoLive } from '../../lib/screenGoLive.js';
 
 async function startStripeConnect(setConnecting) {
@@ -185,7 +185,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
 
   // Fetch screen record. screen_token is no longer column-readable (it is a
   // bearer secret); fetch it via the owner-scoped get_screen_token RPC.
-  const SCREEN_COLS = 'id, name, owner_id, owner_name, owner_type, city_id, city, location, status, lat, lon, monthly_revenue, impressions, own_slots, blocked_categories, max_ad_duration, min_dwell_time, allow_competitors, created_at, updated_at, operator_id, cpm_floor, display_size, monthly_traffic_estimate, content_categories_blocked, operating_hours_start, operating_hours_end, lng, last_seen, health_status, venue_category, venue_subtype, environment, screen_position, state, country, screen_photos, auto_approve, timezone, resolution_w, resolution_h, accepted_formats, max_file_mb, screen_photo_frames';
+  const SCREEN_COLS = 'id, name, owner_id, owner_name, owner_type, city_id, city, location, status, lat, lon, monthly_revenue, impressions, own_slots, blocked_categories, max_ad_duration, min_dwell_time, allow_competitors, created_at, updated_at, operator_id, cpm_floor, display_size, monthly_traffic_estimate, content_categories_blocked, operating_hours_start, operating_hours_end, lng, last_seen, cv_last_seen, health_status, venue_category, venue_subtype, environment, screen_position, state, country, screen_photos, auto_approve, timezone, resolution_w, resolution_h, accepted_formats, max_file_mb, screen_photo_frames';
   useEffect(() => {
     if (!screenId) return;
     setLoading(true);
@@ -757,11 +757,24 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
             screen-agent/README.md
           </code>{' '}for the Docker Compose setup steps.
         </div>
-        <div style={{ padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder ?? '#fde68a'}`, borderRadius: 8, fontSize: 12, color: '#92400e', fontFamily: F.sans, lineHeight: 1.6 }}>
+        <div style={{ padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder ?? '#fde68a'}`, borderRadius: 8, fontSize: 12, color: '#92400e', fontFamily: F.sans, lineHeight: 1.6, marginBottom: 12 }}>
           <strong>Required if you enable this:</strong> post a visible notice at the venue
           disclosing that anonymous audience-analytics camera is in use. This is a condition
           of enabling the feature, not optional signage.
         </div>
+        {/* S19: this is deliberately a separate signal from the screen's main
+            Live/Offline badge above — the camera box can be up or down
+            independently of whether the display itself is showing ads, and
+            conflating the two was the bug. */}
+        {(() => {
+          const cv = cvAgentSignal(screen);
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontFamily: F.sans, color: cv.connected ? C.green : C.textSub }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: cv.connected ? C.green : C.border }} />
+              Camera agent: {cv.label}
+            </div>
+          );
+        })()}
       </Card>
     )}
 

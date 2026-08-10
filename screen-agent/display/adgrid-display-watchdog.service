@@ -1,0 +1,27 @@
+# AdGrid Display Watchdog — recovers a crash-looped kiosk browser
+#
+# adgrid-display.service caps its own restart attempts (StartLimitBurst=5 in
+# StartLimitIntervalSec=60) so a persistent, instant-crashing fault (bad GPU
+# driver init, corrupt Chromium profile, an OOM) doesn't spin systemd in a
+# tight restart loop. But that means once the limit trips, systemd marks the
+# unit "failed" and never retries again on its own — even after whatever
+# caused the crash-loop clears up (network came back, a transient driver
+# glitch passed) — leaving a real screen dark indefinitely with no
+# auto-recovery. This oneshot, run periodically by
+# adgrid-display-watchdog.timer, clears that failed state and restarts the
+# unit if it isn't running. Reset-failed and restart on an already-healthy
+# unit are both no-ops, so this is safe to run unconditionally.
+#
+# Install (bootstrap.sh does this automatically):
+#   sudo cp adgrid-display-watchdog.service adgrid-display-watchdog.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now adgrid-display-watchdog.timer
+
+[Unit]
+Description=AdGrid Display Watchdog — recover a crash-looped kiosk browser
+After=adgrid-display.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl reset-failed adgrid-display.service
+ExecStart=/bin/sh -c 'systemctl is-active --quiet adgrid-display.service || systemctl start adgrid-display.service'

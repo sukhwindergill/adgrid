@@ -117,10 +117,22 @@ systemctl daemon-reload
 systemctl enable adgrid-display
 systemctl restart adgrid-display
 
-# ── 7. Verify ────────────────────────────────────────────────────────────
+# ── 7. Display watchdog (S20) ───────────────────────────────────────────
+# adgrid-display.service stops retrying after 5 crashes/60s and never
+# recovers on its own, even once the fault clears — this timer periodically
+# clears that failed state and restarts it, so a crash-loop doesn't leave
+# the screen dark until someone SSHes in.
+log "Installing display watchdog"
+cp "$SCRIPT_DIR/display/adgrid-display-watchdog.service" /etc/systemd/system/adgrid-display-watchdog.service
+cp "$SCRIPT_DIR/display/adgrid-display-watchdog.timer" /etc/systemd/system/adgrid-display-watchdog.timer
+systemctl daemon-reload
+systemctl enable --now adgrid-display-watchdog.timer
+
+# ── 8. Verify ────────────────────────────────────────────────────────────
 log "Status"
 docker compose -f "$SCRIPT_DIR/docker-compose.yml" ps
 systemctl --no-pager --lines=0 status adgrid-display || true
+systemctl --no-pager --lines=0 status adgrid-display-watchdog.timer || true
 
 log "Done — screen agent + kiosk display running."
 echo "  Display URL:  $APP_ORIGIN/display/$SCREEN_TOKEN"
