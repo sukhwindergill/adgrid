@@ -10,6 +10,19 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// N11: getExpoPushTokenAsync() requires the app to be linked to a real EAS
+// project (extra.eas.projectId in app config, written by `eas init`) --
+// nothing here has ever been run, so this always throws on a real device
+// today. It's caught below either way (push registration failing must never
+// break the app), but a bare error dump left every prior instance of this
+// looking like a random runtime failure. Recognize the specific cause and
+// say so in one line instead, so it's diagnosable from a device log without
+// re-deriving the root cause from scratch.
+function isMissingEasProjectError(err) {
+  const msg = String(err?.message || '');
+  return /project ?id/i.test(msg);
+}
+
 export function usePushNotifications(operatorId, onNotificationTap) {
   useEffect(() => {
     if (!operatorId) return;
@@ -33,7 +46,14 @@ export function usePushNotifications(operatorId, onNotificationTap) {
         );
         if (error) console.error('Failed to register push token:', error.message);
       } catch (err) {
-        console.error('Push notification registration failed:', err);
+        if (isMissingEasProjectError(err)) {
+          console.error(
+            'Push notifications disabled: no EAS project is linked to this app ' +
+            '(run `eas init` in mobile/, see mobile/README.md). In-app notifications still work.'
+          );
+        } else {
+          console.error('Push notification registration failed:', err);
+        }
       }
     }
 
@@ -53,7 +73,7 @@ export function usePushNotifications(operatorId, onNotificationTap) {
 
   async function deregister(operatorId) {
     const result = await Notifications.getExpoPushTokenAsync().catch(err => {
-      console.error('Failed to get push token for deregister:', err);
+      if (!isMissingEasProjectError(err)) console.error('Failed to get push token for deregister:', err);
       return { data: null };
     });
     const token = result?.data;
