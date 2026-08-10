@@ -955,6 +955,67 @@ factory-reset / re-pair path if the token is rotated.
 > session 14, still never load-tested for real), mobile app on real hardware (blocked on `eas
 > login`), S20's watchdog on real hardware.
 
+> **Update — session 17 (2026-08-10, operator payout pipeline — deeper than S17/S18):** Session
+> 11/12 covered `trigger-payout` dedup and refund reversal; this pass went one layer earlier —
+> **how `connect_status` becomes `'active'` in the first place**, since everything downstream
+> (charge-campaign's transfer gate, screen-live gating, the operator billing balance) trusts that
+> single column. Live DB check first: still **0 of 2 operators have `connect_status` set at all**
+> (both `null`) and **0 rows ever in `operator_transfers`/`payouts`** — unchanged since session 10,
+> nobody has attempted Connect onboarding yet, so this is a landmine, not an incident, same framing
+> as S17/S18 originally were.
+>
+> - **B16 (blocker-in-waiting) — `connect_status = 'active'` is set client-side purely because the
+>   browser landed back on the return URL, never verified against Stripe's actual account state.**
+>   [App.jsx:290-297](src/App.jsx:290): on `?connect=success`, after a real CSRF state-token check
+>   (that part's solid), the client directly does
+>   `supabase.from('profiles').update({ connect_status: 'active' })` — no call to
+>   `stripe.accounts.retrieve()` checking `charges_enabled`/`payouts_enabled`/`details_submitted`,
+>   and grepping every function in `supabase/functions/` confirms `stripe-webhook` has **no
+>   `account.updated` case at all** (its switch only handles `payment_intent.*`, `charge.refunded`,
+>   `charge.dispute.created`, `checkout.session.completed`). Stripe's Account Links `return_url` is
+>   documented to redirect regardless of whether onboarding was actually completed — an operator who
+>   closes the KYC form early, or whose account is later restricted for any reason (rejected
+>   document, compliance hold), leaves `connect_status` reading `'active'` forever with nothing to
+>   ever correct it.
+> - **Consequence, confirmed by re-reading the downstream code, not assumed:** a false `'active'`
+>   passes `charge-campaign`'s transfer gate
+>   ([charge-campaign/index.ts:69](supabase/functions/charge-campaign/index.ts:69)) and the
+>   screen-live gate (`checkAndGoLive`, same column). The resulting `stripe.transfers.create` call
+>   does fail safely — caught, logged to `operator_transfers` with `status: 'failed'`
+>   ([charge-campaign/index.ts:116-134](supabase/functions/charge-campaign/index.ts:116)), doesn't
+>   touch the advertiser's already-successful charge — but **nothing ever surfaces that failure to
+>   anyone.** Grepped every operator-facing view and `operator-billing`
+>   ([operator-billing/index.ts](supabase/functions/operator-billing/index.ts)): zero references to
+>   `operator_transfers` or a `'failed'` status anywhere outside `charge-campaign`'s write and
+>   `trigger-payout`'s dedup read (admin-only, unreachable from any UI, per session 11's finding).
+>   `operator-billing`'s own Stripe balance/payout fetch has the identical blind spot
+>   ([operator-billing/index.ts:105-107](supabase/functions/operator-billing/index.ts:105)): a
+>   genuinely-restricted account throws on `stripe.balance.retrieve`, caught silently, Billing just
+>   renders an empty balance — indistinguishable from "genuinely $0 so far." An operator would see
+>   "Connected" in Settings, a real screen showing as bookable, and then nothing — no alert, no
+>   banner, no email — the only way to ever discover a failed transfer today is a raw SQL query
+>   against `operator_transfers`, which is exactly how this session found it.
+> - **Fix direction:** replace the client-side `UPDATE` with a server-side check — either a new/
+>   extended edge function called from the redirect handler that calls
+>   `stripe.accounts.retrieve(accountId)` and only sets `active` when
+>   `charges_enabled && payouts_enabled`, or (more robust, catches later revocation too) add an
+>   `account.updated` case to `stripe-webhook` that syncs `connect_status` from Stripe's own event
+>   stream instead of a one-time client assertion. Either way, pair it with actually surfacing
+>   `operator_transfers.status = 'failed'` somewhere an operator can see it (a banner on Billing, a
+>   `payout_failed` notification type) — the safety net existing in the DB but nowhere in the UI is
+>   the same shape of gap as B14 originally was (a real mechanism, zero visibility).
+>
+> **Go/No-Go:** payments/payout pipeline stays 🟡, not elevated to a hard blocker for the same
+> reason S17/S18 weren't — zero real operators have gone through Connect yet, so nothing has
+> actually failed silently in production. But this is now the most consequential open item in the
+> payment story: the day the first real operator clicks through Connect and it doesn't fully
+> complete, they get told they're "connected" and never learn otherwise. Worth fixing before
+> actively onboarding real operators, not before a controlled pilot.
+>
+> **Not fixed this session** — flagged for the user to decide whether to prioritize now (it's a
+> real code change, not a quick patch: needs either a new server-side verification call or a new
+> webhook case, plus a UI surface for failed transfers).
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
