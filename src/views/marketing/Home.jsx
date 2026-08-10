@@ -12,6 +12,7 @@ import { MarketBand } from './sections/MarketBand.jsx';
 import { Faq } from './sections/Faq.jsx';
 import { CtaBand } from './sections/CtaBand.jsx';
 import { Footer } from './sections/Footer.jsx';
+import { StickyMobileCta } from './sections/StickyMobileCta.jsx';
 
 export function MarketingHome({ onLogin: onLoginProp }) {
   usePageMeta({
@@ -41,6 +42,7 @@ export function MarketingHome({ onLogin: onLoginProp }) {
       <Faq />
       <CtaBand />
       <Footer onLogin={onLogin} onScrollTo={scrollTo} />
+      <StickyMobileCta onOperatorSignup={onOperatorSignup} onBookCampaign={() => scrollTo('advertisers')} />
     </div>
   );
 }
