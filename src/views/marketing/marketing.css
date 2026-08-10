@@ -283,5 +283,5 @@ select.fi { appearance: none; cursor: pointer; }
   .sticky-mobile-cta .btn-s, .sticky-mobile-cta .btn-p { flex: 1; padding: 12px; }
   /* Leave room at the very bottom of the page so the bar never covers the
      footer's own links on small screens. */
-  .mfooter { padding-bottom: 88px; }
+  .mfooter { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
 }
