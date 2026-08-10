@@ -1,4 +1,6 @@
+import { Link } from 'react-router-dom';
 import { usePageMeta } from '../../lib/usePageMeta.js';
+import { Breadcrumbs } from '../../components/shared/Breadcrumbs.jsx';
 
 const page = {
   minHeight: '100vh',
@@ -20,6 +22,7 @@ export function PrivacyPolicy() {
   return (
     <div style={page}>
       <div style={inner}>
+        <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Privacy Policy' }]} />
         <h1 style={h1}>Privacy Policy</h1>
         <p style={{ ...p, color: 'rgba(255,255,255,0.5)' }}>Last updated: June 29, 2026</p>
 
@@ -117,6 +120,10 @@ export function PrivacyPolicy() {
         <p style={p}>
           For privacy questions or data requests:{' '}
           <a href="mailto:privacy@adgrid.io" style={{ color: '#7c3aed' }}>privacy@adgrid.io</a>
+        </p>
+
+        <p style={{ ...p, marginTop: 32, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 24 }}>
+          Also see our <Link to="/terms" style={{ color: '#7c3aed' }}>Terms of Service</Link>.
         </p>
       </div>
     </div>
