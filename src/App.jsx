@@ -250,18 +250,20 @@ function AppInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, activeMode]);
 
-  // Clear a stale "add targeting group" target whenever the route moves away
-  // from the create-campaign screen, no matter how that navigation happened —
-  // Cancel/Save (which already clear it explicitly), the sidebar's nav
-  // handler (which calls react-router's navigate() directly, bypassing
-  // navTo()), browser back/forward, or any future entry point. Without this,
-  // a leftover { id, name } from a previous "+ Add targeting group" click
-  // could silently scope a brand-new campaign under the wrong parent.
-  useEffect(() => {
-    if (active !== 'adv-create' && addingToCampaign) {
-      setAddingToCampaign(null);
-    }
-  }, [active, addingToCampaign]);
+  // B19: this used to be a reactive effect clearing addingToCampaign
+  // whenever `active !== 'adv-create'`. It raced the very navigation it was
+  // meant to allow through: `active` is derived from useLocation(), which
+  // updates on a render pass after the route transition actually commits —
+  // not necessarily the same synchronous batch as the direct
+  // setAddingToCampaign() call in the "+ Add targeting group" handler below.
+  // The effect would see the still-stale `active` (pre-navigation) alongside
+  // the freshly-set addingToCampaign, conclude "we're not on adv-create yet,
+  // this must be stale," and null it out — before CreateCampaign ever
+  // mounted to read it. Confirmed live: every "+ Add targeting group" click
+  // silently created a brand-new standalone campaign (a different
+  // campaigns.id) instead of adding a targeting group to the existing one.
+  // Fixed by making the decision synchronously in navTo() instead of
+  // reactively after the fact — see navTo below.
 
   // Redirect to account hub when user has grants and no active account chosen
   useEffect(() => {
@@ -328,7 +330,14 @@ function AppInner() {
   const displayUser = { name: profile?.name || user.email?.split('@')[0] || 'User', email: user.email };
 
   // ── Navigation helper ──────────────────────────────────────────────────────
-  const navTo = v => {
+  // B19: clears a stale "add targeting group" target on every navigation by
+  // default -- synchronously, in the same handler that calls navTo, rather
+  // than via a separate effect racing the route change (see the removed
+  // effect above for what that raced). The one caller that intentionally
+  // carries addingToCampaign forward ("+ Add targeting group" itself) opts
+  // out explicitly with keepAddingToCampaign.
+  const navTo = (v, { keepAddingToCampaign = false } = {}) => {
+    if (!keepAddingToCampaign) setAddingToCampaign(null);
     navigate('/app/' + v);
     setDetail(null);
   };
@@ -392,7 +401,7 @@ function AppInner() {
           onApprovalChange={bumpApprovalRefresh}
           onAddTargeting={isAdvertiserDetail ? (c) => {
             setAddingToCampaign({ id: c.campaign_id, name: c.parentName || c.campaign_name || c.advertiser });
-            navTo('adv-create');
+            navTo('adv-create', { keepAddingToCampaign: true });
           } : undefined}
         />
       );
