@@ -795,6 +795,27 @@ factory-reset / re-pair path if the token is rotated.
 > targeting picker, and ad-render-preview (shipped Aug 1-8, still code-read only); mobile app on a
 > real device (still blocked on hardware access); S20's systemd watchdog on real hardware.
 
+> **Update — session 14 continued (2026-08-10, S21 fixed same day):** Fixed all three approve
+> paths plus reject. `approveScreen`/`approveAll`/`rejectScreen` now check `{ error }` and bail
+> with a visible message (`actionErr`, renamed from `chargeErr` since it's no longer
+> charge-specific) instead of reporting success on a failed write. `approveAll` and
+> `bulkApproveAll` batch each campaign's screen rows into one `.update().in('screen_id', […])`
+> instead of one query per row. `bulkApproveAll` now processes campaigns in chunks of 5
+> (`runInChunks`) instead of one unbounded `Promise.all` across the whole pending list, gained a
+> `bulkApproving` loading state that disables the button while in flight, and collects failures
+> into a visible banner (advertiser name + reason) — failed campaigns stay in the pending list so a
+> re-click naturally retries just those. New test
+> (`ApprovalQueue.bulkApproveErrors.test.jsx`) forces one campaign in a two-campaign batch to fail
+> and asserts it lands in the banner and is never optimistically marked approved — the gap the
+> existing `bulkApproveAll` test (all-writes-succeed mock) never covered. 567/567 tests pass,
+> build clean, lint delta zero. Not verified live against a real bulk backlog (production currently
+> has none) — the fix is proven by the new unit test and by re-reading the batched query shape, not
+> by an actual load test; worth confirming against a real backlog of dozens of pending campaigns if
+> one ever accumulates.
+>
+> **Go/No-Go:** area 3 back to 🟢 GO — error handling and concurrency are now correct by
+> construction rather than by nobody having hit the edge case yet.
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
