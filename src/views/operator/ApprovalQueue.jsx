@@ -66,12 +66,12 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
   const [rejectScreenId, setRejectScreenId] = useState(null);
   const [rejectReason, setRejectReason] = useState(REJECT_REASONS[0]);
   const [acting, setActing] = useState(false);
-  const [chargeErr, setChargeErr] = useState(null);
+  const [actionErr, setActionErr] = useState(null);
 
   const attemptCharge = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
-    setChargeErr(null);
+    setActionErr(null);
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/charge-campaign`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
@@ -101,7 +101,10 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
       }
       return;
     }
-    setChargeErr(msg);
+    // Screen approval already committed at this point -- the charge is what
+    // failed, so say so explicitly rather than a bare message that reads
+    // like the whole action didn't happen.
+    setActionErr(`Approved, but charge failed: ${msg}`);
   };
 
   const myRows = (campaign.campaign_screens || []).filter(
@@ -135,11 +138,20 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
 
   const approveScreen = async (screenId) => {
     setActing(true);
-    setChargeErr(null);
-    await supabase.from('campaign_screens')
+    setActionErr(null);
+    // S21: check the write actually landed before telling the UI it did --
+    // this previously called onApproved() unconditionally, so a failed
+    // UPDATE (timeout, transient 5xx) would silently drop the row from the
+    // pending list while it was still 'pending' server-side.
+    const { error: updateErr } = await supabase.from('campaign_screens')
       .update({ status: 'approved', approved_at: new Date().toISOString() })
       .eq('campaign_id', campaign.id)
       .eq('screen_id', screenId);
+    if (updateErr) {
+      setActionErr(`Approve failed: ${updateErr.message}`);
+      setActing(false);
+      return;
+    }
     const { data: remaining } = await supabase
       .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
     const allClear = campaign.start_when === 'partial' || !remaining || remaining.length === 0;
@@ -159,13 +171,19 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
     });
     if (!ok) return;
     setActing(true);
-    setChargeErr(null);
-    await Promise.all(myRows.map(row =>
-      supabase.from('campaign_screens')
-        .update({ status: 'approved', approved_at: new Date().toISOString() })
-        .eq('campaign_id', campaign.id)
-        .eq('screen_id', row.screen_id)
-    ));
+    setActionErr(null);
+    // S21: one batched update (.in on screen_id) instead of one query per
+    // row, and the error is actually checked -- same reasoning as
+    // approveScreen above.
+    const { error: updateErr } = await supabase.from('campaign_screens')
+      .update({ status: 'approved', approved_at: new Date().toISOString() })
+      .eq('campaign_id', campaign.id)
+      .in('screen_id', myRows.map(row => row.screen_id));
+    if (updateErr) {
+      setActionErr(`Approve all failed: ${updateErr.message}`);
+      setActing(false);
+      return;
+    }
     myRows.forEach(row => onApproved(campaign.id, row.screen_id));
     const { data: remaining } = await supabase
       .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
@@ -179,10 +197,16 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
 
   const rejectScreen = async () => {
     setActing(true);
-    await supabase.from('campaign_screens')
+    setActionErr(null);
+    const { error: updateErr } = await supabase.from('campaign_screens')
       .update({ status: 'rejected', reject_reason: rejectReason })
       .eq('campaign_id', campaign.id)
       .eq('screen_id', rejectScreenId);
+    if (updateErr) {
+      setActionErr(`Reject failed: ${updateErr.message}`);
+      setActing(false);
+      return;
+    }
     setRejectScreenId(null);
     setActing(false);
     onRejected(campaign.id, rejectScreenId);
@@ -320,9 +344,9 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
                 ✓ Approve all my screens ({myRows.length})
               </Btn>
             )}
-            {chargeErr && (
+            {actionErr && (
               <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, marginTop: 8 }}>
-                ⚠ Approved but charge failed: {chargeErr}
+                ⚠ {actionErr}
               </div>
             )}
           </div>
@@ -487,6 +511,23 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [], onAppro
     onApprovalChange?.();
   };
 
+  // S21: cap how many campaigns bulkApproveAll works on at once. Unbounded
+  // Promise.all across a real backlog means every campaign_screens write
+  // and every charge-campaign call (a live Stripe round trip) all fire
+  // simultaneously -- fine at the 1-2 items this has ever been tested with,
+  // a real concurrency/failure risk at genuine bulk volume. Process in small
+  // chunks instead of throttling per-request, since Supabase/Stripe don't
+  // give us a queue to push individual requests through.
+  const BULK_CHUNK_SIZE = 5;
+  async function runInChunks(items, worker, chunkSize) {
+    for (let i = 0; i < items.length; i += chunkSize) {
+      await Promise.all(items.slice(i, i + chunkSize).map(worker));
+    }
+  }
+
+  const [bulkApproving, setBulkApproving] = useState(false);
+  const [bulkErrors, setBulkErrors] = useState([]);
+
   const bulkApproveAll = async () => {
     const totalPending = enriched.reduce((a, c) =>
       a + (c.campaign_screens.filter(r => myScreens.some(s => s.id === r.screen_id) && r.status === 'pending').length), 0);
@@ -496,16 +537,26 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [], onAppro
       confirmLabel: 'Approve all',
     });
     if (!ok) return;
+    setBulkApproving(true);
+    setBulkErrors([]);
     const { data: { session } } = await supabase.auth.getSession();
-    await Promise.all(enriched.map(async (campaign) => {
+    const failures = [];
+    await runInChunks(enriched, async (campaign) => {
       const rows = campaign.campaign_screens.filter(r => myScreens.some(s => s.id === r.screen_id) && r.status === 'pending');
       if (rows.length === 0) return;
-      await Promise.all(rows.map(row =>
-        supabase.from('campaign_screens')
-          .update({ status: 'approved', approved_at: new Date().toISOString() })
-          .eq('campaign_id', campaign.id)
-          .eq('screen_id', row.screen_id)
-      ));
+      // One batched update per campaign (.in on screen_id) instead of one
+      // query per row, and the error is actually checked: on failure this
+      // campaign is left out of applyApproved/notify/charge entirely, so it
+      // stays visibly pending and a re-click naturally retries just this one
+      // (enriched only ever contains still-pending campaigns).
+      const { error: updateErr } = await supabase.from('campaign_screens')
+        .update({ status: 'approved', approved_at: new Date().toISOString() })
+        .eq('campaign_id', campaign.id)
+        .in('screen_id', rows.map(r => r.screen_id));
+      if (updateErr) {
+        failures.push({ id: campaign.id, name: campaign.advertiser_name || campaign.advertiser, message: updateErr.message });
+        return;
+      }
       rows.forEach(row => applyApproved(campaign.id, row.screen_id));
       const { data: remaining } = await supabase
         .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
@@ -537,7 +588,9 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [], onAppro
           } catch { /* silent — approval already succeeded */ }
         }
       }
-    }));
+    }, BULK_CHUNK_SIZE);
+    setBulkErrors(failures);
+    setBulkApproving(false);
     onApprovalChange?.();
   };
 
@@ -556,8 +609,21 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [], onAppro
       <PageHeader
         title="Approval Queue"
         subtitle={totalPending === 0 ? 'No campaigns pending review' : `${totalPending} campaign${totalPending !== 1 ? 's' : ''} pending review`}
-        actions={totalPending > 1 ? <Btn variant="secondary" size="sm" onClick={bulkApproveAll}>✓ Approve all pending ({totalPending})</Btn> : undefined}
+        actions={totalPending > 1 ? (
+          <Btn variant="secondary" size="sm" onClick={bulkApproveAll} disabled={bulkApproving}>
+            {bulkApproving ? '…Approving' : `✓ Approve all pending (${totalPending})`}
+          </Btn>
+        ) : undefined}
       />
+
+      {bulkErrors.length > 0 && (
+        <div style={{ padding: '10px 14px', marginBottom: 16, background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`, borderRadius: 8, fontSize: 12, color: C.red, fontFamily: F.sans, lineHeight: 1.6 }}>
+          <strong>⚠ {bulkErrors.length} approval{bulkErrors.length !== 1 ? 's' : ''} failed</strong> — still pending, nothing was charged for these. Click "Approve all pending" again to retry.
+          <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+            {bulkErrors.map(f => <li key={f.id}>{f.name}: {f.message}</li>)}
+          </ul>
+        </div>
+      )}
 
       {/* Auto-approve toggle */}
       <Card style={{ padding: '16px 20px', marginBottom: 20, display: 'flex', gap: 16, alignItems: 'flex-start' }}>
