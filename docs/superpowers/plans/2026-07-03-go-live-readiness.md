@@ -1120,6 +1120,49 @@ factory-reset / re-pair path if the token is rotated.
 > session 16); anything downstream of B18 (Stripe Connect never enabled) remains blocked on that
 > one external step.
 
+> **Update — session 19 (2026-08-10, approval SLA / auto-drop pipeline — first pass, never
+> checked before):** Read the full Phase 2C design and the live `sweep-approvals`/`approvalSla.ts`
+> code, then checked the one seam no prior pass had: how the SLA-deadline system interacts with
+> the campaign-hierarchy creative-reassignment reset trigger (`20260731000004`/`...009`) — two
+> features built in different phases, each individually solid, never cross-checked against each
+> other.
+>
+> - **B21 (blocker, found + fixed) — reassigning a creative on an already-approved, mid-flight
+>   screen could get it silently dropped and refunded within 15 minutes, through no fault of the
+>   operator.** `reset_screen_approval_on_creative_change()` flips an approved/auto_approved
+>   `campaign_screens` row back to `pending` on any creative reassignment, but only ever touched
+>   `status` — never `review_due_at`, which is stamped once at initial INSERT by a separate
+>   BEFORE INSERT trigger that never re-fires on this UPDATE. **Reproduced live with disposable
+>   data**: approved a screen, backdated its deadline 2 hours into the past (the normal state for
+>   any screen approved earlier in a multi-week flight, since the SLA default is only 24h — nearly
+>   every real campaign outlives it), reassigned a creative through the real production trigger
+>   path, and called the real `sweep-approvals` function. It returned `expired:1` in that exact
+>   run, issued a real `screen_dropped_sla` notification, and credited the full $300 test budget
+>   back — all within 30 seconds of what should have been a completely ordinary advertiser action.
+>   This makes creative reassignment (including the "+ Add another creative" / per-screen
+>   reassignment flows already verified as *working* in sessions 16/18 — those passes checked the
+>   status transition but never this column) actively dangerous on any campaign simply old enough
+>   to have outlived its SLA window, which is most of them by design (campaigns run for weeks,
+>   SLA defaults to 24h).
+>   **Fixed and verified live**: the reset trigger now recomputes a fresh deadline (same
+>   calculation `set_review_due_at` uses) whenever it resets a row to pending, clears `expired_at`
+>   defensively, and stamps `updated_at` — which also incidentally closes a second, related gap:
+>   `notification-cron`'s pending-review push filters on `updated_at`, so a reset row was
+>   previously invisible to it too (an unmerged branch, PR #47, had independently built this same
+>   `updated_at` fix for that reason but was never merged to `main`; this migration supersedes it).
+>   Re-ran the identical reproduction post-fix: `review_due_at` correctly became a real 24h-out
+>   deadline, `sweep-approvals` returned `expired:0`, row stayed pending untouched. Both test
+>   passes' data fully cleaned up. 570/570 tests pass (DB-only change).
+>
+> **Go/No-Go:** approval SLA / auto-drop pipeline is 🟢 GO — the core mechanism (deadlines,
+> warnings, policy-based auto-approve, expiry, credit-back) is well-built and matches its design
+> doc; the one real gap was specifically at its intersection with a different feature built later,
+> now closed and proven live.
+>
+> **Not yet gone deep on:** the auto-approve policy path itself (`operator_approval_rules`) has
+> never been exercised live — only read as code and unit-tested; the operator-facing SLA/policy
+> settings UI in `OperatorSettingsView.jsx` has never been clicked through.
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
