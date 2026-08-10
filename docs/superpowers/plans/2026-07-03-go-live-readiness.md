@@ -1016,6 +1016,60 @@ factory-reset / re-pair path if the token is rotated.
 > real code change, not a quick patch: needs either a new server-side verification call or a new
 > webhook case, plus a UI surface for failed transfers).
 
+> **Update — session 17 continued (2026-08-10, B16 fixed, and a much bigger thing found: B17,
+> B18):** Fixing B16 uncovered two deeper problems, each hiding the one below it.
+>
+> - **B17 (the real root cause, found + fixed) — `create-connect-account` had no CORS/OPTIONS
+>   handling at all.** Every browser call carries an `Authorization` header, forcing a preflight
+>   OPTIONS request; the function had no branch for it, so the preflight fell into the auth check
+>   (which needs a real bearer token no preflight ever sends) and 401'd with no CORS headers — the
+>   browser aborted the real POST entirely. Identical bug class to B9 (`send-notification`, session
+>   5). Confirmed live via `curl` **before** the fix: `OPTIONS` → `401`, no `Access-Control-*`
+>   headers. **This is the actual reason `connect_status` has stayed `null` for every operator
+>   across every prior go-live session** — "Connect with Stripe" has never once reached this
+>   function in production; B14's entire onboarding path has been dead on arrival since it shipped.
+>   Fixed with the same `CORS` const + OPTIONS short-circuit pattern used everywhere else. Also
+>   wrapped the Stripe calls in `try/catch` — an uncaught Stripe error previously fell through to
+>   Deno's bare 500 with no CORS headers either, which would have shown the browser an opaque "CORS
+>   error" instead of Stripe's actual message. **Verified live**: `curl OPTIONS` now returns `200`
+>   with `Access-Control-Allow-Origin`, on both `create-connect-account` and the new
+>   `confirm-connect-account`.
+> - **B16 — fixed as designed.** New `confirm-connect-account` function calls
+>   `stripe.accounts.retrieve()` and only marks `active` when `charges_enabled && payouts_enabled`
+>   (else `restricted`/`pending`); `App.jsx`'s redirect handler calls it instead of blindly writing
+>   `active`. `stripe-webhook` gained an `account.updated` case to keep status synced from Stripe's
+>   own event stream afterward (catches a later KYC rejection, not just the initial guess). Added
+>   `payout_transfer_failed`/`connect_account_restricted` notification templates, wired them at the
+>   point of failure, and added a failed-transfers banner to the operator Billing page (new
+>   `useFailedTransfers` hook + test) — `operator_transfers.status='failed'` rows existed in the DB
+>   the whole time but nothing anywhere ever surfaced them.
+> - **B18 (found live, blocked on a manual step — cannot be fixed from here) — Stripe Connect
+>   itself has never been enabled on this platform's Stripe account.** With B17's CORS fix deployed
+>   and error handling in place, ran a real end-to-end test: created a disposable operator account
+>   (`golivereview.payout.test.20260810@mailinator.com`, via direct SQL insert with a real
+>   bcrypt-hashed password — signup's email endpoint was rate-limited from earlier test accounts
+>   this session), signed in for a real access token, and called `create-connect-account` for real.
+>   Stripe returned: **"You can only create new accounts if you've signed up for Connect, which you
+>   can do at https://dashboard.stripe.com/connect."** This is a platform-level Stripe Dashboard
+>   setting — not something any API call or service-role key can toggle, and not something this
+>   environment can do on the user's behalf (same category as the Google OAuth secret, the
+>   leaked-password toggle, and `eas login`). **This is the true root of the entire operator-payout
+>   story**: B14 (Connect gate), B16 (status verification), and B17 (the broken button) were all
+>   fixed or working correctly, but none of it can complete until Connect is turned on for the
+>   platform account. Test account and all rows cleaned up after; no Stripe object was ever created
+>   (the very first API call is what failed, before any account existed).
+>
+> **Go/No-Go:** payments/payout pipeline B16 and B17 are 🟢 fixed and verified live down to the
+> point where an external Stripe setting blocks further progress. **B18 is now the single most
+> consequential open item in this entire go-live review** — until Stripe Connect is enabled on the
+> platform account, zero operators can ever complete onboarding, no matter how correct the code is.
+>
+> **What the user needs to do:** visit https://dashboard.stripe.com/connect and complete Stripe's
+> Connect platform setup (this is typically a short questionnaire about the platform/marketplace
+> use case). Once done, re-run the same test (or just have a real operator click "Connect with
+> Stripe") — `create-connect-account` should return a real onboarding URL instead of the error
+> above.
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
