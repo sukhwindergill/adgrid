@@ -1070,6 +1070,56 @@ factory-reset / re-pair path if the token is rotated.
 > Stripe") — `create-connect-account` should return a real onboarding URL instead of the error
 > above.
 
+> **Update — session 18 (2026-08-10, campaign-hierarchy dashboard rollup — live click-through):**
+> Per the carried-forward item, Phase 5's accordion/"+ Add targeting group" had never been
+> exercised by any prior go-live pass (design-doc read only). Found and fixed two more real,
+> previously-unflagged bugs, both confirmed live end-to-end.
+>
+> - **B19 (found + fixed) — "+ Add targeting group" silently created a brand-new standalone
+>   campaign instead of extending the existing one, every time, for every advertiser, since the
+>   feature shipped.** [App.jsx](src/App.jsx)'s safety-net effect clearing `addingToCampaign`
+>   whenever `active !== 'adv-create'` raced the very navigation it was meant to allow through —
+>   `active` derives from `useLocation()`, which updates on a render pass after the route
+>   transition commits, not necessarily the same synchronous batch as the `setAddingToCampaign()`
+>   call in the click handler. The effect would see stale `active` alongside the freshly-set value,
+>   conclude it was leftover from a previous session, and null it out before `CreateCampaign` ever
+>   mounted to read it. **Reproduced live, twice, with SQL proof**: created a real campaign,
+>   clicked "+ Add targeting group," completed the wizard, and confirmed via direct query that the
+>   resulting booking got a brand-new `campaigns.id` instead of the original's — silently, with no
+>   error, no visual hint anything was wrong (named it `SHOULD-NOT-EXIST-second-group` specifically
+>   to prove the point). Fixed by making the decision synchronous instead of reactive: `navTo()`
+>   now clears `addingToCampaign` itself by default, and the one caller that needs to carry it
+>   forward opts out via a new `keepAddingToCampaign` option, decided in the same click handler
+>   that sets the value — removes the race entirely rather than tuning its timing.
+> - **B20 (found + fixed, while re-verifying B19) — the location-search suggestion list could
+>   lose a real click to its own close timer.** `LocationSearch.jsx`'s input closes the dropdown via
+>   `onBlur={() => setTimeout(() => setOpen(false), 150)}`, but each suggestion row only listened
+>   for `onClick` — a real click is mousedown→blur→mouseup→click, and mousedown alone already starts
+>   the 150ms teardown. On anything slower than an instant click (assistive tech, touch, a laggy
+>   trackpad, or — how this was actually found — an automated interaction), the timer can win and
+>   unmount the row before the click event ever dispatches, so the selection silently does nothing.
+>   Not specific to "+ Add targeting group" — same component, same bug, everywhere in the wizard.
+>   Fixed by moving the handler to `onMouseDown` + `preventDefault()`, which stops the input from
+>   blurring in the first place instead of depending on winning the race.
+> - **Both fixes verified live, together, in one full run**: re-opened the real "Rollup Test
+>   Campaign," clicked "+ Add targeting group" (purple banner correct, confirming B19), selected a
+>   city via the fixed mousedown handler (confirming B20), uploaded a creative, submitted with a
+>   $75 budget — **the resulting booking's `campaign_id` matched the original campaign's `id`
+>   exactly**, and the Campaigns list rendered it as a real accordion: "▸ Rollup Test Campaign — 2
+>   targeting groups · 4 screens · $0 of $375" (300+75, correctly summed), collapsed by default
+>   exactly per the design doc's §7. All test data (3 bookings, 2 campaign parents, the test
+>   advertiser account) deleted after.
+> - 570/570 tests pass (two pre-existing tests updated to fire `mousedown` instead of `click`,
+>   matching the fixed interaction — a legitimate behavior change, not a workaround).
+>
+> **Go/No-Go:** campaign-hierarchy dashboard/rollup moves to 🟢 GO — both real, would-have-shipped
+> bugs are fixed and proven correct against production, not just read as code.
+>
+> **Not yet gone deep on:** the "Split by screen type" auto-split convenience button and the
+> ad-render-preview corner-warp feature specifically (both still carried forward, unchanged from
+> session 16); anything downstream of B18 (Stripe Connect never enabled) remains blocked on that
+> one external step.
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
