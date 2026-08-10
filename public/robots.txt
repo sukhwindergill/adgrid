@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /app/
+Disallow: /display/
+Disallow: /report/
+
+Sitemap: https://adgrid.io/sitemap.xml
