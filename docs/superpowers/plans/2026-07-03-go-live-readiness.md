@@ -1402,6 +1402,28 @@ factory-reset / re-pair path if the token is rotated.
 >
 > **Go/No-Go:** B27 is now 🟢 GO, live-verified in both directions.
 
+> **Update — session 21 continued (2026-08-10, CORS audit closed out):** Finished the systemic
+> CORS audit flagged earlier this session. Of the 17 previously-unaudited browser-facing
+> functions: `create-connect-account`, `confirm-connect-account`, `invite-team-member`,
+> `accept-operator-invite`, `campaign-report`, and `ingest-plays` were already fully correct
+> (properly using a shared `CORS` const on every response, not just the preflight). 4 stub
+> functions (`create-checkout-session`, `stripe-capture-payment`, `stripe-create-intent`,
+> `stripe-refund` — all retired 410 endpoints) were also already fine. 7 had the same gap as
+> B24/B25/B26: `setup-billing`, `create-identity-session`, `operator-billing`, `invite-operator`,
+> `manual-review-operator`, `get-stripe-charges`, `ingest-impressions`. Most consequential:
+> **`setup-billing` is the literal "+ Add Payment Method" button** on the Billing page whose
+> *load* B24 fixed earlier this session — advertisers could reach Billing but the one thing they'd
+> go there to do, add a card, silently failed the same way. Live-verified: clicking Add Payment
+> Method now reaches a real Stripe Checkout session instead of "Failed to fetch." All 7 deployed,
+> `verify_jwt` confirmed and preserved per-function before redeploying (not assumed). 576/576 tests
+> passing throughout.
+>
+> **Go/No-Go:** the CORS-header gap across `supabase/functions/` is now fully closed for every
+> browser-reachable function. Remaining known gaps in the codebase after this session: the
+> silent-disabled-Next-button UX issue in the screen registration wizard (should-fix, not
+> blocker), and the two manual Supabase dashboard toggles (Google OAuth secret, leaked-password
+> protection) carried forward from every prior session.
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
