@@ -21,7 +21,13 @@ Deno.serve(async (req: Request) => {
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) return new Response("Unauthorized", { status: 401, headers: CORS });
 
-  const { screen_id } = await req.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: CORS });
+  }
+  const { screen_id } = body as Record<string, unknown>;
   if (!screen_id) {
     return new Response(JSON.stringify({ error: "screen_id required" }), { status: 400, headers: CORS });
   }
@@ -53,7 +59,7 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const origin = req.headers.get("origin") ?? Deno.env.get("PUBLIC_APP_URL") ?? "";
+  const origin = req.headers.get("origin") ?? Deno.env.get("APP_URL") ?? "http://localhost:5173";
   const url = `${origin}/invite/screen/${invite.token}`;
 
   return new Response(JSON.stringify({ token: invite.token, url }), { headers: CORS });
