@@ -88,7 +88,7 @@ export function LoginPage() {
     } else {
       localStorage.setItem('adgrid_signup_intent', intent);
       const { error } = await signUp(email, pass, name, new Date().toISOString());
-      if (error) { localStorage.removeItem('adgrid_signup_intent'); setErr(error.message); }
+      if (error) { localStorage.removeItem('adgrid_signup_intent'); localStorage.removeItem('adgrid_screen_invite_token'); setErr(error.message); }
       else setErr('Check your email to confirm your account.');
     }
     setLoading(false);
