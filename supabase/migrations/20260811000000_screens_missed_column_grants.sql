@@ -1,0 +1,22 @@
+-- 20260703000000_secure_screen_token_and_scans.sql replaced screens' table-wide
+-- SELECT grant with a column-scoped one. Every column added to `screens`
+-- since then needs its own companion GRANT or it's invisible to
+-- anon/authenticated even though RLS would otherwise allow the row --
+-- 20260727000003 already hit and fixed this once for the creative-spec
+-- columns. Two more slipped through the same gap:
+--
+-- - cv_last_seen (20260810000000_cv_agent_last_seen_column.sql): every
+--   direct query against SCREEN_COLS in ScreenDetail.jsx -- i.e. every
+--   operator opening any screen's detail page, live or freshly registered
+--   -- fails outright with "permission denied for table screens" (42501).
+--   Confirmed live: a brand-new screen, registered end-to-end through the
+--   onboarding wizard, showed "Screen not found" both immediately after
+--   finishing setup and again navigating fresh from the Screens list.
+-- - review_sla_hours (20260725000020_approval_sla.sql): breaks
+--   OperatorSettingsView.jsx's SLA-policy read/update UI the same way.
+--
+-- coordinates_missing (20260726000020_screen_coordinates.sql) isn't
+-- selected by any current frontend query, but granting it now closes the
+-- same gap before something starts reading it and hits this blind.
+GRANT SELECT (cv_last_seen, review_sla_hours, coordinates_missing)
+  ON public.screens TO anon, authenticated;
