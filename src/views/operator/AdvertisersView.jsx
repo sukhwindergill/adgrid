@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { C, F } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
 import { useToast } from "../../components/primitives/Toast.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
+import { useOperatorCampaignIds } from "../../hooks/useOperatorCampaignIds.js";
 
 function StatusBadge({ status }) {
   const styles = {
@@ -193,26 +195,41 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
 }
 
 export default function AdvertisersView({ onImpersonate }) {
+  const { user } = useAuth();
   const [advertisers, setAdvertisers] = useState([]);
-  const [campaigns, setCampaigns] = useState([]);
+  const [allBookings, setAllBookings] = useState([]);
+  const [screenIds, setScreenIds] = useState([]);
   const [scans, setScans] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // B27: `bookings` RLS grants read access via two separate policies --
+  // "I'm the advertiser" and "I'm the operator of a targeted screen".
+  // Fetching unfiltered here means this operator's OWN advertiser-side
+  // bookings (if this is a dual-role account) get counted as spend
+  // against themselves in this operator-facing advertiser directory.
+  // Scope down to bookings that actually target one of this operator's
+  // own screens via campaign_screens, same as App.jsx's operatorCampaigns.
+  const operatorCampaignIds = useOperatorCampaignIds(screenIds);
+  const campaigns = allBookings.filter(c => operatorCampaignIds.has(c.id));
+
   useEffect(() => {
+    if (!user) return;
     Promise.all([
       supabase.from("profiles").select("*").or("role.eq.advertiser,active_mode.eq.advertiser"),
       supabase.from("bookings").select("*"),
       supabase.from("scans").select("advertiser_id"),
-    ]).then(([advRes, campRes, scansRes]) => {
+      supabase.from("screens").select("id").eq("operator_id", user.id),
+    ]).then(([advRes, campRes, scansRes, screensRes]) => {
       setAdvertisers(advRes.data ?? []);
-      setCampaigns(campRes.data ?? []);
+      setAllBookings(campRes.data ?? []);
       setScans(scansRes.data ?? []);
+      setScreenIds((screensRes.data ?? []).map(s => s.id));
       setLoading(false);
     });
-  }, []);
+  }, [user]);
 
   function updateAdv(updated) {
     setAdvertisers((prev) => prev.map((a) => a.id === updated.id ? updated : a));

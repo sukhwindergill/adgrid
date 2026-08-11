@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import { supabase } from './lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from './lib/constants.js';
 import { useToast } from './components/primitives/Toast.jsx';
 import { usePendingApprovalCount } from './hooks/usePendingApprovalCount.js';
+import { useOperatorCampaignIds } from './hooks/useOperatorCampaignIds.js';
 
 import { LoginPage } from './components/login/LoginPage.jsx';
 import { GlobalHeader } from './components/layout/GlobalHeader.jsx';
@@ -104,6 +105,29 @@ function AppInner() {
   const [approvalRefreshKey, setApprovalRefreshKey] = useState(0);
   const bumpApprovalRefresh = useCallback(() => setApprovalRefreshKey(k => k + 1), []);
   const pendingCount = usePendingApprovalCount(myScreens.map(s => s.id), approvalRefreshKey);
+
+  // B27: `campaigns` is the whole RLS-visible set of bookings -- for a
+  // dual-role account that's the union of "I'm the advertiser" and "I'm
+  // the operator of a targeted screen" (two separate, both-legitimate RLS
+  // policies). Every mode-specific view needs its own scoped slice of
+  // that, not the raw union, or a dual-role account's own advertiser
+  // spend shows up as operator revenue (and vice versa -- someone else's
+  // booking on a screen this account operates showing up in "My
+  // Campaigns"). advertiserCampaigns mirrors AdvDashboard's existing
+  // internal filter; operatorCampaigns is the operator-side equivalent,
+  // resolved against campaign_screens rather than trusted from the
+  // booking row itself.
+  const currentAdvertiserId = impersonating?.id ?? user?.id;
+  const advertiserCampaigns = useMemo(
+    () => campaigns.filter(c => c.advertiser_id === currentAdvertiserId),
+    [campaigns, currentAdvertiserId]
+  );
+  const myScreenIds = useMemo(() => myScreens.map(s => s.id), [myScreens]);
+  const operatorCampaignIds = useOperatorCampaignIds(myScreenIds);
+  const operatorCampaigns = useMemo(
+    () => campaigns.filter(c => operatorCampaignIds.has(c.id)),
+    [campaigns, operatorCampaignIds]
+  );
 
   // Derive active from current URL path
   const active = location.pathname.replace(/^\/app\/?/, '') || 'overview';
@@ -412,7 +436,7 @@ function AppInner() {
       if (active === 'adv-create')       return (
         <CreateCampaign
           dbScreens={dbScreens}
-          campaigns={campaigns}
+          campaigns={advertiserCampaigns}
           existingCampaign={addingToCampaign}
           onSave={c => {
             setCampaigns(p => [c, ...p]);
@@ -422,8 +446,8 @@ function AppInner() {
           onCancel={() => { setAddingToCampaign(null); navTo('adv-overview'); }}
         />
       );
-      if (active === 'adv-campaigns')    return <Campaigns campaigns={campaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} allowCancel />;
-      if (active === 'adv-analytics')    return <Analytics campaigns={campaigns} loading={dataLoading} />;
+      if (active === 'adv-campaigns')    return <Campaigns campaigns={advertiserCampaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} allowCancel />;
+      if (active === 'adv-analytics')    return <Analytics campaigns={advertiserCampaigns} loading={dataLoading} />;
       if (active === 'adv-audience')     return <ScansView impersonatingId={impersonating?.id ?? null} />;
       if (active === 'adv-rules')        return <AutomationRulesView user={user} ownerSide="advertiser" />;
       if (active === 'adv-billing')      return <AdvertiserBillingView />;
@@ -433,7 +457,7 @@ function AppInner() {
       return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navTo} advertiserId={impersonating?.id ?? user.id} />;
     }
 
-    if (active === 'overview')     return <Dashboard campaigns={campaigns} dbScreens={myScreens} setNav={navTo} loading={dataLoading} />;
+    if (active === 'overview')     return <Dashboard campaigns={operatorCampaigns} dbScreens={myScreens} setNav={navTo} loading={dataLoading} />;
     if (active === 'screen-onboard') return (
       <ScreenOnboardView
         onComplete={(newScreen) => {
@@ -462,24 +486,24 @@ function AppInner() {
         onStartOnboard={() => navTo('screen-onboard')}
       />
     );
-    if (active === 'approval')      return <ApprovalQueue campaigns={campaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} dbScreens={myScreens} onApprovalChange={bumpApprovalRefresh} />;
+    if (active === 'approval')      return <ApprovalQueue campaigns={operatorCampaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} dbScreens={myScreens} onApprovalChange={bumpApprovalRefresh} />;
     if (active === 'screen-detail') {
       if (!selectedScreenId) { navTo('screens'); return null; }
       return <ScreenDetailView screenId={selectedScreenId} onBack={() => navTo('screens')} profile={profile} onScreenUpdated={updated => setMyScreens(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s))} />;
     }
     if (active === 'notif-prefs')   return <NotificationPrefsView />;
-    if (active === 'campaigns')    return <Campaigns campaigns={campaigns} dbScreens={myScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} canReview={canReview} onApprovalChange={bumpApprovalRefresh} />;
-    if (active === 'analytics')    return <Analytics campaigns={campaigns} loading={dataLoading} />;
-    if (active === 'audience')     return <Audience campaigns={campaigns} />;
-    if (active === 'revenue')      return <Revenue campaigns={campaigns} loading={dataLoading} />;
-    if (active === 'billing')      return <Billing campaigns={campaigns} />;
+    if (active === 'campaigns')    return <Campaigns campaigns={operatorCampaigns} dbScreens={myScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} canReview={canReview} onApprovalChange={bumpApprovalRefresh} />;
+    if (active === 'analytics')    return <Analytics campaigns={operatorCampaigns} loading={dataLoading} />;
+    if (active === 'audience')     return <Audience campaigns={operatorCampaigns} />;
+    if (active === 'revenue')      return <Revenue campaigns={operatorCampaigns} loading={dataLoading} />;
+    if (active === 'billing')      return <Billing campaigns={operatorCampaigns} />;
     if (active === 'advertisers')  return <AdvertisersView onImpersonate={startImpersonation} />;
-    if (active === 'signals')      return <SignalsView campaigns={campaigns} />;
+    if (active === 'signals')      return <SignalsView campaigns={operatorCampaigns} />;
     if (active === 'rules')        return <AutomationRulesView user={user} ownerSide="operator" />;
     if (active === 'integrations') return <IntegrationsView />;
-    if (active === 'display')      return <DisplayView campaigns={campaigns} />;
+    if (active === 'display')      return <DisplayView campaigns={operatorCampaigns} />;
     if (active === 'op-settings')  return <OperatorSettingsView />;
-    return <Dashboard campaigns={campaigns} setNav={navTo} loading={dataLoading} />;
+    return <Dashboard campaigns={operatorCampaigns} setNav={navTo} loading={dataLoading} />;
   };
 
   return (
