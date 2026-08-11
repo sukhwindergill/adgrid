@@ -26,6 +26,11 @@
 -- every table here, so its inner query bypasses screen_invites' RLS
 -- instead of re-triggering it) does not recurse, verified against real
 -- data under both roles before this file was written.
+-- Despite the name (kept for symmetry with the policy label below), this
+-- does not filter by status -- it returns true for a 'booked' invite too,
+-- same as screen_invites' own unfiltered public-read policy. Harmless
+-- today (the frontend already short-circuits on 'booked' before ever
+-- querying screens), but don't assume "active" means "not yet booked".
 create or replace function public.screen_has_active_invite(p_screen_id text)
 returns boolean
 language sql
@@ -35,6 +40,13 @@ set search_path = 'public'
 as $$
   select exists (select 1 from screen_invites where screen_id = p_screen_id);
 $$;
+
+-- Explicit, self-documenting grant: anon access is intentional (it's the
+-- entire reason this function exists), not an unstated Postgres default --
+-- matches this codebase's own convention of never leaving a SECURITY
+-- DEFINER function's EXECUTE grant implicit (see get_screen_token,
+-- revoke_anon_lookup_profile_by_email, etc.).
+grant execute on function public.screen_has_active_invite(text) to anon, authenticated;
 
 create policy "Public read screens with an active invite"
   on screens for select
