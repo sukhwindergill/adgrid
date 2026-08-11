@@ -1289,6 +1289,53 @@ factory-reset / re-pair path if the token is rotated.
 > Scans & Data, Alerts & Rules, Settings, Integrations), and/or the CORS audit of the 17 unaudited
 > browser-facing functions listed above.
 
+> **Update — session 21 continued (2026-08-10, operator dashboard sweep — screen onboarding live
+> click-through):** Continued the same click-through session, switched to Operator mode (same
+> account, no re-login needed — `activeMode` is independent of role) and ran the empty-state
+> "Set up your first screen" flow end to end: 5-step wizard (Welcome → Register → Setup → Connect →
+> Payouts) with a real disposable screen, cleaned up after.
+>
+> - **B26 (blocker, found + fixed) — every operator's Screen Detail page was completely broken,
+>   platform-wide, for any screen, not just freshly-created ones.** Finishing the onboarding wizard
+>   landed on "Screen not found." Re-tested via a completely fresh path — back to the Screens list,
+>   click the card — same result, ruling out a one-off race. Root cause, confirmed by replicating
+>   `ScreenDetail.jsx`'s exact `SCREEN_COLS` query against the live DB from the browser's own
+>   session: `error.code 42501 "permission denied for table screens"` — not an RLS rejection (which
+>   returns an empty result, not a permission error), a missing column-level GRANT.
+>   `20260703000000_secure_screen_token_and_scans.sql` (session 3) replaced `screens`' table-wide
+>   SELECT grant with a column-scoped one; every column added since needs its own companion GRANT
+>   or it's invisible to `anon`/`authenticated` regardless of RLS. This exact gap already happened
+>   once before — `20260727000003_screens_creative_spec_column_grant.sql` fixed it for 4
+>   creative-spec columns — but recurred for **`cv_last_seen`** (added in session 13's
+>   `20260810000000_cv_agent_last_seen_column.sql`, the S19/S20 health-signal fix) and
+>   **`review_sla_hours`** (added in `20260725000020_approval_sla.sql`), neither of which got the
+>   companion grant. `cv_last_seen` broke every Screen Detail page load (status, editing, uptime,
+>   campaign history — and the Stripe Connect payout button, since `startStripeConnect` lives on
+>   this exact page); `review_sla_hours` broke `OperatorSettingsView.jsx`'s Review tab (the
+>   auto-approve SLA policy UI) the same way. A third column, `coordinates_missing`, had the same
+>   gap but isn't selected by any current frontend query — granted proactively before something
+>   starts reading it and hits this blind a third time. **Fixed**: migration
+>   `20260811000000_screens_missed_column_grants.sql`, `GRANT SELECT (cv_last_seen,
+>   review_sla_hours, coordinates_missing) ON public.screens TO anon, authenticated`. Re-verified
+>   live: Screen Detail now loads fully (revenue, uptime, screen details, revenue split, payout
+>   setup, campaign history) and the Settings → Review tab loads its SLA field (`24` default) with
+>   no console errors. Disposable test screen and the operator-role promotion its insert trigger
+>   caused were both cleaned up after (`advertiser@adgrid.io` restored to `role='advertiser')`.
+> - Also confirmed clean in the same pass: the registration wizard's Next button correctly gates
+>   on all 9 required fields (name, owner, state, city, location, category, environment, position,
+>   display size, foot traffic > 0, coordinates) — but **gives zero visible feedback when
+>   disabled**. No asterisks on required labels, no inline error, nothing — a real operator missing
+>   one field would see an unresponsive button with no clue why. Not fixed this session (a labeling
+>   pass touches ~9 field labels across a large form component; flagging rather than rushing it).
+>   the map-pin step, connection test, and Stripe Connect entry point all degrade cleanly (clear
+>   empty/error states, no crashes) when there's no real hardware or Stripe account to test against.
+>
+> **Go/No-Go:** area 1 (operator onboarding) was 🔴 **fully blocking** before this fix — no
+> operator could ever view a screen they registered — now 🟢 GO. Next pass: the disabled-Next-button
+> feedback gap (should-fix, not blocker), the rest of the operator dashboard (Approval Queue,
+> Revenue, Audience & Scans, Advertisers, Live Signals, Display Manager), or the remaining
+> advertiser nav / CORS audit carried forward from earlier this session.
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
