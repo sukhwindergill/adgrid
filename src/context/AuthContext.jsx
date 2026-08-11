@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { SUPABASE_FUNCTIONS_URL } from '../lib/constants.js'
 
 const AuthContext = createContext({})
 
@@ -29,6 +30,34 @@ export function AuthProvider({ children }) {
       setActiveModeState(mode)
       localStorage.removeItem('adgrid_signup_intent')
       supabase.from('profiles').update({ active_mode: mode }).eq('id', userId).then(() => {})
+
+      // Screen-invite conversion: set by ScreenInvitePage's "Get Started"
+      // button at localStorage.setItem time, well before signUp() ran --
+      // localStorage (not sessionStorage) is required here because email
+      // confirmation is mandatory in this project (see LoginPage's "Check
+      // your email to confirm your account" message) and the confirmation
+      // click can land back in a fresh tab/session, which sessionStorage
+      // would not survive.
+      const inviteToken = localStorage.getItem('adgrid_screen_invite_token')
+      if (inviteToken) {
+        localStorage.removeItem('adgrid_screen_invite_token')
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          fetch(`${SUPABASE_FUNCTIONS_URL}/accept-screen-invite`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({ token: inviteToken }),
+          })
+            .then(res => res.ok ? res.json() : null)
+            .then(result => {
+              if (result?.screen_id) {
+                sessionStorage.setItem('adgrid_preset_screen_id', result.screen_id)
+                sessionStorage.setItem('adgrid_pending_screen_invite_token', inviteToken)
+              }
+            })
+            .catch(() => {}) // best-effort -- a failure here must never block login
+        }
+      }
     } else {
       setActiveModeState(data?.active_mode ?? 'advertiser')
     }
