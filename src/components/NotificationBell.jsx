@@ -18,6 +18,8 @@ const TYPE_ICONS = {
   weekly_revenue: "📈",
   team_member_joined: "🤝",
   account_suspended: "🚫",
+  screen_invite_signed_up: "🔗",
+  screen_invite_booked: "🎉",
 };
 
 function timeAgo(dateStr) {
