@@ -41,25 +41,28 @@ export function AuthProvider({ children }) {
       const inviteToken = localStorage.getItem('adgrid_screen_invite_token')
       if (inviteToken) {
         localStorage.removeItem('adgrid_screen_invite_token')
+        // Awaited (not fire-and-forget): Task 11's AppInner reads
+        // sessionStorage.adgrid_preset_screen_id via a lazy useState
+        // initializer that only runs once, at first mount -- which happens
+        // as soon as fetchProfile resolves and loading flips to false. The
+        // sessionStorage write below must land before that happens, or
+        // Task 11 can never see it.
         try {
           const { data: { session } } = await supabase.auth.getSession()
           if (session) {
-            fetch(`${SUPABASE_FUNCTIONS_URL}/accept-screen-invite`, {
+            const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/accept-screen-invite`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
               body: JSON.stringify({ token: inviteToken }),
             })
-              .then(res => res.ok ? res.json() : null)
-              .then(result => {
-                if (result?.screen_id) {
-                  sessionStorage.setItem('adgrid_preset_screen_id', result.screen_id)
-                  sessionStorage.setItem('adgrid_pending_screen_invite_token', inviteToken)
-                }
-              })
-              .catch(() => {}) // best-effort -- a failure here must never block login
+            const result = res.ok ? await res.json() : null
+            if (result?.screen_id) {
+              sessionStorage.setItem('adgrid_preset_screen_id', result.screen_id)
+              sessionStorage.setItem('adgrid_pending_screen_invite_token', inviteToken)
+            }
           }
         } catch {
-          // getSession() itself must never block login either
+          // best-effort -- any failure (getSession, fetch, json parse) must never block login
         }
       }
     } else {
