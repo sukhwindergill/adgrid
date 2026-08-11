@@ -9,29 +9,33 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 export function ScreenInvitePage() {
   const { token } = useParams();
   const navigate = useNavigate();
-  const [state, setState] = useState('loading'); // loading | invalid | booked | valid
+  const [state, setState] = useState('loading'); // loading | invalid | error | booked | valid
   const [screen, setScreen] = useState(null);
+
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data: invite } = await supabase
+      const { data: invite, error: inviteError } = await supabase
         .from('screen_invites')
         .select('screen_id, status')
         .eq('token', token)
         .single();
 
       if (cancelled) return;
+      if (inviteError) { setState('error'); return; }
       if (!invite) { setState('invalid'); return; }
       if (invite.status === 'booked') { setState('booked'); return; }
 
-      const { data: screenRow } = await supabase
+      const { data: screenRow, error: screenError } = await supabase
         .from('screens')
         .select('id, name, city, venue_category, screen_photos')
         .eq('id', invite.screen_id)
         .single();
 
       if (cancelled) return;
+      if (screenError) { setState('error'); return; }
       if (!screenRow) { setState('invalid'); return; }
       setScreen(screenRow);
       setState('valid');
@@ -44,7 +48,7 @@ export function ScreenInvitePage() {
       }).catch(() => {});
     })();
     return () => { cancelled = true; };
-  }, [token]);
+  }, [token, retryCount]);
 
   const getStarted = () => {
     localStorage.setItem('adgrid_screen_invite_token', token);
@@ -56,6 +60,17 @@ export function ScreenInvitePage() {
       <Card style={{ maxWidth: 460, padding: 36, textAlign: 'center' }}>
         {state === 'loading' && (
           <div style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans }}>Loading…</div>
+        )}
+        {state === 'error' && (
+          <>
+            <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 8 }}>
+              Something went wrong loading this invite
+            </div>
+            <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>
+              This is likely a temporary connection issue. Try again.
+            </div>
+            <Btn onClick={() => { setState('loading'); setRetryCount((n) => n + 1); }}>Try again</Btn>
+          </>
         )}
         {state === 'invalid' && (
           <>
