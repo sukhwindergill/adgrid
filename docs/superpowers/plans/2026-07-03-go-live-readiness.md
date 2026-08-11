@@ -1336,6 +1336,45 @@ factory-reset / re-pair path if the token is rotated.
 > Revenue, Audience & Scans, Advertisers, Live Signals, Display Manager), or the remaining
 > advertiser nav / CORS audit carried forward from earlier this session.
 
+> **Update — session 21 continued (2026-08-10, operator dashboard sweep — remaining nav, B27
+> found, not fixed):** Continued through Revenue, Audience & Scans, Advertisers, Live Signals,
+> Alerts & Rules, Integrations, Display Manager. Fixed one confirmed correctness/trust bug
+> (Integrations page hardcoding two platforms as already "Connected" to every operator, with a
+> real business's likely subdomain fabricated as the detail string — see commit
+> `fix(integrations)`) and found one significant, **not yet fixed**, architectural issue:
+>
+> - **B27 (should-fix, not blocker, not fixed this session) — dual-role accounts get their own
+>   advertiser spend misattributed as operator revenue.** `loadData()` in `App.jsx` fetches
+>   `bookings.select('*')` with no application-level scoping, relying entirely on RLS. RLS
+>   correctly OR's together "bookings where I'm the advertiser" and "bookings where I'm the
+>   operator of the targeted screen" (two separate, both-correct read policies) — but the single
+>   resulting `campaigns` array is then passed to every operator-only view (Dashboard, Campaigns,
+>   Revenue, Display Manager) with no further filter down to "bookings actually targeting screens I
+>   operate." Confirmed live and reproduced end-to-end: this session's test account
+>   (`advertiser@adgrid.io`) has its own pre-existing advertiser campaign ("Test Brand Co," $500,
+>   booked on `SCR-001` — a screen owned by a *different* operator entirely) show up throughout its
+>   own operator dashboard as if it were real activity on its own screen network: Total Booked
+>   $500, Revenue Split $60 platform / $176 owner / $264 pool, and a screen it doesn't own
+>   ("Corner Brew — Oxford St") listed in Display Manager. Not an RLS/security leak — the account
+>   genuinely can read that row — but a real revenue-reporting correctness bug. The platform has a
+>   dedicated "unified account mode switcher" feature (`2026-06-05-unified-account-mode-switcher`),
+>   so a single account holding both advertiser and operator activity is a supported pattern, not
+>   an edge case — any such account's operator-side revenue/booking totals are currently wrong.
+>   **Not fixed this session**: correctly splitting "bookings I created as advertiser" from
+>   "bookings targeting screens I operate" touches `loadData()` plus every operator view consuming
+>   `campaigns` (Dashboard.jsx, Campaigns.jsx, Revenue.jsx, DisplayView.jsx at minimum) without
+>   breaking the legitimate case operators must keep seeing — bookings from *other* advertisers on
+>   their own screens. That's a scoped fix, not a quick patch; flagging for a deliberate pass
+>   rather than rushing a change to revenue-reporting code.
+> - Also noted, not chased further: a React "missing key prop" console warning attributed to
+>   `DisplayView` — every `.map()` in that file already has a `key`, so the actual source is
+>   unclear without more digging; low priority (dev-only warning, no user-visible effect).
+>
+> **Go/No-Go:** operator dashboard nav (Approval Queue, Revenue, Audience & Scans, Advertisers,
+> Live Signals, Alerts & Rules, Integrations, Display Manager) all render cleanly with sane empty
+> states — 🟢 GO for UI/UX. B27 is a data-correctness issue layered underneath, not a rendering
+> bug — worth fixing before onboarding any real dual-role operator/advertiser accounts at scale.
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
