@@ -1419,10 +1419,26 @@ factory-reset / re-pair path if the token is rotated.
 > passing throughout.
 >
 > **Go/No-Go:** the CORS-header gap across `supabase/functions/` is now fully closed for every
-> browser-reachable function. Remaining known gaps in the codebase after this session: the
-> silent-disabled-Next-button UX issue in the screen registration wizard (should-fix, not
-> blocker), and the two manual Supabase dashboard toggles (Google OAuth secret, leaked-password
-> protection) carried forward from every prior session.
+> browser-reachable function.
+
+> **Update — session 21 continued (2026-08-10, wizard hint fixed, session closed out):** Fixed the
+> last item this session had flagged-but-not-fixed: the screen registration wizard's Next button
+> gave zero feedback when disabled. Added a `missingFields`-driven "Still need: ..." hint under the
+> button, live-verified (blank form lists all 11 unfilled fields; filling Display Size drops it
+> from the list immediately).
+>
+> **Session 21 total, across all sub-updates:** 4 blockers found and fixed (B24 `stripe-billing`
+> CORS, B25 `charge-campaign` CORS, B26 `screens` column grants, B27 dual-role revenue
+> misattribution), a full CORS audit closing the same gap across 7 more functions (most
+> consequential: `setup-billing`, the literal Add Payment Method button), plus UI/UX polish
+> (pluralization, a11y, KPI icon/label consistency, a dead billing link, a fabricated
+> "already-connected" Integrations page, and this wizard hint). 15 commits, 576/576 tests passing
+> throughout, every fix live-verified in the browser.
+>
+> Remaining known gaps after this session: the two manual Supabase dashboard toggles (Google OAuth
+> client secret, leaked-password protection) carried forward from every prior session, and the
+> operator mobile app on a real device (needs the user's own hardware, still blocked as in prior
+> sessions).
 
 ## Next pass — focus areas
 
