@@ -11,9 +11,9 @@ import { Tabs } from '../../components/primitives/Tabs.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 
 const INTEGRATIONS_LIST = [
-  { id: 'meta',      name: 'Meta Conversions API',  logo: '📘', color: '#1877f2', category: 'Advertising', status: 'connected',    detail: 'Pixel 9876543210 · 142 events today', events: ['Scan → ViewContent', 'Consent → Lead', 'Impression → Custom'] },
+  { id: 'meta',      name: 'Meta Conversions API',  logo: '📘', color: '#1877f2', category: 'Advertising', status: 'disconnected', detail: 'Not connected', events: ['Scan → ViewContent', 'Consent → Lead', 'Impression → Custom'] },
   { id: 'google',    name: 'Google Ads',            logo: '🔵', color: '#4285f4', category: 'Advertising', status: 'disconnected', detail: 'Not connected', events: ['Consent → Customer Match', 'Scan → Offline Conversion'] },
-  { id: 'shopify',   name: 'Shopify',               logo: '🛍️', color: '#96bf48', category: 'E-commerce',  status: 'connected',    detail: 'timhortons.myshopify.com · 31 customers', events: ['Consent → Create Customer', 'Scan → Custom Event'] },
+  { id: 'shopify',   name: 'Shopify',               logo: '🛍️', color: '#96bf48', category: 'E-commerce',  status: 'disconnected', detail: 'Not connected', events: ['Consent → Create Customer', 'Scan → Custom Event'] },
   { id: 'salesforce',name: 'Salesforce',            logo: '☁️', color: '#00a1e0', category: 'CRM',         status: 'disconnected', detail: 'Not connected', events: ['Consent → Create Lead', 'Scan → Campaign Activity'] },
   { id: 'hubspot',   name: 'HubSpot',               logo: '🟠', color: '#ff7a59', category: 'CRM',         status: 'disconnected', detail: 'Not connected', events: ['Consent → Create Contact', 'Scan → Custom Event'] },
   { id: 'klaviyo',   name: 'Klaviyo',               logo: '📧', color: '#00b2a9', category: 'Email',       status: 'disconnected', detail: 'Not connected', events: ['Consent → Add to List', 'Scan → Track Event'] },
@@ -135,20 +135,22 @@ export function IntegrationsView() {
       )}
 
       {tab === 'logs' && (
-        <Table
-          columns={[
-            { key: 'ts',    label: 'Time',       render: () => <span style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub }}>{new Date().toLocaleTimeString('en-GB')}</span> },
-            { key: 'intg',  label: 'Integration', render: (_, r) => <span>{r.intg}</span> },
-            { key: 'event', label: 'Event' },
-            { key: 'detail',label: 'Detail' },
-            { key: 'status',label: 'Status',     render: v => <Badge status={v === 'sent' ? 'active' : 'failed'}>{v}</Badge> },
-          ]}
-          rows={[
-            { intg: 'Meta Conversions API', event: 'ViewContent',   detail: 'BK-001 scan → pixel 9876543210',  status: 'sent' },
-            { intg: 'Shopify',              event: 'CreateCustomer', detail: 'alice@example.com → #4821',       status: 'sent' },
-            { intg: 'Meta Conversions API', event: 'Lead',           detail: 'Consent → fb_lead_id abc123',     status: 'sent' },
-            { intg: 'Custom Webhook',       event: 'scan.created',   detail: 'Connection timeout after 30s',    status: 'failed' },
-          ]} />
+        INTEGRATIONS_LIST.some(i => i.status === 'connected') ? (
+          <Table
+            columns={[
+              { key: 'ts',    label: 'Time',       render: () => <span style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub }}>{new Date().toLocaleTimeString('en-GB')}</span> },
+              { key: 'intg',  label: 'Integration', render: (_, r) => <span>{r.intg}</span> },
+              { key: 'event', label: 'Event' },
+              { key: 'detail',label: 'Detail' },
+              { key: 'status',label: 'Status',     render: v => <Badge status={v === 'sent' ? 'active' : 'failed'}>{v}</Badge> },
+            ]}
+            rows={[]} />
+        ) : (
+          <Card style={{ textAlign: 'center', padding: 32, color: C.textMuted, fontFamily: F.sans }}>
+            <div style={{ fontSize: 24, marginBottom: 8 }}>⇌</div>
+            No events yet — connect an integration above to start sending scan and impression events.
+          </Card>
+        )
       )}
     </div>
   );
