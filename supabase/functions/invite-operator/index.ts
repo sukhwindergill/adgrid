@@ -5,22 +5,21 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, content-type",
+  "Content-Type": "application/json",
+};
+
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "authorization, content-type",
-      },
-    });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return new Response("Unauthorized", { status: 401 });
+  if (!authHeader) return new Response("Unauthorized", { status: 401, headers: CORS });
 
   const token = authHeader.replace("Bearer ", "");
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) return new Response("Unauthorized", { status: 401 });
+  if (authError || !user) return new Response("Unauthorized", { status: 401, headers: CORS });
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -29,15 +28,12 @@ Deno.serve(async (req: Request) => {
     .single();
 
   if (!profile?.is_platform_owner) {
-    return new Response("Forbidden", { status: 403 });
+    return new Response("Forbidden", { status: 403, headers: CORS });
   }
 
   const { email } = await req.json();
   if (!email || typeof email !== "string" || !email.includes("@")) {
-    return new Response(JSON.stringify({ error: "Invalid email" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ error: "Invalid email" }), { status: 400, headers: CORS });
   }
 
   const normalizedEmail = email.trim().toLowerCase();
@@ -49,7 +45,7 @@ Deno.serve(async (req: Request) => {
   if (alreadyExists) {
     return new Response(
       JSON.stringify({ error: "A user with this email already exists." }),
-      { status: 409, headers: { "Content-Type": "application/json" } },
+      { status: 409, headers: CORS },
     );
   }
 
@@ -68,7 +64,7 @@ Deno.serve(async (req: Request) => {
   if (insertError || !invite) {
     return new Response(
       JSON.stringify({ error: insertError?.message ?? "Failed to create invite" }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
+      { status: 500, headers: CORS },
     );
   }
 
@@ -80,7 +76,5 @@ Deno.serve(async (req: Request) => {
     data: { invite_token: invite.token, role: "operator" },
   });
 
-  return new Response(JSON.stringify({ ok: true, inviteUrl }), {
-    headers: { "Content-Type": "application/json" },
-  });
+  return new Response(JSON.stringify({ ok: true, inviteUrl }), { headers: CORS });
 });

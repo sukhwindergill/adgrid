@@ -4,16 +4,20 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, { apiVersion: '2024-04-10' });
 
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Content-Type': 'application/json',
+};
+
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' } });
-  }
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
   try {
     // Verify caller via Supabase JWT
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: CORS });
     }
 
     const supabase = createClient(
@@ -24,7 +28,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: CORS });
     }
 
     // Check operator role
@@ -35,7 +39,7 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (!profile || profile.role !== 'operator') {
-      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: CORS });
     }
 
     const charges = await stripe.charges.list({ limit: 50 });
@@ -48,13 +52,8 @@ Deno.serve(async (req: Request) => {
       description: c.description,
     }));
 
-    return new Response(JSON.stringify(result), {
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-    });
+    return new Response(JSON.stringify(result), { headers: CORS });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-    });
+    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: CORS });
   }
 });

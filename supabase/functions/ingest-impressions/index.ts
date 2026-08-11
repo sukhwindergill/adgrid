@@ -13,7 +13,7 @@ const CORS = {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
-  if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
+  if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: CORS });
 
   let body: Record<string, unknown>;
   try {

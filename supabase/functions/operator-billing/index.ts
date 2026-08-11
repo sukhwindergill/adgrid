@@ -21,11 +21,11 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return new Response("Unauthorized", { status: 401 });
+  if (!authHeader) return new Response("Unauthorized", { status: 401, headers: CORS });
 
   const token = authHeader.replace("Bearer ", "");
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) return new Response("Unauthorized", { status: 401 });
+  if (authError || !user) return new Response("Unauthorized", { status: 401, headers: CORS });
 
   const { data: profile } = await supabase
     .from("profiles")

@@ -5,22 +5,21 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, content-type",
+  "Content-Type": "application/json",
+};
+
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "authorization, content-type",
-      },
-    });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return new Response("Unauthorized", { status: 401 });
+  if (!authHeader) return new Response("Unauthorized", { status: 401, headers: CORS });
 
   const token = authHeader.replace("Bearer ", "");
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) return new Response("Unauthorized", { status: 401 });
+  if (authError || !user) return new Response("Unauthorized", { status: 401, headers: CORS });
 
   const { data: reviewer } = await supabase
     .from("profiles")
@@ -29,22 +28,16 @@ Deno.serve(async (req: Request) => {
     .single();
 
   if (!reviewer?.is_platform_owner) {
-    return new Response("Forbidden", { status: 403 });
+    return new Response("Forbidden", { status: 403, headers: CORS });
   }
 
   const { operatorId, decision, notes } = await req.json();
   if (!operatorId || !decision) {
-    return new Response(JSON.stringify({ error: "Missing operatorId or decision" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ error: "Missing operatorId or decision" }), { status: 400, headers: CORS });
   }
 
   if (!["approved", "rejected"].includes(decision)) {
-    return new Response(JSON.stringify({ error: "decision must be 'approved' or 'rejected'" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ error: "decision must be 'approved' or 'rejected'" }), { status: 400, headers: CORS });
   }
 
   const newStatus = decision === "approved" ? "verified" : "rejected";
@@ -58,10 +51,7 @@ Deno.serve(async (req: Request) => {
     .eq("id", operatorId);
 
   if (profileError) {
-    return new Response(JSON.stringify({ error: profileError.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ error: profileError.message }), { status: 500, headers: CORS });
   }
 
   await supabase
@@ -77,7 +67,5 @@ Deno.serve(async (req: Request) => {
     .order("created_at", { ascending: false })
     .limit(1);
 
-  return new Response(JSON.stringify({ ok: true }), {
-    headers: { "Content-Type": "application/json" },
-  });
+  return new Response(JSON.stringify({ ok: true }), { headers: CORS });
 });

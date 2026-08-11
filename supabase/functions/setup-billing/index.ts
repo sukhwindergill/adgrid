@@ -11,22 +11,21 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, content-type",
+  "Content-Type": "application/json",
+};
+
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "authorization, content-type",
-      },
-    });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return new Response("Unauthorized", { status: 401 });
+  if (!authHeader) return new Response("Unauthorized", { status: 401, headers: CORS });
 
   const token = authHeader.replace("Bearer ", "");
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) return new Response("Unauthorized", { status: 401 });
+  if (authError || !user) return new Response("Unauthorized", { status: 401, headers: CORS });
 
   const origin = req.headers.get("origin") ?? Deno.env.get("SITE_URL")!;
 
@@ -38,32 +37,32 @@ Deno.serve(async (req: Request) => {
 
   let customerId = profile?.stripe_customer_id;
 
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: profile?.email ?? user.email,
-      name: profile?.full_name ?? undefined,
-      metadata: { supabase_user_id: user.id },
+  try {
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: profile?.email ?? user.email,
+        name: profile?.full_name ?? undefined,
+        metadata: { supabase_user_id: user.id },
+      });
+      customerId = customer.id;
+
+      await supabase
+        .from("profiles")
+        .update({ stripe_customer_id: customerId })
+        .eq("id", user.id);
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "setup",
+      customer: customerId,
+      currency: profile?.preferred_currency ?? "cad",
+      success_url: `${origin}/billing?setup=success`,
+      cancel_url: `${origin}/billing?setup=cancelled`,
     });
-    customerId = customer.id;
 
-    await supabase
-      .from("profiles")
-      .update({ stripe_customer_id: customerId })
-      .eq("id", user.id);
+    return new Response(JSON.stringify({ url: session.url }), { headers: CORS });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Could not start billing setup";
+    return new Response(JSON.stringify({ error: msg }), { status: 500, headers: CORS });
   }
-
-  const session = await stripe.checkout.sessions.create({
-    mode: "setup",
-    customer: customerId,
-    currency: profile?.preferred_currency ?? "cad",
-    success_url: `${origin}/billing?setup=success`,
-    cancel_url: `${origin}/billing?setup=cancelled`,
-  });
-
-  return new Response(JSON.stringify({ url: session.url }), {
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-    },
-  });
 });
