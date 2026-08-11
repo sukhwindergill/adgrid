@@ -160,16 +160,29 @@ function StepRegister({ onBack, onScreenCreated }) {
 
   const subtypes = form.venue_category ? (VENUE_TAXONOMY[form.venue_category]?.subtypes ?? []) : [];
 
-  const valid =
-    form.name.trim() && form.owner_name.trim() && form.state.trim() &&
-    form.city.trim() && form.location.trim() && form.venue_category &&
-    (subtypes.length === 0 || form.venue_subtype) &&
-    form.environment && form.screen_position && form.display_size.trim() &&
-    Number(form.monthly_traffic_estimate) > 0 &&
+  // The Next button below is simply disabled when any of these fail, with
+  // no other indication of which one -- a real operator missing a single
+  // field (e.g. never dropping a map pin) sees an unresponsive button and
+  // no clue why. missingFields drives an inline "still need: ..." hint so
+  // the disabled state is never a dead end.
+  const missingFields = [
+    !form.name.trim() && 'screen name',
+    !form.owner_name.trim() && 'business / owner name',
+    !form.state.trim() && (STATE_LABEL[form.country] || 'province / state'),
+    !form.city.trim() && 'city',
+    !form.location.trim() && 'location / address',
+    !form.venue_category && 'venue category',
+    subtypes.length > 0 && !form.venue_subtype && 'venue type',
+    !form.environment && 'environment (indoor/outdoor)',
+    !form.screen_position && 'screen position',
+    !form.display_size.trim() && 'display size',
+    !(Number(form.monthly_traffic_estimate) > 0) && 'estimated monthly foot traffic',
     // Coordinates are required: without them the screen is invisible to radius
     // targeting and cannot contribute to reach estimation.
-    Number.isFinite(parseFloat(form.lat)) &&
-    Number.isFinite(parseFloat(form.lng));
+    !(Number.isFinite(parseFloat(form.lat)) && Number.isFinite(parseFloat(form.lng))) && 'screen location on the map',
+  ].filter(Boolean);
+
+  const valid = missingFields.length === 0;
 
   const handleSubmit = async () => {
     if (!valid) return;
@@ -357,6 +370,11 @@ function StepRegister({ onBack, onScreenCreated }) {
 
         <ErrorBanner message={err} onDismiss={() => setErr(null)} />
 
+        {!valid && (
+          <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, marginBottom: 10, textAlign: 'right' }}>
+            Still need: {missingFields.join(', ')}
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 10 }}>
           <Btn variant="secondary" onClick={onBack} style={{ flex: 1 }}>← Back</Btn>
           <Btn onClick={handleSubmit} disabled={!valid || saving} style={{ flex: 1 }}>
