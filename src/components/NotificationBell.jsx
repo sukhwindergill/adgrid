@@ -94,13 +94,16 @@ export default function NotificationBell() {
     <div ref={ref} style={{ position: "relative" }}>
       <button
         onClick={() => setOpen((o) => !o)}
+        aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
+        aria-haspopup="true"
+        aria-expanded={open}
         style={{
           width: 32, height: 32, borderRadius: "50%", border: `1px solid ${C.border}`,
           background: C.surface, cursor: "pointer", display: "flex", alignItems: "center",
           justifyContent: "center", fontSize: 15, position: "relative",
         }}
       >
-        🔔
+        <span aria-hidden="true">🔔</span>
         {unread > 0 && (
           <span style={{
             position: "absolute", top: -4, right: -4,

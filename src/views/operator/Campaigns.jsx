@@ -8,6 +8,7 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { groupByCampaignId, rollupGroup } from '../../lib/campaignRollup.js';
 import { CampaignRow } from './CampaignRow.jsx';
+import { pluralize } from '../../lib/pluralize.js';
 
 
 export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, loadError, loading = false, onNewCampaign, allowCancel = false, canReview = false, onApprovalChange }) {
@@ -158,10 +159,10 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
         actions={<><Btn variant="secondary" size="sm" onClick={() => exportCSV(shown)}>↓ Export CSV</Btn><Btn onClick={onNewCampaign}>+ New Campaign</Btn></>} />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
-        <KPI label="Total Campaigns" value={campaigns.length} />
-        <KPI label="Active Now"      value={campaigns.filter(c => c.status === 'active').length} color={C.green} />
-        <KPI label="Total Booked"    value={`$${campaigns.reduce((a, c) => a + c.budget, 0).toLocaleString()}`} />
-        <KPI label="Total Scans"     value={campaigns.reduce((a, c) => a + c.scans, 0)} color={C.purple} />
+        <KPI label="Total Campaigns" value={campaigns.length} icon="📋" />
+        <KPI label="Active Now"      value={campaigns.filter(c => c.status === 'active').length} color={C.green} icon="▶" />
+        <KPI label="Total Booked"    value={`$${campaigns.reduce((a, c) => a + c.budget, 0).toLocaleString()}`} icon="💰" />
+        <KPI label="Total Scans"     value={campaigns.reduce((a, c) => a + c.scans, 0)} color={C.purple} icon="📲" />
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -252,7 +253,7 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
                   <div>
                     <div style={{ fontWeight: 700, color: C.text, fontFamily: F.sans }}>{expanded ? '▾' : '▸'} {parentName}</div>
                     <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
-                      {withBadge.length} targeting groups · {totalScreens} screens · ${rollup.spent.toLocaleString()} of ${rollup.budget.toLocaleString()}
+                      {withBadge.length} {pluralize(withBadge.length, 'targeting group')} · {totalScreens} {pluralize(totalScreens, 'screen')} · ${rollup.spent.toLocaleString()} of ${rollup.budget.toLocaleString()}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 20 }}>

@@ -176,7 +176,7 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
       <div style={{ display: 'grid', gridTemplateColumns: kpiCols, gap: 14, marginBottom: 24 }}>
         <KPI label="Network Revenue"  value={`$${totalRev.toLocaleString()}`}               sub="this month" icon="💰" />
         <KPI label="Active Campaigns" value={active.length}                                  sub="running now" icon="▶" />
-        <KPI label="Total Booked"     value={`$${totalSpend.toLocaleString()}`}              sub="campaign budgets" />
+        <KPI label="Total Booked"     value={`$${totalSpend.toLocaleString()}`}              sub="campaign budgets" icon="📋" />
         <KPI label="QR Scans"         value={totalScans}                                     sub="consented leads" color={C.green} icon="📲" />
       </div>
 

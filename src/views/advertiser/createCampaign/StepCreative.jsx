@@ -8,6 +8,7 @@ import { ScreenPickerCard } from './ScreenPickerCard.jsx';
 import { CreativeCard } from './CreativeCard.jsx';
 import { unassignedScreenIds, splitScreenIdsByOrientation, makeBlankCreative } from '../../../lib/creativeAssignment.js';
 import { VENUE_TAXONOMY } from '../../../lib/venueTypes.js';
+import { pluralize } from '../../../lib/pluralize.js';
 
 const BLANK_CREATIVE = makeBlankCreative;
 
@@ -141,7 +142,7 @@ export function StepCreative({ form, setForm, matchedScreens }) {
 
         {unassigned.length > 0 && (
           <div style={{ marginBottom: 16, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: 12, color: C.amber, fontFamily: F.sans }}>
-            {unassigned.length} of {form.selected_screen_ids.length} screens aren't assigned to a creative yet — they'll show the first creative above by default.
+            {unassigned.length} of {form.selected_screen_ids.length} {pluralize(form.selected_screen_ids.length, 'screen')} aren't assigned to a creative yet — they'll show the first creative above by default.
           </div>
         )}
 

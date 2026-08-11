@@ -450,7 +450,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
           <span style={{ fontSize: 13, color: '#fbbf24', fontFamily: F.sans }}>
             Add a payment method before submitting — your campaign won't go live without one.
           </span>
-          <a href="#" onClick={e => { e.preventDefault(); onCancel(); }} style={{
+          <a href="#" onClick={e => { e.preventDefault(); navigate('/app/adv-billing'); }} style={{
             fontSize: 12, fontWeight: 600, color: '#fbbf24', fontFamily: F.sans,
             textDecoration: 'underline', whiteSpace: 'nowrap',
           }}>Set up billing →</a>

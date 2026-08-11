@@ -8,6 +8,7 @@ import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { pluralize } from '../../lib/pluralize.js';
 import { periodDelta, splitByPeriod } from '../../lib/periodDelta.js';
 import { DeliveryHealthCard } from '../../components/shared/DeliveryHealthCard.jsx';
 import { ApprovalTracker } from '../../components/shared/ApprovalTracker.jsx';
@@ -158,9 +159,9 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
       />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
-        <KPI label="Spent to Date" value={`$${totalSpent.toLocaleString()}`}         sub={`${totalSpend > 0 ? Math.round((totalSpent / totalSpend) * 100) : 0}% of $${totalSpend.toLocaleString()} budget`} color={C.blue} />
-        <KPI label="Plays"         value={totalPlays.toLocaleString()}                sub="verified proof of play" />
-        <KPI label="Impressions"   value={`${(totalImpr / 1000).toFixed(1)}K`}        sub={imprBasisLabel} color={C.purple} trend={imprTrend} trendLabel="vs prior 30 days" />
+        <KPI label="Spent to Date" value={`$${totalSpent.toLocaleString()}`}         sub={`${totalSpend > 0 ? Math.round((totalSpent / totalSpend) * 100) : 0}% of $${totalSpend.toLocaleString()} budget`} color={C.blue} icon="💰" />
+        <KPI label="Plays"         value={totalPlays.toLocaleString()}                sub="verified proof of play" icon="▶" />
+        <KPI label="Impressions"   value={`${(totalImpr / 1000).toFixed(1)}K`}        sub={imprBasisLabel} color={C.purple} trend={imprTrend} trendLabel="vs prior 30 days" icon="👁" />
         <KPI label="QR Scans"      value={billableScans.toLocaleString()}
              sub={filteredScans > 0 ? `${filteredScans} filtered as bot/duplicate` : 'leads captured'}
              color={C.green} icon="📲" />
@@ -213,7 +214,7 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>
-                          {screenCount > 0 ? `${screenCount} screens` : c.screen}
+                          {screenCount > 0 ? `${screenCount} ${pluralize(screenCount, 'screen')}` : c.screen}
                         </div>
                         <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.city} · {c.category} · {c.start} → {c.end}</div>
                       </div>
@@ -248,7 +249,7 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px 120px 100px 130px', gap: 16, alignItems: 'center' }}>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>
-                        {screenCount > 0 ? `${screenCount} screens` : c.screen}
+                        {screenCount > 0 ? `${screenCount} ${pluralize(screenCount, 'screen')}` : c.screen}
                       </div>
                       <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.city} · {c.category} · {c.start} → {c.end}</div>
                     </div>

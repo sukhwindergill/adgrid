@@ -13,6 +13,7 @@ import { QR_CONTRAST_MIN_RATIO } from '../../../lib/qrColor.js';
 import { mapCoverClickToNatural, rgbToHex } from '../../../lib/sampleMediaColor.js';
 import { CATEGORIES } from '../../../lib/data.js';
 import { QR_CORNER_PRESETS, clampQrCenter } from '../../../lib/creativeQrPosition.js';
+import { pluralize } from '../../../lib/pluralize.js';
 import { MediaUpload } from './MediaUpload.jsx';
 
 const FRAME_ASPECT = 16 / 9;
@@ -248,7 +249,7 @@ export function CreativeCard({
         <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: C.textMid, fontFamily: F.sans }}>
-              Show on ({creative.assigned_screen_ids.length} of {poolScreens.length} screens)
+              Show on ({creative.assigned_screen_ids.length} of {poolScreens.length} {pluralize(poolScreens.length, 'screen')})
             </div>
             <button type="button" onClick={onSplitByType} style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans, padding: 0 }}>
               Split by screen type →

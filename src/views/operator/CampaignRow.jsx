@@ -4,6 +4,7 @@ import { Badge } from '../../components/primitives/Badge.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { ApproveBtn } from '../../lib/campaignActions.jsx';
+import { pluralize } from '../../lib/pluralize.js';
 
 export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel, canReview, setDetail, setCampaigns, onApprovalChange }) {
   const pct = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
@@ -30,7 +31,7 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
             <div style={{ fontWeight: 600, color: C.text, fontFamily: F.sans }}>{c.advertiser}</div>
             {isPending && <span style={{ fontSize: 10, background: C.amber, color: '#fff', padding: '1px 6px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>REVIEW</span>}
           </div>
-          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.category} · {screenCount} screens · {displayCity}</div>
+          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.category} · {screenCount} {pluralize(screenCount, 'screen')} · {displayCity}</div>
         </div>
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
