@@ -52,32 +52,54 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ screen_id: invite.screen_id, screen_name: screen?.name ?? "" }), { headers: CORS });
   }
 
-  const { error: updateError } = await supabase
+  // Condition the update on the invite still being in a pre-signup state,
+  // and check whether a row actually came back. Invite links are public
+  // URLs that can be opened from two sessions/devices at once; without this
+  // guard two near-simultaneous calls both read the invite as still
+  // pending, both fall through to an unconditioned update, and whichever
+  // commits last silently overwrites converted_advertiser_id -- handing
+  // referral credit to the wrong user with no signal to either caller.
+  const { data: updated, error: updateError } = await supabase
     .from("screen_invites")
     .update({
       status: "signed_up",
       signed_up_at: new Date().toISOString(),
       converted_advertiser_id: user.id,
     })
-    .eq("id", invite.id);
+    .eq("id", invite.id)
+    .in("status", ["pending", "viewed"])
+    .select("id")
+    .maybeSingle();
 
   if (updateError) {
     return new Response(JSON.stringify({ error: updateError.message }), { status: 500, headers: CORS });
+  }
+
+  if (!updated) {
+    // Someone else's request won the race and already converted this
+    // invite between our SELECT and this UPDATE -- treat it the same as
+    // the already-signed_up/booked branch: safe no-op, return whatever
+    // the invite now points to (not necessarily this caller).
+    const { data: screen } = await supabase.from("screens").select("id, name").eq("id", invite.screen_id).single();
+    return new Response(JSON.stringify({ screen_id: invite.screen_id, screen_name: screen?.name ?? "" }), { headers: CORS });
   }
 
   const { data: screen } = await supabase.from("screens").select("id, name, operator_id").eq("id", invite.screen_id).single();
 
   // Notify the inviting operator, in-app only (email is unreliable right
   // now -- see design spec's Non-Goals). Fire-and-forget: a notification
-  // failure must never block the invitee's own signup flow.
+  // failure must never block the invitee's own signup flow. Awaited (with
+  // the .catch already swallowing errors) so the isolate isn't recycled
+  // before the background request completes, matching charge-campaign /
+  // stripe-webhook / run-automation-rules.
   if (screen?.operator_id) {
-    fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-notification`, {
+    await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-notification`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-internal-secret": Deno.env.get("INTERNAL_NOTIFICATION_SECRET") ?? "" },
       body: JSON.stringify({
         userId: screen.operator_id,
         type: "screen_invite_signed_up",
-        data: { screenName: screen.name ?? "your screen", appUrl: Deno.env.get("APP_URL") ?? "http://localhost:5173" },
+        data: { screenName: screen.name ?? "your screen", appUrl: Deno.env.get("PUBLIC_APP_URL") ?? "" },
       }),
     }).catch(() => {});
   }
