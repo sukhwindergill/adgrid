@@ -11,13 +11,21 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Content-Type": "application/json",
+};
+
 Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
+
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return new Response("Unauthorized", { status: 401 });
+  if (!authHeader) return new Response("Unauthorized", { status: 401, headers: CORS });
 
   const token = authHeader.replace("Bearer ", "");
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) return new Response("Unauthorized", { status: 401 });
+  if (authError || !user) return new Response("Unauthorized", { status: 401, headers: CORS });
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -27,40 +35,45 @@ Deno.serve(async (req: Request) => {
 
   if (!profile?.stripe_customer_id) {
     return new Response(JSON.stringify({ invoices: [], paymentMethods: [], portalUrl: null }), {
-      headers: { "Content-Type": "application/json" },
+      headers: CORS,
     });
   }
 
   const customerId = profile.stripe_customer_id;
 
-  const [invoicesList, paymentMethodsList, portalSession] = await Promise.all([
-    stripe.invoices.list({ customer: customerId, limit: 24 }),
-    stripe.paymentMethods.list({ customer: customerId, type: "card" }),
-    stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: req.headers.get("origin") ?? Deno.env.get("SITE_URL")!,
-    }),
-  ]);
+  try {
+    const [invoicesList, paymentMethodsList, portalSession] = await Promise.all([
+      stripe.invoices.list({ customer: customerId, limit: 24 }),
+      stripe.paymentMethods.list({ customer: customerId, type: "card" }),
+      stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: req.headers.get("origin") ?? Deno.env.get("SITE_URL")!,
+      }),
+    ]);
 
-  const invoices = invoicesList.data.map((inv) => ({
-    id: inv.id,
-    date: inv.created,
-    description: inv.description ?? "AdGrid Campaign",
-    amount: inv.amount_paid / 100,
-    currency: inv.currency,
-    status: inv.status,
-    pdf: inv.invoice_pdf,
-  }));
+    const invoices = invoicesList.data.map((inv) => ({
+      id: inv.id,
+      date: inv.created,
+      description: inv.description ?? "AdGrid Campaign",
+      amount: inv.amount_paid / 100,
+      currency: inv.currency,
+      status: inv.status,
+      pdf: inv.invoice_pdf,
+    }));
 
-  const paymentMethods = paymentMethodsList.data.map((pm) => ({
-    id: pm.id,
-    brand: pm.card?.brand ?? "card",
-    last4: pm.card?.last4 ?? "****",
-    expMonth: pm.card?.exp_month,
-    expYear: pm.card?.exp_year,
-  }));
+    const paymentMethods = paymentMethodsList.data.map((pm) => ({
+      id: pm.id,
+      brand: pm.card?.brand ?? "card",
+      last4: pm.card?.last4 ?? "****",
+      expMonth: pm.card?.exp_month,
+      expYear: pm.card?.exp_year,
+    }));
 
-  return new Response(JSON.stringify({ invoices, paymentMethods, portalUrl: portalSession.url }), {
-    headers: { "Content-Type": "application/json" },
-  });
+    return new Response(JSON.stringify({ invoices, paymentMethods, portalUrl: portalSession.url }), {
+      headers: CORS,
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to load billing data";
+    return new Response(JSON.stringify({ error: msg }), { status: 500, headers: CORS });
+  }
 });

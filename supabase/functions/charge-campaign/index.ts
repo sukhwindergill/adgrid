@@ -16,6 +16,20 @@ const INTERNAL_SECRET = Deno.env.get("INTERNAL_NOTIFICATION_SECRET") ?? "";
 
 const PLATFORM_FEE_RATE = 0.12;
 
+// Every Response this function returns needs this, not just the OPTIONS
+// preflight — a browser enforces Access-Control-Allow-Origin on the actual
+// response too, not only the preflight. Before this fix, every real
+// response here (200 success and every error path) only set Content-Type,
+// so a real advertiser/operator clicking Approve/Pay in the browser got a
+// CORS-blocked "Failed to fetch", identical in kind to B9/B17/the
+// stripe-billing gap, even though a direct (non-browser) call — the way
+// B22/B23 were verified live — never hits this at all.
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, content-type, x-internal-secret",
+  "Content-Type": "application/json",
+};
+
 async function distributeOperatorCuts(
   bookingId: string,
   budget: number,
@@ -158,16 +172,11 @@ async function notifyAdvertiser(userId: string, type: string, data: Record<strin
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "authorization, content-type",
-      },
-    });
+    return new Response(null, { headers: CORS });
   }
 
   if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405 });
+    return new Response("Method Not Allowed", { status: 405, headers: CORS });
   }
 
   // B22: sweep-approvals' policy-driven auto-approve needs to trigger this
@@ -183,11 +192,11 @@ Deno.serve(async (req: Request) => {
 
   if (!isInternal) {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return new Response("Unauthorized", { status: 401 });
+    if (!authHeader) return new Response("Unauthorized", { status: 401, headers: CORS });
 
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) return new Response("Unauthorized", { status: 401 });
+    if (authError || !user) return new Response("Unauthorized", { status: 401, headers: CORS });
     callerUserId = user.id;
 
     const { data: callerProfile } = await supabase
@@ -202,7 +211,7 @@ Deno.serve(async (req: Request) => {
   if (!campaign_id) {
     return new Response(JSON.stringify({ error: "campaign_id required" }), {
       status: 400,
-      headers: { "Content-Type": "application/json" },
+      headers: CORS,
     });
   }
 
@@ -215,7 +224,7 @@ Deno.serve(async (req: Request) => {
   if (bookingError || !booking) {
     return new Response(JSON.stringify({ error: "Campaign not found" }), {
       status: 404,
-      headers: { "Content-Type": "application/json" },
+      headers: CORS,
     });
   }
 
@@ -229,7 +238,7 @@ Deno.serve(async (req: Request) => {
     const isOwner = booking.advertiser_id === callerUserId;
     if (!isOwner) {
       if (callerRole !== "operator") {
-        return new Response("Forbidden", { status: 403 });
+        return new Response("Forbidden", { status: 403, headers: CORS });
       }
       const { data: opScreens } = await supabase
         .from("screens")
@@ -246,7 +255,7 @@ Deno.serve(async (req: Request) => {
             .maybeSingle()
         : { data: null };
       if (!operatorLink) {
-        return new Response("Forbidden", { status: 403 });
+        return new Response("Forbidden", { status: 403, headers: CORS });
       }
     }
   }
@@ -258,7 +267,7 @@ Deno.serve(async (req: Request) => {
   if (booking.status === "rejected") {
     return new Response(
       JSON.stringify({ error: "This campaign was rejected and cannot be charged." }),
-      { status: 400, headers: { "Content-Type": "application/json" } },
+      { status: 400, headers: CORS },
     );
   }
 
@@ -270,7 +279,7 @@ Deno.serve(async (req: Request) => {
   if (screenLinks && screenLinks.length > 0 && screenLinks.every((r) => r.status === "rejected")) {
     return new Response(
       JSON.stringify({ error: "Every screen targeted by this campaign has rejected it — there's nothing to charge for." }),
-      { status: 400, headers: { "Content-Type": "application/json" } },
+      { status: 400, headers: CORS },
     );
   }
 
@@ -299,7 +308,7 @@ Deno.serve(async (req: Request) => {
     console.error("[charge-campaign] lock update failed:", lockError);
     return new Response(
       JSON.stringify({ error: "Could not start payment processing. Please try again." }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
+      { status: 500, headers: CORS },
     );
   }
 
@@ -307,7 +316,7 @@ Deno.serve(async (req: Request) => {
     // Either already paid or another request is mid-flight
     return new Response(
       JSON.stringify({ error: "Campaign is already paid or a payment is in progress." }),
-      { status: 409, headers: { "Content-Type": "application/json" } },
+      { status: 409, headers: CORS },
     );
   }
 
@@ -322,7 +331,7 @@ Deno.serve(async (req: Request) => {
     await supabase.from("bookings").update({ payment_status: booking.payment_status }).eq("id", campaign_id);
     return new Response(
       JSON.stringify({ error: "Advertiser has no payment account. Ask them to set up billing first." }),
-      { status: 400, headers: { "Content-Type": "application/json" } },
+      { status: 400, headers: CORS },
     );
   }
 
@@ -336,7 +345,7 @@ Deno.serve(async (req: Request) => {
     await supabase.from("bookings").update({ payment_status: booking.payment_status }).eq("id", campaign_id);
     return new Response(
       JSON.stringify({ error: "Advertiser has no card on file. Ask them to add a payment method in billing settings." }),
-      { status: 400, headers: { "Content-Type": "application/json" } },
+      { status: 400, headers: CORS },
     );
   }
 
@@ -371,7 +380,7 @@ Deno.serve(async (req: Request) => {
     });
     return new Response(JSON.stringify({ error: msg }), {
       status: 400,
-      headers: { "Content-Type": "application/json" },
+      headers: CORS,
     });
   }
 
@@ -391,7 +400,7 @@ Deno.serve(async (req: Request) => {
         error: "Your card requires additional authentication. Please update your payment method in billing settings and try again.",
         requires_action: true,
       }),
-      { status: 402, headers: { "Content-Type": "application/json" } },
+      { status: 402, headers: CORS },
     );
   }
 
@@ -402,7 +411,7 @@ Deno.serve(async (req: Request) => {
       .eq("id", campaign_id);
     return new Response(
       JSON.stringify({ error: `Payment not completed (status: ${paymentIntent.status})` }),
-      { status: 400, headers: { "Content-Type": "application/json" } },
+      { status: 400, headers: CORS },
     );
   }
 
@@ -424,6 +433,6 @@ Deno.serve(async (req: Request) => {
 
   return new Response(
     JSON.stringify({ success: true, payment_intent_id: paymentIntent.id }),
-    { headers: { "Content-Type": "application/json" } },
+    { headers: CORS },
   );
 });
