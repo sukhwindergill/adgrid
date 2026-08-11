@@ -1375,6 +1375,33 @@ factory-reset / re-pair path if the token is rotated.
 > states — 🟢 GO for UI/UX. B27 is a data-correctness issue layered underneath, not a rendering
 > bug — worth fixing before onboarding any real dual-role operator/advertiser accounts at scale.
 
+> **Update — session 21 continued (2026-08-10, B27 scoped and fixed):** Went back and fixed B27
+> rather than carrying it forward. Root cause was worse than first described — not just the 4
+> operator views spot-checked, but **every** operator-mode consumer of `campaigns` (Dashboard,
+> Campaigns, Analytics, Audience, Revenue, Billing, SignalsView, DisplayView, ApprovalQueue — 9
+> views total), plus a mirror-image version on the advertiser side (`Campaigns.jsx`/`Analytics.jsx`
+> are shared between both modes and never filtered by `advertiser_id` internally, so
+> `adv-campaigns`/`adv-analytics` could show bookings on screens a dual-role account operates,
+> submitted by *other* advertisers), plus a third, fully independent instance in
+> `AdvertisersView.jsx`, which runs its own separate `bookings.select('*')` query with the exact
+> same missing scope, unrelated to `App.jsx`'s `loadData()`.
+>
+> Fixed with `useOperatorCampaignIds` (new hook, `src/hooks/useOperatorCampaignIds.js` — queries
+> `campaign_screens` directly for the set of campaign ids actually targeting the caller's own
+> screens, mirroring the existing `usePendingApprovalCount` pattern rather than trusting anything
+> off the booking row itself) and two memoized derived arrays in `App.jsx`
+> (`advertiserCampaigns`/`operatorCampaigns`), threaded to every mode-specific consumer in place of
+> the raw RLS-visible union. `AdvertisersView.jsx` now fetches its own screen ids and applies the
+> same hook independently. 3 new unit tests, 576/576 passing.
+>
+> Re-verified live end-to-end: switched this session's test account back and forth between modes.
+> Operator Dashboard/Revenue/Advertisers all now correctly show $0 (zero real screens, so zero real
+> operator revenue) instead of leaking the account's own $500 advertiser campaign; the advertiser
+> side's "My Campaigns"/Dashboard still correctly show that same $500 campaign, unaffected —
+> confirming the fix separates the two without breaking the legitimate case in either direction.
+>
+> **Go/No-Go:** B27 is now 🟢 GO, live-verified in both directions.
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
