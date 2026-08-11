@@ -51,6 +51,44 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ ok: true }), { headers: CORS });
   }
 
+  // Verify campaign_id actually refers to a real booking that (a) belongs to
+  // this advertiser and (b) genuinely targets this invite's screen, before
+  // trusting it as conversion attribution. Without this, campaign_id is
+  // client-supplied and only backstopped by a DB-level FK to bookings(id) --
+  // any authenticated advertiser could pass any real booking id (including
+  // someone else's, or their own booking for an unrelated screen) and have
+  // it recorded as this invite's converted_campaign_id, or reuse the same
+  // booking id to double-count as the conversion for multiple invites.
+  // Screen targeting is checked against campaign_screens (the real
+  // booking-to-screen join table) rather than bookings.screen_id, since a
+  // booking can target multiple screens.
+  const { data: booking, error: bookingError } = await supabase
+    .from("bookings")
+    .select("advertiser_id")
+    .eq("id", campaign_id)
+    .single();
+
+  if (bookingError || !booking) {
+    return new Response(JSON.stringify({ error: "Campaign not found" }), { status: 404, headers: CORS });
+  }
+  if (booking.advertiser_id !== user.id) {
+    return new Response("Forbidden — this campaign isn't yours", { status: 403, headers: CORS });
+  }
+
+  const { data: campaignScreen } = await supabase
+    .from("campaign_screens")
+    .select("id")
+    .eq("campaign_id", campaign_id)
+    .eq("screen_id", invite.screen_id)
+    .maybeSingle();
+
+  if (!campaignScreen) {
+    return new Response(
+      JSON.stringify({ error: "This campaign doesn't target the invited screen" }),
+      { status: 403, headers: CORS },
+    );
+  }
+
   // Conditioned on still being signed_up (not already booked) to avoid the
   // same read-then-write race Task 4's review found and fixed in
   // accept-screen-invite: two near-simultaneous calls (e.g. a double-clicked
