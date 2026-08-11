@@ -59,6 +59,7 @@ const AdminInvites = lazy(() => import('./views/admin/AdminInvites.jsx').then(m 
 // Public views (no auth required) — also lazy so the marketing/display
 // bundles don't ship with the authenticated dashboard's first paint.
 const InviteAcceptPage = lazy(() => import('./views/invite/InviteAcceptPage.jsx').then(m => ({ default: m.InviteAcceptPage })));
+const ScreenInvitePage = lazy(() => import('./views/invite/ScreenInvitePage.jsx').then(m => ({ default: m.ScreenInvitePage })));
 const DisplayPlayer  = lazy(() => import('./views/display/DisplayPlayer.jsx').then(m => ({ default: m.DisplayPlayer })));
 const MarketingHome  = lazy(() => import('./views/marketing/Home.jsx').then(m => ({ default: m.MarketingHome })));
 const NotFound       = lazy(() => import('./views/marketing/NotFound.jsx').then(m => ({ default: m.NotFound })));
@@ -575,6 +576,7 @@ export default function App() {
         <Route path="/thank-you" element={<ThankYou />} />
         <Route path="/display/:token" element={<DisplayPlayerRoute />} />
         <Route path="/report/:token" element={<CampaignReport />} />
+        <Route path="/invite/screen/:token" element={<ScreenInvitePage />} />
         <Route path="/invite/:token" element={<InviteAcceptPage />} />
         <Route path="/app/accounts" element={<RequireAuth><AccountHubRoute /></RequireAuth>} />
         <Route
