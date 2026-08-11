@@ -41,21 +41,25 @@ export function AuthProvider({ children }) {
       const inviteToken = localStorage.getItem('adgrid_screen_invite_token')
       if (inviteToken) {
         localStorage.removeItem('adgrid_screen_invite_token')
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
-          fetch(`${SUPABASE_FUNCTIONS_URL}/accept-screen-invite`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-            body: JSON.stringify({ token: inviteToken }),
-          })
-            .then(res => res.ok ? res.json() : null)
-            .then(result => {
-              if (result?.screen_id) {
-                sessionStorage.setItem('adgrid_preset_screen_id', result.screen_id)
-                sessionStorage.setItem('adgrid_pending_screen_invite_token', inviteToken)
-              }
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session) {
+            fetch(`${SUPABASE_FUNCTIONS_URL}/accept-screen-invite`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+              body: JSON.stringify({ token: inviteToken }),
             })
-            .catch(() => {}) // best-effort -- a failure here must never block login
+              .then(res => res.ok ? res.json() : null)
+              .then(result => {
+                if (result?.screen_id) {
+                  sessionStorage.setItem('adgrid_preset_screen_id', result.screen_id)
+                  sessionStorage.setItem('adgrid_pending_screen_invite_token', inviteToken)
+                }
+              })
+              .catch(() => {}) // best-effort -- a failure here must never block login
+          }
+        } catch {
+          // getSession() itself must never block login either
         }
       }
     } else {
