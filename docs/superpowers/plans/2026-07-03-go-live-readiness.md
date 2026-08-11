@@ -1213,6 +1213,82 @@ factory-reset / re-pair path if the token is rotated.
 > a real Pay-later campaign end-to-end, an authorized live Stripe test-mode charge, not something
 > this session should do unilaterally) before wide launch, given how long this sat broken unnoticed.
 
+> **Update — session 21 (2026-08-10, UI/UX polish sweep — advertiser dashboard live click-through):**
+> Per the user's request for a full UI/UX pass, went deep on area 1 (onboarding/dashboard) with a
+> real logged-in click-through (advertiser demo account) rather than code-reading alone. First
+> re-verified the `App.jsx` mode-switch effect flagged "unconfirmed" after session 6 — already
+> fixed (deps use `user?.id`, not the `user` object; comment documents why) — no bug, no change
+> needed.
+>
+> - **B24 (blocker, found + fixed) — `stripe-billing` has never once returned a response a
+>   browser could read.** No `OPTIONS` handler, no `Access-Control-Allow-Origin` on any response.
+>   Confirmed live: clicking into Billing (or the "Set up billing" prompt inside the campaign
+>   wizard) hung forever on "Loading billing…" — the browser's CORS preflight fails before the
+>   request even reaches the function, so `BillingView.jsx`'s `load()` throws `TypeError: Failed
+>   to fetch` and the page never resolves out of its loading state. Every advertiser's Billing page
+>   — the only place to view or add a payment method — was completely unreachable from the browser.
+>   **Fixed**: added the same `CORS` constant + `OPTIONS` handler pattern already used in
+>   `send-notification`, applied to every response path, wrapped the Stripe calls in `try/catch`
+>   so a Stripe-side failure also returns a readable CORS'd error instead of an unhandled
+>   exception. Deployed (v6, `verify_jwt` unchanged at `true`). Re-verified live: Billing now loads
+>   correctly ("No payment methods on file" / "No invoices yet" for this test account, no console
+>   errors).
+> - **B25 (blocker, found + fixed) — `charge-campaign`'s real responses have the identical gap,
+>   on the function B22/B23 (session 20) declared fixed.** Auditing why the billing CORS bug
+>   existed prompted a sweep of every edge function for CORS-header coverage vs. `Response(...)`
+>   call count (`grep -c` across `supabase/functions/*/index.ts`). Nearly every function only sets
+>   `Access-Control-Allow-Origin` on its `OPTIONS` preflight, not on the actual response — but
+>   `charge-campaign` is the one where that matters most: every one of its 18 response paths
+>   (200 success and all 8 error branches) only set `Content-Type`, no CORS header. A browser
+>   enforces CORS on the actual response, not just the preflight, so **every real advertiser/
+>   operator click that reaches this function from the browser — `ApprovalQueue.jsx`'s
+>   `attemptCharge`, the advertiser's own Pay flow — gets a CORS-blocked "Failed to fetch"**,
+>   regardless of what the business logic underneath would have returned. This is why B22/B23's
+>   live verification last session could reach "the real business-logic branch" at all: that
+>   verification called the function directly (no browser, no CORS enforcement), not through the
+>   actual UI. The underlying payment logic B22/B23 fixed is very likely correct now — but no
+>   advertiser or operator using the real dashboard could ever have reached it. **Fixed**: same
+>   `CORS` constant applied to all 18 response paths. Deployed (v16, `verify_jwt` preserved at
+>   `false` — confirmed the current deployed value before redeploying, since flipping it back to
+>   `true` would silently break the B22 internal-caller bypass from `sweep-approvals`). Not yet
+>   live-verified through an actual browser Approve/Pay click (would require pushing a real or
+>   test-mode Stripe charge, out of scope for a UI sweep) — the CORS mechanism itself is
+>   unambiguous from the code and matches B24's exact symptom, but flagging that the full
+>   browser-based charge flow still deserves the real-card smoke test session 20 already
+>   recommended.
+> - **Systemic finding, not yet fixed — CORS-header coverage is thin across most of
+>   `supabase/functions/`.** The full survey: ~25 of 33 functions have exactly one CORS-header
+>   occurrence (the preflight) regardless of how many response paths they have. Most of those are
+>   legitimately server-only (crons, webhooks, `sweep-approvals`, `stripe-webhook`, `trigger-payout`,
+>   etc.) and never see a browser request, so they're not bugs. But several are browser-called and
+>   unaudited this session: `create-checkout-session`, `create-connect-account`,
+>   `create-identity-session`, `get-stripe-charges`, `operator-billing`, `setup-billing`,
+>   `stripe-capture-payment`, `stripe-create-intent`, `stripe-refund`, `invite-operator`,
+>   `invite-team-member`, `manual-review-operator`, `accept-operator-invite`, `campaign-report`,
+>   `confirm-connect-account`, `ingest-impressions`, `ingest-plays`. Any of these could be hiding
+>   the same silent failure B24/B25 were. Worth a dedicated pass rather than blind-fixing all of
+>   them here — each needs a quick check of whether it's actually browser-reachable before
+>   touching it.
+>
+> Also fixed in passing during the same click-through, none launch-blocking on their own:
+> pluralization ("1 screens" → "1 screen") across 4 advertiser/operator views + a shared
+> `pluralize()` helper added at `src/lib/pluralize.js`; `NotificationBell` had no accessible name
+> (`aria-label="🔔"` in effect) — now `aria-label="Notifications, N unread"` + `aria-hidden` on the
+> decorative emoji; the advertiser dashboard and Campaigns KPI rows were missing icons on some
+> cards where every other KPI row in the app has one on all cards — added, matching the existing
+> per-page icon vocabulary; and the "Set up billing →" prompt inside the campaign wizard's
+> no-payment-method banner called `onCancel()` — silently abandoning the in-progress campaign back
+> to Overview instead of taking the advertiser to Billing. Now navigates to `/app/adv-billing`,
+> the same pattern `StepPay` already used one step later in the same wizard.
+>
+> **Go/No-Go this session:** area 1 (advertiser dashboard/onboarding) stays 🟢 GO for what a
+> logged-in click-through can reach; area 2 (payments) drops to 🟡 **pending a real browser-based
+> Approve/Pay smoke test** — B25 means the B22/B23 fix was never actually reachable from the UI
+> until this session, so it's unverified through the front door despite being "fixed" twice now.
+> Next pass: continue the UI/UX sweep (operator dashboard, remaining advertiser nav — Analytics,
+> Scans & Data, Alerts & Rules, Settings, Integrations), and/or the CORS audit of the 17 unaudited
+> browser-facing functions listed above.
+
 ## Next pass — focus areas
 
 All 9 areas have now been covered at least once (07-03 baseline, 07-06/07-07 deep re-checks).
