@@ -256,11 +256,20 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   }, [screen]);
 
   // Screen referral invites ("bring your own advertiser") sent for this screen.
+  // converted_advertiser is a PostgREST embed via the converted_advertiser_id FK
+  // (profiles.id). Note: profiles RLS only grants "Users can read own profile"
+  // (id = auth.uid()) — there's no policy letting an operator read another
+  // user's profile row, so this embed resolves to null for the operator here
+  // (verified via SQL: a SELECT on profiles for another user's id under the
+  // operator's RLS context returns zero rows, not an error). It's kept anyway
+  // since it degrades gracefully (rendered conditionally below) and will start
+  // working automatically if profiles RLS is ever loosened for this case —
+  // fixing that RLS gap is out of scope for this task.
   useEffect(() => {
     if (!screen) return;
     supabase
       .from('screen_invites')
-      .select('id, token, status, view_count, created_at, converted_advertiser_id, converted_campaign_id')
+      .select('id, token, status, view_count, created_at, converted_advertiser_id, converted_campaign_id, converted_advertiser:converted_advertiser_id(name)')
       .eq('screen_id', screen.id)
       .order('created_at', { ascending: false })
       .then(({ data }) => setInvites(data ?? []));
@@ -276,9 +285,16 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ screen_id: screen.id }),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        // 401/403 paths return plain text; 400/404/500 return JSON {error}.
+        // Try JSON first and fall back to the raw text either way.
+        const raw = await res.text();
+        let msg = raw;
+        try { msg = JSON.parse(raw).error ?? raw; } catch { /* not JSON, use raw text */ }
+        throw new Error(msg);
+      }
       const body = await res.json();
-      setInvites(prev => [{ id: crypto.randomUUID(), token: body.token, status: 'pending', view_count: 0, created_at: new Date().toISOString(), converted_advertiser_id: null, converted_campaign_id: null }, ...prev]);
+      setInvites(prev => [{ id: crypto.randomUUID(), token: body.token, status: 'pending', view_count: 0, created_at: new Date().toISOString(), converted_advertiser_id: null, converted_campaign_id: null, converted_advertiser: null }, ...prev]);
       await navigator.clipboard?.writeText(body.url);
     } catch (e) {
       setInviteError(e.message);
@@ -571,6 +587,11 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 500, color: C.text, fontFamily: F.sans, textTransform: 'capitalize' }}>{inv.status.replace('_', ' ')}</div>
                   <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{inv.view_count} view{inv.view_count !== 1 ? 's' : ''} · {new Date(inv.created_at).toLocaleDateString()}</div>
+                  {inv.converted_advertiser?.name && (
+                    <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>
+                      {inv.status === 'booked' ? 'Booked by ' : 'Signed up: '}{inv.converted_advertiser.name}
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => copyInviteLink(inv.token, inv.id)}
