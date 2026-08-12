@@ -5,10 +5,12 @@ import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 export function ScreenInvitePage() {
   const { token } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [state, setState] = useState('loading'); // loading | invalid | error | booked | valid
   const [screen, setScreen] = useState(null);
 
@@ -50,7 +52,35 @@ export function ScreenInvitePage() {
     return () => { cancelled = true; };
   }, [token, retryCount]);
 
-  const getStarted = () => {
+  const getStarted = async () => {
+    if (user) {
+      // Already signed in -- signup can't run, so consume the invite
+      // directly with the existing session instead of routing through
+      // /login (PublicOnlyRoute would just bounce them straight back to
+      // /app without ever calling accept-screen-invite, silently
+      // orphaning the token).
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/accept-screen-invite`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({ token }),
+          });
+          if (res.ok) {
+            const result = await res.json();
+            if (result?.screen_id) {
+              sessionStorage.setItem('adgrid_preset_screen_id', result.screen_id);
+              sessionStorage.setItem('adgrid_pending_screen_invite_token', token);
+            }
+          }
+        }
+      } catch {
+        // best-effort -- fall through to /app regardless
+      }
+      navigate('/app');
+      return;
+    }
     localStorage.setItem('adgrid_screen_invite_token', token);
     navigate('/login?mode=signup&intent=advertiser');
   };
