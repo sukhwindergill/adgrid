@@ -103,6 +103,10 @@ function AppInner() {
   const [dataLoading,      setDataLoading]   = useState(false);
   const [loadError,        setLoadError]     = useState(null);
   const [selectedScreenId, setSelectedScreenId] = useState(null);
+  const [presetScreenIds, setPresetScreenIds] = useState(() => {
+    const id = sessionStorage.getItem('adgrid_preset_screen_id')
+    return id ? [id] : null
+  })
   const [approvalRefreshKey, setApprovalRefreshKey] = useState(0);
   const bumpApprovalRefresh = useCallback(() => setApprovalRefreshKey(k => k + 1), []);
   const pendingCount = usePendingApprovalCount(myScreens.map(s => s.id), approvalRefreshKey);
@@ -270,7 +274,11 @@ function AppInner() {
   // to the overview and discarding their in-progress form state.
   useEffect(() => {
     if (user && activeMode) {
-      navTo(activeMode === 'advertiser' ? 'adv-overview' : 'overview');
+      if (presetScreenIds && activeMode === 'advertiser') {
+        navTo('adv-create');
+      } else {
+        navTo(activeMode === 'advertiser' ? 'adv-overview' : 'overview');
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, activeMode]);
@@ -439,9 +447,14 @@ function AppInner() {
           dbScreens={dbScreens}
           campaigns={advertiserCampaigns}
           existingCampaign={addingToCampaign}
+          presetScreenIds={presetScreenIds}
           onSave={c => {
             setCampaigns(p => [c, ...p]);
             setAddingToCampaign(null);
+            if (presetScreenIds) {
+              sessionStorage.removeItem('adgrid_preset_screen_id');
+              setPresetScreenIds(null);
+            }
             navTo('adv-campaigns');
           }}
           onCancel={() => { setAddingToCampaign(null); navTo('adv-overview'); }}
