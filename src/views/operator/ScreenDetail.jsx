@@ -276,8 +276,8 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ screen_id: screen.id }),
       });
+      if (!res.ok) throw new Error(await res.text());
       const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? 'Failed to create invite');
       setInvites(prev => [{ id: crypto.randomUUID(), token: body.token, status: 'pending', view_count: 0, created_at: new Date().toISOString(), converted_advertiser_id: null, converted_campaign_id: null }, ...prev]);
       await navigator.clipboard?.writeText(body.url);
     } catch (e) {
