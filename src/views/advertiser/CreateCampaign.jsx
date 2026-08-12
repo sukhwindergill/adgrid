@@ -107,19 +107,26 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
 
   // Screen matching
   const matchedScreens = (() => {
+    // A screen-invite signup is already scoped to one specific screen --
+    // area/venue filters (city, radius, category) don't apply and would
+    // incorrectly narrow or widen the set away from the one screen this
+    // advertiser was actually invited to. This bypasses the inactive/stale
+    // filter below too: an advertiser who was legitimately invited to a
+    // screen should still see it targeted even if its heartbeat has since
+    // lapsed (invite-to-signup can take a while) -- that's an operator/ops
+    // concern, not something that should silently break this advertiser's
+    // invite flow. If the screen genuinely isn't in dbScreens at all (e.g.
+    // deleted), this correctly falls through to an empty result, which
+    // presetScreenUnavailable below turns into a blocking, explained state.
+    if (presetScreenIds && presetScreenIds.length > 0) {
+      return dbScreens.filter(s => presetScreenIds.includes(s.id));
+    }
     // Exclude inactive and screens not seen in the last 7 days (stale-live)
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     let screens = dbScreens.filter(s =>
       s.status !== 'inactive' &&
       (s.last_seen == null || s.last_seen >= sevenDaysAgo || s.status === 'pending')
     );
-    // A screen-invite signup is already scoped to one specific screen --
-    // area/venue filters (city, radius, category) don't apply and would
-    // incorrectly narrow or widen the set away from the one screen this
-    // advertiser was actually invited to.
-    if (presetScreenIds && presetScreenIds.length > 0) {
-      return screens.filter(s => presetScreenIds.includes(s.id));
-    }
     if (form.area_type === 'country') {
       screens = screens.filter(s => s.country === form.country);
     } else if (form.area_type === 'state') {
@@ -193,6 +200,14 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
 
   const selectedScreens = matchedScreens.filter(s => form.selected_screen_ids.includes(s.id));
   const totalImpressions = selectedScreens.reduce((a, s) => a + (s.impressions || 0), 0);
+
+  // True only for the screen-invite flow, and only once dbScreens has
+  // actually loaded and confirmed the invited screen isn't in it (deleted,
+  // or otherwise no longer visible to this advertiser). form.selected_screen_ids
+  // still holds the preset id in this case, so callers must check this flag
+  // explicitly rather than relying on selected_screen_ids.length to detect
+  // "no usable screen".
+  const presetScreenUnavailable = !!(presetScreenIds && presetScreenIds.length > 0 && matchedScreens.length === 0);
 
   const reachSummary = matchedScreens.length > 0
     ? `~${matchedScreens.length} screen${matchedScreens.length !== 1 ? 's' : ''} · ~${(totalImpressions / 1000).toFixed(0)}K impressions/mo estimated`
@@ -305,24 +320,6 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       });
       if (bookingErr) throw new Error(bookingErr.message);
 
-      // If this campaign was created via a screen-invite signup, close the
-      // loop for the inviting operator. Best-effort: a failure here must
-      // never block the advertiser's own successful campaign creation --
-      // this is bookkeeping for the operator, not part of the advertiser's
-      // critical path.
-      const pendingInviteToken = sessionStorage.getItem('adgrid_pending_screen_invite_token');
-      if (pendingInviteToken) {
-        sessionStorage.removeItem('adgrid_pending_screen_invite_token');
-        const { data: { session: inviteSession } } = await supabase.auth.getSession();
-        if (inviteSession) {
-          fetch(`${SUPABASE_FUNCTIONS_URL}/mark-screen-invite-booked`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${inviteSession.access_token}` },
-            body: JSON.stringify({ token: pendingInviteToken, campaign_id: campaignId }),
-          }).catch(() => {});
-        }
-      }
-
       const screenRows = form.selected_screen_ids.map(screen_id => ({
         campaign_id: campaignId,
         screen_id,
@@ -369,8 +366,35 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       // Booking status moves to 'scheduled' server-side (charge-campaign) once
       // payment succeeds — clients cannot write status, by design.
 
-      // Notify each unique operator whose screens were targeted
       const { data: { session } } = await supabase.auth.getSession();
+
+      // If this campaign was created via a screen-invite signup, close the
+      // loop for the inviting operator. Deliberately placed here -- after
+      // every step of the submit pipeline that can still throw (bookings,
+      // campaign_screens, and the multi-creative inserts) has already
+      // succeeded -- rather than right after the bookings insert. Consuming
+      // the token earlier would mean a later failure (e.g. campaign_screens)
+      // leaves the token cleared but no complete campaign behind it; a
+      // retried submit would then create a whole new booking that this
+      // invite can never be attributed to. Still best-effort: a failure here
+      // must never block the advertiser's own already-successful campaign
+      // creation, so it's fire-and-forget with a logged (not swallowed)
+      // failure -- this is the terminal conversion-attribution step for the
+      // whole referral feature, so silent failure would make broken
+      // attribution invisible.
+      const pendingInviteToken = sessionStorage.getItem('adgrid_pending_screen_invite_token');
+      if (pendingInviteToken) {
+        sessionStorage.removeItem('adgrid_pending_screen_invite_token');
+        if (session) {
+          fetch(`${SUPABASE_FUNCTIONS_URL}/mark-screen-invite-booked`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({ token: pendingInviteToken, campaign_id: campaignId }),
+          }).catch(err => console.error('mark-screen-invite-booked failed:', err));
+        }
+      }
+
+      // Notify each unique operator whose screens were targeted
       if (session && SUPABASE_FUNCTIONS_URL) {
         const operatorIds = [...new Set(
           form.selected_screen_ids
@@ -516,7 +540,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       )}
 
       {step === 0 && <StepTargeting form={form} setForm={setForm} reachSummary={reachSummary} allScreens={dbScreens} onPrevCampaigns={campaigns.length > 0 ? () => setShowDupModal(true) : null} existingCampaign={existingCampaign} />}
-      {step === 1 && <StepCreative form={form} setForm={setForm} matchedScreens={matchedScreens} />}
+      {step === 1 && <StepCreative form={form} setForm={setForm} matchedScreens={matchedScreens} presetScreenUnavailable={presetScreenUnavailable} />}
       {step === 2 && <StepBudgetReview form={form} setForm={setForm} matchedScreens={selectedScreens} profile={profile} onSubmit={handleSubmit} submitting={submitting} err={submitErr} canChooseBilling={canChooseBilling} billedTo={billedTo} setBilledTo={setBilledTo} />}
       {step === 3 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} requiresAction={requiresAction} onGoToBilling={() => navigate('/app/adv-billing')} />}
 
@@ -528,7 +552,11 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
               disabled={
                 (step === 0 && form.area_type === 'radius' && !form.radius_center_lat) ||
                 (step === 0 && form.selected_screen_ids.length === 0 && form.area_type !== 'radius') ||
-                (step === 1 && form.selected_screen_ids.length === 0) ||
+                // presetScreenUnavailable is checked separately from
+                // selected_screen_ids.length -- the invited screen's id
+                // stays in selected_screen_ids even when it's no longer a
+                // real, matched screen, so length alone can't detect this.
+                (step === 1 && (form.selected_screen_ids.length === 0 || presetScreenUnavailable)) ||
                 // Creative step: destination URL is optional (no QR is drawn
                 // when it's left blank — see getCreativeRenderPlan's showQr),
                 // but a *typed* value must be a real http(s) address, since a

@@ -12,7 +12,7 @@ import { pluralize } from '../../../lib/pluralize.js';
 
 const BLANK_CREATIVE = makeBlankCreative;
 
-export function StepCreative({ form, setForm, matchedScreens }) {
+export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavailable = false }) {
   const [showFilters, setShowFilters] = useState(false);
 
   const toggleScreen = (id) => setForm(s => ({
@@ -128,7 +128,9 @@ export function StepCreative({ form, setForm, matchedScreens }) {
 
         {matchedScreens.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '32px 24px', color: C.textSub, fontFamily: F.sans, fontSize: 13 }}>
-            No screens match your filters. Try widening your area or removing filters.
+            {presetScreenUnavailable
+              ? 'This screen is no longer available. Contact AdGrid support for help.'
+              : 'No screens match your filters. Try widening your area or removing filters.'}
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, marginBottom: 28 }}>
