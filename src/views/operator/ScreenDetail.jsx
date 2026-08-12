@@ -256,23 +256,31 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   }, [screen]);
 
   // Screen referral invites ("bring your own advertiser") sent for this screen.
-  // converted_advertiser is a PostgREST embed via the converted_advertiser_id FK
-  // (profiles.id). Note: profiles RLS only grants "Users can read own profile"
-  // (id = auth.uid()) — there's no policy letting an operator read another
-  // user's profile row, so this embed resolves to null for the operator here
-  // (verified via SQL: a SELECT on profiles for another user's id under the
-  // operator's RLS context returns zero rows, not an error). It's kept anyway
-  // since it degrades gracefully (rendered conditionally below) and will start
-  // working automatically if profiles RLS is ever loosened for this case —
-  // fixing that RLS gap is out of scope for this task.
+  // The converted advertiser's name can't come from a direct embed
+  // (converted_advertiser:converted_advertiser_id(name)) — profiles RLS only
+  // grants "Users can read own profile" (id = auth.uid()), so that embed
+  // silently resolves to null for the operator. Instead, resolve names via
+  // get_screen_invite_advertiser_names, a SECURITY DEFINER RPC scoped to
+  // "advertiser names for invites on screens this operator owns" (see
+  // supabase/migrations/20260812003632_screen_invite_advertiser_names_rpc.sql).
   useEffect(() => {
     if (!screen) return;
     supabase
       .from('screen_invites')
-      .select('id, token, status, view_count, created_at, converted_advertiser_id, converted_campaign_id, converted_advertiser:converted_advertiser_id(name)')
+      .select('id, token, status, view_count, created_at, converted_advertiser_id, converted_campaign_id')
       .eq('screen_id', screen.id)
       .order('created_at', { ascending: false })
-      .then(({ data }) => setInvites(data ?? []));
+      .then(({ data }) => {
+        setInvites(data ?? []);
+        if ((data ?? []).some(inv => inv.converted_advertiser_id)) {
+          supabase.rpc('get_screen_invite_advertiser_names', { p_screen_id: screen.id })
+            .then(({ data: names }) => {
+              if (!names) return;
+              const nameById = Object.fromEntries(names.map(n => [n.invite_id, n.advertiser_name]));
+              setInvites(prev => prev.map(inv => ({ ...inv, advertiser_name: nameById[inv.id] ?? null })));
+            });
+        }
+      });
   }, [screen]);
 
   async function createInvite() {
@@ -294,7 +302,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         throw new Error(msg);
       }
       const body = await res.json();
-      setInvites(prev => [{ id: crypto.randomUUID(), token: body.token, status: 'pending', view_count: 0, created_at: new Date().toISOString(), converted_advertiser_id: null, converted_campaign_id: null, converted_advertiser: null }, ...prev]);
+      setInvites(prev => [{ id: crypto.randomUUID(), token: body.token, status: 'pending', view_count: 0, created_at: new Date().toISOString(), converted_advertiser_id: null, converted_campaign_id: null, advertiser_name: null }, ...prev]);
       await navigator.clipboard?.writeText(body.url);
     } catch (e) {
       setInviteError(e.message);
@@ -587,9 +595,9 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 500, color: C.text, fontFamily: F.sans, textTransform: 'capitalize' }}>{inv.status.replace('_', ' ')}</div>
                   <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{inv.view_count} view{inv.view_count !== 1 ? 's' : ''} · {new Date(inv.created_at).toLocaleDateString()}</div>
-                  {inv.converted_advertiser?.name && (
+                  {inv.advertiser_name && (
                     <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>
-                      {inv.status === 'booked' ? 'Booked by ' : 'Signed up: '}{inv.converted_advertiser.name}
+                      {inv.status === 'booked' ? 'Booked by ' : 'Signed up: '}{inv.advertiser_name}
                     </div>
                   )}
                 </div>
