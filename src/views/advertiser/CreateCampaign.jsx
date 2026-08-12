@@ -64,13 +64,13 @@ function StepPay({ campaign, onPay, onSkip, paying, err, requiresAction, onGoToB
 
 // ─── Main Wizard ─────────────────────────────────────────────────────────────
 
-export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [], existingCampaign = null }) {
+export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [], existingCampaign = null, presetScreenIds = null }) {
   const { user, profile, activeAccount } = useAuth();
   const navigate = useNavigate();
   const isDelegate = activeAccount && !activeAccount.isOwn;
   const canChooseBilling = isDelegate && ['admin', 'manager'].includes(activeAccount?.role);
   const [billedTo, setBilledTo] = useState('client'); // 'client' | 'agency'
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(() => (presetScreenIds && presetScreenIds.length > 0) ? 1 : 0);
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState(null);
   const [showDupModal, setShowDupModal] = useState(false);
@@ -79,7 +79,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
   const [payErr, setPayErr] = useState(null);
   const [requiresAction, setRequiresAction] = useState(false);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState(() => ({
     name: '',
     area_type: 'city',
     country: 'CA',
@@ -90,7 +90,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     radius_km: 10,
     env_filter: 'any',
     venue_filter: '',
-    selected_screen_ids: [],
+    selected_screen_ids: presetScreenIds && presetScreenIds.length > 0 ? presetScreenIds : [],
     creatives: [],  // StepCreative lazily seeds a blank one; see BLANK_CREATIVE there
     budget_level: 'unified',
     budget_mode: 'total',
@@ -103,7 +103,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     duration: 15,
     slots: 10,
     start_when: 'partial',
-  });
+  }));
 
   // Screen matching
   const matchedScreens = (() => {
@@ -113,6 +113,13 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       s.status !== 'inactive' &&
       (s.last_seen == null || s.last_seen >= sevenDaysAgo || s.status === 'pending')
     );
+    // A screen-invite signup is already scoped to one specific screen --
+    // area/venue filters (city, radius, category) don't apply and would
+    // incorrectly narrow or widen the set away from the one screen this
+    // advertiser was actually invited to.
+    if (presetScreenIds && presetScreenIds.length > 0) {
+      return screens.filter(s => presetScreenIds.includes(s.id));
+    }
     if (form.area_type === 'country') {
       screens = screens.filter(s => s.country === form.country);
     } else if (form.area_type === 'state') {
@@ -142,6 +149,14 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
   // a screen id that's no longer part of the campaign at all.
   const matchedKey = matchedScreens.map(s => s.id).join(',');
   useEffect(() => {
+    // The preset selection from a screen invite is authoritative -- area
+    // matching must never overwrite it (matchedScreens already returns
+    // just the preset screen(s) above, but without this guard the effect
+    // would still redundantly re-set the same value on every render; more
+    // importantly, if dbScreens hasn't loaded yet on first mount,
+    // matchedScreens could transiently be empty and this would wipe the
+    // preset selection before dbScreens arrives).
+    if (presetScreenIds && presetScreenIds.length > 0) return;
     setForm(s => {
       const nextSelectedIds = matchedScreens.map(sc => sc.id);
       return {
@@ -289,6 +304,24 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         scans:                 0,
       });
       if (bookingErr) throw new Error(bookingErr.message);
+
+      // If this campaign was created via a screen-invite signup, close the
+      // loop for the inviting operator. Best-effort: a failure here must
+      // never block the advertiser's own successful campaign creation --
+      // this is bookkeeping for the operator, not part of the advertiser's
+      // critical path.
+      const pendingInviteToken = sessionStorage.getItem('adgrid_pending_screen_invite_token');
+      if (pendingInviteToken) {
+        sessionStorage.removeItem('adgrid_pending_screen_invite_token');
+        const { data: { session: inviteSession } } = await supabase.auth.getSession();
+        if (inviteSession) {
+          fetch(`${SUPABASE_FUNCTIONS_URL}/mark-screen-invite-booked`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${inviteSession.access_token}` },
+            body: JSON.stringify({ token: pendingInviteToken, campaign_id: campaignId }),
+          }).catch(() => {});
+        }
+      }
 
       const screenRows = form.selected_screen_ids.map(screen_id => ({
         campaign_id: campaignId,
