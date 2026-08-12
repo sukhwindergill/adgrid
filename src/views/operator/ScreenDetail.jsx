@@ -182,6 +182,10 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   const [connStatus, setConnStatus] = useState(null); // null | 'checking' | 'ok' | 'no_heartbeat' | 'needs_payout'
   const [reactivateError, setReactivateError] = useState(null);
   const [screenToken, setScreenToken] = useState('');
+  const [invites, setInvites] = useState([]);
+  const [creatingInvite, setCreatingInvite] = useState(false);
+  const [inviteError, setInviteError] = useState(null);
+  const [copiedInviteId, setCopiedInviteId] = useState(null);
 
   // Fetch screen record. screen_token is no longer column-readable (it is a
   // bearer secret); fetch it via the owner-scoped get_screen_token RPC.
@@ -250,6 +254,44 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       setLoadingData(false);
     });
   }, [screen]);
+
+  // Screen referral invites ("bring your own advertiser") sent for this screen.
+  useEffect(() => {
+    if (!screen) return;
+    supabase
+      .from('screen_invites')
+      .select('id, token, status, view_count, created_at, converted_advertiser_id, converted_campaign_id')
+      .eq('screen_id', screen.id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => setInvites(data ?? []));
+  }, [screen]);
+
+  async function createInvite() {
+    setCreatingInvite(true);
+    setInviteError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-screen-invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ screen_id: screen.id }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? 'Failed to create invite');
+      setInvites(prev => [{ id: crypto.randomUUID(), token: body.token, status: 'pending', view_count: 0, created_at: new Date().toISOString(), converted_advertiser_id: null, converted_campaign_id: null }, ...prev]);
+      await navigator.clipboard?.writeText(body.url);
+    } catch (e) {
+      setInviteError(e.message);
+    } finally {
+      setCreatingInvite(false);
+    }
+  }
+
+  async function copyInviteLink(token, id) {
+    await navigator.clipboard?.writeText(`${window.location.origin}/invite/screen/${token}`);
+    setCopiedInviteId(id);
+    setTimeout(() => setCopiedInviteId(null), 2000);
+  }
 
   const { uptimePct, hourlyGrid } = useMemo(() => {
     if (!heartbeats) return { uptimePct: null, hourlyGrid: Array(168).fill(0) };
@@ -507,6 +549,40 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
           )}
         </Card>
       </div>
+
+      {/* Screen referral invite (BYOA) */}
+      <Card style={{ padding: '16px 20px', marginBottom: 20 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>
+          Invite an advertiser
+        </div>
+        <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.5 }}>
+          Know a local business that would want to advertise here? Send them a link scoped to this exact screen — no search, no signup friction.
+        </div>
+        <Btn onClick={createInvite} disabled={creatingInvite} style={{ marginBottom: 12 }}>
+          {creatingInvite ? 'Creating…' : '+ Get invite link'}
+        </Btn>
+        {inviteError && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginBottom: 12 }}>{inviteError}</div>}
+        {invites.length === 0 ? (
+          <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>No invites sent yet.</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {invites.map(inv => (
+              <div key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: C.surfaceAlt, borderRadius: 8 }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 500, color: C.text, fontFamily: F.sans, textTransform: 'capitalize' }}>{inv.status.replace('_', ' ')}</div>
+                  <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{inv.view_count} view{inv.view_count !== 1 ? 's' : ''} · {new Date(inv.created_at).toLocaleDateString()}</div>
+                </div>
+                <button
+                  onClick={() => copyInviteLink(inv.token, inv.id)}
+                  style={{ fontSize: 11, color: C.purple, background: 'none', border: 'none', cursor: 'pointer', fontFamily: F.sans }}
+                >
+                  {copiedInviteId === inv.id ? '✓ Copied' : 'Copy link'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       {/* Campaign history */}
       <Card style={{ padding: 0, overflow: 'hidden' }}>
