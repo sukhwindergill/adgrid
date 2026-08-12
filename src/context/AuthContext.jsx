@@ -196,6 +196,8 @@ export function AuthProvider({ children }) {
     setGrants([])
     sessionStorage.removeItem('adgrid_active_account')
     sessionStorage.removeItem('adgrid_hub_visited')
+    sessionStorage.removeItem('adgrid_preset_screen_id')
+    sessionStorage.removeItem('adgrid_pending_screen_invite_token')
   }
 
   async function signInWithOAuth(provider) {

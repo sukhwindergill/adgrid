@@ -453,11 +453,20 @@ function AppInner() {
             setAddingToCampaign(null);
             if (presetScreenIds) {
               sessionStorage.removeItem('adgrid_preset_screen_id');
+              sessionStorage.removeItem('adgrid_pending_screen_invite_token');
               setPresetScreenIds(null);
             }
             navTo('adv-campaigns');
           }}
-          onCancel={() => { setAddingToCampaign(null); navTo('adv-overview'); }}
+          onCancel={() => {
+            setAddingToCampaign(null);
+            if (presetScreenIds) {
+              sessionStorage.removeItem('adgrid_preset_screen_id');
+              sessionStorage.removeItem('adgrid_pending_screen_invite_token');
+              setPresetScreenIds(null);
+            }
+            navTo('adv-overview');
+          }}
         />
       );
       if (active === 'adv-campaigns')    return <Campaigns campaigns={advertiserCampaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} allowCancel />;
