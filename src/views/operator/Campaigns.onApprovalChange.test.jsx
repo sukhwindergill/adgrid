@@ -5,6 +5,10 @@ vi.mock('../../components/primitives/ConfirmModal.jsx', () => ({
   useConfirm: () => vi.fn(() => Promise.resolve(true)),
 }));
 
+vi.mock('../../components/primitives/Toast.jsx', () => ({
+  useToast: () => ({ error: vi.fn(), success: vi.fn(), undo: vi.fn() }),
+}));
+
 const fromMock = vi.fn(() => ({
   select: () => ({ in: () => Promise.resolve({ data: [], error: null }) }),
   update: () => ({ eq: () => Promise.resolve({ error: null, data: null }) }),

@@ -64,7 +64,7 @@ function StepPay({ campaign, onPay, onSkip, paying, err, requiresAction, onGoToB
 
 // ─── Main Wizard ─────────────────────────────────────────────────────────────
 
-export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [], existingCampaign = null }) {
+export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [], existingCampaign = null, duplicateFrom = null }) {
   const { user, profile, activeAccount } = useAuth();
   const navigate = useNavigate();
   const isDelegate = activeAccount && !activeAccount.isOwn;
@@ -218,6 +218,19 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     }));
     setShowDupModal(false);
   };
+
+  // Duplicate-from-detail entry point: App.jsx sets duplicateFrom when the
+  // advertiser clicks "Duplicate" on an existing campaign's detail page.
+  // Prefill once on mount rather than reactively -- duplicateFrom doesn't
+  // change identity while this wizard is mounted, and re-running loadDuplicate
+  // on every render would stomp on whatever the advertiser has since edited.
+  const duplicateLoadedRef = useRef(false);
+  useEffect(() => {
+    if (duplicateFrom && !duplicateLoadedRef.current) {
+      duplicateLoadedRef.current = true;
+      loadDuplicate(duplicateFrom);
+    }
+  }, [duplicateFrom]);
 
   const handleSubmit = async () => {
     if (!form.budget || parseFloat(form.budget) <= 0) {

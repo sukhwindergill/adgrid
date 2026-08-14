@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { C, F } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
 import { useToast } from "../../components/primitives/Toast.jsx";
+import { useConfirm } from "../../components/primitives/ConfirmModal.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useOperatorCampaignIds } from "../../hooks/useOperatorCampaignIds.js";
 
@@ -32,6 +33,7 @@ function Modal({ title, onClose, children }) {
 
 function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate }) {
   const toast = useToast();
+  const confirm = useConfirm();
   const [tab, setTab] = useState("overview");
   const [creditsAmount, setCreditsAmount] = useState("");
   const [rateAmount, setRateAmount] = useState(adv.rate_override ?? "");
@@ -42,17 +44,31 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
   const activeCampaigns = campaigns.filter((c) => c.status === "active").length;
 
   async function updateStatus(status) {
+    const previousStatus = adv.status ?? "active";
     setSaving(true);
     const { error: statusError } = await supabase.from("profiles").update({ status }).eq("id", adv.id);
     setSaving(false);
     if (statusError) { toast.error("Failed to update status."); return; }
     onUpdated({ ...adv, status });
     setModal(null);
+    if (status === "suspended") {
+      toast.undo(`${adv.name}'s account suspended.`, async () => {
+        const { error: undoError } = await supabase.from("profiles").update({ status: previousStatus }).eq("id", adv.id);
+        if (undoError) { toast.error("Failed to undo suspension."); return; }
+        onUpdated({ ...adv, status: previousStatus });
+      });
+    }
   }
 
   async function addCredits() {
     const amount = parseFloat(creditsAmount);
     if (isNaN(amount)) return;
+    const ok = await confirm({
+      title: 'Add credits?',
+      message: `Add $${amount.toFixed(2)} in credits to ${adv.name}'s account?`,
+      confirmLabel: 'Add Credits',
+    });
+    if (!ok) return;
     setSaving(true);
     const newCredits = (adv.credits ?? 0) + amount;
     const { error } = await supabase.from("profiles").update({ credits: newCredits }).eq("id", adv.id);
@@ -65,6 +81,14 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
 
   async function saveRate() {
     const rate = parseFloat(rateAmount) || null;
+    const ok = await confirm({
+      title: 'Set custom CPM rate?',
+      message: rate
+        ? `Set ${adv.name}'s CPM rate to $${rate.toFixed(2)}, overriding the default rate?`
+        : `Clear ${adv.name}'s custom CPM rate and revert to the default rate?`,
+      confirmLabel: 'Save Rate',
+    });
+    if (!ok) return;
     setSaving(true);
     await supabase.from("profiles").update({ rate_override: rate }).eq("id", adv.id);
     setSaving(false);
@@ -204,6 +228,10 @@ export default function AdvertisersView({ onImpersonate }) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [checked, setChecked] = useState(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const toast = useToast();
+  const confirm = useConfirm();
 
   // B27: `bookings` RLS grants read access via two separate policies --
   // "I'm the advertiser" and "I'm the operator of a targeted screen".
@@ -242,6 +270,49 @@ export default function AdvertisersView({ onImpersonate }) {
     return matchSearch && matchStatus;
   });
 
+  function toggleChecked(id) {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAllChecked() {
+    setChecked((prev) => prev.size === filtered.length ? new Set() : new Set(filtered.map((a) => a.id)));
+  }
+
+  async function bulkSetStatus(status) {
+    const ids = [...checked];
+    if (ids.length === 0) return;
+    const ok = await confirm({
+      title: status === "suspended" ? "Suspend selected accounts?" : "Reactivate selected accounts?",
+      message: `This will ${status === "suspended" ? "suspend" : "reactivate"} ${ids.length} advertiser${ids.length !== 1 ? "s" : ""}.`,
+      confirmLabel: status === "suspended" ? "Suspend" : "Reactivate",
+      danger: status === "suspended",
+    });
+    if (!ok) return;
+    const previousStatuses = new Map(advertisers.filter((a) => ids.includes(a.id)).map((a) => [a.id, a.status ?? "active"]));
+    setBulkBusy(true);
+    const { error } = await supabase.from("profiles").update({ status }).in("id", ids);
+    setBulkBusy(false);
+    if (error) { toast.error("Bulk update failed."); return; }
+    setAdvertisers((prev) => prev.map((a) => ids.includes(a.id) ? { ...a, status } : a));
+    setChecked(new Set());
+    const label = `${ids.length} advertiser${ids.length !== 1 ? "s" : ""} ${status === "suspended" ? "suspended" : "reactivated"}.`;
+    if (status === "suspended") {
+      toast.undo(label, async () => {
+        const undoResults = await Promise.all(ids.map((id) =>
+          supabase.from("profiles").update({ status: previousStatuses.get(id) }).eq("id", id)
+        ));
+        if (undoResults.some((r) => r.error)) { toast.error("Some accounts failed to restore."); }
+        setAdvertisers((prev) => prev.map((a) => ids.includes(a.id) ? { ...a, status: previousStatuses.get(a.id) } : a));
+      });
+    } else {
+      toast.success(label);
+    }
+  }
+
   const selectedCampaigns = selected ? campaigns.filter((c) => c.advertiser_id === selected.id) : [];
   const selectedScans = selected ? scans.filter((s) => s.advertiser_id === selected.id) : [];
 
@@ -260,10 +331,21 @@ export default function AdvertisersView({ onImpersonate }) {
           <option value="suspended">Suspended</option>
         </select>
       </div>
+      {checked.size > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", marginBottom: 12, background: C.blueLight, border: `1px solid ${C.border}`, borderRadius: 10 }}>
+          <span style={{ fontSize: 13, color: C.text, fontWeight: 500 }}>{checked.size} selected</span>
+          <button onClick={() => bulkSetStatus("suspended")} disabled={bulkBusy} style={{ padding: "6px 12px", borderRadius: 8, background: C.red, color: "#fff", border: "none", cursor: "pointer", fontFamily: F.sans, fontSize: 12, fontWeight: 500 }}>Suspend</button>
+          <button onClick={() => bulkSetStatus("active")} disabled={bulkBusy} style={{ padding: "6px 12px", borderRadius: 8, background: C.green, color: "#fff", border: "none", cursor: "pointer", fontFamily: F.sans, fontSize: 12, fontWeight: 500 }}>Reactivate</button>
+          <button onClick={() => setChecked(new Set())} style={{ padding: "6px 12px", borderRadius: 8, background: "none", color: C.textSub, border: `1px solid ${C.border}`, cursor: "pointer", fontFamily: F.sans, fontSize: 12 }}>Clear</button>
+        </div>
+      )}
       <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ background: C.bg }}>
+              <th style={{ padding: "10px 16px", borderBottom: `1px solid ${C.border}`, width: 32 }}>
+                <input type="checkbox" checked={filtered.length > 0 && checked.size === filtered.length} onChange={toggleAllChecked} />
+              </th>
               {["Name", "Email", "Company", "Status", "Total Spend", "Active Campaigns", "Joined"].map((h) => (
                 <th key={h} style={{ padding: "10px 16px", textAlign: "left", color: C.textSub, fontWeight: 500, borderBottom: `1px solid ${C.border}` }}>{h}</th>
               ))}
@@ -276,6 +358,9 @@ export default function AdvertisersView({ onImpersonate }) {
               const active = advCamps.filter((c) => c.status === "active").length;
               return (
                 <tr key={a.id} onClick={() => setSelected(a)} style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer", background: selected?.id === a.id ? C.blueLight : "transparent" }}>
+                  <td style={{ padding: "12px 16px" }} onClick={(e) => e.stopPropagation()}>
+                    <input type="checkbox" checked={checked.has(a.id)} onChange={() => toggleChecked(a.id)} />
+                  </td>
                   <td style={{ padding: "12px 16px", fontWeight: 500, color: C.text }}>{a.name ?? "—"}</td>
                   <td style={{ padding: "12px 16px", color: C.textSub }}>{a.email}</td>
                   <td style={{ padding: "12px 16px", color: C.textSub }}>{a.company_name ?? "—"}</td>
@@ -287,7 +372,7 @@ export default function AdvertisersView({ onImpersonate }) {
               );
             })}
             {filtered.length === 0 && (
-              <tr><td colSpan={7} style={{ padding: "32px 16px", textAlign: "center", color: C.textMuted }}>No advertisers found.</td></tr>
+              <tr><td colSpan={8} style={{ padding: "32px 16px", textAlign: "center", color: C.textMuted }}>No advertisers found.</td></tr>
             )}
           </tbody>
         </table>

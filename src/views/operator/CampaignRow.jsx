@@ -5,6 +5,8 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { ApproveBtn } from '../../lib/campaignActions.jsx';
 import { pluralize } from '../../lib/pluralize.js';
+import { useConfirm } from '../../components/primitives/ConfirmModal.jsx';
+import { useToast } from '../../components/primitives/Toast.jsx';
 
 export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel, canReview, setDetail, setCampaigns, onApprovalChange }) {
   const pct = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
@@ -13,6 +15,8 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
   // component doesn't have -- Campaigns.jsx computes it per booking and
   // passes the result as c.badgeStatus (see Task 3 Step 3).
   const badgeStatus = c.badgeStatus ?? c.status;
+  const confirm = useConfirm();
+  const toast = useToast();
 
   return (
     <div
@@ -60,9 +64,22 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
             <Badge status={badgeStatus} />
             <Btn variant="danger" size="sm" onClick={async e => {
               e.preventDefault(); e.stopPropagation();
-              if (!window.confirm(`Cancel campaign "${c.advertiser}"? This cannot be undone.`)) return;
+              const ok = await confirm({
+                title: 'Cancel campaign?',
+                message: `Cancel campaign "${c.advertiser}"? You can undo this from the toast right after.`,
+                confirmLabel: 'Cancel Campaign',
+                danger: true,
+              });
+              if (!ok) return;
+              const previousStatus = c.status;
               const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', c.id);
-              if (!error) setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: 'cancelled' } : x));
+              if (error) return;
+              setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: 'cancelled' } : x));
+              toast.undo(`Campaign "${c.advertiser}" cancelled.`, async () => {
+                const { error: undoError } = await supabase.from('bookings').update({ status: previousStatus }).eq('id', c.id);
+                if (undoError) { toast.error('Failed to undo cancellation.'); return; }
+                setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: previousStatus } : x));
+              });
             }}>✕ Cancel</Btn>
           </div>
         ) : (
