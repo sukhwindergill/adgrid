@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { C, F, SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
 import { useToast } from "../../components/primitives/Toast.jsx";
+import { useConfirm } from "../../components/primitives/ConfirmModal.jsx";
 import { useBreakpoint } from "../../lib/useBreakpoint.js";
 
 const STATUS_COLORS = {
@@ -27,7 +28,9 @@ export default function BillingView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [setupLoading, setSetupLoading] = useState(false);
+  const [pmBusyId, setPmBusyId] = useState(null);
   const toast = useToast();
+  const confirm = useConfirm();
 
   async function load() {
     setLoading(true);
@@ -64,6 +67,44 @@ export default function BillingView() {
       toast.error(e.message);
       setSetupLoading(false);
     }
+  }
+
+  async function callManagePaymentMethod(action, paymentMethodId) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { toast.error("Session expired. Please log in again."); return false; }
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/manage-payment-method`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ action, payment_method_id: paymentMethodId }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) { toast.error(body?.error ?? "Failed to update payment method."); return false; }
+    return true;
+  }
+
+  async function setDefault(pm) {
+    setPmBusyId(pm.id);
+    const ok = await callManagePaymentMethod("set_default", pm.id);
+    setPmBusyId(null);
+    if (!ok) return;
+    toast.success(`${pm.brand} ···· ${pm.last4} is now your default payment method.`);
+    load();
+  }
+
+  async function removeMethod(pm) {
+    const ok = await confirm({
+      title: "Remove payment method?",
+      message: `Remove ${pm.brand} ···· ${pm.last4} from your account?${pm.isDefault ? " This is your current default — future charges will need a different method on file." : ""}`,
+      confirmLabel: "Remove",
+      danger: true,
+    });
+    if (!ok) return;
+    setPmBusyId(pm.id);
+    const removed = await callManagePaymentMethod("detach", pm.id);
+    setPmBusyId(null);
+    if (!removed) return;
+    toast.success(`${pm.brand} ···· ${pm.last4} removed.`);
+    load();
   }
 
   useEffect(() => {
@@ -115,9 +156,9 @@ export default function BillingView() {
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {data.paymentMethods.map((pm) => (
               <div key={pm.id} style={{
-                display: "flex", alignItems: "center", gap: 12,
+                display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
                 padding: "12px 16px", background: C.bg, borderRadius: 8,
-                border: `1px solid ${C.border}`,
+                border: `1px solid ${pm.isDefault ? C.blue : C.border}`,
               }}>
                 <span style={{ fontSize: 20 }}>💳</span>
                 <span style={{ fontSize: 14, fontWeight: 500, color: C.text, textTransform: "capitalize" }}>
@@ -126,6 +167,24 @@ export default function BillingView() {
                 <span style={{ fontSize: 13, color: C.textSub }}>
                   Expires {pm.expMonth}/{pm.expYear}
                 </span>
+                {pm.isDefault && (
+                  <span style={{
+                    fontSize: 11, fontWeight: 600, color: C.blue, background: "rgba(37,99,235,0.1)",
+                    padding: "2px 8px", borderRadius: 10,
+                  }}>Default</span>
+                )}
+                <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+                  {!pm.isDefault && (
+                    <button onClick={() => setDefault(pm)} disabled={pmBusyId === pm.id} style={{
+                      padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.border}`,
+                      background: C.surface, color: C.text, fontSize: 12, cursor: "pointer",
+                    }}>{pmBusyId === pm.id ? "…" : "Set as default"}</button>
+                  )}
+                  <button onClick={() => removeMethod(pm)} disabled={pmBusyId === pm.id} style={{
+                    padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.border}`,
+                    background: C.surface, color: C.red, fontSize: 12, cursor: "pointer",
+                  }}>{pmBusyId === pm.id ? "…" : "Remove"}</button>
+                </div>
               </div>
             ))}
           </div>
@@ -142,7 +201,7 @@ export default function BillingView() {
                 textDecoration: "none",
               }}
             >
-              Manage Payment Methods →
+              + Add Payment Method →
             </a>
           ) : (
             <button

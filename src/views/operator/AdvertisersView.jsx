@@ -44,12 +44,20 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
   const activeCampaigns = campaigns.filter((c) => c.status === "active").length;
 
   async function updateStatus(status) {
+    const previousStatus = adv.status ?? "active";
     setSaving(true);
     const { error: statusError } = await supabase.from("profiles").update({ status }).eq("id", adv.id);
     setSaving(false);
     if (statusError) { toast.error("Failed to update status."); return; }
     onUpdated({ ...adv, status });
     setModal(null);
+    if (status === "suspended") {
+      toast.undo(`${adv.name}'s account suspended.`, async () => {
+        const { error: undoError } = await supabase.from("profiles").update({ status: previousStatus }).eq("id", adv.id);
+        if (undoError) { toast.error("Failed to undo suspension."); return; }
+        onUpdated({ ...adv, status: previousStatus });
+      });
+    }
   }
 
   async function addCredits() {
@@ -284,13 +292,25 @@ export default function AdvertisersView({ onImpersonate }) {
       danger: status === "suspended",
     });
     if (!ok) return;
+    const previousStatuses = new Map(advertisers.filter((a) => ids.includes(a.id)).map((a) => [a.id, a.status ?? "active"]));
     setBulkBusy(true);
     const { error } = await supabase.from("profiles").update({ status }).in("id", ids);
     setBulkBusy(false);
     if (error) { toast.error("Bulk update failed."); return; }
     setAdvertisers((prev) => prev.map((a) => ids.includes(a.id) ? { ...a, status } : a));
-    toast.success(`${ids.length} advertiser${ids.length !== 1 ? "s" : ""} ${status === "suspended" ? "suspended" : "reactivated"}.`);
     setChecked(new Set());
+    const label = `${ids.length} advertiser${ids.length !== 1 ? "s" : ""} ${status === "suspended" ? "suspended" : "reactivated"}.`;
+    if (status === "suspended") {
+      toast.undo(label, async () => {
+        const undoResults = await Promise.all(ids.map((id) =>
+          supabase.from("profiles").update({ status: previousStatuses.get(id) }).eq("id", id)
+        ));
+        if (undoResults.some((r) => r.error)) { toast.error("Some accounts failed to restore."); }
+        setAdvertisers((prev) => prev.map((a) => ids.includes(a.id) ? { ...a, status: previousStatuses.get(a.id) } : a));
+      });
+    } else {
+      toast.success(label);
+    }
   }
 
   const selectedCampaigns = selected ? campaigns.filter((c) => c.advertiser_id === selected.id) : [];
