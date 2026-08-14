@@ -22,6 +22,8 @@ const THRESHOLD = 0.2; // +/-20% counts as on-target
 
 export function compareDeliveryCheck(row) {
   if (!row) return { available: false, reason: 'no_data' };
+  // Number(null) === 0, so Number.isFinite alone would treat a missing rate
+  // as a real zero -- check for null/undefined explicitly first.
   if (row.exposed_rate == null || row.control_rate == null) {
     return { available: false, reason: 'no_data' };
   }
