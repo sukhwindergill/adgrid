@@ -20,6 +20,21 @@ function uptime(screen) {
   return '—';
 }
 
+// Explains *why* a card stat shows a bare dash instead of a value -- an
+// unexplained '—' reads as "broken" rather than "not available yet",
+// which was flagged as an investor/operator confidence issue.
+function impressionsHint(screen) {
+  if (screen.impressions > 0) return null;
+  if (screen.status === 'pending') return 'Pending approval — no delivery data yet';
+  return 'No traffic estimate set — add one in this screen’s settings';
+}
+
+function uptimeHint(screen) {
+  if (screen.status !== 'live') return 'Not yet approved to go live';
+  if (!screen.last_seen) return 'No signal received since going live';
+  return 'No signal in the last 5 minutes';
+}
+
 function ScreenCard({ screen, onClick }) {
   const hs = healthSignal(screen);
   const firstPhoto = screen.screen_photos?.[0];
@@ -84,7 +99,10 @@ function ScreenCard({ screen, onClick }) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>Impressions/mo</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono, marginTop: 2 }}>
+            <div
+              title={impressionsHint(screen) ?? undefined}
+              style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono, marginTop: 2, cursor: impressionsHint(screen) ? 'help' : undefined }}
+            >
               {screen.impressions > 0 ? `${(screen.impressions / 1000).toFixed(0)}K` : '—'}
             </div>
           </div>
@@ -94,7 +112,12 @@ function ScreenCard({ screen, onClick }) {
           </div>
           <div>
             <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>Uptime</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: screen.status === 'live' ? C.green : C.textMuted, fontFamily: F.mono, marginTop: 2 }}>{uptime(screen)}</div>
+            <div
+              title={uptime(screen) === '—' ? uptimeHint(screen) : undefined}
+              style={{ fontSize: 15, fontWeight: 700, color: screen.status === 'live' ? C.green : C.textMuted, fontFamily: F.mono, marginTop: 2, cursor: uptime(screen) === '—' ? 'help' : undefined }}
+            >
+              {uptime(screen)}
+            </div>
           </div>
         </div>
 
