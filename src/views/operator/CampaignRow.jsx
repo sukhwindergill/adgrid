@@ -5,6 +5,7 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { ApproveBtn } from '../../lib/campaignActions.jsx';
 import { pluralize } from '../../lib/pluralize.js';
+import { useConfirm } from '../../components/primitives/ConfirmModal.jsx';
 
 export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel, canReview, setDetail, setCampaigns, onApprovalChange }) {
   const pct = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
@@ -13,6 +14,7 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
   // component doesn't have -- Campaigns.jsx computes it per booking and
   // passes the result as c.badgeStatus (see Task 3 Step 3).
   const badgeStatus = c.badgeStatus ?? c.status;
+  const confirm = useConfirm();
 
   return (
     <div
@@ -60,7 +62,13 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
             <Badge status={badgeStatus} />
             <Btn variant="danger" size="sm" onClick={async e => {
               e.preventDefault(); e.stopPropagation();
-              if (!window.confirm(`Cancel campaign "${c.advertiser}"? This cannot be undone.`)) return;
+              const ok = await confirm({
+                title: 'Cancel campaign?',
+                message: `Cancel campaign "${c.advertiser}"? This cannot be undone.`,
+                confirmLabel: 'Cancel Campaign',
+                danger: true,
+              });
+              if (!ok) return;
               const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', c.id);
               if (!error) setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: 'cancelled' } : x));
             }}>✕ Cancel</Btn>

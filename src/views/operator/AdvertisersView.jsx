@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { C, F } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
 import { useToast } from "../../components/primitives/Toast.jsx";
+import { useConfirm } from "../../components/primitives/ConfirmModal.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useOperatorCampaignIds } from "../../hooks/useOperatorCampaignIds.js";
 
@@ -32,6 +33,7 @@ function Modal({ title, onClose, children }) {
 
 function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate }) {
   const toast = useToast();
+  const confirm = useConfirm();
   const [tab, setTab] = useState("overview");
   const [creditsAmount, setCreditsAmount] = useState("");
   const [rateAmount, setRateAmount] = useState(adv.rate_override ?? "");
@@ -53,6 +55,12 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
   async function addCredits() {
     const amount = parseFloat(creditsAmount);
     if (isNaN(amount)) return;
+    const ok = await confirm({
+      title: 'Add credits?',
+      message: `Add $${amount.toFixed(2)} in credits to ${adv.name}'s account?`,
+      confirmLabel: 'Add Credits',
+    });
+    if (!ok) return;
     setSaving(true);
     const newCredits = (adv.credits ?? 0) + amount;
     const { error } = await supabase.from("profiles").update({ credits: newCredits }).eq("id", adv.id);
@@ -65,6 +73,14 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
 
   async function saveRate() {
     const rate = parseFloat(rateAmount) || null;
+    const ok = await confirm({
+      title: 'Set custom CPM rate?',
+      message: rate
+        ? `Set ${adv.name}'s CPM rate to $${rate.toFixed(2)}, overriding the default rate?`
+        : `Clear ${adv.name}'s custom CPM rate and revert to the default rate?`,
+      confirmLabel: 'Save Rate',
+    });
+    if (!ok) return;
     setSaving(true);
     await supabase.from("profiles").update({ rate_override: rate }).eq("id", adv.id);
     setSaving(false);
