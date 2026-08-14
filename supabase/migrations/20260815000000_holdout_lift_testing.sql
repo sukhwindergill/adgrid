@@ -69,6 +69,14 @@ $$;
 
 REVOKE EXECUTE ON FUNCTION public.assign_holdout_control(text) FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.assign_holdout_control(text) FROM authenticated;
+-- Revoking from PUBLIC/authenticated is not sufficient: this project's
+-- database-level default ACL explicitly grants `anon` EXECUTE on every
+-- newly created function, which is a per-role grant that a PUBLIC revoke
+-- does not remove. Without this explicit revoke, any unauthenticated
+-- caller could invoke this SECURITY DEFINER function directly via
+-- PostgREST's /rest/v1/rpc/assign_holdout_control, bypassing the edge
+-- function's ownership check entirely.
+REVOKE EXECUTE ON FUNCTION public.assign_holdout_control(text) FROM anon;
 
 -- Per-campaign scan-rate comparison between exposed and control screens.
 -- Computed live (not materialized) -- this is a single-campaign filter over
