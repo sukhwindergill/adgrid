@@ -13,7 +13,7 @@ const CORS = {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
-  if (req.method !== "POST") return new Response("Method not allowed", { status: 405, headers: CORS });
+  if (req.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: CORS });
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return new Response("Unauthorized", { status: 401, headers: CORS });
@@ -42,6 +42,19 @@ Deno.serve(async (req: Request) => {
 
   if (!booking.holdout_enabled) {
     return new Response(JSON.stringify({ error: "This campaign did not opt into a holdout test" }), { status: 400, headers: CORS });
+  }
+
+  // Idempotency guard: a double-click or retried request must not
+  // re-randomize on top of an already-assigned control group, which
+  // would inflate the control percentage past the intended ~20%.
+  const { count: existingControlCount } = await supabase
+    .from("campaign_screens")
+    .select("id", { count: "exact", head: true })
+    .eq("campaign_id", campaign_id)
+    .eq("is_control", true);
+
+  if (existingControlCount && existingControlCount > 0) {
+    return new Response(JSON.stringify({ ok: true, control_count: existingControlCount, already_assigned: true }), { headers: CORS });
   }
 
   const { data: controlCount, error: rpcError } = await supabase.rpc("assign_holdout_control", {
