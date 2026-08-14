@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { expandCreativeAssignments } from "../_shared/creativeSelection.ts";
+import { clampDurationToScreen } from "../_shared/adDuration.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -24,7 +25,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: screen, error: screenError } = await supabase
     .from("screens")
-    .select("id, name, operator_id, status, operating_hours_start, operating_hours_end, timezone")
+    .select("id, name, operator_id, status, operating_hours_start, operating_hours_end, timezone, max_ad_duration")
     .eq("screen_token", screenToken)
     .single();
 
@@ -145,6 +146,7 @@ Deno.serve(async (req: Request) => {
             destination_url: cs?.destination_url || b.destination_url,
             media_url: cs?.media_url || b.media_url,
             media_type: cs?.media_type || b.media_type,
+            duration: clampDurationToScreen(b.duration as number, screen.max_ad_duration as number | null),
           });
           continue;
         }
@@ -172,6 +174,7 @@ Deno.serve(async (req: Request) => {
             qr_size_pct: cr.qr_size_pct ?? b.qr_size_pct,
             qr_fg_color: cr.qr_fg_color ?? b.qr_fg_color,
             qr_bg_color: cr.qr_bg_color ?? b.qr_bg_color,
+            duration: clampDurationToScreen(b.duration as number, screen.max_ad_duration as number | null),
           });
         }
       }
