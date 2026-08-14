@@ -38,12 +38,14 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
       .from('lift_stats')
       .select('is_control, impressions, billable_scans')
       .eq('campaign_id', c.id)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) { toast.error('Failed to load lift test results.'); return; }
         const exposedRow = (data ?? []).find(r => r.is_control === false);
         const controlRow = (data ?? []).find(r => r.is_control === true);
         setLiftExposed(exposedRow ?? null);
         setLiftControl(controlRow ?? null);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [c.id, c.holdout_enabled]);
   const pct      = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
   const daysLeft = Math.max(0, Math.round((new Date(c.end) - new Date()) / (1000 * 60 * 60 * 24)));
