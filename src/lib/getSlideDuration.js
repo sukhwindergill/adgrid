@@ -2,10 +2,12 @@
 /**
  * How long a campaign's slide should stay on the physical screen.
  *
- * campaign.duration comes straight from bookings.duration (seconds), set by
- * the advertiser in the wizard's Budget & Schedule step (StepBudgetReview.jsx,
- * 5-60s input) and passed through unmodified by display-feed. This is the
- * single place that turns that advertiser-chosen number into a safe
+ * campaign.duration comes from bookings.duration (seconds), set by the
+ * advertiser in the wizard's Budget & Schedule step (StepBudgetReview.jsx,
+ * 5-60s input) — display-feed clamps it down to the serving screen's own
+ * max_ad_duration ceiling first (clampDurationToScreen), so what arrives
+ * here may already be shorter than what the advertiser originally chose.
+ * This is the single place that turns that number into a safe
  * milliseconds value for DisplayPlayer.jsx's rotation timer — sanitizing
  * missing/zero/negative/non-numeric values to a 10s default, and clamping
  * the result to [5s, 60s] so a bad row can never freeze or flicker a
