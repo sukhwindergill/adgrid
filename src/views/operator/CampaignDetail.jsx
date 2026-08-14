@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { C, F } from '../../design/tokens.js';
 import { useToast } from '../../components/primitives/Toast.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
@@ -13,6 +13,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { ShareReportModal } from '../../components/shared/ShareReportModal.jsx';
 import { ApproveBtn } from '../../lib/campaignActions.jsx';
 import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
+import { LiftTestPanel } from '../../components/shared/LiftTestPanel.jsx';
 
 export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onDuplicate, canReview = false, setCampaigns, onApprovalChange }) {
   const toast = useToast();
@@ -27,7 +28,23 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
   const [editForm, setEditForm] = useState({ budget: campaign.budget, start: campaign.start, end: campaign.end });
   const [editingCreative, setEditingCreative] = useState(false);
   const [creativeForm, setCreativeForm] = useState({ accent_color: campaign.color ?? '#7c3aed' });
+  const [liftExposed, setLiftExposed] = useState(null);
+  const [liftControl, setLiftControl] = useState(null);
   const c = campaign;
+
+  useEffect(() => {
+    if (!c.holdout_enabled) return;
+    supabase
+      .from('lift_stats')
+      .select('is_control, impressions, billable_scans')
+      .eq('campaign_id', c.id)
+      .then(({ data }) => {
+        const exposedRow = (data ?? []).find(r => r.is_control === false);
+        const controlRow = (data ?? []).find(r => r.is_control === true);
+        setLiftExposed(exposedRow ?? null);
+        setLiftControl(controlRow ?? null);
+      });
+  }, [c.id, c.holdout_enabled]);
   const pct      = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
   const daysLeft = Math.max(0, Math.round((new Date(c.end) - new Date()) / (1000 * 60 * 60 * 24)));
   const cpm      = c.impressions > 0 ? ((c.spent / c.impressions) * 1000).toFixed(2) : '4.20';
@@ -147,7 +164,12 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
         </div>
       </Card>
 
-      <Tabs tabs={[{ id: 'overview', label: 'Performance' }, { id: 'creative', label: 'Creative' }, { id: 'settings', label: 'Settings' }]} active={tab} onChange={setTab} />
+      <Tabs tabs={[
+        { id: 'overview', label: 'Performance' },
+        { id: 'creative', label: 'Creative' },
+        ...(c.holdout_enabled ? [{ id: 'lift', label: 'Lift Test' }] : []),
+        { id: 'settings', label: 'Settings' },
+      ]} active={tab} onChange={setTab} />
 
       {tab === 'overview' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
@@ -222,6 +244,10 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
             </div>
           )}
         </Card>
+      )}
+
+      {tab === 'lift' && (
+        <LiftTestPanel holdoutEnabled={c.holdout_enabled} exposed={liftExposed} control={liftControl} />
       )}
 
       {tab === 'settings' && (
