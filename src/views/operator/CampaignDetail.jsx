@@ -14,7 +14,7 @@ import { ShareReportModal } from '../../components/shared/ShareReportModal.jsx';
 import { ApproveBtn } from '../../lib/campaignActions.jsx';
 import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
 
-export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, canReview = false, setCampaigns, onApprovalChange }) {
+export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onDuplicate, canReview = false, setCampaigns, onApprovalChange }) {
   const toast = useToast();
   const [tab, setTab] = useState('overview');
   const [rejecting, setRejecting] = useState(false);
@@ -101,6 +101,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, can
         back="All Campaigns" onBack={onBack}
         actions={<>
           {onAddTargeting && c.campaign_id && <Btn variant="secondary" size="sm" onClick={() => onAddTargeting(c)}>+ Add targeting group</Btn>}
+          {onDuplicate && <Btn variant="secondary" size="sm" onClick={() => onDuplicate(c)}>⧉ Duplicate</Btn>}
           {statusAction(c.status)}
           <Btn variant="secondary" size="sm" onClick={() => setSharing(true)}>Share report</Btn>
           <Btn variant="secondary" size="sm" onClick={() => { setEditForm({ budget: c.budget, start: c.start, end: c.end }); setEditing(true); }}>✏ Edit</Btn>

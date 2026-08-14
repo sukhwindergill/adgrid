@@ -99,6 +99,7 @@ function AppInner() {
   const [myScreens,        setMyScreens]     = useState([]); // operator's own screens, full columns
   const [detail,           setDetail]        = useState(null);
   const [addingToCampaign, setAddingToCampaign] = useState(null); // { id, name } | null
+  const [duplicatingCampaign, setDuplicatingCampaign] = useState(null); // campaign object | null
   const [dataLoading,      setDataLoading]   = useState(false);
   const [loadError,        setLoadError]     = useState(null);
   const [selectedScreenId, setSelectedScreenId] = useState(null);
@@ -360,8 +361,9 @@ function AppInner() {
   // effect above for what that raced). The one caller that intentionally
   // carries addingToCampaign forward ("+ Add targeting group" itself) opts
   // out explicitly with keepAddingToCampaign.
-  const navTo = (v, { keepAddingToCampaign = false } = {}) => {
+  const navTo = (v, { keepAddingToCampaign = false, keepDuplicatingCampaign = false } = {}) => {
     if (!keepAddingToCampaign) setAddingToCampaign(null);
+    if (!keepDuplicatingCampaign) setDuplicatingCampaign(null);
     navigate('/app/' + v);
     setDetail(null);
   };
@@ -427,6 +429,10 @@ function AppInner() {
             setAddingToCampaign({ id: c.campaign_id, name: c.parentName || c.campaign_name || c.advertiser });
             navTo('adv-create', { keepAddingToCampaign: true });
           } : undefined}
+          onDuplicate={isAdvertiserDetail ? (c) => {
+            setDuplicatingCampaign(c);
+            navTo('adv-create', { keepDuplicatingCampaign: true });
+          } : undefined}
         />
       );
     }
@@ -438,12 +444,14 @@ function AppInner() {
           dbScreens={dbScreens}
           campaigns={advertiserCampaigns}
           existingCampaign={addingToCampaign}
+          duplicateFrom={duplicatingCampaign}
           onSave={c => {
             setCampaigns(p => [c, ...p]);
             setAddingToCampaign(null);
+            setDuplicatingCampaign(null);
             navTo('adv-campaigns');
           }}
-          onCancel={() => { setAddingToCampaign(null); navTo('adv-overview'); }}
+          onCancel={() => { setAddingToCampaign(null); setDuplicatingCampaign(null); navTo('adv-overview'); }}
         />
       );
       if (active === 'adv-campaigns')    return <Campaigns campaigns={advertiserCampaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} allowCancel />;
