@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { C, F } from '../../design/tokens.js';
 import { downloadCsv } from '../../lib/csv.js';
+import { LiftTestPanel } from '../../components/shared/LiftTestPanel.jsx';
 import './CampaignReport.css';
 
 const FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL
@@ -49,7 +50,7 @@ export function CampaignReport() {
     );
   }
 
-  const { campaign, totals, daily, health } = report;
+  const { campaign, totals, daily, health, lift } = report;
 
   return (
     <div className="report-page">
@@ -85,6 +86,15 @@ export function CampaignReport() {
         <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 28 }}>
           Delivery health: <strong style={{ color: C.text }}>{Number(health.delivery_pct).toFixed(1)}%</strong> of scheduled plays confirmed
           {Number(health.offline_days) > 0 && ` · ${health.offline_days} day(s) a screen was offline`}
+        </div>
+      )}
+
+      {lift && (
+        <div style={{ marginBottom: 28 }}>
+          {/* The public report never sends holdout_enabled directly (see
+              campaign-report/index.ts) -- `lift` is only present at all when
+              it's true, so its presence alone is the signal here. */}
+          <LiftTestPanel holdoutEnabled={true} exposed={lift.exposed} control={lift.control} />
         </div>
       )}
 

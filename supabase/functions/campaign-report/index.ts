@@ -42,7 +42,7 @@ Deno.serve(async (req: Request) => {
   // exposing the account behind them.
   const { data: campaign } = await supabase
     .from("bookings")
-    .select("id, campaign_name, advertiser_name, category, start_date, end_date, currency")
+    .select("id, campaign_name, advertiser_name, category, start_date, end_date, currency, holdout_enabled")
     .eq("id", campaignId)
     .single();
 
@@ -57,6 +57,17 @@ Deno.serve(async (req: Request) => {
     .select("expected_plays, delivered_plays, delivery_pct, offline_days")
     .eq("campaign_id", campaignId)
     .maybeSingle();
+
+  let lift = null;
+  if (campaign?.holdout_enabled) {
+    const { data: liftRows } = await supabase
+      .from("lift_stats")
+      .select("is_control, impressions, billable_scans")
+      .eq("campaign_id", campaignId);
+    const exposedRow = (liftRows ?? []).find((r) => r.is_control === false) ?? null;
+    const controlRow = (liftRows ?? []).find((r) => r.is_control === true) ?? null;
+    lift = { exposed: exposedRow, control: controlRow };
+  }
 
   const rows = delivery ?? [];
   const totals = {
@@ -86,5 +97,6 @@ Deno.serve(async (req: Request) => {
     totals,
     daily: rows,
     health: health ?? null,
+    lift,
   }), { headers: CORS });
 });
