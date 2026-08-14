@@ -58,15 +58,14 @@ Deno.serve(async (req: Request) => {
     .eq("campaign_id", campaignId)
     .maybeSingle();
 
-  let lift = null;
+  let deliveryCheck = null;
   if (campaign?.holdout_enabled) {
-    const { data: liftRows } = await supabase
-      .from("lift_stats")
-      .select("is_control, impressions, billable_scans")
-      .eq("campaign_id", campaignId);
-    const exposedRow = (liftRows ?? []).find((r) => r.is_control === false) ?? null;
-    const controlRow = (liftRows ?? []).find((r) => r.is_control === true) ?? null;
-    lift = { exposed: exposedRow, control: controlRow };
+    const { data: row } = await supabase
+      .from("delivery_check_stats")
+      .select("exposed_impressions, exposed_play_minutes, exposed_rate, control_rate")
+      .eq("campaign_id", campaignId)
+      .maybeSingle();
+    deliveryCheck = row ?? null;
   }
 
   const rows = delivery ?? [];
@@ -97,6 +96,6 @@ Deno.serve(async (req: Request) => {
     totals,
     daily: rows,
     health: health ?? null,
-    lift,
+    deliveryCheck,
   }), { headers: CORS });
 });
