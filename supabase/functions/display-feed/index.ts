@@ -65,6 +65,7 @@ Deno.serve(async (req: Request) => {
     .from("campaign_screens")
     .select("campaign_id, status, headline, cta_text, accent_color, destination_url, media_url, media_type")
     .eq("screen_id", screen.id)
+    .eq("is_control", false)
     .in("status", ["approved", "auto_approved"]);
 
   const activeCampaigns: Record<string, unknown>[] = [];
