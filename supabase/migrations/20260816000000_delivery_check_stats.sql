@@ -61,6 +61,10 @@ control AS (
     ON ai.screen_id = cs.screen_id
    AND ai.dow = cw.dow
    AND ai.hour BETWEEN cw.start_hour AND cw.end_hour
+  -- Same reliability gate screen_audience_index's own migration
+  -- establishes: a thinly-sampled (screen, dow, hour) cell is noise, not
+  -- a measurement, and shouldn't be able to swing the control-side rate.
+  WHERE ai.sample_windows >= public.audience_min_samples()
   GROUP BY cw.campaign_id
 )
 SELECT
