@@ -13,7 +13,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { ShareReportModal } from '../../components/shared/ShareReportModal.jsx';
 import { ApproveBtn } from '../../lib/campaignActions.jsx';
 import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
-import { LiftTestPanel } from '../../components/shared/LiftTestPanel.jsx';
+import { DeliveryCheckPanel } from '../../components/shared/DeliveryCheckPanel.jsx';
 
 export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onDuplicate, canReview = false, setCampaigns, onApprovalChange }) {
   const toast = useToast();
@@ -28,22 +28,19 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
   const [editForm, setEditForm] = useState({ budget: campaign.budget, start: campaign.start, end: campaign.end });
   const [editingCreative, setEditingCreative] = useState(false);
   const [creativeForm, setCreativeForm] = useState({ accent_color: campaign.color ?? '#7c3aed' });
-  const [liftExposed, setLiftExposed] = useState(null);
-  const [liftControl, setLiftControl] = useState(null);
+  const [deliveryCheckRow, setDeliveryCheckRow] = useState(null);
   const c = campaign;
 
   useEffect(() => {
     if (!c.holdout_enabled) return;
     supabase
-      .from('lift_stats')
-      .select('is_control, impressions, billable_scans')
+      .from('delivery_check_stats')
+      .select('exposed_impressions, exposed_play_minutes, exposed_rate, control_rate')
       .eq('campaign_id', c.id)
+      .maybeSingle()
       .then(({ data, error }) => {
-        if (error) { toast.error('Failed to load lift test results.'); return; }
-        const exposedRow = (data ?? []).find(r => r.is_control === false);
-        const controlRow = (data ?? []).find(r => r.is_control === true);
-        setLiftExposed(exposedRow ?? null);
-        setLiftControl(controlRow ?? null);
+        if (error) { toast.error('Failed to load delivery check results.'); return; }
+        setDeliveryCheckRow(data ?? null);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [c.id, c.holdout_enabled]);
@@ -169,7 +166,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
       <Tabs tabs={[
         { id: 'overview', label: 'Performance' },
         { id: 'creative', label: 'Creative' },
-        ...(c.holdout_enabled ? [{ id: 'lift', label: 'Lift Test' }] : []),
+        ...(c.holdout_enabled ? [{ id: 'delivery-check', label: 'Delivery Check' }] : []),
         { id: 'settings', label: 'Settings' },
       ]} active={tab} onChange={setTab} />
 
@@ -248,8 +245,8 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
         </Card>
       )}
 
-      {tab === 'lift' && (
-        <LiftTestPanel holdoutEnabled={c.holdout_enabled} exposed={liftExposed} control={liftControl} />
+      {tab === 'delivery-check' && (
+        <DeliveryCheckPanel holdoutEnabled={c.holdout_enabled} row={deliveryCheckRow} />
       )}
 
       {tab === 'settings' && (
