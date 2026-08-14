@@ -38,9 +38,14 @@ Deno.serve(async (req: Request) => {
 
   const normalizedEmail = email.trim().toLowerCase();
 
+  // Only block on a user who actually completed sign-up (confirmed email).
+  // inviteUserByEmail itself creates an auth user immediately, before the
+  // invite is ever accepted -- so after the very first invite send, this
+  // email always shows up in listUsers() with email_confirmed_at still
+  // null. Blocking on presence alone made every "Resend" fail forever.
   const { data: existingUsers } = await supabase.auth.admin.listUsers();
   const alreadyExists = existingUsers?.users?.some(
-    (u) => u.email?.toLowerCase() === normalizedEmail,
+    (u) => u.email?.toLowerCase() === normalizedEmail && u.email_confirmed_at,
   );
   if (alreadyExists) {
     return new Response(
