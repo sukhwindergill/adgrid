@@ -10,6 +10,7 @@ import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { BenchmarkRow } from '../../components/shared/BenchmarkRow.jsx';
 
 const EMPTY_HOURLY = Array(24).fill(0);
 const EMPTY_DAY    = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
@@ -155,6 +156,19 @@ export function Analytics({ campaigns }) {
   const [customTo, setCustomTo] = useState('');
   const { isMobile } = useBreakpoint();
   const { stats, loading, hasReal, impressionTrend } = useImpressionStats(period, customFrom, customTo);
+  const [benchmark, setBenchmark] = useState(null);
+
+  useEffect(() => {
+    // Match on the venue mix this account actually runs on. With one
+    // dominant venue category today this is a single lookup; when the
+    // network diversifies, look up per campaign instead.
+    supabase
+      .from('benchmark_stats')
+      .select('venue_category, environment, campaign_category, campaign_count, advertiser_count, scan_rate_p25, scan_rate_p50, scan_rate_p75')
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => setBenchmark(data ?? null));
+  }, []);
 
   const totalImpr  = campaigns.reduce((a, c) => a + (c.impressions || 0), 0);
   const totalScans = campaigns.reduce((a, c) => a + (c.scans || 0), 0);
@@ -296,6 +310,19 @@ export function Analytics({ campaigns }) {
         <KPI label="QR Scans"          value={totalScans} sub="total scans" color={C.green} icon="📲" />
         <KPI label={hasReal ? 'Avg Attention' : 'Scan Rate'} value={hasReal ? `${avgAttn}%` : `${scanRate}%`} sub={hasReal ? 'frontal attention score' : 'scans / impressions'} icon="📊" />
       </div>
+
+      <BenchmarkRow
+        label="Scan rate"
+        value={Number(scanRate)}
+        stats={benchmark && {
+          p25: benchmark.scan_rate_p25,
+          p50: benchmark.scan_rate_p50,
+          p75: benchmark.scan_rate_p75,
+          campaign_count: benchmark.campaign_count,
+          advertiser_count: benchmark.advertiser_count,
+        }}
+        format={v => `${Number(v).toFixed(2)}%`}
+      />
 
       {/* Heatmap + Day bars */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
