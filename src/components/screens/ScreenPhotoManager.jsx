@@ -17,6 +17,8 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
 
   const frameFor = (url) => frames.find(f => f.url === url);
 
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
   const persistPhotos = (updated) => supabase.from('screens').update({ screen_photos: updated }).eq('id', screenId);
   const persistFrames = (updated) => supabase.from('screens').update({ screen_photo_frames: updated }).eq('id', screenId);
 
@@ -30,8 +32,12 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
     // having to reverse-engineer a path from its public URL.
     let failedUploads = 0;
     for (const file of toUpload) {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        failedUploads += 1;
+        continue;
+      }
       const path = `${screenId}/${crypto.randomUUID()}`;
-      const { error: uploadError } = await supabase.storage.from('screen-photos').upload(path, file);
+      const { error: uploadError } = await supabase.storage.from('screen-photos').upload(path, file, { contentType: file.type });
       if (!uploadError) {
         const { data } = supabase.storage.from('screen-photos').getPublicUrl(path);
         newUrls.push(data.publicUrl);

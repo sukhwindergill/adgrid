@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { validatePlayBatch } from "../_shared/playValidation.ts";
+import { requestTooLarge } from "../_shared/requestSize.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -15,6 +16,7 @@ const CORS = {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: CORS });
+  if (requestTooLarge(req, 1048576)) return new Response(JSON.stringify({ error: "Payload too large" }), { status: 413, headers: CORS });
 
   let body: { screen_token?: string; plays?: unknown };
   try {

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireCronSecret } from "../_shared/cronGuard.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -48,6 +49,9 @@ async function sendNotification(userId: string, type: string, data: Record<strin
 }
 
 Deno.serve(async (req: Request) => {
+  const denied = requireCronSecret(req);
+  if (denied) return denied;
+
   const body = await req.json().catch(() => ({}));
   const pendingOnly = body?.mode === "pending_only";
 

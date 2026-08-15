@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireCronSecret } from "../_shared/cronGuard.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -12,6 +13,9 @@ const OFFLINE_MINUTES = 60;
 const IDLE_MINUTES = 5;
 
 Deno.serve(async (_req: Request) => {
+  const denied = requireCronSecret(_req);
+  if (denied) return denied;
+
   const now = new Date();
   const offlineCutoff = new Date(now.getTime() - OFFLINE_MINUTES * 60 * 1000).toISOString();
   const idleCutoff = new Date(now.getTime() - IDLE_MINUTES * 60 * 1000).toISOString();
