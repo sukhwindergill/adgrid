@@ -210,7 +210,7 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
             />
             <span style={{ fontSize: 13, color: C.text, fontFamily: F.sans }}>
               <strong>Run a holdout test</strong> — we'll randomly hold back ~20% of screens as a control
-              group to measure whether this campaign actually drives scans, at no extra cost (control
+              group to check whether delivery matched the measured audience, at no extra cost (control
               screens aren't billed).
             </span>
           </label>
