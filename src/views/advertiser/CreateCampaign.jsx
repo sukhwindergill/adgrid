@@ -103,6 +103,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     duration: 15,
     slots: 10,
     start_when: 'partial',
+    holdout_enabled: false,
   });
 
   // Screen matching
@@ -287,6 +288,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         currency:              profile?.preferred_currency || 'cad',
         budget_mode:           form.budget_mode,
         start_when:            form.start_when,
+        holdout_enabled:       form.holdout_enabled,
         start_date:            form.start_date || null,
         end_date:              form.end_date || null,
         schedule_days:         form.schedule_days,
@@ -310,6 +312,22 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       }));
       const { error: screenErr } = await supabase.from('campaign_screens').insert(screenRows);
       if (screenErr) throw new Error(screenErr.message);
+
+      // Control-screen assignment is server-computed (never client-set --
+      // see the migration's comment on assign_holdout_control). A failure
+      // here does not roll back the campaign; it just means the holdout
+      // test won't have a control group, which the Lift Test panel's
+      // "still collecting data" state covers gracefully either way.
+      if (form.holdout_enabled) {
+        const { data: { session: holdoutSession } } = await supabase.auth.getSession();
+        if (holdoutSession) {
+          await fetch(`${SUPABASE_FUNCTIONS_URL}/assign-holdout-control`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${holdoutSession.access_token}` },
+            body: JSON.stringify({ campaign_id: campaignId }),
+          }).catch(() => {});
+        }
+      }
 
       if (isMulti) {
         const { data: creativeRows, error: creativesErr } = await supabase
@@ -495,7 +513,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         </div>
       )}
 
-      {step === 0 && <StepTargeting form={form} setForm={setForm} reachSummary={reachSummary} allScreens={dbScreens} onPrevCampaigns={campaigns.length > 0 ? () => setShowDupModal(true) : null} existingCampaign={existingCampaign} />}
+      {step === 0 && <StepTargeting form={form} setForm={setForm} reachSummary={reachSummary} matchedScreenCount={matchedScreens.length} allScreens={dbScreens} onPrevCampaigns={campaigns.length > 0 ? () => setShowDupModal(true) : null} existingCampaign={existingCampaign} />}
       {step === 1 && <StepCreative form={form} setForm={setForm} matchedScreens={matchedScreens} />}
       {step === 2 && <StepBudgetReview form={form} setForm={setForm} matchedScreens={selectedScreens} profile={profile} onSubmit={handleSubmit} submitting={submitting} err={submitErr} canChooseBilling={canChooseBilling} billedTo={billedTo} setBilledTo={setBilledTo} />}
       {step === 3 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} requiresAction={requiresAction} onGoToBilling={() => navigate('/app/adv-billing')} />}

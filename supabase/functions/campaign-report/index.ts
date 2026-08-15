@@ -42,7 +42,7 @@ Deno.serve(async (req: Request) => {
   // exposing the account behind them.
   const { data: campaign } = await supabase
     .from("bookings")
-    .select("id, campaign_name, advertiser_name, category, start_date, end_date, currency")
+    .select("id, campaign_name, advertiser_name, category, start_date, end_date, currency, holdout_enabled")
     .eq("id", campaignId)
     .single();
 
@@ -57,6 +57,16 @@ Deno.serve(async (req: Request) => {
     .select("expected_plays, delivered_plays, delivery_pct, offline_days")
     .eq("campaign_id", campaignId)
     .maybeSingle();
+
+  let deliveryCheck = null;
+  if (campaign?.holdout_enabled) {
+    const { data: row } = await supabase
+      .from("delivery_check_stats")
+      .select("exposed_impressions, exposed_play_minutes, exposed_rate, control_rate")
+      .eq("campaign_id", campaignId)
+      .maybeSingle();
+    deliveryCheck = row ?? null;
+  }
 
   const rows = delivery ?? [];
   const totals = {
@@ -86,5 +96,6 @@ Deno.serve(async (req: Request) => {
     totals,
     daily: rows,
     health: health ?? null,
+    deliveryCheck,
   }), { headers: CORS });
 });

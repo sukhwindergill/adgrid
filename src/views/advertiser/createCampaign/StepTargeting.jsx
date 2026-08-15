@@ -12,7 +12,7 @@ import { ScreenMap } from './ScreenMap.jsx';
 
 const countryLabel = code => COUNTRIES.find(c => c.code === code)?.label ?? code;
 
-export function StepTargeting({ form, setForm, reachSummary, allScreens, onPrevCampaigns, existingCampaign = null }) {
+export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount, allScreens, onPrevCampaigns, existingCampaign = null }) {
   const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
 
   const loading = allScreens.length === 0;
@@ -195,6 +195,25 @@ export function StepTargeting({ form, setForm, reachSummary, allScreens, onPrevC
           <div style={{ marginTop: 16, padding: '10px 14px', background: C.purpleSoft, borderRadius: 8, fontSize: 13, color: C.purple, fontFamily: F.sans }}>
             {reachSummary}
           </div>
+        )}
+
+        {matchedScreenCount >= 10 && (
+          <label style={{
+            display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 12,
+            padding: '10px 14px', border: `1px solid ${C.border}`, borderRadius: 8, cursor: 'pointer',
+          }}>
+            <input
+              type="checkbox"
+              checked={form.holdout_enabled}
+              onChange={e => setForm(s => ({ ...s, holdout_enabled: e.target.checked }))}
+              style={{ marginTop: 2 }}
+            />
+            <span style={{ fontSize: 13, color: C.text, fontFamily: F.sans }}>
+              <strong>Run a holdout test</strong> — we'll randomly hold back ~20% of screens as a control
+              group to check whether delivery matched the measured audience, at no extra cost (control
+              screens aren't billed).
+            </span>
+          </label>
         )}
       </Card>
     </div>
