@@ -16,6 +16,7 @@ import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS } from '../../lib/venueTypes.js';
 import { healthSignal, cvAgentSignal } from '../../lib/screenHealth.js';
 import { checkAndGoLive } from '../../lib/screenGoLive.js';
+import { ScreenLocationPicker } from '../../components/ScreenLocationPicker.jsx';
 
 async function startStripeConnect(setConnecting) {
   setConnecting(true);
@@ -71,8 +72,8 @@ function DetailsTab({ screen, onSaved }) {
     venue_subtype:   screen.venue_subtype || '',
     environment:     screen.environment || '',
     screen_position: screen.screen_position || '',
-    lat:             screen.lat != null ? String(screen.lat) : '',
-    lon:             screen.lon != null ? String(screen.lon) : '',
+    lat:             screen.lat != null ? screen.lat : null,
+    lon:             screen.lon != null ? screen.lon : null,
   });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -92,13 +93,13 @@ function DetailsTab({ screen, onSaved }) {
       venue_subtype:   fields.venue_subtype || null,
       environment:     fields.environment || null,
       screen_position: fields.screen_position || null,
-      lat:             fields.lat ? parseFloat(fields.lat) : null,
-      lon:             fields.lon ? parseFloat(fields.lon) : null,
+      lat:             fields.lat,
+      lon:             fields.lon,
     }).eq('id', screen.id);
     setSaving(false);
     if (error) { setMsg({ ok: false, text: error.message }); return; }
     setMsg({ ok: true, text: 'Changes saved.' });
-    onSaved?.({ ...screen, ...fields, lat: fields.lat ? parseFloat(fields.lat) : null, lon: fields.lon ? parseFloat(fields.lon) : null });
+    onSaved?.({ ...screen, ...fields });
   };
 
   return (
@@ -148,11 +149,18 @@ function DetailsTab({ screen, onSaved }) {
             <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Screen Position</div>
             <PillGroup options={SCREEN_POSITION_OPTIONS} value={fields.screen_position} onChange={val => set('screen_position', val)} />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Inp label="Latitude (optional)" type="number" step="any" placeholder="e.g. 43.6532"
-              value={fields.lat} onChange={e => set('lat', e.target.value)} />
-            <Inp label="Longitude (optional)" type="number" step="any" placeholder="e.g. -79.3832"
-              value={fields.lon} onChange={e => set('lon', e.target.value)} />
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>
+              Screen Location
+            </div>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 8 }}>
+              Advertisers searching by radius can't find this screen without a pinned location, and it's
+              excluded from audience reach estimates.
+            </div>
+            <ScreenLocationPicker
+              value={fields.lat != null && fields.lon != null ? { lat: fields.lat, lng: fields.lon } : null}
+              onChange={({ lat, lng }) => setFields(s => ({ ...s, lat, lon: lng }))}
+            />
           </div>
         </div>
         {msg && (
