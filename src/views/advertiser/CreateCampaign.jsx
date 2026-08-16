@@ -13,6 +13,7 @@ import { formatCurrency } from '../../lib/formatCurrency.js';
 import { haversineKm } from '../../lib/geo.js';
 import { isValidDestinationUrl, normalizeDestinationUrl } from '../../lib/destinationUrl.js';
 import { buildPreviewCampaign } from '../../lib/buildPreviewCampaign.js';
+import { sanitizeText } from '../../lib/sanitizeText.js';
 import { makeBlankCreative, reconcileAssignments } from '../../lib/creativeAssignment.js';
 import { Stepper } from './createCampaign/Stepper.jsx';
 import { StepTargeting } from './createCampaign/StepTargeting.jsx';
@@ -234,8 +235,13 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
   }, [duplicateFrom]);
 
   const handleSubmit = async () => {
-    if (!form.budget || parseFloat(form.budget) <= 0) {
+    const budgetValue = parseFloat(form.budget);
+    if (!form.budget || budgetValue <= 0) {
       setSubmitErr('Enter a budget greater than 0 before submitting.');
+      return;
+    }
+    if (budgetValue > 1000000) {
+      setSubmitErr('Budget cannot exceed $1,000,000.');
       return;
     }
     setSubmitting(true);
@@ -273,8 +279,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         campaign_id:           parentCampaignId,
         budget_level:          isMulti ? form.budget_level : 'unified',
         advertiser_id:         user.id,
-        campaign_name:         form.name || null,
-        advertiser_name:       profile?.name || user.email?.split('@')[0] || 'Advertiser',
+        campaign_name:         form.name ? sanitizeText(form.name, 200) : null,
+        advertiser_name:       sanitizeText(profile?.name || user.email?.split('@')[0] || 'Advertiser', 200),
         screen_name:           firstScreen?.name || '',
         city:                  form.city || form.state || form.country || '',
         ...preview,
