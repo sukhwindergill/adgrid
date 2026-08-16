@@ -1,0 +1,33 @@
+-- ============================================================
+-- CRITICAL FIX: screen_audience_index leaked cross-operator footfall data
+-- to any authenticated user, and to unauthenticated requests.
+--
+-- 20260724000001 created this materialized view (per-screen hourly
+-- averages of people_per_min/avg_dwell_s/avg_attention, aggregated from
+-- impression_events) with the default privilege set new objects get in this
+-- project's public schema: anon=arwdDxtm, authenticated=arwdDxtm. Materialized
+-- views do NOT inherit the underlying tables' RLS in Postgres -- there is no
+-- way to attach a policy to a matview at all -- so impression_events' own
+-- access controls never applied here.
+--
+-- get_advisors has flagged this ("Materialized view screen_audience_index is
+-- selectable by anon or authenticated roles") since it shipped three weeks
+-- ago; never addressed. Confirmed live, not a linter false-positive:
+-- authenticated as one real operator, queried this view directly, got back
+-- footfall data for screens owned by a DIFFERENT operator -- zero ownership
+-- scoping. Confirmed the anon role gets the identical result: no login
+-- required at all. Not personal data (aggregated, anonymous), but real
+-- competitively-sensitive business data (per-venue hourly traffic patterns),
+-- freely scrapeable. Nothing in the app currently reads this view (grepped
+-- src/ and supabase/functions/ -- zero references), so this is dead,
+-- unused surface area, not a feature regression.
+--
+-- Fix: revoke anon/authenticated entirely, matching the same deny-all
+-- pattern already used for approval_tokens/cities. If a real feature needs
+-- this data later, expose it through a SECURITY INVOKER view or RPC that
+-- joins screens and lets that table's own operator_id RLS apply, not a bare
+-- grant on the matview.
+-- ============================================================
+
+REVOKE ALL ON public.screen_audience_index FROM anon, authenticated;
+GRANT SELECT ON public.screen_audience_index TO service_role;
