@@ -4,7 +4,7 @@ import { ScreenCard } from '../../components/screens/ScreenCard';
 
 const baseScreen = {
   id: '1', name: 'Lobby Screen', venue_category: 'retail', venue_subtype: 'Clothing',
-  address_city: 'Toronto', health_status: null, last_seen: new Date().toISOString(), screen_photos: [],
+  city: 'Toronto', health_status: null, last_seen: new Date().toISOString(), screen_photos: [],
 };
 
 const screenWithPhoto = { ...baseScreen, screen_photos: ['https://example.com/photo.jpg'] };
