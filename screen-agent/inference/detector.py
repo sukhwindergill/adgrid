@@ -39,6 +39,15 @@ FRAME_PATH      = os.path.join(FRAME_DIR, "latest.jpg")
 FRAME_INTERVAL_S  = float(os.getenv("FRAME_INTERVAL_S", "1"))
 DEMOGRAPHICS_SKIP = max(1, int(os.getenv("DEMOGRAPHICS_FRAME_SKIP", "3")))
 
+# If latest.jpg stops advancing (camera frozen without cap.read() raising, or
+# capture container mid-restart) this loop would otherwise keep detecting the
+# same static frame — dwell time climbs, attention scores compute, and a
+# fabricated "engaged viewer" gets pushed as real audience data. Gate on
+# mtime: a frame is only usable if it's newer than the last one we processed
+# AND not older than FRAME_STALE_S. Default covers several missed capture
+# cycles (capture writes every 1/CAPTURE_FPS seconds) before calling it stale.
+FRAME_STALE_S = float(os.getenv("FRAME_STALE_S", "10"))
+
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 mp_face = mp.solutions.face_detection
@@ -48,6 +57,11 @@ mp_mesh = mp.solutions.face_mesh
 # Key: approximate face region hash, Value: first_seen timestamp
 face_tracker: dict[str, float] = {}
 POSITION_BUCKET = 80  # pixels — bucket size for position-based tracking
+
+# mtime of the last frame actually processed — persists across windows so a
+# camera that dies mid-window stays flagged stale at the start of the next
+# one too, instead of resetting the freshness check every 30s.
+_last_frame_mtime: float | None = None
 
 def bucket_pos(x, y):
     return (x // POSITION_BUCKET, y // POSITION_BUCKET)
@@ -83,7 +97,13 @@ def classify_age(age_val):
     return "55_plus"
 
 def run_window():
-    """Collect stats for one WINDOW_SECONDS period, write result JSON."""
+    """Collect stats for one WINDOW_SECONDS period, write result JSON.
+
+    Returns False (no result written) if every frame seen this window was
+    stale — camera's dead/frozen, and a zeroed or stale-derived result would
+    misrepresent that as "measured, nobody's there" instead of "unmeasured."
+    """
+    global _last_frame_mtime
     from deepface import DeepFace
 
     window_start = datetime.now(timezone.utc)
@@ -99,6 +119,7 @@ def run_window():
     face_tracker.clear()
     end_time = time.time() + WINDOW_SECONDS
     frame_counter = 0
+    fresh_frames = 0
 
     with mp_face.FaceDetection(min_detection_confidence=0.5) as detector, \
          mp_mesh.FaceMesh(static_image_mode=True, max_num_faces=10, min_detection_confidence=0.4) as mesher:
@@ -110,10 +131,27 @@ def run_window():
                 time.sleep(FRAME_INTERVAL_S)
                 continue
 
+            try:
+                mtime = os.path.getmtime(FRAME_PATH)
+            except OSError:
+                time.sleep(FRAME_INTERVAL_S)
+                continue
+
+            is_new = _last_frame_mtime is None or mtime > _last_frame_mtime
+            is_recent = (time.time() - mtime) <= FRAME_STALE_S
+            if not (is_new and is_recent):
+                # Same frame as last pass, or old enough the capture side has
+                # likely stalled/restarted — don't detect off it.
+                time.sleep(FRAME_INTERVAL_S)
+                continue
+
             frame = cv2.imread(FRAME_PATH)
             if frame is None:
                 time.sleep(FRAME_INTERVAL_S)
                 continue
+
+            _last_frame_mtime = mtime
+            fresh_frames += 1
 
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             h, w = frame.shape[:2]
@@ -190,6 +228,15 @@ def run_window():
 
             time.sleep(FRAME_INTERVAL_S)
 
+    if fresh_frames == 0:
+        # Camera never produced a usable frame this whole window — dead,
+        # frozen, or mid-restart. Write nothing rather than a fabricated
+        # zero-people result; a real empty room still has fresh frames, this
+        # is "unmeasured," not "measured and empty."
+        print(f"[inference] WARN: no fresh frames in this {WINDOW_SECONDS}s window — "
+              "camera likely stalled/disconnected, skipping result", flush=True)
+        return False
+
     window_end = datetime.now(timezone.utc)
     avg_dwell = round(sum(stats["dwell_samples"]) / max(len(stats["dwell_samples"]), 1), 2)
     avg_attention = round(sum(stats["attention_samples"]) / max(len(stats["attention_samples"]), 1), 3)
@@ -217,6 +264,7 @@ def run_window():
 
     print(f"[inference] Window {ts}: {result['people_count']} people, "
           f"dwell={avg_dwell}s, attention={avg_attention}", flush=True)
+    return True
 
 
 if __name__ == "__main__":
