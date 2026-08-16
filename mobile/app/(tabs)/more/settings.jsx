@@ -14,7 +14,7 @@ import { C, F } from '../../../lib/tokens';
 export default function SettingsScreen() {
   const router = useRouter();
   const { profile } = useAuth();
-  const [name, setName] = useState(profile?.full_name || '');
+  const [name, setName] = useState(profile?.name || '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -23,7 +23,10 @@ export default function SettingsScreen() {
     if (!name.trim()) { setError('Name is required'); return; }
     if (!profile?.id) { setError('Profile not loaded. Pull to refresh and try again.'); return; }
     setError(''); setSaving(true);
-    const { error: err } = await supabase.from('profiles').update({ full_name: name.trim() }).eq('id', profile.id);
+    // profiles.name, not full_name -- full_name never existed, confirmed
+    // against the live schema. Every save failed, unconditionally, and the
+    // field never showed the real name on load either.
+    const { error: err } = await supabase.from('profiles').update({ name: name.trim() }).eq('id', profile.id);
     setSaving(false);
     if (err) setError(err.message);
     else { setSuccess(true); setTimeout(() => setSuccess(false), 2000); }

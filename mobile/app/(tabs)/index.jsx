@@ -18,7 +18,7 @@ export default function DashboardScreen() {
   const { profile } = useAuth();
   const { totalScreens, liveScreens, pendingApprovals, revenueThisMonth, loading } = useDashboard(profile?.id);
   const { screens, loading: screensLoading, refetch } = useScreens(profile?.id);
-  const firstName = profile?.full_name?.split(' ')[0] || 'Operator';
+  const firstName = profile?.name?.split(' ')[0] || 'Operator';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
