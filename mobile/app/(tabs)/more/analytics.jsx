@@ -24,8 +24,18 @@ export default function AnalyticsScreen() {
       setLoading(true);
       const screenIds = screens.map(s => s.id);
       if (screenIds.length === 0) { setLoading(false); return; }
-      const { count: impressions } = await supabase
-        .from('impressions').select('id', { count: 'exact', head: true }).in('screen_id', screenIds);
+      // impressions doesn't exist as a table -- impression_events is the
+      // real one, and it stores aggregated 30s-window rows (people_count
+      // per window), not one row per impression, so a plain row count would
+      // be wrong even with the right table name. Sum people_count instead,
+      // matching how web's Analytics.jsx computes the same "Total
+      // Impressions" figure. No date-range filter here (unlike web's
+      // period selector) -- this screen shows an all-time total by design;
+      // worth revisiting with a server-side aggregate if a screen
+      // accumulates enough windows for this to become a lot of rows.
+      const { data: impressionRows } = await supabase
+        .from('impression_events').select('people_count').in('screen_id', screenIds);
+      const impressions = (impressionRows || []).reduce((a, r) => a + (r.people_count || 0), 0);
       const { count: active } = await supabase
         .from('campaign_screens').select('id', { count: 'exact', head: true }).in('screen_id', screenIds).eq('status', 'approved');
       setStats({ totalImpressions: impressions || 0, activeCampaigns: active || 0 });
