@@ -541,6 +541,13 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [], onAppro
     setBulkErrors([]);
     const { data: { session } } = await supabase.auth.getSession();
     const failures = [];
+    // Campaigns whose charge failed for "no payment method on file" -- the
+    // solo approveScreen/approveAll path gates this behind an explicit
+    // confirm() before scheduling unpaid; collect them here instead of
+    // scheduling immediately, so bulk-approve asks the same question once
+    // for the whole batch rather than silently defaulting to "schedule
+    // anyway" for every affected campaign.
+    const needsConsent = [];
     await runInChunks(enriched, async (campaign) => {
       const rows = campaign.campaign_screens.filter(r => myScreens.some(s => s.id === r.screen_id) && r.status === 'pending');
       if (rows.length === 0) return;
@@ -578,17 +585,30 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [], onAppro
               const body = await res.json().catch(() => ({}));
               const msg = body.error ?? '';
               const isNoPayment = msg.toLowerCase().includes('no payment') || msg.toLowerCase().includes('no card');
-              if (isNoPayment) {
-                await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
-                setCampaigns(prev => prev.map(x =>
-                  x.id === campaign.id ? { ...x, status: 'scheduled' } : x
-                ));
-              }
+              if (isNoPayment) needsConsent.push(campaign);
             }
           } catch { /* silent — approval already succeeded */ }
         }
       }
     }, BULK_CHUNK_SIZE);
+
+    if (needsConsent.length > 0) {
+      const names = needsConsent.map(c => c.advertiser_name || c.advertiser).join(', ');
+      const scheduleAnyway = await confirm({
+        title: `Approve ${needsConsent.length} without charging?`,
+        message: `${names} — no payment method on file.\n\nYou can collect payment manually.`,
+        confirmLabel: 'Approve anyway',
+        danger: false,
+      });
+      if (scheduleAnyway) {
+        await Promise.all(needsConsent.map(campaign =>
+          supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id)
+        ));
+        const scheduledIds = new Set(needsConsent.map(c => c.id));
+        setCampaigns(prev => prev.map(x => scheduledIds.has(x.id) ? { ...x, status: 'scheduled' } : x));
+      }
+    }
+
     setBulkErrors(failures);
     setBulkApproving(false);
     onApprovalChange?.();
