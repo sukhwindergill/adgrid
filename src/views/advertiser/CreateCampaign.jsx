@@ -311,30 +311,21 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
       });
       if (bookingErr) throw new Error(bookingErr.message);
 
-      const screenRows = form.selected_screen_ids.map(screen_id => ({
-        campaign_id: campaignId,
-        screen_id,
-        status: matchedScreens.find(s => s.id === screen_id)?.auto_approve ? 'auto_approved' : 'pending',
-      }));
-      const { error: screenErr } = await supabase.from('campaign_screens').insert(screenRows);
-      if (screenErr) throw new Error(screenErr.message);
-
-      // Control-screen assignment is server-computed (never client-set --
-      // see the migration's comment on assign_holdout_control). A failure
-      // here does not roll back the campaign; it just means the holdout
-      // test won't have a control group, which the Lift Test panel's
-      // "still collecting data" state covers gracefully either way.
-      if (form.holdout_enabled) {
-        const { data: { session: holdoutSession } } = await supabase.auth.getSession();
-        if (holdoutSession) {
-          await fetch(`${SUPABASE_FUNCTIONS_URL}/assign-holdout-control`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${holdoutSession.access_token}` },
-            body: JSON.stringify({ campaign_id: campaignId }),
-          }).catch(() => {});
-        }
-      }
-
+      // campaign_creative_screens is inserted BEFORE campaign_screens on
+      // purpose. reset_screen_approval_on_creative_change() (an AFTER
+      // INSERT/DELETE trigger on campaign_creative_screens) resets any
+      // campaign_screens row already sitting at approved/auto_approved back
+      // to pending -- correct for an advertiser editing an existing,
+      // already-reviewed campaign, but on a *brand-new* submission it has no
+      // way to tell that apart from "this row was inserted 200ms ago and
+      // never got to actually be auto-approved for anything." Inserting
+      // campaign_creative_screens first means the trigger's UPDATE runs
+      // against a campaign_id with zero campaign_screens rows yet -- a
+      // harmless no-op -- instead of immediately reverting the
+      // just-set auto_approved status the moment a multi-creative campaign
+      // (2+ creatives, the normal case, not an edge case) is created.
+      // campaign_creative_screens.screen_id references screens(id) directly,
+      // not campaign_screens, so this ordering has no FK dependency issue.
       if (isMulti) {
         const { data: creativeRows, error: creativesErr } = await supabase
           .from('campaign_creatives')
@@ -367,6 +358,30 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
         if (creativeScreenRows.length > 0) {
           const { error: assignErr } = await supabase.from('campaign_creative_screens').insert(creativeScreenRows);
           if (assignErr) throw new Error(assignErr.message);
+        }
+      }
+
+      const screenRows = form.selected_screen_ids.map(screen_id => ({
+        campaign_id: campaignId,
+        screen_id,
+        status: matchedScreens.find(s => s.id === screen_id)?.auto_approve ? 'auto_approved' : 'pending',
+      }));
+      const { error: screenErr } = await supabase.from('campaign_screens').insert(screenRows);
+      if (screenErr) throw new Error(screenErr.message);
+
+      // Control-screen assignment is server-computed (never client-set --
+      // see the migration's comment on assign_holdout_control). A failure
+      // here does not roll back the campaign; it just means the holdout
+      // test won't have a control group, which the Lift Test panel's
+      // "still collecting data" state covers gracefully either way.
+      if (form.holdout_enabled) {
+        const { data: { session: holdoutSession } } = await supabase.auth.getSession();
+        if (holdoutSession) {
+          await fetch(`${SUPABASE_FUNCTIONS_URL}/assign-holdout-control`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${holdoutSession.access_token}` },
+            body: JSON.stringify({ campaign_id: campaignId }),
+          }).catch(() => {});
         }
       }
 
