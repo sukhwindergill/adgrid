@@ -442,6 +442,7 @@ function AppInner() {
       if (active === 'adv-create')       return (
         <CreateCampaign
           dbScreens={dbScreens}
+          screensLoading={dataLoading}
           campaigns={advertiserCampaigns}
           existingCampaign={addingToCampaign}
           duplicateFrom={duplicatingCampaign}
