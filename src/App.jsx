@@ -59,6 +59,7 @@ const AdminInvites = lazy(() => import('./views/admin/AdminInvites.jsx').then(m 
 // Public views (no auth required) — also lazy so the marketing/display
 // bundles don't ship with the authenticated dashboard's first paint.
 const InviteAcceptPage = lazy(() => import('./views/invite/InviteAcceptPage.jsx').then(m => ({ default: m.InviteAcceptPage })));
+const ScreenInvitePage = lazy(() => import('./views/invite/ScreenInvitePage.jsx').then(m => ({ default: m.ScreenInvitePage })));
 const DisplayPlayer  = lazy(() => import('./views/display/DisplayPlayer.jsx').then(m => ({ default: m.DisplayPlayer })));
 const MarketingHome  = lazy(() => import('./views/marketing/Home.jsx').then(m => ({ default: m.MarketingHome })));
 const NotFound       = lazy(() => import('./views/marketing/NotFound.jsx').then(m => ({ default: m.NotFound })));
@@ -103,6 +104,10 @@ function AppInner() {
   const [dataLoading,      setDataLoading]   = useState(false);
   const [loadError,        setLoadError]     = useState(null);
   const [selectedScreenId, setSelectedScreenId] = useState(null);
+  const [presetScreenIds, setPresetScreenIds] = useState(() => {
+    const id = sessionStorage.getItem('adgrid_preset_screen_id')
+    return id ? [id] : null
+  })
   const [approvalRefreshKey, setApprovalRefreshKey] = useState(0);
   const bumpApprovalRefresh = useCallback(() => setApprovalRefreshKey(k => k + 1), []);
   const pendingCount = usePendingApprovalCount(myScreens.map(s => s.id), approvalRefreshKey);
@@ -270,7 +275,11 @@ function AppInner() {
   // to the overview and discarding their in-progress form state.
   useEffect(() => {
     if (user && activeMode) {
-      navTo(activeMode === 'advertiser' ? 'adv-overview' : 'overview');
+      if (presetScreenIds && activeMode === 'advertiser') {
+        navTo('adv-create');
+      } else {
+        navTo(activeMode === 'advertiser' ? 'adv-overview' : 'overview');
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, activeMode]);
@@ -445,14 +454,29 @@ function AppInner() {
           screensLoading={dataLoading}
           campaigns={advertiserCampaigns}
           existingCampaign={addingToCampaign}
+          presetScreenIds={presetScreenIds}
           duplicateFrom={duplicatingCampaign}
           onSave={c => {
             setCampaigns(p => [c, ...p]);
             setAddingToCampaign(null);
             setDuplicatingCampaign(null);
+            if (presetScreenIds) {
+              sessionStorage.removeItem('adgrid_preset_screen_id');
+              sessionStorage.removeItem('adgrid_pending_screen_invite_token');
+              setPresetScreenIds(null);
+            }
             navTo('adv-campaigns');
           }}
-          onCancel={() => { setAddingToCampaign(null); setDuplicatingCampaign(null); navTo('adv-overview'); }}
+          onCancel={() => {
+            setAddingToCampaign(null);
+            setDuplicatingCampaign(null);
+            if (presetScreenIds) {
+              sessionStorage.removeItem('adgrid_preset_screen_id');
+              sessionStorage.removeItem('adgrid_pending_screen_invite_token');
+              setPresetScreenIds(null);
+            }
+            navTo('adv-overview');
+          }}
         />
       );
       if (active === 'adv-campaigns')    return <Campaigns campaigns={advertiserCampaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} allowCancel />;
@@ -584,6 +608,7 @@ export default function App() {
         <Route path="/thank-you" element={<ThankYou />} />
         <Route path="/display/:token" element={<DisplayPlayerRoute />} />
         <Route path="/report/:token" element={<CampaignReport />} />
+        <Route path="/invite/screen/:token" element={<ScreenInvitePage />} />
         <Route path="/invite/:token" element={<InviteAcceptPage />} />
         <Route path="/app/accounts" element={<RequireAuth><AccountHubRoute /></RequireAuth>} />
         <Route

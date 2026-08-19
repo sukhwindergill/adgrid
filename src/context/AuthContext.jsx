@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { SUPABASE_FUNCTIONS_URL } from '../lib/constants.js'
 
 const AuthContext = createContext({})
 
@@ -29,6 +30,41 @@ export function AuthProvider({ children }) {
       setActiveModeState(mode)
       localStorage.removeItem('adgrid_signup_intent')
       supabase.from('profiles').update({ active_mode: mode }).eq('id', userId).then(() => {})
+
+      // Screen-invite conversion: set by ScreenInvitePage's "Get Started"
+      // button at localStorage.setItem time, well before signUp() ran --
+      // localStorage (not sessionStorage) is required here because email
+      // confirmation is mandatory in this project (see LoginPage's "Check
+      // your email to confirm your account" message) and the confirmation
+      // click can land back in a fresh tab/session, which sessionStorage
+      // would not survive.
+      const inviteToken = localStorage.getItem('adgrid_screen_invite_token')
+      if (inviteToken) {
+        localStorage.removeItem('adgrid_screen_invite_token')
+        // Awaited (not fire-and-forget): Task 11's AppInner reads
+        // sessionStorage.adgrid_preset_screen_id via a lazy useState
+        // initializer that only runs once, at first mount -- which happens
+        // as soon as fetchProfile resolves and loading flips to false. The
+        // sessionStorage write below must land before that happens, or
+        // Task 11 can never see it.
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session) {
+            const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/accept-screen-invite`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+              body: JSON.stringify({ token: inviteToken }),
+            })
+            const result = res.ok ? await res.json() : null
+            if (result?.screen_id) {
+              sessionStorage.setItem('adgrid_preset_screen_id', result.screen_id)
+              sessionStorage.setItem('adgrid_pending_screen_invite_token', inviteToken)
+            }
+          }
+        } catch {
+          // best-effort -- any failure (getSession, fetch, json parse) must never block login
+        }
+      }
     } else {
       setActiveModeState(data?.active_mode ?? 'advertiser')
     }
@@ -181,6 +217,8 @@ export function AuthProvider({ children }) {
     setGrants([])
     sessionStorage.removeItem('adgrid_active_account')
     sessionStorage.removeItem('adgrid_hub_visited')
+    sessionStorage.removeItem('adgrid_preset_screen_id')
+    sessionStorage.removeItem('adgrid_pending_screen_invite_token')
   }
 
   async function signInWithOAuth(provider) {

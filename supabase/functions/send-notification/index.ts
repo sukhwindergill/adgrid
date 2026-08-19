@@ -263,6 +263,26 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
       d.acceptUrl ?? "",
     ),
   }),
+  screen_invite_signed_up: (d) => ({
+    title: "Your invite was accepted",
+    body: `Someone you invited to advertise on ${d.screenName} just signed up.`,
+    html: emailHtml(
+      "Your invite was accepted",
+      `Someone you invited to advertise on <strong>${d.screenName}</strong> just signed up. Keep an eye on your screen's invite list to see if they book.`,
+      "View Screen",
+      d.appUrl ?? "",
+    ),
+  }),
+  screen_invite_booked: (d) => ({
+    title: "Your invite turned into a booking",
+    body: `Someone you invited just booked a campaign on ${d.screenName}.`,
+    html: emailHtml(
+      "Your invite turned into a booking",
+      `Someone you invited to advertise on <strong>${d.screenName}</strong> just submitted a real campaign. Check your Approval Queue.`,
+      "View Approval Queue",
+      d.appUrl ?? "",
+    ),
+  }),
 };
 
 function emailHtml(title: string, body: string, ctaLabel: string, ctaUrl: string): string {
