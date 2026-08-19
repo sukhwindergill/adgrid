@@ -3,14 +3,17 @@ import { C, F } from '../../design/tokens.js';
 
 const ToastContext = createContext(null);
 
+const UNDO_TIMEOUT_MS = 6000;
+
 export function ToastProvider({ children }) {
-  const [toast, setToast] = useState(null); // { message, variant: 'success'|'error' }
+  const [toast, setToast] = useState(null); // { message, variant: 'success'|'error', action?: { label, onClick } }
   const timerRef = useRef(null);
 
-  const show = useCallback((message, variant = 'error') => {
+  const show = useCallback((message, variant = 'error', action = null) => {
     if (timerRef.current) clearTimeout(timerRef.current);
-    setToast({ message, variant });
-    timerRef.current = setTimeout(() => setToast(null), 4000);
+    setToast({ message, variant, action });
+    const timeout = action ? UNDO_TIMEOUT_MS : 4000;
+    timerRef.current = setTimeout(() => setToast(null), timeout);
   }, []);
 
   const dismiss = useCallback(() => {
@@ -21,16 +24,17 @@ export function ToastProvider({ children }) {
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
   return (
-    <ToastContext.Provider value={{ show }}>
+    <ToastContext.Provider value={{ show, dismiss }}>
       {children}
       {toast && (
         <div
           onClick={dismiss}
           style={{
             position: 'fixed', bottom: 24, right: 24, zIndex: 9998,
+            display: 'flex', alignItems: 'center', gap: 14,
             padding: '12px 16px', borderRadius: 10, cursor: 'pointer',
             fontFamily: F.sans, fontSize: 13, fontWeight: 500,
-            maxWidth: 360,
+            maxWidth: 400,
             background: toast.variant === 'success' ? C.greenSoft : C.redSoft,
             border: `1px solid ${toast.variant === 'success' ? C.greenBorder : C.redBorder}`,
             color: toast.variant === 'success' ? C.green : C.red,
@@ -38,7 +42,19 @@ export function ToastProvider({ children }) {
             animation: 'toast-in 0.2s ease',
           }}
         >
-          {toast.message}
+          <span>{toast.message}</span>
+          {toast.action && (
+            <button
+              onClick={e => { e.stopPropagation(); toast.action.onClick(); dismiss(); }}
+              style={{
+                flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer',
+                fontFamily: F.sans, fontSize: 13, fontWeight: 700,
+                color: 'inherit', textDecoration: 'underline', padding: 0,
+              }}
+            >
+              {toast.action.label}
+            </button>
+          )}
           <style>{`@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
         </div>
       )}
@@ -52,5 +68,9 @@ export function useToast() {
   return {
     error: (msg) => ctx.show(msg, 'error'),
     success: (msg) => ctx.show(msg, 'success'),
+    // Shows a success toast with an "Undo" action that stays up longer than
+    // a normal toast. onUndo is called once, on click, then the toast
+    // dismisses immediately -- it does not also wait out the timeout.
+    undo: (msg, onUndo, label = 'Undo') => ctx.show(msg, 'success', { label, onClick: onUndo }),
   };
 }

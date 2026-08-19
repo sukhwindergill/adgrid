@@ -15,6 +15,11 @@ const SCREEN_B = {
   impressions: 210000,
 };
 
+const SCREEN_CAPPED = {
+  id: 'scr-3', name: 'Subway Platform — King St', city: 'London', environment: 'indoor',
+  impressions: 50000, max_ad_duration: 15,
+};
+
 const baseForm = {
   area_type: 'city',
   country: 'CA',
@@ -141,5 +146,86 @@ describe('StepBudgetReview', () => {
     );
     expect(screen.getByText(/Budget may be too low/)).toBeInTheDocument();
     expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+  });
+
+  it('warns when the chosen duration exceeds a selected screen\'s max_ad_duration', () => {
+    const form = { ...baseForm, duration: 30 };
+    render(
+      <StepBudgetReview
+        form={form}
+        setForm={() => {}}
+        matchedScreens={[SCREEN_A, SCREEN_CAPPED]}
+        profile={null}
+        onSubmit={() => {}}
+        submitting={false}
+        err={null}
+        canChooseBilling={false}
+        billedTo="client"
+        setBilledTo={() => {}}
+      />
+    );
+    expect(screen.getByText(/1 of 2 selected screens cap ad duration below 30s/)).toBeInTheDocument();
+    expect(screen.getByText(/Subway Platform — King St/)).toBeInTheDocument();
+  });
+
+  it('does not warn when every selected screen has no configured max_ad_duration', () => {
+    const form = { ...baseForm, duration: 30 };
+    render(
+      <StepBudgetReview
+        form={form}
+        setForm={() => {}}
+        matchedScreens={[SCREEN_A, SCREEN_B]}
+        profile={null}
+        onSubmit={() => {}}
+        submitting={false}
+        err={null}
+        canChooseBilling={false}
+        billedTo="client"
+        setBilledTo={() => {}}
+      />
+    );
+    expect(screen.queryByText(/cap ad duration/)).not.toBeInTheDocument();
+  });
+
+  it('does not warn when the chosen duration fits every selected screen\'s max_ad_duration', () => {
+    const form = { ...baseForm, duration: 10 };
+    render(
+      <StepBudgetReview
+        form={form}
+        setForm={() => {}}
+        matchedScreens={[SCREEN_A, SCREEN_CAPPED]}
+        profile={null}
+        onSubmit={() => {}}
+        submitting={false}
+        err={null}
+        canChooseBilling={false}
+        billedTo="client"
+        setBilledTo={() => {}}
+      />
+    );
+    expect(screen.queryByText(/cap ad duration/)).not.toBeInTheDocument();
+  });
+
+  it('truncates the screen-name list with an "and N more" suffix when more than 3 screens are over the cap', () => {
+    const cappedScreens = Array.from({ length: 5 }, (_, i) => ({
+      id: `scr-cap-${i}`, name: `Capped Screen ${i}`, max_ad_duration: 10,
+    }));
+    const form = { ...baseForm, duration: 30 };
+    render(
+      <StepBudgetReview
+        form={form}
+        setForm={() => {}}
+        matchedScreens={[SCREEN_A, ...cappedScreens]}
+        profile={null}
+        onSubmit={() => {}}
+        submitting={false}
+        err={null}
+        canChooseBilling={false}
+        billedTo="client"
+        setBilledTo={() => {}}
+      />
+    );
+    expect(screen.getByText(/5 of 6 selected screens cap ad duration below 30s/)).toBeInTheDocument();
+    expect(screen.getByText(/and 2 more/)).toBeInTheDocument();
   });
 });

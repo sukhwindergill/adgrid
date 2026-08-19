@@ -1,5 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Alert } from 'react-native';
 import { supabase } from '../lib/supabase';
+
+const FUNCTIONS_URL = process.env.EXPO_PUBLIC_SUPABASE_URL
+  ? `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1`
+  : '';
+
+// Promise wrapper around RN's callback-based Alert.alert, matching the
+// Cancel/confirm button pattern ApprovalCard.jsx's own confirmReject already
+// uses -- resolves false on Cancel, true on the destructive/confirm action.
+function confirmAsync(title, message) {
+  return new Promise(resolve => {
+    Alert.alert(title, message, [
+      { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+      { text: 'Approve anyway', onPress: () => resolve(true) },
+    ]);
+  });
+}
 
 const SELECT = `
   id, status, screen_id, campaign_id, approved_at,
@@ -84,23 +101,66 @@ export function useApprovals(operatorId, screenIds) {
     return () => { supabase.removeChannel(channel); };
   }, [fetchPending]);
 
+  // Mirrors web's attemptCharge (ApprovalQueue.jsx) -- actually calls
+  // charge-campaign instead of just flipping bookings.status directly.
+  // Without this, a campaign approved entirely from mobile never gets
+  // billed: 'partial' campaigns landed on status='scheduled' with
+  // payment_status left null forever, and non-partial campaigns never
+  // advanced past pending_review at all, since nothing ever checked whether
+  // every screen had been approved.
+  async function attemptCharge(campaignId) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    let res;
+    try {
+      res = await fetch(`${FUNCTIONS_URL}/charge-campaign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ campaign_id: campaignId }),
+      });
+    } catch {
+      return; // network error -- non-blocking, approval already succeeded
+    }
+    if (res.ok) return;
+    const body = await res.json().catch(() => ({}));
+    const msg = body.error ?? 'Charge failed';
+    const isNoPayment = msg.toLowerCase().includes('no payment') || msg.toLowerCase().includes('no card');
+    if (isNoPayment) {
+      const confirmed = await confirmAsync('Approve without charging?', `${msg}\n\nYou can collect payment manually.`);
+      if (confirmed) {
+        await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaignId);
+      }
+      return;
+    }
+    setError(msg);
+  }
+
   async function approve(campaignScreenId, campaignId, startWhen) {
+    setError(null);
     const { error: err } = await supabase.from('campaign_screens')
       .update({ status: 'approved', approved_at: new Date().toISOString() })
       .eq('id', campaignScreenId);
     if (err) { setError(err.message); return { error: err }; }
-    if (startWhen === 'partial') {
-      const { error: bookingErr } = await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaignId);
-      if (bookingErr) { setError(bookingErr.message); return { error: bookingErr }; }
-    }
-    setError(null);
+
+    const { data: remaining } = await supabase
+      .from('campaign_screens').select('status').eq('campaign_id', campaignId).eq('status', 'pending');
+    const allClear = startWhen === 'partial' || !remaining || remaining.length === 0;
+    // attemptCharge sets its own error on a real charge failure -- don't
+    // clear it again after the fact, or a genuine failure gets silently
+    // wiped the instant this function returns.
+    if (allClear) await attemptCharge(campaignId);
+
     setPending(prev => prev.filter(p => p.id !== campaignScreenId));
     return { error: null };
   }
 
   async function reject(campaignScreenId, reason) {
+    // Column is reject_reason on campaign_screens (matches web's
+    // ApprovalQueue.jsx) -- rejection_reason doesn't exist, so this update
+    // failed on every call: Postgres rejects the whole statement for an
+    // unknown column, so status never got set to 'rejected' either.
     const { error: err } = await supabase.from('campaign_screens')
-      .update({ status: 'rejected', rejection_reason: reason })
+      .update({ status: 'rejected', reject_reason: reason })
       .eq('id', campaignScreenId);
     if (err) { setError(err.message); return { error: err }; }
     setError(null);

@@ -9,9 +9,14 @@ export function useScreens(operatorId) {
   const fetchScreens = useCallback(async () => {
     if (!operatorId) { setScreens([]); setLoading(false); return; }
     setLoading(true);
+    // city, not address_city -- the real screens.city column (confirmed
+    // against the live schema). This query previously 404'd on every call,
+    // which cascaded into approvals.jsx deriving an empty screenIds list
+    // and the Approvals tab always showing "All caught up" regardless of
+    // real pending state.
     const { data, error: err } = await supabase
       .from('screens')
-      .select('id, name, venue_category, venue_subtype, address_city, health_status, last_seen, screen_photos, status, operating_hours_start, operating_hours_end, timezone')
+      .select('id, name, venue_category, venue_subtype, city, health_status, last_seen, screen_photos, status, operating_hours_start, operating_hours_end, timezone')
       .eq('operator_id', operatorId);
     if (err) setError(err.message);
     else setScreens(data || []);

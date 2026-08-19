@@ -20,6 +20,21 @@ function uptime(screen) {
   return '—';
 }
 
+// Explains *why* a card stat shows a bare dash instead of a value -- an
+// unexplained '—' reads as "broken" rather than "not available yet",
+// which was flagged as an investor/operator confidence issue.
+function impressionsHint(screen) {
+  if (screen.impressions > 0) return null;
+  if (screen.status === 'pending') return 'Pending approval — no delivery data yet';
+  return 'No traffic estimate set — add one in this screen’s settings';
+}
+
+function uptimeHint(screen) {
+  if (screen.status !== 'live') return 'Not yet approved to go live';
+  if (!screen.last_seen) return 'No signal received since going live';
+  return 'No signal in the last 5 minutes';
+}
+
 function ScreenCard({ screen, onClick }) {
   const hs = healthSignal(screen);
   const firstPhoto = screen.screen_photos?.[0];
@@ -84,7 +99,10 @@ function ScreenCard({ screen, onClick }) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>Impressions/mo</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono, marginTop: 2 }}>
+            <div
+              title={impressionsHint(screen) ?? undefined}
+              style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono, marginTop: 2, cursor: impressionsHint(screen) ? 'help' : undefined }}
+            >
               {screen.impressions > 0 ? `${(screen.impressions / 1000).toFixed(0)}K` : '—'}
             </div>
           </div>
@@ -94,7 +112,12 @@ function ScreenCard({ screen, onClick }) {
           </div>
           <div>
             <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>Uptime</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: screen.status === 'live' ? C.green : C.textMuted, fontFamily: F.mono, marginTop: 2 }}>{uptime(screen)}</div>
+            <div
+              title={uptime(screen) === '—' ? uptimeHint(screen) : undefined}
+              style={{ fontSize: 15, fontWeight: 700, color: screen.status === 'live' ? C.green : C.textMuted, fontFamily: F.mono, marginTop: 2, cursor: uptime(screen) === '—' ? 'help' : undefined }}
+            >
+              {uptime(screen)}
+            </div>
           </div>
         </div>
 
@@ -111,8 +134,27 @@ function ScreenCard({ screen, onClick }) {
   );
 }
 
+function screensToCsv(screens) {
+  const header = ['Name', 'City', 'Neighbourhood', 'Status', 'Impressions/mo', 'CPM', 'Active Campaigns', 'Revenue/mo'];
+  const rows = screens.map(s => [
+    s.name, s.city, s.neighbourhood ?? '', s.status,
+    s.impressions ?? 0, s.cpm ?? '', s.campaigns ?? 0, s.revenue ?? 0,
+  ]);
+  return [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+}
+
+function downloadCsv(csv, filename) {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 export function ScreensView({ dbScreens, loading = false, onSelectScreen, onStartOnboard }) {
   const [filter, setFilter] = useState('All');
+  const [search, setSearch] = useState('');
   const { isMobile, isTablet } = useBreakpoint();
 
   if (loading) {
@@ -128,7 +170,12 @@ export function ScreensView({ dbScreens, loading = false, onSelectScreen, onStar
 
   const allScreens = dbScreens || [];
   const cities = ['All', ...new Set(allScreens.map(s => s.city))];
-  const shown = filter === 'All' ? allScreens : allScreens.filter(s => s.city === filter);
+  const byCity = filter === 'All' ? allScreens : allScreens.filter(s => s.city === filter);
+  const q = search.trim().toLowerCase();
+  const shown = q
+    ? byCity.filter(s => [s.name, s.neighbourhood, s.city, s.venue_subtype].some(v => v?.toLowerCase().includes(q)))
+    : byCity;
+  const isFiltered = filter !== 'All' || q.length > 0;
   const totalImpr = allScreens.reduce((a, s) => a + (s.impressions || 0), 0);
   const activeCampaigns = allScreens.reduce((a, s) => a + (s.campaigns || 0), 0);
   const cols = isMobile ? 1 : isTablet ? 2 : 3;
@@ -137,7 +184,7 @@ export function ScreensView({ dbScreens, loading = false, onSelectScreen, onStar
     <div>
       <PageHeader title="Screens"
         subtitle={`${allScreens.length} registered · ${allScreens.filter(s => s.status === 'live').length} live · ${allScreens.filter(s => s.status === 'pending').length} pending`}
-        actions={<><Btn variant="secondary" size="sm">↓ Export</Btn><Btn onClick={onStartOnboard}>+ Register Screen</Btn></>} />
+        actions={<><Btn variant="secondary" size="sm" onClick={() => downloadCsv(screensToCsv(shown), 'screens.csv')}>↓ Export</Btn><Btn onClick={onStartOnboard}>+ Register Screen</Btn></>} />
 
       {allScreens.some(s => s.lat == null || s.lon == null) && (
         <Card style={{ padding: 16, marginBottom: 20, borderLeft: `3px solid ${C.amber}` }}>
@@ -158,24 +205,40 @@ export function ScreensView({ dbScreens, loading = false, onSelectScreen, onStar
         <KPI label="Active Campaigns"  value={activeCampaigns} color={C.purple} />
       </div>
 
-      <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
-        {cities.map(c => (
-          <button key={c} onClick={() => setFilter(c)} style={{
-            padding: '6px 14px', borderRadius: 20, cursor: 'pointer',
-            border: `1px solid ${filter === c ? C.purple : C.border}`,
-            background: filter === c ? C.purpleSoft : C.surface,
-            color: filter === c ? C.purple : C.textSub,
-            fontSize: 12, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
-          }}>{c}</button>
-        ))}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Inp placeholder="Search screens by name, neighbourhood, venue…" value={search}
+          onChange={e => setSearch(e.target.value)} style={{ minWidth: 240, flex: '0 1 320px' }} />
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {cities.map(c => (
+            <button key={c} onClick={() => setFilter(c)} style={{
+              padding: '6px 14px', borderRadius: 20, cursor: 'pointer',
+              border: `1px solid ${filter === c ? C.purple : C.border}`,
+              background: filter === c ? C.purpleSoft : C.surface,
+              color: filter === c ? C.purple : C.textSub,
+              fontSize: 12, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
+            }}>{c}</button>
+          ))}
+        </div>
       </div>
 
       {shown.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>📺</div>
-          <div style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No screens registered yet</div>
-          <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>Register your first screen to start running campaigns on the network.</div>
-          <Btn onClick={onStartOnboard}>+ Register Screen</Btn>
+          {isFiltered ? (
+            <>
+              <div style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No screens match</div>
+              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>
+                No registered screens match {q ? `“${search}”` : `city “${filter}”`}. Try a different search or clear the filter.
+              </div>
+              <Btn variant="secondary" onClick={() => { setSearch(''); setFilter('All'); }}>Clear filters</Btn>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No screens registered yet</div>
+              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>Register your first screen to start running campaigns on the network.</div>
+              <Btn onClick={onStartOnboard}>+ Register Screen</Btn>
+            </>
+          )}
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>

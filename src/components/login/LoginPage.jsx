@@ -65,8 +65,11 @@ export function LoginPage() {
       setErr(''); setLoading(true);
       const { error } = await resetPasswordForEmail(email);
       setLoading(false);
-      if (error) setErr(error.message);
-      else setErr('Check your email for a password reset link.');
+      // Always show the same success-shaped copy regardless of whether the
+      // account exists (Supabase's error differs for unknown emails vs rate
+      // limiting) -- surfacing error.message here would let an attacker
+      // enumerate registered accounts by trying emails against this form.
+      setErr('Check your inbox: if an account exists for that email, a password reset link is on its way.');
       return;
     }
     if (activeMode === 'reset') {

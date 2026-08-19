@@ -36,10 +36,13 @@ async function distributeOperatorCuts(
   currency: string,
 ): Promise<void> {
   // 1. Find all screens for this campaign
+  // Control screens (holdout test) never served this campaign's creative --
+  // an operator should not be paid for a screen that showed nothing.
   const { data: csRows } = await supabase
     .from("campaign_screens")
     .select("screen_id")
-    .eq("campaign_id", bookingId);
+    .eq("campaign_id", bookingId)
+    .eq("is_control", false);
 
   if (!csRows || csRows.length === 0) return;
 

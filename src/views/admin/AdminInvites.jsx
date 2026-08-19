@@ -17,7 +17,7 @@ function useInvites() {
     setLoading(true)
     const { data } = await supabase
       .from('operator_invites')
-      .select('id, email, status, created_at')
+      .select('id, email, status, created_at, expires_at')
       .order('created_at', { ascending: false })
     setInvites(data ?? [])
     setLoading(false)
@@ -28,28 +28,66 @@ function useInvites() {
   return { invites, loading, refresh }
 }
 
+function expiryLabel(inv) {
+  if (inv.status !== 'pending') return null
+  const msLeft = new Date(inv.expires_at).getTime() - Date.now()
+  if (msLeft <= 0) return 'Expired'
+  const daysLeft = Math.ceil(msLeft / 86400000)
+  return `Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`
+}
+
 export function AdminInvites() {
   const navigate = useNavigate()
   const toast = useToast()
   const { invites, loading, refresh } = useInvites()
   const [email, setEmail] = useState('')
   const [sending, setSending] = useState(false)
+  const [busyId, setBusyId] = useState(null)
+
+  const sendInviteEmail = async (targetEmail) => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { toast.error('Session expired. Please log in again.'); return false }
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/invite-operator`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ email: targetEmail }),
+    })
+    const body = await res.json().catch(() => ({}))
+    if (!res.ok) { toast.error(body?.error ?? 'Failed to send invite.'); return false }
+    return true
+  }
 
   const sendInvite = async () => {
     if (!email.includes('@')) { toast.error('Enter a valid email address.'); return }
     setSending(true)
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { setSending(false); toast.error('Session expired. Please log in again.'); return }
-    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/invite-operator`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ email }),
-    })
-    const body = await res.json().catch(() => ({}))
+    const ok = await sendInviteEmail(email)
     setSending(false)
-    if (!res.ok) { toast.error(body?.error ?? 'Failed to send invite.'); return }
+    if (!ok) return
     toast.success('Invite sent.')
     setEmail('')
+    refresh()
+  }
+
+  const resendInvite = async (inv) => {
+    setBusyId(inv.id)
+    // invite-operator auto-expires any existing pending invite for this
+    // email and issues a fresh one, so resend is just re-inviting.
+    const ok = await sendInviteEmail(inv.email)
+    setBusyId(null)
+    if (!ok) return
+    toast.success(`Invite resent to ${inv.email}.`)
+    refresh()
+  }
+
+  const revokeInvite = async (inv) => {
+    setBusyId(inv.id)
+    const { error } = await supabase
+      .from('operator_invites')
+      .update({ status: 'expired' })
+      .eq('id', inv.id)
+    setBusyId(null)
+    if (error) { toast.error('Failed to revoke invite.'); return }
+    toast.success(`Invite to ${inv.email} revoked.`)
     refresh()
   }
 
@@ -89,10 +127,27 @@ export function AdminInvites() {
         invites.map(inv => (
           <Card
             key={inv.id}
-            style={{ marginBottom: 10, padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+            style={{ marginBottom: 10, padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}
           >
-            <span style={{ fontFamily: F.sans, fontSize: 13, color: C.text }}>{inv.email}</span>
-            <Badge status={inv.status}>{inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}</Badge>
+            <div>
+              <div style={{ fontFamily: F.sans, fontSize: 13, color: C.text }}>{inv.email}</div>
+              {expiryLabel(inv) && (
+                <div style={{ fontFamily: F.sans, fontSize: 11, color: C.textMuted, marginTop: 2 }}>{expiryLabel(inv)}</div>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Badge status={inv.status}>{inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}</Badge>
+              {inv.status !== 'accepted' && (
+                <Btn variant="ghost" size="sm" disabled={busyId === inv.id} onClick={() => resendInvite(inv)}>
+                  {busyId === inv.id ? '…' : 'Resend'}
+                </Btn>
+              )}
+              {inv.status === 'pending' && (
+                <Btn variant="danger" size="sm" disabled={busyId === inv.id} onClick={() => revokeInvite(inv)}>
+                  {busyId === inv.id ? '…' : 'Revoke'}
+                </Btn>
+              )}
+            </div>
           </Card>
         ))
       )}

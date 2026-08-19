@@ -35,11 +35,11 @@ export default function MoreScreen() {
           <View style={styles.profileRow}>
             <View style={styles.avatar}>
               <Text style={[styles.avatarText, { fontFamily: F.sansBold }]}>
-                {(profile.full_name || 'O')[0].toUpperCase()}
+                {(profile.name || 'O')[0].toUpperCase()}
               </Text>
             </View>
             <View>
-              <Text style={[styles.profileName, { fontFamily: F.sansSemi }]}>{profile.full_name}</Text>
+              <Text style={[styles.profileName, { fontFamily: F.sansSemi }]}>{profile.name}</Text>
               <Text style={[styles.profileEmail, { fontFamily: F.sans }]}>{profile.email}</Text>
             </View>
           </View>

@@ -182,8 +182,29 @@ export function AuthProvider({ children }) {
     return { data, error }
   }
 
+  async function authSecurity(action, email) {
+    // Fire-and-forget-ish: a failure here (network blip, cold start) must
+    // never block the user's actual sign-in/reset flow, so every call is
+    // wrapped and its result treated as best-effort.
+    try {
+      const { data } = await supabase.functions.invoke('auth-security', { body: { action, email } })
+      return data ?? {}
+    } catch {
+      return {}
+    }
+  }
+
   async function signIn(email, password) {
+    const { locked } = await authSecurity('check_lockout', email)
+    if (locked) {
+      return { data: null, error: { message: 'Too many failed attempts. Try again in 15 minutes.' } }
+    }
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) {
+      await authSecurity('record_login_failure', email)
+    } else {
+      await authSecurity('record_login_success', email)
+    }
     return { data, error }
   }
 
@@ -210,7 +231,16 @@ export function AuthProvider({ children }) {
   }
 
   async function resetPasswordForEmail(email) {
-    return supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin })
+    const { allowed } = await authSecurity('check_reset_throttle', email)
+    if (allowed === false) {
+      // Return a shape identical to a normal Supabase result so the caller's
+      // generic success copy still shows -- must not reveal that throttling
+      // kicked in, or that becomes its own enumeration/probing signal.
+      return { data: null, error: null }
+    }
+    const result = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin })
+    await authSecurity('record_reset_request', email)
+    return result
   }
 
   async function updatePassword(password) {

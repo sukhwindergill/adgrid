@@ -14,7 +14,7 @@ const mockSupabase = createClient('', '');
 const mockScreen = {
   id: 'screen-1', name: 'Lobby Screen', status: 'active',
   operating_hours_start: '08:00', operating_hours_end: '22:00', timezone: 'America/Toronto',
-  venue_category: 'retail', venue_subtype: null, address_city: 'Toronto', screen_photos: [],
+  venue_category: 'retail', venue_subtype: null, city: 'Toronto', screen_photos: [],
 };
 
 beforeEach(() => {

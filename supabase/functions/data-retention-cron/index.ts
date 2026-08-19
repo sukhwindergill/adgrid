@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireCronSecret } from "../_shared/cronGuard.ts";
 
 // Enforces the retention windows promised in the Privacy Policy
 // (src/views/legal/PrivacyPolicy.jsx, "Data retention" section):
@@ -21,6 +22,9 @@ function cutoffIso(days: number): string {
 }
 
 Deno.serve(async (_req: Request) => {
+  const denied = requireCronSecret(_req);
+  if (denied) return denied;
+
   const telemetryCutoff = cutoffIso(TELEMETRY_RETENTION_DAYS);
   const scanCutoff = cutoffIso(SCAN_RETENTION_DAYS);
 

@@ -12,10 +12,18 @@ import { ScreenMap } from './ScreenMap.jsx';
 
 const countryLabel = code => COUNTRIES.find(c => c.code === code)?.label ?? code;
 
-export function StepTargeting({ form, setForm, reachSummary, allScreens, onPrevCampaigns, existingCampaign = null }) {
+export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount, allScreens, screensLoading = false, onPrevCampaigns, existingCampaign = null }) {
   const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
 
-  const loading = allScreens.length === 0;
+  // allScreens.length === 0 is ambiguous by itself -- true both while the
+  // initial fetch is still in flight AND once it resolves to "zero live
+  // screens right now" (a real state for a young, thin marketplace, not a
+  // hypothetical). screensLoading is App.jsx's actual dataLoading flag,
+  // threaded down through CreateCampaign, so this can tell the two apart
+  // instead of showing a "Loading…" placeholder that never resolves when
+  // inventory is genuinely empty.
+  const loading = screensLoading;
+  const noInventory = !screensLoading && allScreens.length === 0;
   const locationIndex = useMemo(() => buildLocationIndex(allScreens), [allScreens]);
   const countryOptions = useMemo(() => distinctCountries(locationIndex), [locationIndex]);
   const stateOptions = useMemo(() => distinctStates(locationIndex, form.country), [locationIndex, form.country]);
@@ -69,6 +77,12 @@ export function StepTargeting({ form, setForm, reachSummary, allScreens, onPrevC
         <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 4px' }}>Where do you want to advertise?</h2>
         <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 20px' }}>Choose an area and, optionally, the kind of screens you're after — we'll find matching screens for you.</p>
 
+        {noInventory && (
+          <div style={{ marginBottom: 20, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder ?? '#fde68a'}`, borderRadius: 8, fontSize: 13, color: '#92400e', fontFamily: F.sans }}>
+            No screens are live on the network yet — check back soon.
+          </div>
+        )}
+
         {onPrevCampaigns && (
           <div style={{ marginBottom: 20 }}>
             <button onClick={onPrevCampaigns} style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans, padding: 0 }}>
@@ -95,7 +109,7 @@ export function StepTargeting({ form, setForm, reachSummary, allScreens, onPrevC
           <SelInput label="Country" value={form.country} disabled={loading} onChange={e => setForm(s => ({ ...s, country: e.target.value, radius_center_lat: null, radius_center_lon: null }))}>
             {countryOptions.length > 0
               ? countryOptions.map(code => <option key={code} value={code}>{countryLabel(code)}</option>)
-              : <option value={form.country}>{loading ? 'Loading…' : countryLabel(form.country)}</option>}
+              : <option value={form.country}>{loading ? 'Loading…' : noInventory ? 'No screens yet' : countryLabel(form.country)}</option>}
           </SelInput>
 
           {(form.area_type === 'state' || form.area_type === 'city' || form.area_type === 'radius') && (
@@ -195,6 +209,25 @@ export function StepTargeting({ form, setForm, reachSummary, allScreens, onPrevC
           <div style={{ marginTop: 16, padding: '10px 14px', background: C.purpleSoft, borderRadius: 8, fontSize: 13, color: C.purple, fontFamily: F.sans }}>
             {reachSummary}
           </div>
+        )}
+
+        {matchedScreenCount >= 10 && (
+          <label style={{
+            display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 12,
+            padding: '10px 14px', border: `1px solid ${C.border}`, borderRadius: 8, cursor: 'pointer',
+          }}>
+            <input
+              type="checkbox"
+              checked={form.holdout_enabled}
+              onChange={e => setForm(s => ({ ...s, holdout_enabled: e.target.checked }))}
+              style={{ marginTop: 2 }}
+            />
+            <span style={{ fontSize: 13, color: C.text, fontFamily: F.sans }}>
+              <strong>Run a holdout test</strong> — we'll randomly hold back ~20% of screens as a control
+              group to check whether delivery matched the measured audience, at no extra cost (control
+              screens aren't billed).
+            </span>
+          </label>
         )}
       </Card>
     </div>

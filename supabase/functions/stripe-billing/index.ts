@@ -42,14 +42,21 @@ Deno.serve(async (req: Request) => {
   const customerId = profile.stripe_customer_id;
 
   try {
-    const [invoicesList, paymentMethodsList, portalSession] = await Promise.all([
+    const [invoicesList, paymentMethodsList, portalSession, customer] = await Promise.all([
       stripe.invoices.list({ customer: customerId, limit: 24 }),
       stripe.paymentMethods.list({ customer: customerId, type: "card" }),
       stripe.billingPortal.sessions.create({
         customer: customerId,
         return_url: req.headers.get("origin") ?? Deno.env.get("SITE_URL")!,
       }),
+      stripe.customers.retrieve(customerId),
     ]);
+
+    const defaultPaymentMethodId = (!customer.deleted && customer.invoice_settings?.default_payment_method)
+      ? (typeof customer.invoice_settings.default_payment_method === "string"
+        ? customer.invoice_settings.default_payment_method
+        : customer.invoice_settings.default_payment_method.id)
+      : null;
 
     const invoices = invoicesList.data.map((inv) => ({
       id: inv.id,
@@ -67,6 +74,7 @@ Deno.serve(async (req: Request) => {
       last4: pm.card?.last4 ?? "****",
       expMonth: pm.card?.exp_month,
       expYear: pm.card?.exp_year,
+      isDefault: pm.id === defaultPaymentMethodId,
     }));
 
     return new Response(JSON.stringify({ invoices, paymentMethods, portalUrl: portalSession.url }), {

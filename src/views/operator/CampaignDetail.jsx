@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { C, F } from '../../design/tokens.js';
 import { useToast } from '../../components/primitives/Toast.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
@@ -13,8 +13,9 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { ShareReportModal } from '../../components/shared/ShareReportModal.jsx';
 import { ApproveBtn } from '../../lib/campaignActions.jsx';
 import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
+import { DeliveryCheckPanel } from '../../components/shared/DeliveryCheckPanel.jsx';
 
-export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, canReview = false, setCampaigns, onApprovalChange }) {
+export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onDuplicate, canReview = false, setCampaigns, onApprovalChange }) {
   const toast = useToast();
   const [tab, setTab] = useState('overview');
   const [rejecting, setRejecting] = useState(false);
@@ -27,7 +28,22 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, can
   const [editForm, setEditForm] = useState({ budget: campaign.budget, start: campaign.start, end: campaign.end });
   const [editingCreative, setEditingCreative] = useState(false);
   const [creativeForm, setCreativeForm] = useState({ accent_color: campaign.color ?? '#7c3aed' });
+  const [deliveryCheckRow, setDeliveryCheckRow] = useState(null);
   const c = campaign;
+
+  useEffect(() => {
+    if (!c.holdout_enabled) return;
+    supabase
+      .from('delivery_check_stats')
+      .select('exposed_impressions, exposed_play_minutes, exposed_rate, control_rate')
+      .eq('campaign_id', c.id)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) { toast.error('Failed to load delivery check results.'); return; }
+        setDeliveryCheckRow(data ?? null);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [c.id, c.holdout_enabled]);
   const pct      = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
   const daysLeft = Math.max(0, Math.round((new Date(c.end) - new Date()) / (1000 * 60 * 60 * 24)));
   const cpm      = c.impressions > 0 ? ((c.spent / c.impressions) * 1000).toFixed(2) : '4.20';
@@ -101,6 +117,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, can
         back="All Campaigns" onBack={onBack}
         actions={<>
           {onAddTargeting && c.campaign_id && <Btn variant="secondary" size="sm" onClick={() => onAddTargeting(c)}>+ Add targeting group</Btn>}
+          {onDuplicate && <Btn variant="secondary" size="sm" onClick={() => onDuplicate(c)}>⧉ Duplicate</Btn>}
           {statusAction(c.status)}
           <Btn variant="secondary" size="sm" onClick={() => setSharing(true)}>Share report</Btn>
           <Btn variant="secondary" size="sm" onClick={() => { setEditForm({ budget: c.budget, start: c.start, end: c.end }); setEditing(true); }}>✏ Edit</Btn>
@@ -146,7 +163,12 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, can
         </div>
       </Card>
 
-      <Tabs tabs={[{ id: 'overview', label: 'Performance' }, { id: 'creative', label: 'Creative' }, { id: 'settings', label: 'Settings' }]} active={tab} onChange={setTab} />
+      <Tabs tabs={[
+        { id: 'overview', label: 'Performance' },
+        { id: 'creative', label: 'Creative' },
+        ...(c.holdout_enabled ? [{ id: 'delivery-check', label: 'Delivery Check' }] : []),
+        { id: 'settings', label: 'Settings' },
+      ]} active={tab} onChange={setTab} />
 
       {tab === 'overview' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
@@ -221,6 +243,10 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, can
             </div>
           )}
         </Card>
+      )}
+
+      {tab === 'delivery-check' && (
+        <DeliveryCheckPanel holdoutEnabled={c.holdout_enabled} row={deliveryCheckRow} />
       )}
 
       {tab === 'settings' && (

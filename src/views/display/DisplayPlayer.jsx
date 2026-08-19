@@ -1,14 +1,14 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import QRCode from 'react-qr-code';
 import { createPlayBuffer, FLUSH_INTERVAL_MS } from '../../lib/playBuffer.js';
 import { getCreativeRenderPlan } from '../../lib/getCreativeRenderPlan.js';
+import { getSlideDurationMs } from '../../lib/getSlideDuration.js';
 
 const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
   : '';
 
 const POLL_INTERVAL_MS  = 30_000;
-const ROTATE_INTERVAL_MS = 10_000;
 
 function buildQrUrl(destinationUrl, screenId, campaignId, creativeId) {
   if (!SUPABASE_FUNCTIONS_URL || !campaignId) return destinationUrl;
@@ -166,6 +166,24 @@ export function DisplayPlayer({ screenToken }) {
   if (playBufferRef.current === null) playBufferRef.current = createPlayBuffer();
   const playStartRef = useRef(null);
 
+  // `campaigns` gets a brand-new array/object-graph reference on every
+  // successful poll (fetch/res.json() always allocates fresh objects, even
+  // when the feed content is byte-for-byte identical to the previous poll —
+  // POLL_INTERVAL_MS below). Effects that key off `campaigns` directly would
+  // therefore re-fire every poll regardless of whether anything actually
+  // changed. `campaignsRef` gives effects/timeouts a way to read the live
+  // list without depending on its identity, and `feedSignature` is a
+  // content-derived string (stable across identical-content polls, by JS
+  // string value equality) that effects depend on instead. JSON.stringify
+  // of per-campaign tuples (rather than a hand-joined template string) keeps
+  // this delimiter-safe if id/media_url etc. ever contain ':' or '|'.
+  const campaignsRef = useRef(campaigns);
+  useEffect(() => { campaignsRef.current = campaigns; }, [campaigns]);
+  const feedSignature = useMemo(
+    () => JSON.stringify(campaigns.map((c) => [c.id, c.creative_id ?? null, c.duration ?? null, c.media_url ?? null])),
+    [campaigns]
+  );
+
   const fetchFeed = async () => {
     if (stopPollingRef.current) return;
     try {
@@ -210,25 +228,35 @@ export function DisplayPlayer({ screenToken }) {
   // attached. Screens without a camera legitimately report zero measured
   // audience until one is added.
 
-  // Rotate campaigns
+  // Rotate campaigns — each slide gets its own duration (campaign.duration,
+  // sanitized/clamped by getSlideDurationMs) instead of one fixed interval
+  // shared by every campaign on the screen.
   useEffect(() => {
-    if (campaigns.length < 2) return;
-    rotateRef.current = setInterval(() => {
+    const list = campaignsRef.current;
+    if (list.length < 2) return;
+    const current = list[currentIdx];
+    const timeoutId = setTimeout(() => {
       setFadeIn(false);
-      setTimeout(() => {
+      rotateRef.current = setTimeout(() => {
         setCurrentIdx(i => {
-          const next = (i + 1) % campaigns.length;
+          const next = (i + 1) % campaignsRef.current.length;
           currentIdxRef.current = next;
           return next;
         });
         setFadeIn(true);
       }, 400);
-    }, ROTATE_INTERVAL_MS);
-    return () => clearInterval(rotateRef.current);
-  }, [campaigns.length]);
+    }, getSlideDurationMs(current));
+    return () => { clearTimeout(timeoutId); clearTimeout(rotateRef.current); };
+    // Deps intentionally exclude raw `campaigns` — see feedSignature comment
+    // above. Depending on the array reference would restart this timer every
+    // poll, so any slide with duration >= POLL_INTERVAL_MS could never
+    // survive a full poll cycle and would never rotate away.
+  }, [feedSignature, currentIdx]);
 
-  // Reset index when campaigns list changes
-  useEffect(() => { setCurrentIdx(0); currentIdxRef.current = 0; setFadeIn(true); }, [campaigns]);
+  // Reset index when the feed's actual content changes (new/removed/reordered
+  // campaigns, or an edited duration/creative) — not on every poll, which
+  // would otherwise snap a mid-rotation display back to slide 0.
+  useEffect(() => { setCurrentIdx(0); currentIdxRef.current = 0; setFadeIn(true); }, [feedSignature]);
 
   // Record proof of play for the creative that is leaving the screen — on
   // rotation, on feed change, and on unmount — so duration_s is the time the
@@ -237,12 +265,13 @@ export function DisplayPlayer({ screenToken }) {
   // This records THAT a creative played, never who saw it. Audience data comes
   // only from the CV agent (see the note above).
   useEffect(() => {
-    const current = campaigns[currentIdx];
+    const current = campaignsRef.current[currentIdx];
     if (status !== 'ok' || !current || !screenId) return;
 
     playStartRef.current = Date.now();
     const campaignId = current.id;
     const creativeId = current.creative_id ?? null;
+    const slotMs = getSlideDurationMs(current);
 
     return () => {
       const startedAt = playStartRef.current;
@@ -254,10 +283,14 @@ export function DisplayPlayer({ screenToken }) {
         creative_id: creativeId,
         played_at: new Date(startedAt).toISOString(),
         duration_s: durationS,
-        completed: durationS >= (ROTATE_INTERVAL_MS / 1000) * 0.9,
+        completed: durationS >= (slotMs / 1000) * 0.9,
       });
     };
-  }, [campaigns, currentIdx, status, screenId]);
+    // Same identity-churn concern as the rotation effect above: keying this
+    // off raw `campaigns` would close out (and record a fragmented,
+    // artificially-incomplete) proof-of-play entry on every poll instead of
+    // when the creative genuinely finishes its slot or the feed changes.
+  }, [feedSignature, currentIdx, status, screenId]);
 
   // Flush buffered plays every 60s, and once more on unmount.
   useEffect(() => {

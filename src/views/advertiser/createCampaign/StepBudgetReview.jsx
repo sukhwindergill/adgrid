@@ -24,6 +24,10 @@ export function StepBudgetReview({
   const tooLow = budget > 0 && matchedScreens.length > 0 && days > 0
     && (budget / matchedScreens.length / days) < 0.50;
 
+  const overCapScreens = matchedScreens.filter(s =>
+    typeof s.max_ad_duration === 'number' && Number(form.duration) > s.max_ad_duration
+  );
+
   const isMulti = form.creatives.length > 1;
   const creativeLabel = (i) => form.creatives[i]?.label || `Creative ${i + 1}`;
 
@@ -95,6 +99,12 @@ export function StepBudgetReview({
           {tooLow && (
             <div style={{ padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: 12, color: C.amber, fontFamily: F.sans }}>
               ⚠ Budget may be too low to run consistently across all selected screens. Consider increasing your budget or reducing screen count.
+            </div>
+          )}
+
+          {overCapScreens.length > 0 && (
+            <div style={{ padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: 12, color: C.amber, fontFamily: F.sans }}>
+              ⚠ {overCapScreens.length} of {matchedScreens.length} selected screens cap ad duration below {form.duration}s — your ad will play shorter there: {overCapScreens.slice(0, 3).map(s => s.name).join(', ')}{overCapScreens.length > 3 ? ` and ${overCapScreens.length - 3} more` : ''}.
             </div>
           )}
 

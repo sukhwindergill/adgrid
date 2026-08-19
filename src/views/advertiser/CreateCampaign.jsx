@@ -13,6 +13,7 @@ import { formatCurrency } from '../../lib/formatCurrency.js';
 import { haversineKm } from '../../lib/geo.js';
 import { isValidDestinationUrl, normalizeDestinationUrl } from '../../lib/destinationUrl.js';
 import { buildPreviewCampaign } from '../../lib/buildPreviewCampaign.js';
+import { sanitizeText } from '../../lib/sanitizeText.js';
 import { makeBlankCreative, reconcileAssignments } from '../../lib/creativeAssignment.js';
 import { Stepper } from './createCampaign/Stepper.jsx';
 import { StepTargeting } from './createCampaign/StepTargeting.jsx';
@@ -64,7 +65,7 @@ function StepPay({ campaign, onPay, onSkip, paying, err, requiresAction, onGoToB
 
 // ─── Main Wizard ─────────────────────────────────────────────────────────────
 
-export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [], existingCampaign = null, presetScreenIds = null }) {
+export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoading = false, campaigns = [], existingCampaign = null, presetScreenIds = null, duplicateFrom = null }) {
   const { user, profile, activeAccount } = useAuth();
   const navigate = useNavigate();
   const isDelegate = activeAccount && !activeAccount.isOwn;
@@ -103,6 +104,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     duration: 15,
     slots: 10,
     start_when: 'partial',
+    holdout_enabled: false,
   }));
 
   // Screen matching
@@ -249,9 +251,27 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
     setShowDupModal(false);
   };
 
+  // Duplicate-from-detail entry point: App.jsx sets duplicateFrom when the
+  // advertiser clicks "Duplicate" on an existing campaign's detail page.
+  // Prefill once on mount rather than reactively -- duplicateFrom doesn't
+  // change identity while this wizard is mounted, and re-running loadDuplicate
+  // on every render would stomp on whatever the advertiser has since edited.
+  const duplicateLoadedRef = useRef(false);
+  useEffect(() => {
+    if (duplicateFrom && !duplicateLoadedRef.current) {
+      duplicateLoadedRef.current = true;
+      loadDuplicate(duplicateFrom);
+    }
+  }, [duplicateFrom]);
+
   const handleSubmit = async () => {
-    if (!form.budget || parseFloat(form.budget) <= 0) {
+    const budgetValue = parseFloat(form.budget);
+    if (!form.budget || budgetValue <= 0) {
       setSubmitErr('Enter a budget greater than 0 before submitting.');
+      return;
+    }
+    if (budgetValue > 1000000) {
+      setSubmitErr('Budget cannot exceed $1,000,000.');
       return;
     }
     setSubmitting(true);
@@ -289,8 +309,8 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         campaign_id:           parentCampaignId,
         budget_level:          isMulti ? form.budget_level : 'unified',
         advertiser_id:         user.id,
-        campaign_name:         form.name || null,
-        advertiser_name:       profile?.name || user.email?.split('@')[0] || 'Advertiser',
+        campaign_name:         form.name ? sanitizeText(form.name, 200) : null,
+        advertiser_name:       sanitizeText(profile?.name || user.email?.split('@')[0] || 'Advertiser', 200),
         screen_name:           firstScreen?.name || '',
         city:                  form.city || form.state || form.country || '',
         ...preview,
@@ -304,6 +324,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         currency:              profile?.preferred_currency || 'cad',
         budget_mode:           form.budget_mode,
         start_when:            form.start_when,
+        holdout_enabled:       form.holdout_enabled,
         start_date:            form.start_date || null,
         end_date:              form.end_date || null,
         schedule_days:         form.schedule_days,
@@ -320,14 +341,21 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
       });
       if (bookingErr) throw new Error(bookingErr.message);
 
-      const screenRows = form.selected_screen_ids.map(screen_id => ({
-        campaign_id: campaignId,
-        screen_id,
-        status: matchedScreens.find(s => s.id === screen_id)?.auto_approve ? 'auto_approved' : 'pending',
-      }));
-      const { error: screenErr } = await supabase.from('campaign_screens').insert(screenRows);
-      if (screenErr) throw new Error(screenErr.message);
-
+      // campaign_creative_screens is inserted BEFORE campaign_screens on
+      // purpose. reset_screen_approval_on_creative_change() (an AFTER
+      // INSERT/DELETE trigger on campaign_creative_screens) resets any
+      // campaign_screens row already sitting at approved/auto_approved back
+      // to pending -- correct for an advertiser editing an existing,
+      // already-reviewed campaign, but on a *brand-new* submission it has no
+      // way to tell that apart from "this row was inserted 200ms ago and
+      // never got to actually be auto-approved for anything." Inserting
+      // campaign_creative_screens first means the trigger's UPDATE runs
+      // against a campaign_id with zero campaign_screens rows yet -- a
+      // harmless no-op -- instead of immediately reverting the
+      // just-set auto_approved status the moment a multi-creative campaign
+      // (2+ creatives, the normal case, not an edge case) is created.
+      // campaign_creative_screens.screen_id references screens(id) directly,
+      // not campaign_screens, so this ordering has no FK dependency issue.
       if (isMulti) {
         const { data: creativeRows, error: creativesErr } = await supabase
           .from('campaign_creatives')
@@ -360,6 +388,30 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         if (creativeScreenRows.length > 0) {
           const { error: assignErr } = await supabase.from('campaign_creative_screens').insert(creativeScreenRows);
           if (assignErr) throw new Error(assignErr.message);
+        }
+      }
+
+      const screenRows = form.selected_screen_ids.map(screen_id => ({
+        campaign_id: campaignId,
+        screen_id,
+        status: matchedScreens.find(s => s.id === screen_id)?.auto_approve ? 'auto_approved' : 'pending',
+      }));
+      const { error: screenErr } = await supabase.from('campaign_screens').insert(screenRows);
+      if (screenErr) throw new Error(screenErr.message);
+
+      // Control-screen assignment is server-computed (never client-set --
+      // see the migration's comment on assign_holdout_control). A failure
+      // here does not roll back the campaign; it just means the holdout
+      // test won't have a control group, which the Lift Test panel's
+      // "still collecting data" state covers gracefully either way.
+      if (form.holdout_enabled) {
+        const { data: { session: holdoutSession } } = await supabase.auth.getSession();
+        if (holdoutSession) {
+          await fetch(`${SUPABASE_FUNCTIONS_URL}/assign-holdout-control`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${holdoutSession.access_token}` },
+            body: JSON.stringify({ campaign_id: campaignId }),
+          }).catch(() => {});
         }
       }
 
@@ -539,7 +591,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], campaigns = [
         </div>
       )}
 
-      {step === 0 && <StepTargeting form={form} setForm={setForm} reachSummary={reachSummary} allScreens={dbScreens} onPrevCampaigns={campaigns.length > 0 ? () => setShowDupModal(true) : null} existingCampaign={existingCampaign} />}
+      {step === 0 && <StepTargeting form={form} setForm={setForm} reachSummary={reachSummary} matchedScreenCount={matchedScreens.length} allScreens={dbScreens} screensLoading={screensLoading} onPrevCampaigns={campaigns.length > 0 ? () => setShowDupModal(true) : null} existingCampaign={existingCampaign} />}
       {step === 1 && <StepCreative form={form} setForm={setForm} matchedScreens={matchedScreens} presetScreenUnavailable={presetScreenUnavailable} />}
       {step === 2 && <StepBudgetReview form={form} setForm={setForm} matchedScreens={selectedScreens} profile={profile} onSubmit={handleSubmit} submitting={submitting} err={submitErr} canChooseBilling={canChooseBilling} billedTo={billedTo} setBilledTo={setBilledTo} />}
       {step === 3 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} requiresAction={requiresAction} onGoToBilling={() => navigate('/app/adv-billing')} />}

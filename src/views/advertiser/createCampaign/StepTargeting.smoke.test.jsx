@@ -109,4 +109,38 @@ describe('StepTargeting', () => {
     expect(screen.getByText('Adding a new targeting group to')).toBeInTheDocument();
     expect(screen.getByText('Summer Promo 2026')).toBeInTheDocument();
   });
+
+  // allScreens.length === 0 is ambiguous on its own -- "still fetching" and
+  // "fetch resolved to zero live screens" look identical without a real
+  // loading flag. screensLoading (App.jsx's actual dataLoading) disambiguates.
+  it('shows "Loading…" and no empty-inventory banner while the real fetch is in flight', () => {
+    render(
+      <StepTargeting
+        form={baseForm}
+        setForm={() => {}}
+        reachSummary={null}
+        allScreens={[]}
+        screensLoading
+        onPrevCampaigns={null}
+      />
+    );
+    expect(screen.getByText('Loading…')).toBeInTheDocument();
+    expect(screen.queryByText(/No screens are live on the network yet/)).not.toBeInTheDocument();
+  });
+
+  it('shows an empty-inventory banner, not a stuck "Loading…", once the fetch resolves to zero screens', () => {
+    render(
+      <StepTargeting
+        form={baseForm}
+        setForm={() => {}}
+        reachSummary={null}
+        allScreens={[]}
+        screensLoading={false}
+        onPrevCampaigns={null}
+      />
+    );
+    expect(screen.getByText(/No screens are live on the network yet/)).toBeInTheDocument();
+    expect(screen.queryByText('Loading…')).not.toBeInTheDocument();
+    expect(screen.getByText('No screens yet')).toBeInTheDocument();
+  });
 });

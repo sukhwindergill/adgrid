@@ -100,6 +100,7 @@ function AppInner() {
   const [myScreens,        setMyScreens]     = useState([]); // operator's own screens, full columns
   const [detail,           setDetail]        = useState(null);
   const [addingToCampaign, setAddingToCampaign] = useState(null); // { id, name } | null
+  const [duplicatingCampaign, setDuplicatingCampaign] = useState(null); // campaign object | null
   const [dataLoading,      setDataLoading]   = useState(false);
   const [loadError,        setLoadError]     = useState(null);
   const [selectedScreenId, setSelectedScreenId] = useState(null);
@@ -369,8 +370,9 @@ function AppInner() {
   // effect above for what that raced). The one caller that intentionally
   // carries addingToCampaign forward ("+ Add targeting group" itself) opts
   // out explicitly with keepAddingToCampaign.
-  const navTo = (v, { keepAddingToCampaign = false } = {}) => {
+  const navTo = (v, { keepAddingToCampaign = false, keepDuplicatingCampaign = false } = {}) => {
     if (!keepAddingToCampaign) setAddingToCampaign(null);
+    if (!keepDuplicatingCampaign) setDuplicatingCampaign(null);
     navigate('/app/' + v);
     setDetail(null);
   };
@@ -436,6 +438,10 @@ function AppInner() {
             setAddingToCampaign({ id: c.campaign_id, name: c.parentName || c.campaign_name || c.advertiser });
             navTo('adv-create', { keepAddingToCampaign: true });
           } : undefined}
+          onDuplicate={isAdvertiserDetail ? (c) => {
+            setDuplicatingCampaign(c);
+            navTo('adv-create', { keepDuplicatingCampaign: true });
+          } : undefined}
         />
       );
     }
@@ -445,12 +451,15 @@ function AppInner() {
       if (active === 'adv-create')       return (
         <CreateCampaign
           dbScreens={dbScreens}
+          screensLoading={dataLoading}
           campaigns={advertiserCampaigns}
           existingCampaign={addingToCampaign}
           presetScreenIds={presetScreenIds}
+          duplicateFrom={duplicatingCampaign}
           onSave={c => {
             setCampaigns(p => [c, ...p]);
             setAddingToCampaign(null);
+            setDuplicatingCampaign(null);
             if (presetScreenIds) {
               sessionStorage.removeItem('adgrid_preset_screen_id');
               sessionStorage.removeItem('adgrid_pending_screen_invite_token');
@@ -460,6 +469,7 @@ function AppInner() {
           }}
           onCancel={() => {
             setAddingToCampaign(null);
+            setDuplicatingCampaign(null);
             if (presetScreenIds) {
               sessionStorage.removeItem('adgrid_preset_screen_id');
               sessionStorage.removeItem('adgrid_pending_screen_invite_token');
