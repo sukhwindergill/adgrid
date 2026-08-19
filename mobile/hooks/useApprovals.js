@@ -155,8 +155,12 @@ export function useApprovals(operatorId, screenIds) {
   }
 
   async function reject(campaignScreenId, reason) {
+    // Column is reject_reason on campaign_screens (matches web's
+    // ApprovalQueue.jsx) -- rejection_reason doesn't exist, so this update
+    // failed on every call: Postgres rejects the whole statement for an
+    // unknown column, so status never got set to 'rejected' either.
     const { error: err } = await supabase.from('campaign_screens')
-      .update({ status: 'rejected', rejection_reason: reason })
+      .update({ status: 'rejected', reject_reason: reason })
       .eq('id', campaignScreenId);
     if (err) { setError(err.message); return { error: err }; }
     setError(null);
