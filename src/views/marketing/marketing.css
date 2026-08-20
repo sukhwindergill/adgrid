@@ -321,30 +321,3 @@ select.fi { appearance: none; cursor: pointer; }
   .mfooter { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
   .cookie-banner { bottom: calc(64px + env(safe-area-inset-bottom)); }
 }
-
-/* ── Floating contact button ── */
-.floating-contact-btn {
-  position: fixed;
-  bottom: 24px;
-  left: 24px;
-  z-index: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 999px;
-  background: #ffffff;
-  color: #0A0A0F;
-  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-}
-
-/* Hidden at the same breakpoint where StickyMobileCta takes over the bottom
-   of the viewport, so the two never collide. */
-@media (max-width: 768px) {
-  .floating-contact-btn { display: none; }
-}
