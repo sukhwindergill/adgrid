@@ -97,6 +97,7 @@ export function SiteSearch({ onScrollTo }) {
         value={query}
         onChange={onChange}
         onKeyDown={onKeyDown}
+        onFocus={() => setClosed(false)}
         role="combobox"
         aria-expanded={isOpen}
         aria-controls="site-search-listbox"
