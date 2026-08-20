@@ -288,4 +288,5 @@ select.fi { appearance: none; cursor: pointer; }
   /* Leave room at the very bottom of the page so the bar never covers the
      footer's own links on small screens. */
   .mfooter { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+  .cookie-banner { bottom: calc(64px + env(safe-area-inset-bottom)); }
 }

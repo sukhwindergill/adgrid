@@ -28,7 +28,7 @@ export function CookieBanner() {
   };
 
   return (
-    <div style={{
+    <div className="cookie-banner" style={{
       position: 'fixed',
       bottom: 0,
       left: 0,

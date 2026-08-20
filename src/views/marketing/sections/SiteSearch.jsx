@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { F } from '../../../design/tokens.js';
-import { FAQS } from './Faq.jsx';
+import { FAQS } from './faqData.js';
 
 const SECTION_ENTRIES = [
   { id: 'how', title: 'How it works', text: 'List your screens or book a campaign — real-time pricing, self-serve, no long-term contracts.' },
