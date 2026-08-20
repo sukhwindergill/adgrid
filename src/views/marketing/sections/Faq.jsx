@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useReveal } from './useReveal.js';
 
-const FAQS = [
+export const FAQS = [
   ['Which cities is AdGrid available in?',
     "We're launching in Toronto and Vancouver, with more Canadian cities planned as we onboard operators. Join the waitlist below if you're elsewhere — we'll reach out as we expand."],
   ['What screens qualify as an AdGrid display?',
