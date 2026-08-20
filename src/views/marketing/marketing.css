@@ -55,6 +55,10 @@
 .nl:hover { color: #fff; }
 .nav-spacer { flex: 1; }
 @media (max-width: 768px) { .nav-mid { display: none; } }
+.nav-search-wrap { flex-shrink: 0; }
+@media (max-width: 1024px) {
+  .nav-search-wrap { display: none; }
+}
 
 /* ── Mobile nav ── */
 .nav-burger {
