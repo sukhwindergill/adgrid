@@ -13,6 +13,7 @@ import { Faq } from './sections/Faq.jsx';
 import { CtaBand } from './sections/CtaBand.jsx';
 import { Footer } from './sections/Footer.jsx';
 import { StickyMobileCta } from './sections/StickyMobileCta.jsx';
+import { FloatingContactButton } from '../../components/chrome/FloatingContactButton.jsx';
 import { CookieBanner } from '../../components/chrome/CookieBanner.jsx';
 
 export function MarketingHome({ onLogin: onLoginProp }) {
@@ -31,7 +32,7 @@ export function MarketingHome({ onLogin: onLoginProp }) {
   };
 
   return (
-    <div className="mktg" style={{ background: '#0A0A0F', minHeight: '100vh' }}>
+    <div id="main-content" className="mktg" style={{ background: '#0A0A0F', minHeight: '100vh' }}>
       <Nav onScrollTo={scrollTo} onLogin={onLogin} />
       <Hero onScrollTo={scrollTo} onOperatorSignup={onOperatorSignup} />
       <ProofStrip />
@@ -44,6 +45,7 @@ export function MarketingHome({ onLogin: onLoginProp }) {
       <CtaBand />
       <Footer onLogin={onLogin} onScrollTo={scrollTo} />
       <StickyMobileCta onOperatorSignup={onOperatorSignup} onBookCampaign={() => scrollTo('advertisers')} />
+      <FloatingContactButton onClick={() => scrollTo('waitlist-form')} />
       <CookieBanner />
     </div>
   );
