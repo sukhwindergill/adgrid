@@ -33,6 +33,10 @@ export const Btn = ({ children, variant = 'primary', size = 'md', onClick, disab
             e.currentTarget.style.boxShadow = '0 2px 16px rgba(0,194,255,0.35)';
           }
           if (variant === 'secondary') e.currentTarget.style.background = C.surfaceAlt;
+          if (variant === 'ghost') e.currentTarget.style.background = C.surfaceAlt;
+          if (variant === 'danger') e.currentTarget.style.background = 'rgba(239,68,68,0.16)';
+          if (variant === 'success') e.currentTarget.style.background = 'rgba(16,185,129,0.16)';
+          if (variant === 'stripe') e.currentTarget.style.background = '#5147e6';
         }
       }}
       onMouseLeave={e => {
@@ -41,6 +45,10 @@ export const Btn = ({ children, variant = 'primary', size = 'md', onClick, disab
           e.currentTarget.style.boxShadow = '0 1px 8px rgba(0,194,255,0.2)';
         }
         if (variant === 'secondary') e.currentTarget.style.background = C.surface;
+        if (variant === 'ghost') e.currentTarget.style.background = 'transparent';
+        if (variant === 'danger') e.currentTarget.style.background = C.redSoft;
+        if (variant === 'success') e.currentTarget.style.background = C.greenSoft;
+        if (variant === 'stripe') e.currentTarget.style.background = '#635bff';
       }}
     >
       {icon && <span style={{ fontSize: 14 }}>{icon}</span>}
