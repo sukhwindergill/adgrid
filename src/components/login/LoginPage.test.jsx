@@ -52,3 +52,17 @@ describe('LoginPage demo login', () => {
     await waitFor(() => screen.getByText('Demo account unavailable'));
   });
 });
+
+describe('LoginPage password visibility toggle', () => {
+  it('shows the password field masked by default and reveals it on toggle click', () => {
+    render(<LoginPage />);
+    const passwordInput = screen.getByPlaceholderText('••••••••');
+    expect(passwordInput).toHaveAttribute('type', 'password');
+
+    fireEvent.click(screen.getByRole('button', { name: /show password/i }));
+    expect(passwordInput).toHaveAttribute('type', 'text');
+
+    fireEvent.click(screen.getByRole('button', { name: /hide password/i }));
+    expect(passwordInput).toHaveAttribute('type', 'password');
+  });
+});

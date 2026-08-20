@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase.js';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../primitives/Card.jsx';
 import { Btn } from '../primitives/Btn.jsx';
+import { CopyButton } from '../primitives/CopyButton.jsx';
 import { useToast } from '../primitives/Toast.jsx';
 
 // base64url token, generated client-side. The value is only ever a lookup key
@@ -58,15 +59,6 @@ export function ShareReportModal({ campaignId, userId, onClose }) {
 
   const urlFor = (token) => `${window.location.origin}/report/${token}`;
 
-  const copy = async (token) => {
-    try {
-      await navigator.clipboard.writeText(urlFor(token));
-      toast.success('Link copied');
-    } catch {
-      toast.error('Could not copy — select the link and copy manually');
-    }
-  };
-
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
       <Card style={{ padding: 24, width: 'min(560px, 92vw)', maxHeight: '80vh', overflowY: 'auto' }}>
@@ -92,7 +84,13 @@ export function ShareReportModal({ campaignId, userId, onClose }) {
                 </div>
                 {!dead && (
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <Btn size="sm" variant="secondary" onClick={() => copy(l.token)}>Copy</Btn>
+                    <CopyButton
+                      value={urlFor(l.token)}
+                      label="Copy"
+                      size="sm"
+                      onCopied={() => toast.success('Link copied')}
+                      onError={() => toast.error('Could not copy — select the link and copy manually')}
+                    />
                     <Btn size="sm" variant="ghost" onClick={() => revoke(l.token)}>Revoke</Btn>
                   </div>
                 )}

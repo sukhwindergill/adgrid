@@ -14,6 +14,7 @@ import { CtaBand } from './sections/CtaBand.jsx';
 import { Footer } from './sections/Footer.jsx';
 import { StickyMobileCta } from './sections/StickyMobileCta.jsx';
 import { FloatingContactButton } from '../../components/chrome/FloatingContactButton.jsx';
+import { CookieBanner } from '../../components/chrome/CookieBanner.jsx';
 
 export function MarketingHome({ onLogin: onLoginProp }) {
   usePageMeta({
@@ -45,6 +46,7 @@ export function MarketingHome({ onLogin: onLoginProp }) {
       <Footer onLogin={onLogin} onScrollTo={scrollTo} />
       <StickyMobileCta onOperatorSignup={onOperatorSignup} onBookCampaign={() => scrollTo('advertisers')} />
       <FloatingContactButton onClick={() => scrollTo('waitlist-form')} />
+      <CookieBanner />
     </div>
   );
 }

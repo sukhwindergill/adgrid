@@ -5,6 +5,7 @@ import { Card } from '../../components/primitives/Card.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { CopyButton } from '../../components/primitives/CopyButton.jsx';
 import { Inp } from '../../components/primitives/Inp.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
@@ -116,7 +117,12 @@ export function IntegrationsView() {
                 return (
                   <>
                     <pre style={{ background: C.surfaceAlt, borderRadius: 8, padding: '12px 14px', fontSize: 11, color: C.textMid, lineHeight: 1.8, overflow: 'auto', border: `1px solid ${C.border}`, whiteSpace: 'pre-wrap', fontFamily: F.mono }}>{snippet}</pre>
-                    <button onClick={() => navigator.clipboard?.writeText(snippet)} style={{ position: 'absolute', top: 8, right: 8, padding: '4px 10px', fontSize: 11, background: C.surface, color: C.textSub, border: `1px solid ${C.border}`, borderRadius: 6, cursor: 'pointer', fontFamily: F.sans }}>Copy</button>
+                    <CopyButton
+                      value={snippet}
+                      variant="ghost"
+                      size="sm"
+                      style={{ position: 'absolute', top: 8, right: 8, padding: '4px 10px', fontSize: 11, background: C.surface, color: C.textSub, border: `1px solid ${C.border}`, borderRadius: 6 }}
+                    />
                   </>
                 );
               })()}
