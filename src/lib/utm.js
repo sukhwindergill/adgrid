@@ -1,4 +1,3 @@
-// src/lib/utm.js
 const STORAGE_KEY = 'adgrid_utm';
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
 

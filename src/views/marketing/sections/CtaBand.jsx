@@ -4,6 +4,10 @@ import { useReveal } from './useReveal.js';
 import { supabase } from '../../../lib/supabase.js';
 import { getUtmLabel } from '../../../lib/utm.js';
 
+export function applyUtmPrefill(prev, label) {
+  return prev.source ? prev : { ...prev, source: label };
+}
+
 export function CtaBand() {
   const [ref, on] = useReveal();
   const navigate = useNavigate();
@@ -14,7 +18,7 @@ export function CtaBand() {
   useEffect(() => {
     const label = getUtmLabel();
     if (label) {
-      setForm(prev => prev.source ? prev : { ...prev, source: label });
+      setForm(prev => applyUtmPrefill(prev, label));
     }
   }, []);
 

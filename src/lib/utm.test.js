@@ -1,4 +1,3 @@
-// src/lib/utm.test.js
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { captureUtmParams, getUtmLabel } from './utm.js';
 
