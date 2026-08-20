@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useReveal } from './useReveal.js';
 import { supabase } from '../../../lib/supabase.js';
+import { getUtmLabel } from '../../../lib/utm.js';
 
 export function CtaBand() {
   const [ref, on] = useReveal();
@@ -9,6 +10,13 @@ export function CtaBand() {
   const [form, setForm] = useState({ name: '', email: '', company: '', city: '', screens: '', source: '' });
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState(null);
+
+  useEffect(() => {
+    const label = getUtmLabel();
+    if (label) {
+      setForm(prev => prev.source ? prev : { ...prev, source: label });
+    }
+  }, []);
 
   const set = field => e => setForm(prev => ({ ...prev, [field]: e.target.value }));
 

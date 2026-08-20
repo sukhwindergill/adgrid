@@ -47,4 +47,23 @@ describe('CtaBand', () => {
     await waitFor(() => screen.getByText(/something went wrong/i));
     expect(navigateMock).not.toHaveBeenCalled();
   });
+
+  describe('UTM pre-fill', () => {
+    beforeEach(() => {
+      sessionStorage.clear();
+    });
+
+    it('pre-fills the source field from captured UTM data', () => {
+      sessionStorage.setItem('adgrid_utm', JSON.stringify({ utm_source: 'google', utm_medium: 'cpc' }));
+      render(<MemoryRouter><CtaBand /></MemoryRouter>);
+
+      expect(screen.getByLabelText(/how did you hear about adgrid/i).value).toBe('google / cpc');
+    });
+
+    it('leaves the source field empty when no UTM data was captured', () => {
+      render(<MemoryRouter><CtaBand /></MemoryRouter>);
+
+      expect(screen.getByLabelText(/how did you hear about adgrid/i).value).toBe('');
+    });
+  });
 });
