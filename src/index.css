@@ -28,3 +28,7 @@ input, select, button { font-family: inherit; }
 .skip-link:focus {
   top: 8px;
 }
+
+@media (max-width: 768px) {
+  .scroll-to-top-btn { display: none; }
+}

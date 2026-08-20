@@ -18,6 +18,7 @@ export function ScrollToTopButton() {
   return (
     <button
       aria-label="Scroll to top"
+      className="scroll-to-top-btn"
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       style={{
         position: 'fixed',
