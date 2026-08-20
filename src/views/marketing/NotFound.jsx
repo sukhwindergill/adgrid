@@ -9,7 +9,7 @@ export function NotFound() {
   });
 
   return (
-    <div className="mktg" style={{ background: '#0A0A0F', minHeight: '100vh' }}>
+    <div id="main-content" className="mktg" style={{ background: '#0A0A0F', minHeight: '100vh' }}>
       <section className="sec dark" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
         <div className="inner" style={{ textAlign: 'center', maxWidth: 560 }}>
           <div className="eyebrow">404</div>

@@ -15,6 +15,9 @@ import { ErrorBoundary } from './components/primitives/ErrorBoundary.jsx';
 import { RequireAuth } from './components/auth/RequireAuth.jsx';
 
 import { RequirePlatformOwner } from './components/auth/RequirePlatformOwner.jsx';
+import { SkipLink } from './components/chrome/SkipLink.jsx';
+import { ScrollToTopButton } from './components/chrome/ScrollToTopButton.jsx';
+import { ScrollProgressBar } from './components/chrome/ScrollProgressBar.jsx';
 
 // Authenticated dashboard + other public views — lazy-loaded so none of this
 // code ships in the bundle a first-time marketing-page visitor downloads.
@@ -600,6 +603,7 @@ function PublicOnlyRoute({ children }) {
 export default function App() {
   return (
     <Suspense fallback={null}>
+      <SiteChrome />
       <Routes>
         <Route path="/" element={<PublicOnlyRoute><MarketingHome /></PublicOnlyRoute>} />
         <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
@@ -627,6 +631,20 @@ export default function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
+  );
+}
+
+// Skip-link + scroll-to-top + scroll-progress-bar, mounted for every route
+// except the unattended kiosk display player.
+function SiteChrome() {
+  const location = useLocation();
+  if (location.pathname.startsWith('/display/')) return null;
+  return (
+    <>
+      <SkipLink />
+      <ScrollProgressBar />
+      <ScrollToTopButton />
+    </>
   );
 }
 

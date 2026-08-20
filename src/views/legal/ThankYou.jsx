@@ -35,7 +35,7 @@ export function ThankYou() {
   });
 
   return (
-    <div style={page}>
+    <div id="main-content" style={page}>
       <div style={inner}>
         <div style={{ textAlign: 'left' }}>
           <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Thank you' }]} />
