@@ -4,6 +4,7 @@ import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { CopyButton } from '../../components/primitives/CopyButton.jsx';
 import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { ErrorBanner } from '../../components/primitives/ErrorBanner.jsx';
@@ -389,13 +390,6 @@ function StepRegister({ onBack, onScreenCreated }) {
 const HARDWARE_OPTIONS = ['Browser Kiosk', 'Raspberry Pi 5', 'Mini PC', 'Android TV'];
 
 function CopyBox({ label, value }) {
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard.writeText(value).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch(() => {});
-  };
   return (
     <div style={{ marginBottom: 16 }}>
       {label && (
@@ -411,22 +405,13 @@ function CopyBox({ label, value }) {
         }}>
           {value}
         </div>
-        <Btn variant="secondary" size="sm" onClick={copy} style={{ flexShrink: 0, minWidth: 64 }}>
-          {copied ? '✓ Copied' : 'Copy'}
-        </Btn>
+        <CopyButton value={value} copiedLabel="✓ Copied" style={{ flexShrink: 0, minWidth: 64 }} />
       </div>
     </div>
   );
 }
 
 function CodeBox({ label, value }) {
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard.writeText(value).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch(() => {});
-  };
   return (
     <div style={{ marginBottom: 16 }}>
       {label && (
@@ -440,14 +425,16 @@ function CodeBox({ label, value }) {
           fontFamily: F.mono, fontSize: 11, color: '#a3e635',
           whiteSpace: 'pre', overflowX: 'auto', margin: 0,
         }}>{value}</pre>
-        <button onClick={copy} style={{
-          position: 'absolute', top: 8, right: 8,
-          background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
-          borderRadius: 4, color: '#fff', fontSize: 11, padding: '3px 10px',
-          cursor: 'pointer', fontFamily: F.sans,
-        }}>
-          {copied ? '✓' : 'Copy'}
-        </button>
+        <CopyButton
+          value={value}
+          label="Copy"
+          copiedLabel="✓"
+          style={{
+            position: 'absolute', top: 8, right: 8,
+            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: 4, color: '#fff', fontSize: 11, padding: '3px 10px',
+          }}
+        />
       </div>
     </div>
   );
