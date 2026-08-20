@@ -429,6 +429,7 @@ function CodeBox({ label, value }) {
           value={value}
           label="Copy"
           copiedLabel="✓"
+          variant="ghost"
           style={{
             position: 'absolute', top: 8, right: 8,
             background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
