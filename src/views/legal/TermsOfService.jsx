@@ -20,7 +20,7 @@ export function TermsOfService() {
     description: "The terms governing use of AdGrid's digital out-of-home advertising marketplace.",
   });
   return (
-    <div style={page}>
+    <div id="main-content" style={page}>
       <div style={inner}>
         <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Terms of Service' }]} />
         <h1 style={h1}>Terms of Service</h1>

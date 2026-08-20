@@ -55,7 +55,7 @@ export function AppShell({ sidebar, header, children, impersonating, onStopImper
         {/* Right column: TopBar + main content */}
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
           {header}
-          <main style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '16px 12px 40px' : '28px 28px 60px', width: '100%', boxSizing: 'border-box' }}>
+          <main id="main-content" style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '16px 12px 40px' : '28px 28px 60px', width: '100%', boxSizing: 'border-box' }}>
             {children}
           </main>
         </div>
