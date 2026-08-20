@@ -36,4 +36,12 @@ describe('CopyButton', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
     await waitFor(() => expect(onCopied).toHaveBeenCalledTimes(1));
   });
+
+  it('calls onError when the clipboard write fails', async () => {
+    Object.assign(navigator, { clipboard: { writeText: vi.fn().mockRejectedValue(new Error('denied')) } });
+    const onError = vi.fn();
+    render(<CopyButton value="hello" onError={onError} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
+  });
 });

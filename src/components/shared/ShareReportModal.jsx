@@ -89,6 +89,7 @@ export function ShareReportModal({ campaignId, userId, onClose }) {
                       label="Copy"
                       size="sm"
                       onCopied={() => toast.success('Link copied')}
+                      onError={() => toast.error('Could not copy — select the link and copy manually')}
                     />
                     <Btn size="sm" variant="ghost" onClick={() => revoke(l.token)}>Revoke</Btn>
                   </div>

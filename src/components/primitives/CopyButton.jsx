@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Btn } from './Btn.jsx';
 
-export function CopyButton({ value, label = 'Copy', copiedLabel = 'Copied!', variant = 'secondary', size = 'sm', style = {}, onCopied }) {
+export function CopyButton({ value, label = 'Copy', copiedLabel = 'Copied!', variant = 'secondary', size = 'sm', style = {}, onCopied, onError }) {
   const [copied, setCopied] = useState(false);
   const timerRef = useRef(null);
 
@@ -15,9 +15,7 @@ export function CopyButton({ value, label = 'Copy', copiedLabel = 'Copied!', var
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Clipboard write can fail (permissions, insecure context, etc).
-      // Silently no-op — callers that need a failure UI handle it themselves
-      // via their own error toast, same as before this component existed.
+      onError?.();
     }
   };
 
