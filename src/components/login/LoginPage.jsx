@@ -46,10 +46,12 @@ function DarkInp({ label, type, placeholder, value, onChange, onKeyDown, togglea
             style={{
               position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
               background: 'none', border: 'none', cursor: 'pointer', fontSize: 15,
-              padding: 4, lineHeight: 1,
+              padding: 4, lineHeight: 1, borderRadius: 4,
             }}
+            onFocus={e => e.target.style.outline = '2px solid #00C2FF'}
+            onBlur={e => e.target.style.outline = 'none'}
           >
-            {visible ? '🙈' : '👁'}
+            <span aria-hidden="true">{visible ? '🙈' : '👁'}</span>
           </button>
         )}
       </div>
