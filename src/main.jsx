@@ -6,6 +6,9 @@ import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { ToastProvider } from './components/primitives/Toast.jsx'
 import { ConfirmProvider } from './components/primitives/ConfirmModal.jsx'
+import { captureUtmParams } from './lib/utm.js'
+
+captureUtmParams()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
