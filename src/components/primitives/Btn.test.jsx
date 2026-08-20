@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Btn } from './Btn.jsx';
 import { C } from '../../design/tokens.js';
@@ -49,6 +49,35 @@ describe('Btn hover states', () => {
     const btn = screen.getByRole('button', { name: 'Cancel' });
     fireEvent.mouseEnter(btn);
     expect(btn.style.background).toBe('transparent');
+  });
+});
+
+describe('Btn loading state', () => {
+  it('renders a spinner when loading is true', () => {
+    const { container } = render(<Btn loading>Save</Btn>);
+    expect(container.querySelector('[data-testid="btn-spinner"]')).toBeInTheDocument();
+  });
+
+  it('does not render a spinner when loading is false', () => {
+    const { container } = render(<Btn>Save</Btn>);
+    expect(container.querySelector('[data-testid="btn-spinner"]')).not.toBeInTheDocument();
+  });
+
+  it('keeps the original children in the DOM (visually hidden) while loading', () => {
+    render(<Btn loading>Save</Btn>);
+    expect(screen.getByText('Save')).toBeInTheDocument();
+  });
+
+  it('disables the button while loading', () => {
+    render(<Btn loading>Save</Btn>);
+    expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
+  });
+
+  it('does not fire onClick while loading', () => {
+    const onClick = vi.fn();
+    render(<Btn loading onClick={onClick}>Save</Btn>);
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+    expect(onClick).not.toHaveBeenCalled();
   });
 });
 

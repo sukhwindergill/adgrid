@@ -1,6 +1,7 @@
 import { C, F } from '../../design/tokens.js';
+import { Spinner } from './Spinner.jsx';
 
-export const Btn = ({ children, variant = 'primary', size = 'md', onClick, disabled, style = {}, icon }) => {
+export const Btn = ({ children, variant = 'primary', size = 'md', onClick, disabled, style = {}, icon, loading = false }) => {
   const sz = {
     sm: { padding: '6px 12px', fontSize: 12 },
     md: { padding: '8px 16px', fontSize: 13 },
@@ -16,18 +17,19 @@ export const Btn = ({ children, variant = 'primary', size = 'md', onClick, disab
   }[variant] || {};
   return (
     <button
-      onClick={onClick}
-      disabled={disabled}
+      onClick={loading ? undefined : onClick}
+      disabled={disabled || loading}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 6,
         fontFamily: F.sans, fontWeight: 500, borderRadius: 8,
-        cursor: disabled ? 'not-allowed' : 'pointer',
+        cursor: (disabled || loading) ? 'not-allowed' : 'pointer',
         transition: 'all 0.15s', whiteSpace: 'nowrap',
         opacity: disabled ? 0.5 : 1,
+        position: 'relative',
         ...sz, ...vr, ...style,
       }}
       onMouseEnter={e => {
-        if (!disabled) {
+        if (!disabled && !loading) {
           if (variant === 'primary') {
             e.currentTarget.style.background = C.purpleDark;
             e.currentTarget.style.boxShadow = '0 2px 16px rgba(0,194,255,0.35)';
@@ -51,8 +53,18 @@ export const Btn = ({ children, variant = 'primary', size = 'md', onClick, disab
         if (variant === 'stripe') e.currentTarget.style.background = '#635bff';
       }}
     >
-      {icon && <span style={{ fontSize: 14 }}>{icon}</span>}
-      {children}
+      <span style={{ opacity: loading ? 0 : 1, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        {icon && <span style={{ fontSize: 14 }}>{icon}</span>}
+        {children}
+      </span>
+      {loading && (
+        <span
+          data-testid="btn-spinner"
+          style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Spinner />
+        </span>
+      )}
     </button>
   );
 };
