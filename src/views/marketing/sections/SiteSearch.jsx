@@ -44,7 +44,7 @@ export function SiteSearch({ onScrollTo }) {
           {results.length === 0 ? (
             <div style={{ padding: 12, fontSize: 13, color: '#8A8A9A', fontFamily: F.sans }}>No results</div>
           ) : (
-            results.map((r, i) => (
+            results.map((r) => (
               <button
                 key={r.key ?? r.id}
                 onClick={() => { onScrollTo(r.id); setQuery(''); }}
