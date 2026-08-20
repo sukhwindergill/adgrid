@@ -30,7 +30,7 @@ export function MarketingHome({ onLogin: onLoginProp }) {
   };
 
   return (
-    <div className="mktg" style={{ background: '#0A0A0F', minHeight: '100vh' }}>
+    <div id="main-content" className="mktg" style={{ background: '#0A0A0F', minHeight: '100vh' }}>
       <Nav onScrollTo={scrollTo} onLogin={onLogin} />
       <Hero onScrollTo={scrollTo} onOperatorSignup={onOperatorSignup} />
       <ProofStrip />
