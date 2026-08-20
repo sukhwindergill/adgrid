@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SiteSearch } from './SiteSearch.jsx';
 
 export function Nav({ onScrollTo, onLogin }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -15,6 +16,9 @@ export function Nav({ onScrollTo, onLogin }) {
           <button className="nl" onClick={() => go('how')}>How it works</button>
           <button className="nl" onClick={() => go('faq')}>FAQ</button>
         </div>
+        <div className="nav-desktop-only">
+          <SiteSearch onScrollTo={go} />
+        </div>
         <div className="nav-spacer" />
         <button className="nl nav-desktop-only" onClick={onLogin}>Sign in</button>
         <button className="btn-p nav-desktop-only" onClick={() => go('waitlist-form')}>Join the waitlist</button>
@@ -30,6 +34,9 @@ export function Nav({ onScrollTo, onLogin }) {
       {/* Mobile dropdown */}
       {menuOpen && (
         <div className="nav-mobile-menu">
+          <div style={{ padding: '0 12px 12px' }}>
+            <SiteSearch onScrollTo={go} />
+          </div>
           <button className="nl" onClick={() => go('operators')}>For operators</button>
           <button className="nl" onClick={() => go('advertisers')}>For advertisers</button>
           <button className="nl" onClick={() => go('how')}>How it works</button>
