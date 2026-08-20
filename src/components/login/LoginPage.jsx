@@ -15,26 +15,44 @@ const loginCSS = `
   }
 `;
 
-function DarkInp({ label, type, placeholder, value, onChange, onKeyDown }) {
+function DarkInp({ label, type, placeholder, value, onChange, onKeyDown, toggleable = false }) {
+  const [visible, setVisible] = useState(false);
+  const resolvedType = toggleable ? (visible ? 'text' : 'password') : type;
   return (
     <div>
       <div style={{ fontSize: 12, fontWeight: 500, color: '#8A8A9A', fontFamily: F.sans, marginBottom: 6 }}>{label}</div>
-      <input
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-        onKeyDown={onKeyDown}
-        style={{
-          width: '100%', padding: '10px 12px', borderRadius: 8,
-          border: '1px solid #1E1E2E', background: 'rgba(255,255,255,0.04)',
-          color: '#fff', fontSize: 13, fontFamily: F.sans,
-          outline: 'none', boxSizing: 'border-box',
-          transition: 'border-color 0.15s',
-        }}
-        onFocus={e => e.target.style.borderColor = '#00C2FF'}
-        onBlur={e => e.target.style.borderColor = '#1E1E2E'}
-      />
+      <div style={{ position: 'relative' }}>
+        <input
+          type={resolvedType}
+          placeholder={placeholder}
+          value={value}
+          onChange={onChange}
+          onKeyDown={onKeyDown}
+          style={{
+            width: '100%', padding: toggleable ? '10px 40px 10px 12px' : '10px 12px', borderRadius: 8,
+            border: '1px solid #1E1E2E', background: 'rgba(255,255,255,0.04)',
+            color: '#fff', fontSize: 13, fontFamily: F.sans,
+            outline: 'none', boxSizing: 'border-box',
+            transition: 'border-color 0.15s',
+          }}
+          onFocus={e => e.target.style.borderColor = '#00C2FF'}
+          onBlur={e => e.target.style.borderColor = '#1E1E2E'}
+        />
+        {toggleable && (
+          <button
+            type="button"
+            onClick={() => setVisible(v => !v)}
+            aria-label={visible ? 'Hide password' : 'Show password'}
+            style={{
+              position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+              background: 'none', border: 'none', cursor: 'pointer', fontSize: 15,
+              padding: 4, lineHeight: 1,
+            }}
+          >
+            {visible ? '🙈' : '👁'}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -259,7 +277,7 @@ export function LoginPage() {
               <DarkInp label="Email" type="email" placeholder="you@company.com" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handle()} />
             )}
             {(activeMode === 'signin' || activeMode === 'signup' || activeMode === 'reset') && (
-              <DarkInp label={activeMode === 'reset' ? 'New Password' : 'Password'} type="password" placeholder="••••••••" value={pass} onChange={e => setPass(e.target.value)} onKeyDown={e => e.key === 'Enter' && handle()} />
+              <DarkInp label={activeMode === 'reset' ? 'New Password' : 'Password'} type="password" placeholder="••••••••" value={pass} onChange={e => setPass(e.target.value)} onKeyDown={e => e.key === 'Enter' && handle()} toggleable />
             )}
           </div>
 
