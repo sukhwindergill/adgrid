@@ -24,7 +24,7 @@ export const Btn = ({ children, variant = 'primary', size = 'md', onClick, disab
         fontFamily: F.sans, fontWeight: 500, borderRadius: 8,
         cursor: (disabled || loading) ? 'not-allowed' : 'pointer',
         transition: 'all 0.15s', whiteSpace: 'nowrap',
-        opacity: disabled ? 0.5 : 1,
+        opacity: (disabled || loading) ? 0.5 : 1,
         position: 'relative',
         ...sz, ...vr, ...style,
       }}
@@ -60,6 +60,8 @@ export const Btn = ({ children, variant = 'primary', size = 'md', onClick, disab
       {loading && (
         <span
           data-testid="btn-spinner"
+          role="status"
+          aria-label="Loading"
           style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <Spinner />
