@@ -13,6 +13,7 @@ import { Faq } from './sections/Faq.jsx';
 import { CtaBand } from './sections/CtaBand.jsx';
 import { Footer } from './sections/Footer.jsx';
 import { StickyMobileCta } from './sections/StickyMobileCta.jsx';
+import { FloatingContactButton } from '../../components/chrome/FloatingContactButton.jsx';
 
 export function MarketingHome({ onLogin: onLoginProp }) {
   usePageMeta({
@@ -43,6 +44,7 @@ export function MarketingHome({ onLogin: onLoginProp }) {
       <CtaBand />
       <Footer onLogin={onLogin} onScrollTo={scrollTo} />
       <StickyMobileCta onOperatorSignup={onOperatorSignup} onBookCampaign={() => scrollTo('advertisers')} />
+      <FloatingContactButton onClick={() => scrollTo('waitlist-form')} />
     </div>
   );
 }
