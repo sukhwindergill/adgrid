@@ -76,11 +76,22 @@ async function runMarketplaceExpiryPass() {
         .eq("id", listing.id);
 
       if (listing.auto_renew && booking.advertiser_auto_renew) {
-        const start = listing.end_date;
+        // The exclusion constraint on marketplace_listings uses an inclusive
+        // daterange ('[]') and covers 'draft'/'active'/'booked' rows, so the
+        // old (still 'booked') listing's range [old_start, old_end] and a
+        // naive new range [old_end, old_end+14] would share the day old_end
+        // and collide. Transition the old listing out of the filtered
+        // statuses AND start the new listing the day after old_end so the
+        // two ranges never overlap under either condition alone.
+        const start = new Date(new Date(listing.end_date).getTime() + 24 * 60 * 60 * 1000)
+          .toISOString()
+          .slice(0, 10);
         const durationDays = 14; // matches the original window length assumption; refined once real usage data exists
         const end = new Date(new Date(start).getTime() + durationDays * 24 * 60 * 60 * 1000)
           .toISOString()
           .slice(0, 10);
+
+        await supabase.from("marketplace_listings").update({ status: "expired" }).eq("id", listing.id);
 
         await supabase.from("marketplace_listings").insert({
           screen_id: listing.screen_id,
@@ -92,8 +103,13 @@ async function runMarketplaceExpiryPass() {
           auto_renew: true,
         });
       }
-    } catch (_err) {
-      // Non-blocking: one bad listing/booking row should not stop the cron job
+    } catch (err) {
+      // Non-blocking: one bad listing/booking row should not stop the cron
+      // job, but the failure must be visible in cron logs rather than
+      // vanishing silently (e.g. an exclusion-constraint violation on the
+      // auto-renew insert would otherwise leave the advertiser believing a
+      // renewal happened when it didn't).
+      console.error(`runMarketplaceExpiryPass: failed for listing ${listing.id}`, err);
     }
   }
 }
