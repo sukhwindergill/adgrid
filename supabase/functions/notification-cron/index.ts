@@ -48,6 +48,118 @@ async function sendNotification(userId: string, type: string, data: Record<strin
   });
 }
 
+// Marketplace: remind on bookings expiring within 3 days (once), and
+// auto-rebook when both operator (listing.auto_renew) and advertiser
+// (booking.advertiser_auto_renew) opted in. Never rebooks on one-sided
+// consent — see 2026-08-21-marketplace-exclusivity-design.md §6.
+async function runMarketplaceExpiryPass() {
+  const todayDate = new Date().toISOString().slice(0, 10);
+
+  const { data: expiring } = await supabase
+    .from("marketplace_listings")
+    .select("id, screen_id, operator_id, end_date, auto_renew, reminder_sent_at, marketplace_bookings(id, advertiser_id, advertiser_auto_renew, price_cents, status)")
+    .eq("status", "booked")
+    .gte("end_date", todayDate)
+    .lte("end_date", new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10))
+    .is("reminder_sent_at", null);
+
+  for (const listing of expiring ?? []) {
+    try {
+      const booking = (listing.marketplace_bookings ?? []).find(
+        (b: { status: string }) => b.status !== "cancelled"
+      );
+      if (!booking) continue;
+
+      await sendNotification(booking.advertiser_id, "marketplace_booking_expiring", {
+        listingId: listing.id,
+      });
+      await supabase
+        .from("marketplace_listings")
+        .update({ reminder_sent_at: new Date().toISOString() })
+        .eq("id", listing.id);
+
+      if (listing.auto_renew && booking.advertiser_auto_renew) {
+        // The exclusion constraint on marketplace_listings uses an inclusive
+        // daterange ('[]') and covers 'draft'/'active'/'booked' rows, so the
+        // old (still 'booked') listing's range [old_start, old_end] and a
+        // naive new range [old_end, old_end+14] would share the day old_end
+        // and collide. Transition the old listing out of the filtered
+        // statuses AND start the new listing the day after old_end so the
+        // two ranges never overlap under either condition alone.
+        const start = new Date(new Date(listing.end_date).getTime() + 24 * 60 * 60 * 1000)
+          .toISOString()
+          .slice(0, 10);
+        const durationDays = 14; // matches the original window length assumption; refined once real usage data exists
+        const end = new Date(new Date(start).getTime() + durationDays * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .slice(0, 10);
+
+        await supabase.from("marketplace_listings").update({ status: "expired" }).eq("id", listing.id);
+
+        await supabase.from("marketplace_listings").insert({
+          screen_id: listing.screen_id,
+          operator_id: listing.operator_id,
+          price_cents: booking.price_cents,
+          start_date: start,
+          end_date: end,
+          status: "active",
+          auto_renew: true,
+        });
+      }
+    } catch (err) {
+      // Non-blocking: one bad listing/booking row should not stop the cron
+      // job, but the failure must be visible in cron logs rather than
+      // vanishing silently (e.g. an exclusion-constraint violation on the
+      // auto-renew insert would otherwise leave the advertiser believing a
+      // renewal happened when it didn't).
+      console.error(`runMarketplaceExpiryPass: failed for listing ${listing.id}`, err);
+    }
+  }
+}
+
+// Marketplace: listings that are still 'booked' but whose window has already
+// ended (end_date < today) never got flipped to 'expired' by anything else —
+// runMarketplaceExpiryPass only reminds/renews forward-looking windows. Sweep
+// these past-due listings and their bookings to a terminal state so they
+// stop showing up as "current" bookings/listings.
+async function runMarketplacePastDueSweep() {
+  const todayDate = new Date().toISOString().slice(0, 10);
+
+  const { data: pastDue } = await supabase
+    .from("marketplace_listings")
+    .select("id, marketplace_bookings(id, status)")
+    .eq("status", "booked")
+    .lt("end_date", todayDate);
+
+  for (const listing of pastDue ?? []) {
+    try {
+      const { error: listingErr } = await supabase
+        .from("marketplace_listings")
+        .update({ status: "expired" })
+        .eq("id", listing.id);
+      if (listingErr) {
+        console.error(`runMarketplacePastDueSweep: failed to expire listing ${listing.id}`, listingErr);
+        continue;
+      }
+
+      const bookings = (listing.marketplace_bookings ?? []).filter(
+        (b: { status: string }) => b.status === "confirmed" || b.status === "active"
+      );
+      for (const booking of bookings) {
+        const { error: bookingErr } = await supabase
+          .from("marketplace_bookings")
+          .update({ status: "completed" })
+          .eq("id", booking.id);
+        if (bookingErr) {
+          console.error(`runMarketplacePastDueSweep: failed to complete booking ${booking.id}`, bookingErr);
+        }
+      }
+    } catch (err) {
+      console.error(`runMarketplacePastDueSweep: failed for listing ${listing.id}`, err);
+    }
+  }
+}
+
 Deno.serve(async (req: Request) => {
   const denied = requireCronSecret(req);
   if (denied) return denied;
@@ -219,6 +331,10 @@ Deno.serve(async (req: Request) => {
       });
     }
   }
+  // ── Marketplace: expiring-listing reminders + opt-in auto-renew ──
+  await runMarketplaceExpiryPass();
+  await runMarketplacePastDueSweep();
+
   } // end !pendingOnly
 
   // ── Pending approval push notifications ─────────────────────

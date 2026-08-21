@@ -20,6 +20,9 @@ const TYPE_ICONS = {
   account_suspended: "🚫",
   screen_invite_signed_up: "🔗",
   screen_invite_booked: "🎉",
+  marketplace_thread_message: "💬",
+  marketplace_booking_confirmed: "🤝",
+  marketplace_booking_expiring: "⏳",
 };
 
 function timeAgo(dateStr) {

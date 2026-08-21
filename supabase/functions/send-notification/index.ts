@@ -283,6 +283,40 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
       d.appUrl ?? "",
     ),
   }),
+  marketplace_thread_message: (d) => ({
+    title: "New marketplace message",
+    body: "You have a new message about a marketplace listing.",
+    html: emailHtml(
+      "New marketplace message",
+      "You have a new message about a marketplace listing. Reply to keep the conversation moving.",
+      "View Message",
+      d.appUrl ?? "",
+    ),
+  }),
+  marketplace_booking_confirmed: (d) => ({
+    title: d.role === "operator" ? "Your listing was booked" : "Booking confirmed",
+    body: d.role === "operator"
+      ? "An advertiser booked your exclusive listing."
+      : "Your exclusive placement booking is confirmed.",
+    html: emailHtml(
+      d.role === "operator" ? "Your listing was booked" : "Booking confirmed",
+      d.role === "operator"
+        ? "An advertiser booked your exclusive listing. Check the marketplace to review the booking details."
+        : "Your exclusive placement booking is confirmed. Check the marketplace for booking details.",
+      "View Booking",
+      d.appUrl ?? "",
+    ),
+  }),
+  marketplace_booking_expiring: (d) => ({
+    title: "Exclusive placement expiring soon",
+    body: "Your marketplace booking expires soon. Renew to keep this placement.",
+    html: emailHtml(
+      "Exclusive placement expiring soon",
+      "Your marketplace booking expires soon. Renew to keep this exclusive placement.",
+      "Renew Booking",
+      d.appUrl ?? "",
+    ),
+  }),
 };
 
 function emailHtml(title: string, body: string, ctaLabel: string, ctaUrl: string): string {
