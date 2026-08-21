@@ -13,11 +13,14 @@ const CORS = {
 };
 
 async function notify(userId: string, type: string, data: Record<string, unknown>) {
-  await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-notification`, {
+  const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-notification`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-internal-secret": INTERNAL_SECRET },
     body: JSON.stringify({ userId, type, data }),
   });
+  if (!res.ok) {
+    console.error(`notify failed: type=${type} userId=${userId} status=${res.status}`);
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -66,9 +69,12 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: confirmErr.message }), { status: 409, headers: CORS });
   }
 
-  await supabase.from("marketplace_bookings")
+  const { error: paymentUpdateErr } = await supabase.from("marketplace_bookings")
     .update({ payment_intent_id: paymentIntentId, payment_status: "paid" })
     .eq("id", bookingId);
+  if (paymentUpdateErr) {
+    console.error(`marketplace_bookings payment_status update failed: bookingId=${bookingId} error=${paymentUpdateErr.message}`);
+  }
 
   await notify(user.id, "marketplace_booking_confirmed", { listingId, bookingId, role: "advertiser" });
   await notify(listing.operator_id, "marketplace_booking_confirmed", { listingId, bookingId, role: "operator" });
