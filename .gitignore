@@ -32,3 +32,4 @@ __pycache__/
 .claude/
 supabase/.temp/
 .superpowers/
+package-lock.json
