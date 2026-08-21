@@ -28,11 +28,16 @@ export function MarketplaceListingForm({ screenId, onCreated, onCancel }) {
 
   const handleSubmit = async () => {
     setSaving(true);
-    const listing = await createListing({
-      screenId, priceCents: Math.round(Number(priceCents) * 100), startDate, endDate, autoRenew,
-    });
-    setSaving(false);
-    onCreated(listing);
+    try {
+      const listing = await createListing({
+        screenId, priceCents: Math.round(Number(priceCents) * 100), startDate, endDate, autoRenew,
+      });
+      onCreated(listing);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

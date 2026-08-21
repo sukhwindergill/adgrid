@@ -4,6 +4,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 vi.mock('../../lib/marketplace.js', () => ({
   createListing: vi.fn(() => Promise.resolve({ id: 'l1' })),
 }));
+import { createListing } from '../../lib/marketplace.js';
 vi.mock('../../lib/supabase.js', () => ({
   supabase: {
     from: () => ({
@@ -28,5 +29,21 @@ describe('MarketplaceListingForm', () => {
     fireEvent.change(screen.getByLabelText(/end date/i), { target: { value: '2026-09-15' } });
     fireEvent.click(screen.getByText(/create listing/i));
     await waitFor(() => expect(onCreated).toHaveBeenCalled());
+  });
+
+  it('re-enables the submit button and does not call onCreated when createListing rejects', async () => {
+    createListing.mockRejectedValueOnce(new Error('boom'));
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const onCreated = vi.fn();
+    render(<MarketplaceListingForm screenId="s1" onCreated={onCreated} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText(/price/i), { target: { value: '500' } });
+    fireEvent.change(screen.getByLabelText(/start date/i), { target: { value: '2026-09-01' } });
+    fireEvent.change(screen.getByLabelText(/end date/i), { target: { value: '2026-09-15' } });
+    const submitBtn = screen.getByText(/create listing/i);
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => expect(submitBtn).not.toBeDisabled());
+    expect(onCreated).not.toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
   });
 });
