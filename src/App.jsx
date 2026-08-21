@@ -154,6 +154,21 @@ function AppInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
+  // 'adv-marketplace' covers both the browse list and the listing detail
+  // (toggled by local selectedListingId state, no separate route). Sidebar
+  // nav clicks go through react-router's navigate() directly (not navTo),
+  // which changes location.pathname; the internal onSelectListing/onBack
+  // callbacks only flip selectedListingId and never touch the path. So a
+  // pathname-keyed effect fires exactly on real nav-ins (including
+  // clicking "Marketplace" again after leaving) and not on the internal
+  // browse<->detail toggle -- same class of fix as selectedScreenId/
+  // 'screens' vs 'screen-detail' below, but here we don't have a second
+  // route id to fall back on, so we reset explicitly instead.
+  useEffect(() => {
+    if (active === 'adv-marketplace') setSelectedListingId(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
   // ── Impersonation audit trail ─────────────────────────────────────────────
   useEffect(() => {
     if (!user) return;
