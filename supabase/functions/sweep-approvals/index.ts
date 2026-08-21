@@ -30,7 +30,7 @@ Deno.serve(async (_req: Request) => {
 
   const { data: pending } = await supabase
     .from("campaign_screens")
-    .select("id, campaign_id, screen_id, status, review_due_at")
+    .select("id, campaign_id, screen_id, status, review_due_at, is_control")
     .eq("status", "pending");
   // NOTE: campaign status is filtered per-row below via shouldSweep rather
   // than here, so the response can report how many rows were skipped for not
@@ -185,12 +185,21 @@ Deno.serve(async (_req: Request) => {
     // Credit the advertiser for this screen's share — only on a paid campaign,
     // and only via the credits ledger. There is no automated Stripe refund
     // path in this codebase (stripe-refund is retired), so do not attempt one.
+    //
+    // Holdout-test control screens (row.is_control) are never billed --
+    // charge-campaign's own budget math excludes them entirely (see
+    // distributeOperatorCuts, .eq("is_control", false)) -- so a control
+    // screen expiring gets no credit at all (nothing was ever paid for it;
+    // crediting one would be a pure, unfunded giveaway), and an exposed
+    // screen's share is computed against the exposed screen count only, to
+    // match what the advertiser's budget actually bought.
     let creditLabel = "No charge";
-    if (campaign.payment_status === "paid") {
+    if (campaign.payment_status === "paid" && !row.is_control) {
       const { count: totalScreens } = await supabase
         .from("campaign_screens")
         .select("id", { count: "exact", head: true })
-        .eq("campaign_id", campaign.id);
+        .eq("campaign_id", campaign.id)
+        .eq("is_control", false);
 
       const share = (totalScreens ?? 0) > 0 ? Number(campaign.budget) / (totalScreens as number) : 0;
       const credit = Math.round(share * 100) / 100;
