@@ -451,6 +451,26 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         </div>
       )}
 
+      {/* S22: the badge alone told an operator a live screen went dark with no
+          next step -- the one existing hint (below, on the Uptime card) only
+          fires when the screen has NEVER connected, not the realistic case of
+          "was live, went dark" (power blip, crashed kiosk, unplugged cable).
+          This banner covers that gap and jumps straight to the reconnect tool. */}
+      {screen.status === 'live' && healthSignal(screen).label !== 'Live' && (
+        <div style={{
+          marginBottom: 16, padding: '10px 14px', display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+          background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8,
+        }}>
+          <span style={{ fontSize: 12, color: C.red, fontFamily: F.sans }}>
+            {healthSignal(screen).label === 'Offline'
+              ? "This screen isn't sending heartbeats. Check that its display is powered on and connected to the internet."
+              : "This screen's last heartbeat is stale — it may be about to go offline."}
+          </span>
+          <Btn variant="danger" size="sm" onClick={() => setTab('setup')}>Reconnect →</Btn>
+        </div>
+      )}
+
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: `1px solid ${C.border}`, paddingBottom: 0 }}>
         {[
@@ -880,15 +900,17 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
     {hwType === 'atv' && (
       <Card style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Android TV Setup</div>
+        <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.6 }}>
+          There's no native AdGrid app for Android TV yet — use a kiosk browser app instead.
+        </div>
         <ol style={{ paddingLeft: 20, fontFamily: F.sans, fontSize: 13, color: C.textSub, lineHeight: 2 }}>
-          <li>Enable <strong>Developer Options</strong> on your Android TV device (Settings → About → click Build Number 7×).</li>
-          <li>Enable <strong>Install unknown apps</strong> in Developer Options.</li>
-          <li>Download the AdGrid APK to a USB drive or sideload via ADB.</li>
-          <li>Install and launch. Enter your screen token when prompted.</li>
-          <li>Token: <strong style={{ fontFamily: F.mono }}>{screenToken}</strong></li>
+          <li>Install <strong>Fully Kiosk Browser</strong> from the Google Play Store on your Android TV.</li>
+          <li>Open it, go to Settings → Web Content → Start URL, and paste the player URL below.</li>
+          <li>Enable Settings → Other → Kiosk Mode and "Start on boot" so it auto-launches.</li>
+          <li>Restart the device to confirm it boots straight into the display.</li>
         </ol>
-        <div style={{ marginTop: 12, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder ?? '#fde68a'}`, borderRadius: 8, fontSize: 12, color: '#92400e', fontFamily: F.sans }}>
-          Note: Android TV app is in beta. Contact support for the APK download link.
+        <div style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: 11, color: C.purple, wordBreak: 'break-all', marginTop: 12 }}>
+          {`${window.location.origin}/display/${screenToken}`}
         </div>
       </Card>
     )}
