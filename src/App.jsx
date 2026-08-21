@@ -40,12 +40,15 @@ const ScansView              = lazy(() => import('./views/advertiser/ScansView.j
 const AdvertiserBillingView  = lazy(() => import('./views/advertiser/BillingView.jsx'));
 const SettingsView           = lazy(() => import('./views/advertiser/SettingsView.jsx'));
 const AdvIntegrationsView    = lazy(() => import('./views/advertiser/AdvIntegrationsView.jsx'));
+const MarketplaceView            = lazy(() => import('./views/advertiser/MarketplaceView.jsx').then(m => ({ default: m.MarketplaceView })));
+const MarketplaceListingDetail   = lazy(() => import('./views/advertiser/MarketplaceListingDetail.jsx').then(m => ({ default: m.MarketplaceListingDetail })));
 
 // Operator views (new)
 const ApprovalQueue         = lazy(() => import('./views/operator/ApprovalQueue.jsx').then(m => ({ default: m.ApprovalQueue })));
 const ScreenDetailView      = lazy(() => import('./views/operator/ScreenDetail.jsx').then(m => ({ default: m.ScreenDetailView })));
 const ScreenOnboardView     = lazy(() => import('./views/operator/ScreenOnboard.jsx').then(m => ({ default: m.ScreenOnboardView })));
 const NotificationPrefsView = lazy(() => import('./views/shared/NotificationPrefsView.jsx').then(m => ({ default: m.NotificationPrefsView })));
+const MarketplaceListingsView = lazy(() => import('./views/operator/MarketplaceListingsView.jsx').then(m => ({ default: m.MarketplaceListingsView })));
 
 // Shared views
 const SignalsView         = lazy(() => import('./views/shared/SignalsView.jsx').then(m => ({ default: m.SignalsView })));
@@ -107,6 +110,7 @@ function AppInner() {
   const [dataLoading,      setDataLoading]   = useState(false);
   const [loadError,        setLoadError]     = useState(null);
   const [selectedScreenId, setSelectedScreenId] = useState(null);
+  const [selectedListingId, setSelectedListingId] = useState(null);
   const [presetScreenIds, setPresetScreenIds] = useState(() => {
     const id = sessionStorage.getItem('adgrid_preset_screen_id')
     return id ? [id] : null
@@ -483,6 +487,12 @@ function AppInner() {
         />
       );
       if (active === 'adv-campaigns')    return <Campaigns campaigns={advertiserCampaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} allowCancel />;
+      if (active === 'adv-marketplace') {
+        if (selectedListingId) {
+          return <MarketplaceListingDetail listingId={selectedListingId} onBack={() => setSelectedListingId(null)} />;
+        }
+        return <MarketplaceView onSelectListing={id => setSelectedListingId(id)} />;
+      }
       if (active === 'adv-analytics')    return <Analytics campaigns={advertiserCampaigns} loading={dataLoading} />;
       if (active === 'adv-audience')     return <ScansView impersonatingId={impersonating?.id ?? null} />;
       if (active === 'adv-rules')        return <AutomationRulesView user={user} ownerSide="advertiser" />;
@@ -529,6 +539,9 @@ function AppInner() {
     }
     if (active === 'notif-prefs')   return <NotificationPrefsView />;
     if (active === 'campaigns')    return <Campaigns campaigns={operatorCampaigns} dbScreens={myScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} canReview={canReview} onApprovalChange={bumpApprovalRefresh} />;
+    if (active === 'marketplace-listings') {
+      return <MarketplaceListingsView operatorId={impersonating?.id ?? user.id} myScreens={myScreens} />;
+    }
     if (active === 'analytics')    return <Analytics campaigns={operatorCampaigns} loading={dataLoading} />;
     if (active === 'audience')     return <Audience campaigns={operatorCampaigns} />;
     if (active === 'revenue')      return <Revenue campaigns={operatorCampaigns} loading={dataLoading} />;
