@@ -3,6 +3,7 @@ import { C, F } from '../../design/tokens.js';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { supabase } from '../../lib/supabase.js';
 import { createListing } from '../../lib/marketplace.js';
+import { useToast } from '../../components/primitives/Toast.jsx';
 
 // Simple heuristic: avg daily impressions over the window * $ per impression
 // floor, shown next to the op's own price input so they price with real
@@ -16,6 +17,7 @@ export function MarketplaceListingForm({ screenId, onCreated, onCancel }) {
   const [autoRenew, setAutoRenew] = useState(false);
   const [projected, setProjected] = useState(null);
   const [saving, setSaving] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     supabase.from('campaign_delivery_daily').select('impressions').eq('screen_id', screenId)
@@ -35,6 +37,7 @@ export function MarketplaceListingForm({ screenId, onCreated, onCancel }) {
       onCreated(listing);
     } catch (err) {
       console.error(err);
+      toast.error('Failed to create listing. Please try again.');
     } finally {
       setSaving(false);
     }

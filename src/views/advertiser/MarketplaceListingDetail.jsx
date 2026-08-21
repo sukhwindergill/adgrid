@@ -5,20 +5,34 @@ import { ScreenAnalyticsPanel } from '../../components/marketplace/ScreenAnalyti
 import { MarketplaceThread } from '../../components/marketplace/MarketplaceThread.jsx';
 import { fetchListing, bookListing } from '../../lib/marketplace.js';
 import { useToast } from '../../components/primitives/Toast.jsx';
+import { supabase } from '../../lib/supabase.js';
+
+const DEFAULT_FEE_PCT = 5;
 
 export function MarketplaceListingDetail({ listingId, onBack }) {
   const [listing, setListing] = useState(null);
   const [booking, setBooking] = useState(false);
+  const [autoRenew, setAutoRenew] = useState(false);
+  const [feePct, setFeePct] = useState(null);
   const toast = useToast();
 
   useEffect(() => {
     fetchListing(listingId).then(setListing);
   }, [listingId]);
 
+  useEffect(() => {
+    supabase
+      .from('platform_config')
+      .select('value')
+      .eq('key', 'marketplace_fee_pct')
+      .maybeSingle()
+      .then(({ data }) => setFeePct(Number(data?.value ?? DEFAULT_FEE_PCT)));
+  }, []);
+
   const handleBook = async () => {
     setBooking(true);
     try {
-      await bookListing(listingId);
+      await bookListing(listingId, autoRenew);
       toast.success('Booking confirmed');
       onBack();
     } catch (e) {
@@ -44,7 +58,21 @@ export function MarketplaceListingDetail({ listingId, onBack }) {
 
       <ScreenAnalyticsPanel screenId={listing.screen_id} />
 
-      <div style={{ marginTop: 20 }}>
+      <div style={{ marginTop: 20, fontFamily: F.sans, fontSize: 13, color: C.textSub }}>
+        {feePct !== null && (
+          <div>
+            Platform fee ({feePct}%): ${((listing.price_cents * (feePct / 100)) / 100).toFixed(2)} —{' '}
+            total ${((listing.price_cents * (1 + feePct / 100)) / 100).toFixed(2)}
+          </div>
+        )}
+      </div>
+
+      <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, fontFamily: F.sans, fontSize: 12, color: C.textSub }}>
+        <input type="checkbox" checked={autoRenew} onChange={e => setAutoRenew(e.target.checked)} />
+        Auto-renew this booking when it expires
+      </label>
+
+      <div style={{ marginTop: 12 }}>
         <Btn variant="primary" onClick={handleBook} loading={booking}>Book this placement</Btn>
       </div>
 

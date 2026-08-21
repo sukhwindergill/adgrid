@@ -43,12 +43,12 @@ export async function cancelListing(listingId) {
   if (error) throw error;
 }
 
-export async function bookListing(listingId) {
+export async function bookListing(listingId, autoRenew = false) {
   const { data: { session } } = await supabase.auth.getSession();
   const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/marketplace-book`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ listingId }),
+    body: JSON.stringify({ listingId, autoRenew: !!autoRenew }),
   });
   const json = await res.json();
   if (!res.ok) throw new Error(json.error || 'booking failed');

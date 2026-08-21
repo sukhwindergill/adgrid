@@ -14,7 +14,16 @@ vi.mock('../../lib/marketplace.js', () => ({
   sendThreadMessage: vi.fn(() => Promise.resolve()),
 }));
 vi.mock('../../lib/supabase.js', () => ({
-  supabase: { from: () => ({ select: () => ({ eq: () => Promise.resolve({ data: [], error: null }) }) }) },
+  supabase: {
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: () => Promise.resolve({ data: { value: 5 }, error: null }),
+          then: (resolve) => Promise.resolve({ data: [], error: null }).then(resolve),
+        }),
+      }),
+    }),
+  },
 }));
 vi.mock('../../components/primitives/Toast.jsx', () => ({ useToast: () => ({ success: vi.fn(), error: vi.fn() }) }));
 
@@ -36,6 +45,21 @@ describe('marketplace browse-to-book flow', () => {
     fireEvent.click(screen.getByText(/\$500/));
     await waitFor(() => screen.getByText(/book this placement/i));
     fireEvent.click(screen.getByText(/book this placement/i));
-    await waitFor(() => expect(bookListing).toHaveBeenCalledWith('l1'));
+    await waitFor(() => expect(bookListing).toHaveBeenCalledWith('l1', false));
+  });
+
+  it('shows the platform fee and passes the auto-renew choice through to bookListing', async () => {
+    render(<Flow />);
+    await waitFor(() => screen.getByText(/\$500/));
+    fireEvent.click(screen.getByText(/\$500/));
+    await waitFor(() => screen.getByText(/book this placement/i));
+
+    // Platform fee (5% of $500 = $25) and total ($525) shown before booking.
+    await waitFor(() => expect(screen.getByText(/\$25\.00/)).toBeInTheDocument());
+    expect(screen.getByText(/\$525\.00/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText(/auto-renew/i));
+    fireEvent.click(screen.getByText(/book this placement/i));
+    await waitFor(() => expect(bookListing).toHaveBeenCalledWith('l1', true));
   });
 });

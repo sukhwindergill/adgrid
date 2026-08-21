@@ -32,7 +32,7 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS });
   }
 
-  const { listingId } = await req.json();
+  const { listingId, autoRenew } = await req.json();
   if (!listingId) {
     return new Response(JSON.stringify({ error: "listingId required" }), { status: 400, headers: CORS });
   }
@@ -58,6 +58,10 @@ Deno.serve(async (req: Request) => {
   // confirmed — this stub assumes success so the confirm/notify flow below
   // is fully testable independent of payment wiring.
   const paymentIntentId = `stub_${crypto.randomUUID()}`;
+  // payment_status is "stubbed", not "paid" — no real charge has happened yet
+  // (see TODO above), so no downstream query can mistake this for settled
+  // revenue until real payment integration lands.
+  const paymentStatus = "stubbed";
 
   const { data: bookingId, error: confirmErr } = await supabase.rpc("marketplace_confirm_booking", {
     p_listing_id: listingId,
@@ -70,7 +74,11 @@ Deno.serve(async (req: Request) => {
   }
 
   const { error: paymentUpdateErr } = await supabase.from("marketplace_bookings")
-    .update({ payment_intent_id: paymentIntentId, payment_status: "paid" })
+    .update({
+      payment_intent_id: paymentIntentId,
+      payment_status: paymentStatus,
+      advertiser_auto_renew: !!autoRenew,
+    })
     .eq("id", bookingId);
   if (paymentUpdateErr) {
     console.error(`marketplace_bookings payment_status update failed: bookingId=${bookingId} error=${paymentUpdateErr.message}`);

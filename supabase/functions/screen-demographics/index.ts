@@ -61,6 +61,12 @@ async function fetchCensusEstimate(lat: number, lng: number) {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const { data: { user }, error: authErr } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+  if (authErr || !user) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS });
+  }
+
   let screenId: string | undefined;
   try {
     ({ screenId } = await req.json());

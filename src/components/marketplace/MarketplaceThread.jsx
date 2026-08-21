@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { C, F } from '../../design/tokens.js';
 import { Btn } from '../primitives/Btn.jsx';
 import { fetchOrCreateThread, fetchThreadMessages, sendThreadMessage } from '../../lib/marketplace.js';
+import { useToast } from '../primitives/Toast.jsx';
 
 export function MarketplaceThread({ listingId, operatorId }) {
   const [thread, setThread] = useState(null);
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     fetchOrCreateThread(listingId, operatorId).then(t => {
@@ -25,6 +27,7 @@ export function MarketplaceThread({ listingId, operatorId }) {
       setDraft('');
     } catch (error) {
       console.error('Failed to send message:', error);
+      toast.error('Failed to send message. Please try again.');
     } finally {
       setSending(false);
     }

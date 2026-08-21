@@ -9,6 +9,11 @@ vi.mock('../../lib/marketplace.js', () => ({
   sendThreadMessage: (...args) => sendThreadMessage(...args),
 }));
 
+const toastError = vi.fn();
+vi.mock('../primitives/Toast.jsx', () => ({
+  useToast: () => ({ success: vi.fn(), error: toastError }),
+}));
+
 import { MarketplaceThread } from './MarketplaceThread.jsx';
 
 describe('MarketplaceThread', () => {
@@ -38,5 +43,6 @@ describe('MarketplaceThread', () => {
     await waitFor(() => expect(sendThreadMessage).toHaveBeenCalledWith('t1', 'Test message'));
     expect(input.value).toBe('Test message');
     expect(sendBtn).not.toBeDisabled();
+    expect(toastError).toHaveBeenCalled();
   });
 });

@@ -13,6 +13,11 @@ vi.mock('../../lib/supabase.js', () => ({
   },
 }));
 
+const toastError = vi.fn();
+vi.mock('../../components/primitives/Toast.jsx', () => ({
+  useToast: () => ({ success: vi.fn(), error: toastError }),
+}));
+
 import { MarketplaceListingForm } from './MarketplaceListingForm.jsx';
 
 describe('MarketplaceListingForm', () => {
@@ -44,6 +49,7 @@ describe('MarketplaceListingForm', () => {
 
     await waitFor(() => expect(submitBtn).not.toBeDisabled());
     expect(onCreated).not.toHaveBeenCalled();
+    expect(toastError).toHaveBeenCalled();
     consoleErrorSpy.mockRestore();
   });
 });
