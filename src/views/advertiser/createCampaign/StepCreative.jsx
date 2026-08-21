@@ -56,11 +56,21 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
     const base = s.creatives;
     const target = base.find(c => c.id === id);
     if (!target) return s;
-    const { landscape, portrait } = splitScreenIdsByOrientation(matchedScreens, form.selected_screen_ids);
+    const other = base.find(c => c.id !== id);
+    // Scope the split to screens this pair can actually claim -- the two
+    // creatives' own current assignments plus whatever's still unassigned.
+    // Splitting against the *entire* selected pool would sweep in screens a
+    // third (or later) creative already owns, silently double-assigning
+    // them into this pair and overwriting that creative's manual work.
+    const pool = new Set([
+      ...target.assigned_screen_ids,
+      ...(other ? other.assigned_screen_ids : []),
+      ...unassignedScreenIds(s.selected_screen_ids, base),
+    ]);
+    const { landscape, portrait } = splitScreenIdsByOrientation(matchedScreens, [...pool]);
     // This creative takes landscape, the first other creative takes portrait
     // -- a starting point the advertiser can hand-adjust afterward, not a
     // permanent rule.
-    const other = base.find(c => c.id !== id);
     return {
       ...s,
       creatives: base.map(c => {
