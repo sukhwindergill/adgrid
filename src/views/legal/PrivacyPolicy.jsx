@@ -20,7 +20,7 @@ export function PrivacyPolicy() {
     description: 'How AdGrid collects, uses, and protects the data of advertisers, screen operators, and website visitors.',
   });
   return (
-    <div style={page}>
+    <div id="main-content" style={page}>
       <div style={inner}>
         <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Privacy Policy' }]} />
         <h1 style={h1}>Privacy Policy</h1>

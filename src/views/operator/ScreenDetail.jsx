@@ -6,6 +6,7 @@ import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { CopyButton } from '../../components/primitives/CopyButton.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
 import { UptimeGrid } from '../../components/shared/UptimeGrid.jsx';
@@ -193,7 +194,6 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   const [invites, setInvites] = useState([]);
   const [creatingInvite, setCreatingInvite] = useState(false);
   const [inviteError, setInviteError] = useState(null);
-  const [copiedInviteId, setCopiedInviteId] = useState(null);
 
   // Fetch screen record. screen_token is no longer column-readable (it is a
   // bearer secret); fetch it via the owner-scoped get_screen_token RPC.
@@ -317,12 +317,6 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
     } finally {
       setCreatingInvite(false);
     }
-  }
-
-  async function copyInviteLink(token, id) {
-    await navigator.clipboard?.writeText(`${window.location.origin}/invite/screen/${token}`);
-    setCopiedInviteId(id);
-    setTimeout(() => setCopiedInviteId(null), 2000);
   }
 
   const { uptimePct, hourlyGrid } = useMemo(() => {
@@ -609,12 +603,14 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
                     </div>
                   )}
                 </div>
-                <button
-                  onClick={() => copyInviteLink(inv.token, inv.id)}
-                  style={{ fontSize: 11, color: C.purple, background: 'none', border: 'none', cursor: 'pointer', fontFamily: F.sans }}
-                >
-                  {copiedInviteId === inv.id ? '✓ Copied' : 'Copy link'}
-                </button>
+                <CopyButton
+                  value={`${window.location.origin}/invite/screen/${inv.token}`}
+                  label="Copy link"
+                  copiedLabel="✓ Copied"
+                  variant="ghost"
+                  size="sm"
+                  style={{ fontSize: 11, color: C.purple, padding: 0, border: 'none', background: 'none' }}
+                />
               </div>
             ))}
           </div>
@@ -782,18 +778,8 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         {screenToken}
       </div>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <button
-          onClick={() => navigator.clipboard.writeText(screenToken)}
-          style={{ padding: '5px 14px', borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface, color: C.textSub, fontSize: 12, fontFamily: F.sans, cursor: 'pointer' }}
-        >
-          Copy Token
-        </button>
-        <button
-          onClick={() => navigator.clipboard.writeText(`${window.location.origin}/display/${screenToken}`)}
-          style={{ padding: '5px 14px', borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface, color: C.textSub, fontSize: 12, fontFamily: F.sans, cursor: 'pointer' }}
-        >
-          Copy Player URL
-        </button>
+        <CopyButton value={screenToken} label="Copy Token" size="sm" />
+        <CopyButton value={`${window.location.origin}/display/${screenToken}`} label="Copy Player URL" size="sm" />
       </div>
     </Card>
 
