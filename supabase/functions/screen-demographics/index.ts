@@ -18,42 +18,55 @@ const CENSUS_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000; // 90 days — census data i
 // rather than erroring — the frontend renders "not available for this
 // location" per spec, it never blocks the listing flow.
 async function fetchCensusEstimate(lat: number, lng: number) {
-  const geoRes = await fetch(
-    `https://geocoding.geo.census.gov/geocoder/geographies/coordinates?x=${lng}&y=${lat}&benchmark=Public_AR_Current&vintage=Current_Current&layers=10&format=json`,
-  );
-  if (!geoRes.ok) return null;
-  const geoJson = await geoRes.json();
-  const blockGroup = geoJson?.result?.geographies?.["Census Block Groups"]?.[0];
-  if (!blockGroup) return null; // outside US Census coverage
+  try {
+    const geoRes = await fetch(
+      `https://geocoding.geo.census.gov/geocoder/geographies/coordinates?x=${lng}&y=${lat}&benchmark=Public_AR_Current&vintage=Current_Current&layers=10&format=json`,
+    );
+    if (!geoRes.ok) return null;
+    const geoJson = await geoRes.json();
+    const blockGroup = geoJson?.result?.geographies?.["Census Block Groups"]?.[0];
+    if (!blockGroup) return null; // outside US Census coverage
 
-  const { STATE, COUNTY, TRACT, BLKGRP } = blockGroup;
-  const acsRes = await fetch(
-    `https://api.census.gov/data/2022/acs/acs5?get=B01002_001E,B19013_001E&for=block%20group:${BLKGRP}&in=state:${STATE}%20county:${COUNTY}%20tract:${TRACT}`,
-  );
-  if (!acsRes.ok) return null;
-  const acsJson = await acsRes.json();
-  const row = acsJson?.[1]; // row 0 is headers
-  if (!row) return null;
+    const { STATE, COUNTY, TRACT, BLKGRP } = blockGroup;
+    const acsRes = await fetch(
+      `https://api.census.gov/data/2022/acs/acs5?get=B01002_001E,B19013_001E&for=block%20group:${BLKGRP}&in=state:${STATE}%20county:${COUNTY}%20tract:${TRACT}`,
+    );
+    if (!acsRes.ok) return null;
+    const acsJson = await acsRes.json();
+    const row = acsJson?.[1]; // row 0 is headers
+    if (!row) return null;
 
-  const [medianAgeStr, medianIncomeStr] = row;
-  const medianAge = Number(medianAgeStr);
-  const medianIncome = Number(medianIncomeStr);
-  const incomeBand =
-    medianIncome < 40000 ? "under_40k" :
-    medianIncome < 75000 ? "40k_75k" :
-    medianIncome < 120000 ? "75k_120k" : "120k_plus";
+    const [medianAgeStr, medianIncomeStr] = row;
+    const medianAge = Number(medianAgeStr);
+    const medianIncome = Number(medianIncomeStr);
+    const incomeBand =
+      medianIncome < 40000 ? "under_40k" :
+      medianIncome < 75000 ? "40k_75k" :
+      medianIncome < 120000 ? "75k_120k" : "120k_plus";
 
-  return {
-    areaGeoId: `${STATE}${COUNTY}${TRACT}${BLKGRP}`,
-    medianAge: Number.isFinite(medianAge) ? medianAge : null,
-    incomeBand,
-  };
+    return {
+      areaGeoId: `${STATE}${COUNTY}${TRACT}${BLKGRP}`,
+      medianAge: Number.isFinite(medianAge) ? medianAge : null,
+      incomeBand,
+    };
+  } catch (err) {
+    // Network failure, DNS failure, timeout, or malformed JSON from either
+    // Census API — degrade to "no estimate available" rather than throwing,
+    // per the spec's "must never block a listing" constraint.
+    console.error("fetchCensusEstimate failed", err);
+    return null;
+  }
 }
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
-  const { screenId } = await req.json();
+  let screenId: string | undefined;
+  try {
+    ({ screenId } = await req.json());
+  } catch (err) {
+    return new Response(JSON.stringify({ error: "invalid JSON body" }), { status: 400, headers: CORS });
+  }
   if (!screenId) {
     return new Response(JSON.stringify({ error: "screenId required" }), { status: 400, headers: CORS });
   }
