@@ -22,4 +22,21 @@ describe('MarketplaceThread', () => {
     await waitFor(() => expect(sendThreadMessage).toHaveBeenCalledWith('t1', 'Any weekend traffic data?'));
     expect(screen.getByPlaceholderText(/ask a question/i).value).toBe('');
   });
+
+  it('keeps draft and re-enables send button when sendThreadMessage fails', async () => {
+    sendThreadMessage.mockRejectedValueOnce(new Error('Network error'));
+    render(<MarketplaceThread listingId="l1" operatorId="op1" />);
+    await waitFor(() => expect(screen.getByText(/dwell time/i)).toBeInTheDocument());
+
+    const input = screen.getByPlaceholderText(/ask a question/i);
+    const sendBtn = screen.getByText(/send/i);
+
+    fireEvent.change(input, { target: { value: 'Test message' } });
+    fireEvent.click(sendBtn);
+
+    // After the promise rejects, button should be re-enabled and draft preserved
+    await waitFor(() => expect(sendThreadMessage).toHaveBeenCalledWith('t1', 'Test message'));
+    expect(input.value).toBe('Test message');
+    expect(sendBtn).not.toBeDisabled();
+  });
 });

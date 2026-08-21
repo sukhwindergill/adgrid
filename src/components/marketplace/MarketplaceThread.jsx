@@ -19,10 +19,15 @@ export function MarketplaceThread({ listingId, operatorId }) {
   const handleSend = async () => {
     if (!draft.trim() || !thread) return;
     setSending(true);
-    await sendThreadMessage(thread.id, draft.trim());
-    setMessages(prev => [...prev, { id: `temp-${Date.now()}`, body: draft.trim() }]);
-    setDraft('');
-    setSending(false);
+    try {
+      await sendThreadMessage(thread.id, draft.trim());
+      setMessages(prev => [...prev, { id: `temp-${Date.now()}`, body: draft.trim() }]);
+      setDraft('');
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
