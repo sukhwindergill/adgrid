@@ -48,6 +48,56 @@ async function sendNotification(userId: string, type: string, data: Record<strin
   });
 }
 
+// Marketplace: remind on bookings expiring within 3 days (once), and
+// auto-rebook when both operator (listing.auto_renew) and advertiser
+// (booking.advertiser_auto_renew) opted in. Never rebooks on one-sided
+// consent — see 2026-08-21-marketplace-exclusivity-design.md §6.
+async function runMarketplaceExpiryPass() {
+  const { data: expiring } = await supabase
+    .from("marketplace_listings")
+    .select("id, screen_id, operator_id, end_date, auto_renew, reminder_sent_at, marketplace_bookings(id, advertiser_id, advertiser_auto_renew, price_cents, status)")
+    .eq("status", "booked")
+    .lte("end_date", new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10))
+    .is("reminder_sent_at", null);
+
+  for (const listing of expiring ?? []) {
+    try {
+      const booking = (listing.marketplace_bookings ?? []).find(
+        (b: { status: string }) => b.status !== "cancelled"
+      );
+      if (!booking) continue;
+
+      await sendNotification(booking.advertiser_id, "marketplace_booking_expiring", {
+        listingId: listing.id,
+      });
+      await supabase
+        .from("marketplace_listings")
+        .update({ reminder_sent_at: new Date().toISOString() })
+        .eq("id", listing.id);
+
+      if (listing.auto_renew && booking.advertiser_auto_renew) {
+        const start = listing.end_date;
+        const durationDays = 14; // matches the original window length assumption; refined once real usage data exists
+        const end = new Date(new Date(start).getTime() + durationDays * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .slice(0, 10);
+
+        await supabase.from("marketplace_listings").insert({
+          screen_id: listing.screen_id,
+          operator_id: listing.operator_id,
+          price_cents: booking.price_cents,
+          start_date: start,
+          end_date: end,
+          status: "active",
+          auto_renew: true,
+        });
+      }
+    } catch (_err) {
+      // Non-blocking: one bad listing/booking row should not stop the cron job
+    }
+  }
+}
+
 Deno.serve(async (req: Request) => {
   const denied = requireCronSecret(req);
   if (denied) return denied;
@@ -219,6 +269,9 @@ Deno.serve(async (req: Request) => {
       });
     }
   }
+  // ── Marketplace: expiring-listing reminders + opt-in auto-renew ──
+  await runMarketplaceExpiryPass();
+
   } // end !pendingOnly
 
   // ── Pending approval push notifications ─────────────────────
