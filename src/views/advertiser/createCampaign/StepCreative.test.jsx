@@ -1,6 +1,27 @@
 import { useState } from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+
+// StepCreative pulls in useAuth() and the favorites/recent-screens hooks
+// (real supabase client throws under jsdom with no env) -- mock both, same
+// pattern as StepCreative.smoke.test.jsx.
+vi.mock('../../../lib/supabase.js', () => ({
+  supabase: {
+    storage: { from: vi.fn() },
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          order: vi.fn(() => Promise.resolve({ data: [] })),
+          then: (resolve) => Promise.resolve({ data: [] }).then(resolve),
+        })),
+      })),
+    })),
+  },
+}));
+vi.mock('../../../context/AuthContext.jsx', () => ({
+  useAuth: () => ({ user: { id: 'u-1' } }),
+}));
+
 import { StepCreative } from './StepCreative.jsx';
 import { makeBlankCreative } from '../../../lib/creativeAssignment.js';
 
