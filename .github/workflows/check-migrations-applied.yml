@@ -48,18 +48,23 @@ jobs:
           supabase migration list --linked --output-format json > migrations.json
           cat migrations.json
 
-          # Tolerant of either key-casing the CLI might use across versions
-          # -- verify against the real output on the first CI run and
-          # simplify this jq filter once confirmed.
-          pending=$(jq '[.[] | select(
+          # supabase migration list --output-format json returns
+          # {"migrations": [...], "message": "..."} -- NOT a bare array.
+          # Confirmed against real CI output on 2026-08-29 (PR #80's
+          # check-migrations run): the earlier `.[]`-on-the-top-level
+          # filter iterated the object's values (the array AND the
+          # message string) and crashed with "Cannot index array with
+          # string" the first time it hit .remote on the string. Index
+          # into .migrations explicitly instead.
+          pending=$(jq '[.migrations[] | select(
             ((.remote // .Remote // "") | length) == 0
           )] | length' migrations.json)
 
           if [ "$pending" -gt 0 ]; then
             echo "::error::${pending} migration(s) exist in supabase/migrations/ but have never been applied to the linked project (ref: ${{ secrets.SUPABASE_PROJECT_REF }})."
             echo "Apply them with 'supabase db push --linked' (or via the Supabase MCP apply_migration tool) before merging."
-            jq -r '.[] | select(((.remote // .Remote // "") | length) == 0) | (.local // .Local // .version // "unknown")' migrations.json
+            jq -r '.migrations[] | select(((.remote // .Remote // "") | length) == 0) | (.local // .Local // .version // "unknown")' migrations.json
             exit 1
           fi
 
-          echo "All $(jq 'length' migrations.json) migration(s) are applied on the linked project."
+          echo "All $(jq '.migrations | length' migrations.json) migration(s) are applied on the linked project."
