@@ -95,6 +95,11 @@ async function runMarketplaceExpiryPass() {
           .slice(0, 10);
 
         await supabase.from("marketplace_listings").update({ status: "expired" }).eq("id", listing.id);
+        // The old listing just left status 'booked', so runMarketplacePastDueSweep
+        // (which only scans status='booked' listings) will never see it again to
+        // close out its booking. Close it out here instead, or it's stuck in a
+        // non-terminal status forever.
+        await supabase.from("marketplace_bookings").update({ status: "completed" }).eq("id", booking.id);
 
         await supabase.from("marketplace_listings").insert({
           screen_id: listing.screen_id,

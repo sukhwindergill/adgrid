@@ -25,25 +25,30 @@ export function useAdvertiserScreenFavorites(advertiserId) {
 
   const toggleFavorite = useCallback((screenId) => {
     if (!advertiserId) return;
+    // Side effects (the supabase writes) must stay out of the setFavoriteIds
+    // updater -- React can invoke a functional updater more than once per
+    // update (StrictMode/concurrent rendering), which would double-fire the
+    // insert/delete. Decide the direction from the current committed state
+    // (closure over favoriteIds) instead, then update state and fire the
+    // write side by side.
+    const isFavorited = favoriteIds.has(screenId);
     setFavoriteIds(prev => {
-      const isFavorited = prev.has(screenId);
       const next = new Set(prev);
-      if (isFavorited) {
-        next.delete(screenId);
-        supabase.from('advertiser_screen_favorites')
-          .delete()
-          .eq('advertiser_id', advertiserId)
-          .eq('screen_id', screenId)
-          .then(() => {});
-      } else {
-        next.add(screenId);
-        supabase.from('advertiser_screen_favorites')
-          .insert({ advertiser_id: advertiserId, screen_id: screenId })
-          .then(() => {});
-      }
+      if (isFavorited) next.delete(screenId); else next.add(screenId);
       return next;
     });
-  }, [advertiserId]);
+    if (isFavorited) {
+      supabase.from('advertiser_screen_favorites')
+        .delete()
+        .eq('advertiser_id', advertiserId)
+        .eq('screen_id', screenId)
+        .then(() => {});
+    } else {
+      supabase.from('advertiser_screen_favorites')
+        .insert({ advertiser_id: advertiserId, screen_id: screenId })
+        .then(() => {});
+    }
+  }, [advertiserId, favoriteIds]);
 
   return { favoriteIds, loading, toggleFavorite };
 }
