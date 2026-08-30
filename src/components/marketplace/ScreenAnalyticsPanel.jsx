@@ -20,12 +20,20 @@ const INCOME_LABELS = {
 
 export function ScreenAnalyticsPanel({ screenId }) {
   const [traffic, setTraffic] = useState(null);
+  const [trafficError, setTrafficError] = useState(false);
   const [demo, setDemo] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
+    setTrafficError(false);
     supabase.from('impression_events').select('created_at').eq('screen_id', screenId)
-      .then(({ data }) => { if (!cancelled) setTraffic(summarizeTraffic(data ?? [])); });
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        // Don't let a failed query masquerade as "0 scans/day" -- that reads
+        // as real, verified traffic data to the advertiser.
+        if (error) { setTrafficError(true); return; }
+        setTraffic(summarizeTraffic(data ?? []));
+      });
     fetchScreenDemographics(screenId).then(d => { if (!cancelled) setDemo(d); });
     return () => { cancelled = true; };
   }, [screenId]);
@@ -39,7 +47,9 @@ export function ScreenAnalyticsPanel({ screenId }) {
         <div style={{ fontFamily: F.sans, fontWeight: 600, fontSize: 13, color: C.text, marginBottom: 8 }}>
           Traffic — platform-verified
         </div>
-        {traffic ? (
+        {trafficError ? (
+          <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMuted }}>Traffic data unavailable right now.</div>
+        ) : traffic ? (
           <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMid }}>
             ~{traffic.avgDaily} scans/day average, based on {traffic.sampleDays} days of measured data
           </div>

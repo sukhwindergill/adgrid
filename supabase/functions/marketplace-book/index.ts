@@ -81,7 +81,16 @@ Deno.serve(async (req: Request) => {
     })
     .eq("id", bookingId);
   if (paymentUpdateErr) {
+    // The booking row is already confirmed at this point (marketplace_confirm_booking
+    // succeeded), so we can't roll that back here -- but we must not tell the
+    // client this booking is good and fire "confirmed" notifications when its
+    // payment bookkeeping is broken. Surface the failure instead of silently
+    // returning 200.
     console.error(`marketplace_bookings payment_status update failed: bookingId=${bookingId} error=${paymentUpdateErr.message}`);
+    return new Response(
+      JSON.stringify({ error: "booking confirmed but payment record update failed", bookingId }),
+      { status: 500, headers: CORS },
+    );
   }
 
   await notify(user.id, "marketplace_booking_confirmed", { listingId, bookingId, role: "advertiser" });
