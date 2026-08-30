@@ -1,4 +1,15 @@
 import { supabase } from './supabase.js';
+import { SUPABASE_FUNCTIONS_URL } from './constants.js';
+
+async function notify(userId, type, data) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+  fetch(`${SUPABASE_FUNCTIONS_URL}/send-notification`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+    body: JSON.stringify({ userId, type, data }),
+  }).catch(() => {});
+}
 
 export async function fetchActiveListings() {
   const { data, error } = await supabase
@@ -77,11 +88,17 @@ export async function fetchThreadMessages(threadId) {
   return data;
 }
 
-export async function sendThreadMessage(threadId, body) {
+export async function sendThreadMessage(thread, body) {
   const { data: { user } } = await supabase.auth.getUser();
   const { error } = await supabase
-    .from('marketplace_thread_messages').insert({ thread_id: threadId, sender_id: user.id, body });
+    .from('marketplace_thread_messages').insert({ thread_id: thread.id, sender_id: user.id, body });
   if (error) throw error;
+
+  // Notify whichever participant didn't send this message -- otherwise a
+  // pre-sale question/reply sits unseen until someone happens to reopen the
+  // listing manually.
+  const recipientId = user.id === thread.advertiser_id ? thread.operator_id : thread.advertiser_id;
+  notify(recipientId, 'marketplace_thread_message', { listingId: thread.listing_id, appUrl: window.location.origin });
 }
 
 export async function fetchScreenDemographics(screenId) {

@@ -24,7 +24,7 @@ describe('MarketplaceThread', () => {
     fireEvent.change(screen.getByPlaceholderText(/ask a question/i), { target: { value: 'Any weekend traffic data?' } });
     fireEvent.click(screen.getByText(/send/i));
 
-    await waitFor(() => expect(sendThreadMessage).toHaveBeenCalledWith('t1', 'Any weekend traffic data?'));
+    await waitFor(() => expect(sendThreadMessage).toHaveBeenCalledWith({ id: 't1' }, 'Any weekend traffic data?'));
     expect(screen.getByPlaceholderText(/ask a question/i).value).toBe('');
   });
 
@@ -40,7 +40,7 @@ describe('MarketplaceThread', () => {
     fireEvent.click(sendBtn);
 
     // After the promise rejects, button should be re-enabled and draft preserved
-    await waitFor(() => expect(sendThreadMessage).toHaveBeenCalledWith('t1', 'Test message'));
+    await waitFor(() => expect(sendThreadMessage).toHaveBeenCalledWith({ id: 't1' }, 'Test message'));
     expect(input.value).toBe('Test message');
     expect(sendBtn).not.toBeDisabled();
     expect(toastError).toHaveBeenCalled();
