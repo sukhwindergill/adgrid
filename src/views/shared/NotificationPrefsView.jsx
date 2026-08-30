@@ -11,6 +11,7 @@ const EVENTS = [
   { key: 'scan_spike',        label: 'Scan spike detected', defaultInApp: true,  defaultEmail: false },
   { key: 'payout_processed',  label: 'Payout processed',   defaultInApp: true,  defaultEmail: true },
   { key: 'new_advertiser',    label: 'New advertiser',      defaultInApp: true,  defaultEmail: false },
+  { key: 'marketplace_thread_message', label: 'Marketplace messages', defaultInApp: true, defaultEmail: false },
 ];
 
 function defaultPrefs() {
