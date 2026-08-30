@@ -22,7 +22,7 @@ export function MarketplaceThread({ listingId, operatorId }) {
     if (!draft.trim() || !thread) return;
     setSending(true);
     try {
-      await sendThreadMessage(thread.id, draft.trim());
+      await sendThreadMessage(thread, draft.trim());
       setMessages(prev => [...prev, { id: `temp-${Date.now()}`, body: draft.trim() }]);
       setDraft('');
     } catch (error) {
