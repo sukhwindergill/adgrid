@@ -4,8 +4,21 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
+// StepCreative also pulls in useAdvertiserScreenFavorites / useAdvertiserRecentScreens,
+// which call supabase.from(...).select(...).eq(...) -- give the mock a
+// from() that resolves to an empty result so those hooks settle quietly.
 vi.mock('../../../lib/supabase.js', () => ({
-  supabase: { storage: { from: vi.fn() } },
+  supabase: {
+    storage: { from: vi.fn() },
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          order: vi.fn(() => Promise.resolve({ data: [] })),
+          then: (resolve) => Promise.resolve({ data: [] }).then(resolve),
+        })),
+      })),
+    })),
+  },
 }));
 vi.mock('../../../context/AuthContext.jsx', () => ({
   useAuth: () => ({ user: { id: 'u-1' } }),

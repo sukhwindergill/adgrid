@@ -1,5 +1,5 @@
 // src/views/advertiser/createCampaign/StepCreative.jsx
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { C, F } from '../../../design/tokens.js';
 import { Card } from '../../../components/primitives/Card.jsx';
 import { SelInput } from '../../../components/primitives/SelInput.jsx';
@@ -9,11 +9,18 @@ import { CreativeCard } from './CreativeCard.jsx';
 import { unassignedScreenIds, splitScreenIdsByOrientation, makeBlankCreative } from '../../../lib/creativeAssignment.js';
 import { VENUE_TAXONOMY } from '../../../lib/venueTypes.js';
 import { pluralize } from '../../../lib/pluralize.js';
+import { useAuth } from '../../../context/AuthContext.jsx';
+import { useAdvertiserScreenFavorites } from '../../../hooks/useAdvertiserScreenFavorites.js';
+import { useAdvertiserRecentScreens } from '../../../hooks/useAdvertiserRecentScreens.js';
 
 const BLANK_CREATIVE = makeBlankCreative;
 
 export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavailable = false }) {
   const [showFilters, setShowFilters] = useState(false);
+  const [screenTab, setScreenTab] = useState('all');
+  const { user } = useAuth();
+  const { favoriteIds, toggleFavorite } = useAdvertiserScreenFavorites(user?.id);
+  const { screenIds: recentScreenIds } = useAdvertiserRecentScreens(user?.id);
 
   const toggleScreen = (id) => setForm(s => ({
     ...s,
@@ -23,6 +30,22 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
   }));
   const selectAll = () => setForm(s => ({ ...s, selected_screen_ids: matchedScreens.map(sc => sc.id) }));
   const deselectAll = () => setForm(s => ({ ...s, selected_screen_ids: [] }));
+
+  // Favorites/Recent only ever narrow matchedScreens (still respecting the
+  // targeting filters above) -- a favorited screen that's fallen out of the
+  // current area/venue filters shouldn't reappear here.
+  const favoriteScreens = useMemo(
+    () => matchedScreens.filter(s => favoriteIds.has(s.id)),
+    [matchedScreens, favoriteIds]
+  );
+  const recentScreens = useMemo(() => {
+    const byId = new Map(matchedScreens.map(s => [s.id, s]));
+    return recentScreenIds.map(id => byId.get(id)).filter(Boolean);
+  }, [matchedScreens, recentScreenIds]);
+
+  const visibleScreens = screenTab === 'favorites' ? favoriteScreens
+    : screenTab === 'recent' ? recentScreens
+    : matchedScreens;
 
   const selectedScreens = matchedScreens.filter(s => form.selected_screen_ids.includes(s.id));
   const totalImpr = selectedScreens.reduce((a, s) => a + (s.impressions || 0), 0);
@@ -136,16 +159,40 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
           </div>
         </div>
 
-        {matchedScreens.length === 0 ? (
+        <div style={{ marginBottom: 14 }}>
+          <PillGroup
+            options={[
+              { value: 'all', label: `All matching (${matchedScreens.length})` },
+              { value: 'favorites', label: `Favorites (${favoriteScreens.length})` },
+              { value: 'recent', label: `Recent (${recentScreens.length})` },
+            ]}
+            value={screenTab}
+            onChange={setScreenTab}
+          />
+        </div>
+
+        {visibleScreens.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '32px 24px', color: C.textSub, fontFamily: F.sans, fontSize: 13 }}>
-            {presetScreenUnavailable
+            {screenTab === 'favorites'
+              ? 'No favorites yet — star a board below to save it here.'
+              : screenTab === 'recent'
+              ? 'No boards from past campaigns yet.'
+              : presetScreenUnavailable
               ? 'This screen is no longer available. Contact AdGrid support for help.'
               : 'No screens match your filters. Try widening your area or removing filters.'}
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, marginBottom: 28 }}>
-            {matchedScreens.map(s => (
-              <ScreenPickerCard key={s.id} screen={s} selected={form.selected_screen_ids} onToggle={toggleScreen} creative={creativeForScreen(s.id)} />
+            {visibleScreens.map(s => (
+              <ScreenPickerCard
+                key={s.id}
+                screen={s}
+                selected={form.selected_screen_ids}
+                onToggle={toggleScreen}
+                creative={creativeForScreen(s.id)}
+                isFavorited={favoriteIds.has(s.id)}
+                onToggleFavorite={toggleFavorite}
+              />
             ))}
           </div>
         )}

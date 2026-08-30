@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { C, F } from '../../../design/tokens.js';
 import { AdRenderPreviewModal } from '../../../components/shared/AdRenderPreviewModal.jsx';
 
-export function ScreenPickerCard({ screen, selected, onToggle, creative }) {
+export function ScreenPickerCard({ screen, selected, onToggle, creative, isFavorited, onToggleFavorite }) {
   const [showPreview, setShowPreview] = useState(false);
   const firstPhoto = screen.screen_photos?.[0];
   const venueLabel = screen.venue_subtype || screen.venue_category;
@@ -23,6 +23,21 @@ export function ScreenPickerCard({ screen, selected, onToggle, creative }) {
         transition: 'all 0.15s', position: 'relative',
       }}
     >
+      {onToggleFavorite && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onToggleFavorite(screen.id); }}
+          title={isFavorited ? 'Remove from favorites' : 'Save as favorite'}
+          style={{
+            position: 'absolute', top: 6, left: 6, zIndex: 1,
+            width: 24, height: 24, borderRadius: '50%', border: 'none',
+            background: 'rgba(0,0,0,0.55)', color: isFavorited ? '#fbbf24' : '#fff',
+            fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          {isFavorited ? '★' : '☆'}
+        </button>
+      )}
       {firstPhoto && (
         <div style={{ position: 'relative' }}>
           <img src={firstPhoto} alt={screen.name} style={{ width: '100%', height: 72, objectFit: 'cover', display: 'block' }} />
@@ -47,7 +62,13 @@ export function ScreenPickerCard({ screen, selected, onToggle, creative }) {
       )}
       <div style={{ padding: '10px 12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, lineHeight: 1.3 }}>{screen.name}</div>
+          <div style={{
+            fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, lineHeight: 1.3,
+            // Star sits absolute top-left over the photo strip when there is
+            // one; without a photo it overlaps this title row instead, so
+            // make room for it there.
+            paddingLeft: !firstPhoto && onToggleFavorite ? 28 : 0,
+          }}>{screen.name}</div>
           <div style={{
             width: 18, height: 18, borderRadius: 4, border: `2px solid ${isSelected ? C.purple : C.border}`,
             background: isSelected ? C.purple : 'transparent', flexShrink: 0, marginLeft: 8, marginTop: 1,

@@ -39,3 +39,29 @@ describe('ScreenPickerCard preview button', () => {
     expect(onToggle).not.toHaveBeenCalled();
   });
 });
+
+describe('ScreenPickerCard favorite star', () => {
+  it('does not render a star when onToggleFavorite is not provided', () => {
+    render(<ScreenPickerCard screen={BASE_SCREEN} selected={[]} onToggle={() => {}} creative={NO_CREATIVE} />);
+    expect(screen.queryByTitle('Save as favorite')).not.toBeInTheDocument();
+  });
+
+  it('shows an unfilled star when not favorited, and calls onToggleFavorite with the screen id', () => {
+    const onToggleFavorite = vi.fn();
+    render(<ScreenPickerCard screen={BASE_SCREEN} selected={[]} onToggle={() => {}} creative={NO_CREATIVE} isFavorited={false} onToggleFavorite={onToggleFavorite} />);
+    fireEvent.click(screen.getByTitle('Save as favorite'));
+    expect(onToggleFavorite).toHaveBeenCalledWith('scr-1');
+  });
+
+  it('shows a filled star and different title when favorited', () => {
+    render(<ScreenPickerCard screen={BASE_SCREEN} selected={[]} onToggle={() => {}} creative={NO_CREATIVE} isFavorited onToggleFavorite={() => {}} />);
+    expect(screen.getByTitle('Remove from favorites')).toHaveTextContent('★');
+  });
+
+  it('clicking the star does not toggle the card selection', () => {
+    const onToggle = vi.fn();
+    render(<ScreenPickerCard screen={BASE_SCREEN} selected={[]} onToggle={onToggle} creative={NO_CREATIVE} onToggleFavorite={() => {}} />);
+    fireEvent.click(screen.getByTitle('Save as favorite'));
+    expect(onToggle).not.toHaveBeenCalled();
+  });
+});
