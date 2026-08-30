@@ -7,7 +7,7 @@ CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 CREATE TABLE IF NOT EXISTS marketplace_listings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  screen_id uuid NOT NULL REFERENCES screens(id) ON DELETE CASCADE,
+  screen_id text NOT NULL REFERENCES screens(id) ON DELETE CASCADE,
   operator_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   price_cents integer NOT NULL CHECK (price_cents > 0),
   start_date date NOT NULL,

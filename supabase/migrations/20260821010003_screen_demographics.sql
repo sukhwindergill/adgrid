@@ -2,7 +2,7 @@
 -- slow cadence by the screen-demographics edge function (census data doesn't
 -- change day to day) — never queried live per-request against the source API.
 CREATE TABLE IF NOT EXISTS screen_demographics (
-  screen_id uuid PRIMARY KEY REFERENCES screens(id) ON DELETE CASCADE,
+  screen_id text PRIMARY KEY REFERENCES screens(id) ON DELETE CASCADE,
   area_geo_id text,
   median_age numeric,
   income_band text,
