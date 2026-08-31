@@ -3,7 +3,7 @@ import { C, F } from '../../design/tokens.js';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { ScreenAnalyticsPanel } from '../../components/marketplace/ScreenAnalyticsPanel.jsx';
 import { MarketplaceThread } from '../../components/marketplace/MarketplaceThread.jsx';
-import { fetchListing, bookListing } from '../../lib/marketplace.js';
+import { fetchListing, bookListing, fetchListingScreens } from '../../lib/marketplace.js';
 import { useToast } from '../../components/primitives/Toast.jsx';
 import { supabase } from '../../lib/supabase.js';
 
@@ -11,6 +11,7 @@ const DEFAULT_FEE_PCT = 5;
 
 export function MarketplaceListingDetail({ listingId, onBack }) {
   const [listing, setListing] = useState(null);
+  const [bundleScreenNames, setBundleScreenNames] = useState(null); // null until loaded, [] if not a bundle
   const [booking, setBooking] = useState(false);
   const [autoRenew, setAutoRenew] = useState(false);
   const [feePct, setFeePct] = useState(null);
@@ -19,6 +20,13 @@ export function MarketplaceListingDetail({ listingId, onBack }) {
   useEffect(() => {
     fetchListing(listingId).then(setListing);
   }, [listingId]);
+
+  useEffect(() => {
+    if (!listing?.is_bundle) return;
+    fetchListingScreens(listingId)
+      .then(ids => supabase.from('advertiser_screens').select('id, name').in('id', ids))
+      .then(({ data }) => setBundleScreenNames((data ?? []).map(s => s.name)));
+  }, [listing?.is_bundle, listingId]);
 
   useEffect(() => {
     supabase
@@ -50,13 +58,24 @@ export function MarketplaceListingDetail({ listingId, onBack }) {
         ← Back to marketplace
       </button>
       <h2 style={{ fontFamily: F.sans, fontSize: 20, fontWeight: 600, color: C.text }}>
-        Exclusive placement — ${(listing.price_cents / 100).toFixed(0)}
+        {listing.is_bundle ? 'Bundle placement' : 'Exclusive placement'} — ${(listing.price_cents / 100).toFixed(0)}
       </h2>
-      <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textSub, marginTop: 4, marginBottom: 20 }}>
+      <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textSub, marginTop: 4, marginBottom: 8 }}>
         {listing.start_date} – {listing.end_date}
       </div>
 
+      {listing.is_bundle && (
+        <div style={{ fontFamily: F.sans, fontSize: 13, color: C.text, background: C.purpleSoft, borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>
+          {bundleScreenNames === null ? 'Loading screens…' : `${bundleScreenNames.length} screens included: ${bundleScreenNames.join(', ')}`}
+        </div>
+      )}
+
       <ScreenAnalyticsPanel screenId={listing.screen_id} />
+      {listing.is_bundle && bundleScreenNames && bundleScreenNames.length > 1 && (
+        <div style={{ fontFamily: F.sans, fontSize: 12, color: C.textMuted, marginTop: 6 }}>
+          Analytics shown above are for the primary screen in this bundle.
+        </div>
+      )}
 
       <div style={{ marginTop: 20, fontFamily: F.sans, fontSize: 13, color: C.textSub }}>
         {feePct !== null && (

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { C, F } from '../../design/tokens.js';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { supabase } from '../../lib/supabase.js';
-import { createListing } from '../../lib/marketplace.js';
+import { createListing, createBundleListing } from '../../lib/marketplace.js';
 import { useToast } from '../../components/primitives/Toast.jsx';
 
 // Simple heuristic: avg daily impressions over the window * $ per impression
@@ -10,33 +10,46 @@ import { useToast } from '../../components/primitives/Toast.jsx';
 // information rather than guessing. Not prescriptive — op sets final price.
 const CPM_ESTIMATE = 8; // $ per 1000 impressions, matches typical cpm_floor range
 
-export function MarketplaceListingForm({ screenId, onCreated, onCancel }) {
+// screenId: single-screen listing (existing flow, unchanged).
+// bundleScreens: [{id, name}] for a bundle listing -- one shared price/date
+// range across every screen in the set. Exactly one of the two is passed.
+export function MarketplaceListingForm({ screenId, bundleScreens, onCreated, onCancel }) {
+  const isBundle = !!bundleScreens;
   const [priceCents, setPriceCents] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [autoRenew, setAutoRenew] = useState(false);
   const [projected, setProjected] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState(null);
   const toast = useToast();
 
   useEffect(() => {
+    if (isBundle) return; // Per-screen projection isn't meaningful summed naively across a bundle -- omitted rather than shown misleadingly.
     supabase.from('campaign_delivery_daily').select('impressions').eq('screen_id', screenId)
       .then(({ data }) => {
         const rows = data ?? [];
         const avg = rows.length ? rows.reduce((s, r) => s + (r.impressions || 0), 0) / rows.length : 0;
         setProjected(Math.round((avg * 30 / 1000) * CPM_ESTIMATE)); // ~30-day shared-rotation projection
       });
-  }, [screenId]);
+  }, [screenId, isBundle]);
 
   const handleSubmit = async () => {
     setSaving(true);
+    setErr(null);
     try {
-      const listing = await createListing({
-        screenId, priceCents: Math.round(Number(priceCents) * 100), startDate, endDate, autoRenew,
-      });
+      const listing = isBundle
+        ? await createBundleListing({
+            screenIds: bundleScreens.map(s => s.id),
+            priceCents: Math.round(Number(priceCents) * 100), startDate, endDate, autoRenew,
+          })
+        : await createListing({
+            screenId, priceCents: Math.round(Number(priceCents) * 100), startDate, endDate, autoRenew,
+          });
       onCreated(listing);
-    } catch (err) {
-      console.error(err);
+    } catch (e) {
+      console.error(e);
+      setErr(e.message || 'Failed to create listing.');
       toast.error('Failed to create listing. Please try again.');
     } finally {
       setSaving(false);
@@ -45,13 +58,18 @@ export function MarketplaceListingForm({ screenId, onCreated, onCancel }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 420 }}>
+      {isBundle && (
+        <div style={{ fontFamily: F.sans, fontSize: 12, color: C.text, background: C.purpleSoft, borderRadius: 8, padding: 10 }}>
+          Bundle of {bundleScreens.length} screens: {bundleScreens.map(s => s.name).join(', ')}
+        </div>
+      )}
       {projected !== null && (
         <div style={{ fontFamily: F.sans, fontSize: 12, color: C.textSub, background: C.surfaceAlt, borderRadius: 8, padding: 10 }}>
           Projected shared-rotation earnings for a similar 30-day window: ~${projected}
         </div>
       )}
       <label style={{ fontFamily: F.sans, fontSize: 12, color: C.textSub }}>
-        Price ($)
+        Price ($){isBundle ? ' — for the whole bundle' : ''}
         <input aria-label="price" type="number" value={priceCents} onChange={e => setPriceCents(e.target.value)}
           style={{ display: 'block', width: '100%', marginTop: 4, padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8 }} />
       </label>
@@ -69,9 +87,10 @@ export function MarketplaceListingForm({ screenId, onCreated, onCancel }) {
         <input type="checkbox" checked={autoRenew} onChange={e => setAutoRenew(e.target.checked)} />
         Allow auto-renewal
       </label>
+      {err && <div style={{ fontFamily: F.sans, fontSize: 12, color: C.red }}>{err}</div>}
       <div style={{ display: 'flex', gap: 8 }}>
         <Btn variant="primary" onClick={handleSubmit} loading={saving} disabled={!priceCents || !startDate || !endDate}>
-          Create listing
+          {isBundle ? 'Create bundle listing' : 'Create listing'}
         </Btn>
         <Btn variant="ghost" onClick={onCancel}>Cancel</Btn>
       </div>

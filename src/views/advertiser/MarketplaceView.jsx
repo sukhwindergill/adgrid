@@ -27,8 +27,13 @@ export function MarketplaceView({ onSelectListing }) {
               borderRadius: 12, padding: 16,
             }}
           >
-            <div style={{ fontFamily: F.sans, fontWeight: 600, fontSize: 15, color: C.text }}>
+            <div style={{ fontFamily: F.sans, fontWeight: 600, fontSize: 15, color: C.text, display: 'flex', alignItems: 'center', gap: 8 }}>
               ${(l.price_cents / 100).toFixed(0)}
+              {l.is_bundle && (
+                <span style={{ fontSize: 11, fontWeight: 600, color: C.purple, background: C.purpleSoft, borderRadius: 999, padding: '2px 8px' }}>
+                  Bundle
+                </span>
+              )}
             </div>
             <div style={{ fontFamily: F.sans, fontSize: 12, color: C.textSub, marginTop: 4 }}>
               {l.start_date} – {l.end_date}
