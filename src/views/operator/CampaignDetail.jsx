@@ -14,8 +14,9 @@ import { ShareReportModal } from '../../components/shared/ShareReportModal.jsx';
 import { ApproveBtn } from '../../lib/campaignActions.jsx';
 import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
 import { DeliveryCheckPanel } from '../../components/shared/DeliveryCheckPanel.jsx';
+import { PacingCard } from '../../components/shared/PacingCard.jsx';
 
-export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onDuplicate, canReview = false, setCampaigns, onApprovalChange }) {
+export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onDuplicate, canReview = false, setCampaigns, onApprovalChange, isAdvertiserView = false }) {
   const toast = useToast();
   const [tab, setTab] = useState('overview');
   const [rejecting, setRejecting] = useState(false);
@@ -162,6 +163,10 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
           ))}
         </div>
       </Card>
+
+      {isAdvertiserView && (c.status === 'scheduled' || c.status === 'active') && (
+        <PacingCard startDate={c.start} endDate={c.end} spent={c.spent} budget={c.budget} currency={c.currency} />
+      )}
 
       <Tabs tabs={[
         { id: 'overview', label: 'Performance' },

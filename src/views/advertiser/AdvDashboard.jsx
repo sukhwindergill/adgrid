@@ -12,10 +12,28 @@ import { pluralize } from '../../lib/pluralize.js';
 import { periodDelta, splitByPeriod } from '../../lib/periodDelta.js';
 import { DeliveryHealthCard } from '../../components/shared/DeliveryHealthCard.jsx';
 import { ApprovalTracker } from '../../components/shared/ApprovalTracker.jsx';
+import { PacingDot } from '../../components/shared/PacingDot.jsx';
 import { estimateReach, averageFrequency } from '../../lib/reach.js';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { listDrafts, deleteDraft } from '../../lib/campaignDrafts.js';
+import { DraftsCard } from './createCampaign/DraftsCard.jsx';
 
 export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
   const { isMobile } = useBreakpoint();
+  // Drafts are stored per real signed-in user (see campaignDrafts.js), not
+  // per impersonated/delegate account -- `user` here can be a display-only
+  // stand-in during impersonation, so this reads the actual auth user.
+  const { user: authUser } = useAuth();
+  const [drafts, setDrafts] = useState(() => (authUser ? listDrafts(authUser.id) : []));
+  const resumeDraft = (draftId) => {
+    sessionStorage.setItem('adgrid_resume_draft_id', draftId);
+    setAdvNav('adv-create');
+  };
+  const removeDraft = (draftId) => {
+    if (!authUser) return;
+    deleteDraft(authUser.id, draftId);
+    setDrafts(listDrafts(authUser.id));
+  };
   const [campaignScreens, setCampaignScreens] = useState({}); // map: campaignId -> [{screen_id, status}]
   const [delivery, setDelivery] = useState([]);
   const [health, setHealth] = useState(null);
@@ -158,6 +176,8 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
         actions={<Btn onClick={() => setAdvNav('adv-create')}>+ New Campaign</Btn>}
       />
 
+      <DraftsCard drafts={drafts} onResume={resumeDraft} onDelete={removeDraft} />
+
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
         <KPI label="Spent to Date" value={`$${totalSpent.toLocaleString()}`}         sub={`${totalSpend > 0 ? Math.round((totalSpent / totalSpend) * 100) : 0}% of $${totalSpend.toLocaleString()} budget`} color={C.blue} icon="💰" />
         <KPI label="Plays"         value={totalPlays.toLocaleString()}                sub="verified proof of play" icon="▶" />
@@ -239,8 +259,11 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
                     </div>
                     {/* Row 3: Progress Bar */}
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>Spend</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: C.textSub, fontFamily: F.sans }}>
+                          Spend
+                          <PacingDot startDate={c.start} endDate={c.end} spent={c.spent} budget={c.budget} />
+                        </span>
                       </div>
                       <ProgressBar value={c.spent} max={c.budget} height={4} />
                     </div>
@@ -254,8 +277,11 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
                       <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.city} · {c.category} · {c.start} → {c.end}</div>
                     </div>
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>Spend</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: C.textSub, fontFamily: F.sans }}>
+                          Spend
+                          <PacingDot startDate={c.start} endDate={c.end} spent={c.spent} budget={c.budget} />
+                        </span>
                         <span style={{ fontSize: 11, fontWeight: 500, color: C.text, fontFamily: F.mono }}>${c.spent.toLocaleString()} / ${c.budget.toLocaleString()}</span>
                       </div>
                       <ProgressBar value={c.spent} max={c.budget} height={4} />
