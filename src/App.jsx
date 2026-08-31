@@ -456,6 +456,7 @@ function AppInner() {
           canReview={canReview}
           setCampaigns={setCampaigns}
           onApprovalChange={bumpApprovalRefresh}
+          isAdvertiserView={isAdvertiserDetail}
           onAddTargeting={isAdvertiserDetail ? (c) => {
             setAddingToCampaign({ id: c.campaign_id, name: c.parentName || c.campaign_name || c.advertiser });
             navTo('adv-create', { keepAddingToCampaign: true });
