@@ -39,27 +39,29 @@ function Flow() {
 }
 
 describe('marketplace browse-to-book flow', () => {
-  it('lets an advertiser go from browse to a confirmed booking', async () => {
+  // Booking is gated off (marketplace-book stubs payment — see
+  // supabase/functions/marketplace-book/index.ts) until payments-integration
+  // lands. These now assert the gate, not a completed booking; restore the
+  // pre-gate assertions (click through to bookListing) once it's lifted.
+  it('shows booking as gated instead of letting an advertiser complete one', async () => {
     render(<Flow />);
     await waitFor(() => screen.getByText(/\$500/));
     fireEvent.click(screen.getByText(/\$500/));
-    await waitFor(() => screen.getByText(/book this placement/i));
-    fireEvent.click(screen.getByText(/book this placement/i));
-    await waitFor(() => expect(bookListing).toHaveBeenCalledWith('l1', false));
+    await waitFor(() => screen.getByText(/booking coming soon/i));
+    const btn = screen.getByText(/booking coming soon/i).closest('button');
+    expect(btn).toBeDisabled();
+    fireEvent.click(btn);
+    expect(bookListing).not.toHaveBeenCalled();
   });
 
-  it('shows the platform fee and passes the auto-renew choice through to bookListing', async () => {
+  it('still shows the platform fee and total ahead of the gated booking button', async () => {
     render(<Flow />);
     await waitFor(() => screen.getByText(/\$500/));
     fireEvent.click(screen.getByText(/\$500/));
-    await waitFor(() => screen.getByText(/book this placement/i));
+    await waitFor(() => screen.getByText(/booking coming soon/i));
 
-    // Platform fee (5% of $500 = $25) and total ($525) shown before booking.
+    // Platform fee (5% of $500 = $25) and total ($525) still shown for context.
     await waitFor(() => expect(screen.getByText(/\$25\.00/)).toBeInTheDocument());
     expect(screen.getByText(/\$525\.00/)).toBeInTheDocument();
-
-    fireEvent.click(screen.getByLabelText(/auto-renew/i));
-    fireEvent.click(screen.getByText(/book this placement/i));
-    await waitFor(() => expect(bookListing).toHaveBeenCalledWith('l1', true));
   });
 });
