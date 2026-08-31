@@ -9,6 +9,15 @@ const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL
   : '';
 
 const POLL_INTERVAL_MS  = 30_000;
+// A poll failure falls back to whatever `campaigns` last held (see the
+// status==='error' comment near the render below) so a brief network blip
+// doesn't blank a paid impression. But with no ceiling that fallback would
+// hold forever — a paused/expired/pulled campaign would keep playing to a
+// real audience while the dashboard already shows the screen "Offline"
+// (health_status flips after 5min of missed heartbeats, screenHealth.js).
+// Past this many consecutive failed polls, stop trusting the stale feed and
+// blank to the idle slide instead of over-serving it.
+const MAX_STALE_MS = 15 * 60_000;
 
 function buildQrUrl(destinationUrl, screenId, campaignId, creativeId) {
   if (!SUPABASE_FUNCTIONS_URL || !campaignId) return destinationUrl;
@@ -165,6 +174,7 @@ export function DisplayPlayer({ screenToken }) {
   const playBufferRef = useRef(null);
   if (playBufferRef.current === null) playBufferRef.current = createPlayBuffer();
   const playStartRef = useRef(null);
+  const lastOkAtRef = useRef(Date.now());
 
   // `campaigns` gets a brand-new array/object-graph reference on every
   // successful poll (fetch/res.json() always allocates fresh objects, even
@@ -184,6 +194,14 @@ export function DisplayPlayer({ screenToken }) {
     [campaigns]
   );
 
+  // On a failed poll we fall through to whatever `campaigns` last held (see
+  // the status==='error' render comment below) so a brief blip doesn't blank
+  // a paid impression. Past MAX_STALE_MS of consecutive failures, stop
+  // trusting that stale feed — the campaign it's showing may since have been
+  // paused, run out of budget, or been pulled by the advertiser — and blank
+  // to the idle slide instead of over-serving it.
+  const staleTooLong = () => Date.now() - lastOkAtRef.current > MAX_STALE_MS;
+
   const fetchFeed = async () => {
     if (stopPollingRef.current) return;
     try {
@@ -197,6 +215,7 @@ export function DisplayPlayer({ screenToken }) {
         } else {
           setErrMsg(body.error ?? `HTTP ${res.status}`);
           setStatus('error');
+          if (staleTooLong()) setCampaigns([]);
         }
         return;
       }
@@ -204,15 +223,23 @@ export function DisplayPlayer({ screenToken }) {
       setScreenId(data.screen_id);
       setCampaigns(data.campaigns ?? []);
       setStatus('ok');
+      lastOkAtRef.current = Date.now();
     } catch (e) {
       setErrMsg(e.message);
       setStatus('error');
+      if (staleTooLong()) setCampaigns([]);
     }
   };
 
   // Initial fetch + poll every 30s
   useEffect(() => {
     stopPollingRef.current = false;
+    // A new token starts its own staleness clock — otherwise, if this
+    // instance is ever reused for a different token (route param change
+    // without a remount) while the old token's clock was already near
+    // MAX_STALE_MS, the new token could trip staleTooLong() on its very
+    // first failure instead of after 15 real minutes of it.
+    lastOkAtRef.current = Date.now();
     fetchFeed();
     const poll = setInterval(fetchFeed, POLL_INTERVAL_MS);
     return () => clearInterval(poll);
