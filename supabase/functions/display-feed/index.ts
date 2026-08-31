@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { expandCreativeAssignments } from "../_shared/creativeSelection.ts";
 import { clampDurationToScreen } from "../_shared/adDuration.ts";
+import { resolveDayWindow } from "../_shared/dayparting.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -76,7 +77,7 @@ Deno.serve(async (req: Request) => {
     // Step 2: fetch bookings for those campaigns filtered by date and live status
     const { data: bookings } = await supabase
       .from("bookings")
-      .select("id, advertiser_name, headline, cta_text, accent_color, destination_url, category, media_url, media_type, qr_x, qr_y, qr_size_pct, qr_fg_color, qr_bg_color, slots, duration, schedule_days, time_start, time_end")
+      .select("id, advertiser_name, headline, cta_text, accent_color, destination_url, category, media_url, media_type, qr_x, qr_y, qr_size_pct, qr_fg_color, qr_bg_color, slots, duration, schedule_days, time_start, time_end, dayparting")
       .in("id", campaignIds)
       .in("status", ["scheduled", "active"])
       .eq("payment_status", "paid")
@@ -131,7 +132,13 @@ Deno.serve(async (req: Request) => {
         const cs = csMap.get(b.id);
         const days: string[] = (b.schedule_days as string[]) ?? [];
         const inDay = days.length === 0 || days.includes(currentDay);
-        const inTime = currentTime >= ((b.time_start as string) ?? "00:00") && currentTime <= ((b.time_end as string) ?? "23:59");
+        const window = resolveDayWindow(
+          b.dayparting as Record<string, { time_start: string; time_end: string }> | null,
+          currentDay,
+          b.time_start as string | null,
+          b.time_end as string | null,
+        );
+        const inTime = currentTime >= window.time_start && currentTime <= window.time_end;
         if (!inDay || !inTime) continue;
 
         const assignments = creativesByTargeting.get(b.id as string) ?? [];

@@ -6,6 +6,7 @@ import { Btn } from '../../../components/primitives/Btn.jsx';
 import { ErrorBanner } from '../../../components/primitives/ErrorBanner.jsx';
 import { PillGroup } from './PillGroup.jsx';
 import { formatCurrency } from '../../../lib/formatCurrency.js';
+import { syncDaypartingDays } from '../../../lib/dayparting.js';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -37,7 +38,9 @@ export function StepBudgetReview({
     ['Creatives', isMulti ? form.creatives.map((c, i) => creativeLabel(i)).join(', ') : creativeLabel(0)],
     ['Budget', `${form.budget ? formatCurrency(form.budget, profile?.preferred_currency) : '—'} (${form.budget_mode === 'daily' ? 'daily' : 'total'})`],
     ['Dates', form.start_date && form.end_date ? `${form.start_date} → ${form.end_date} (${days} days)` : '—'],
-    ['Time', `${form.time_start} – ${form.time_end}`],
+    ['Time', form.dayparting
+      ? form.schedule_days.map(d => `${d} ${form.dayparting[d]?.time_start}–${form.dayparting[d]?.time_end}`).join(', ')
+      : `${form.time_start} – ${form.time_end}`],
     ['Days', form.schedule_days.join(', ')],
     ['Ad Duration', `${form.duration}s per play`],
     ['Slot Share', `${form.slots}% of airtime`],
@@ -115,13 +118,46 @@ export function StepBudgetReview({
 
           <div>
             <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Days of week</div>
-            <PillGroup options={DAYS} value={form.schedule_days} onChange={v => setField('schedule_days', v)} multi={true} />
+            <PillGroup options={DAYS} value={form.schedule_days} onChange={v => setForm(s => ({
+              ...s,
+              schedule_days: v,
+              // Keep the per-day grid in sync with the day selection -- a
+              // newly-added day is seeded from the flat window, a removed
+              // one drops its override. No-op while dayparting is off.
+              dayparting: s.dayparting ? syncDaypartingDays(s.dayparting, v, s.time_start, s.time_end) : null,
+            }))} multi={true} />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Inp label="From" type="time" value={form.time_start} onChange={e => setField('time_start', e.target.value)} />
-            <Inp label="Until" type="time" value={form.time_end} onChange={e => setField('time_end', e.target.value)} />
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Play times</div>
+            <PillGroup
+              options={[{ value: 'same', label: 'Same time every day' }, { value: 'different', label: 'Different times per day' }]}
+              value={form.dayparting ? 'different' : 'same'}
+              onChange={v => setForm(s => ({
+                ...s,
+                dayparting: v === 'different' ? syncDaypartingDays(s.dayparting, s.schedule_days, s.time_start, s.time_end) : null,
+              }))}
+            />
           </div>
+
+          {form.dayparting ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {form.schedule_days.map(day => (
+                <div key={day} style={{ display: 'grid', gridTemplateColumns: '48px 1fr 1fr', gap: 10, alignItems: 'end' }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: C.textMid, fontFamily: F.sans, paddingBottom: 9 }}>{day}</div>
+                  <Inp type="time" value={form.dayparting[day]?.time_start ?? ''}
+                    onChange={e => setField('dayparting', { ...form.dayparting, [day]: { ...form.dayparting[day], time_start: e.target.value } })} />
+                  <Inp type="time" value={form.dayparting[day]?.time_end ?? ''}
+                    onChange={e => setField('dayparting', { ...form.dayparting, [day]: { ...form.dayparting[day], time_end: e.target.value } })} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <Inp label="From" type="time" value={form.time_start} onChange={e => setField('time_start', e.target.value)} />
+              <Inp label="Until" type="time" value={form.time_end} onChange={e => setField('time_end', e.target.value)} />
+            </div>
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Inp label="Ad play duration (seconds)" type="number" min="5" max="60" step="1"

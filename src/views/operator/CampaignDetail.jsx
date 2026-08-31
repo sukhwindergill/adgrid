@@ -49,6 +49,12 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
   const daysLeft = Math.max(0, Math.round((new Date(c.end) - new Date()) / (1000 * 60 * 60 * 24)));
   const cpm      = c.impressions > 0 ? ((c.spent / c.impressions) * 1000).toFixed(2) : '4.20';
   const scanRate = c.impressions > 0 ? ((c.scans / c.impressions) * 100).toFixed(2) : '0.00';
+  // Per-day time windows (dayparting) override the flat timeStart/timeEnd
+  // shown otherwise -- see src/lib/dayparting.js and display-feed's
+  // resolveDayWindow for how this is actually enforced on-screen.
+  const scheduleLabel = c.dayparting
+    ? (c.days || []).map(d => `${d} ${c.dayparting[d]?.time_start}–${c.dayparting[d]?.time_end}`).join(', ')
+    : `${c.timeStart}–${c.timeEnd}`;
 
   const hourly = Array.from({ length: 24 }, (_, h) => {
     const p = { 7: 78, 8: 92, 9: 80, 12: 84, 13: 82, 17: 86, 18: 90, 19: 72 };
@@ -155,7 +161,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
         </div>
         <ProgressBar value={c.spent} max={c.budget} showLabel height={10} />
         <div style={{ display: 'flex', gap: 28, marginTop: 14 }}>
-          {[['CPM', `$${cpm}`], ['Slot Share', c.slots + '%'], ['Ad Duration', c.duration + 's'], ['Schedule', `${c.timeStart}–${c.timeEnd}`], ['Days', (c.days || []).join(', ')]].map(([l, v]) => (
+          {[['CPM', `$${cpm}`], ['Slot Share', c.slots + '%'], ['Ad Duration', c.duration + 's'], ['Schedule', scheduleLabel], ['Days', (c.days || []).join(', ')]].map(([l, v]) => (
             <div key={l}>
               <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 2 }}>{l}</div>
               <div style={{ fontSize: 13, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{v}</div>
@@ -258,7 +264,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <Card>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Schedule</div>
-            {[['Days', (c.days || []).join(', ')], ['Time Window', `${c.timeStart} – ${c.timeEnd}`], ['Ad Duration', c.duration + 's per play'], ['Slot Share', c.slots + '% of airtime']].map(([l, v]) => (
+            {[['Days', (c.days || []).join(', ')], ['Time Window', scheduleLabel], ['Ad Duration', c.duration + 's per play'], ['Slot Share', c.slots + '% of airtime']].map(([l, v]) => (
               <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
                 <span style={{ fontSize: 13, color: C.textSub }}>{l}</span>
                 <span style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{v}</span>
