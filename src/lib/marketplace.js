@@ -48,6 +48,47 @@ export async function createListing({ screenId, priceCents, startDate, endDate, 
   return data;
 }
 
+// A bundle listing is a single marketplace_listings row (one price, one
+// booking) whose screen_id is the first of screenIds -- kept for
+// backward-compat display -- with every screen (including that first one)
+// also inserted into marketplace_listing_screens so callers that need the
+// full set have it. Booking itself doesn't change: marketplace-book only
+// ever looks at listing_id.
+export async function createBundleListing({ screenIds, priceCents, startDate, endDate, autoRenew }) {
+  if (!screenIds || screenIds.length < 2) {
+    throw new Error('A bundle needs at least 2 screens.');
+  }
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: listing, error } = await supabase
+    .from('marketplace_listings')
+    .insert({
+      screen_id: screenIds[0], operator_id: user.id, price_cents: priceCents,
+      start_date: startDate, end_date: endDate, auto_renew: !!autoRenew, status: 'active', is_bundle: true,
+    })
+    .select().single();
+  if (error) throw error;
+
+  const { error: screensErr } = await supabase
+    .from('marketplace_listing_screens')
+    .insert(screenIds.map(screen_id => ({ listing_id: listing.id, screen_id, start_date: startDate, end_date: endDate })));
+  if (screensErr) {
+    // The listing row is already live at this point. Cancel it rather than
+    // leaving an active bundle listing with an incomplete (or single-screen)
+    // membership set silently bookable.
+    await supabase.from('marketplace_listings').update({ status: 'cancelled' }).eq('id', listing.id);
+    throw screensErr;
+  }
+
+  return listing;
+}
+
+export async function fetchListingScreens(listingId) {
+  const { data, error } = await supabase
+    .from('marketplace_listing_screens').select('screen_id').eq('listing_id', listingId);
+  if (error) throw error;
+  return (data ?? []).map(r => r.screen_id);
+}
+
 export async function cancelListing(listingId) {
   const { error } = await supabase
     .from('marketplace_listings').update({ status: 'cancelled' }).eq('id', listingId);
