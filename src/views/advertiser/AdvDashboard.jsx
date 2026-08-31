@@ -13,9 +13,26 @@ import { periodDelta, splitByPeriod } from '../../lib/periodDelta.js';
 import { DeliveryHealthCard } from '../../components/shared/DeliveryHealthCard.jsx';
 import { ApprovalTracker } from '../../components/shared/ApprovalTracker.jsx';
 import { estimateReach, averageFrequency } from '../../lib/reach.js';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { listDrafts, deleteDraft } from '../../lib/campaignDrafts.js';
+import { DraftsCard } from './createCampaign/DraftsCard.jsx';
 
 export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
   const { isMobile } = useBreakpoint();
+  // Drafts are stored per real signed-in user (see campaignDrafts.js), not
+  // per impersonated/delegate account -- `user` here can be a display-only
+  // stand-in during impersonation, so this reads the actual auth user.
+  const { user: authUser } = useAuth();
+  const [drafts, setDrafts] = useState(() => (authUser ? listDrafts(authUser.id) : []));
+  const resumeDraft = (draftId) => {
+    sessionStorage.setItem('adgrid_resume_draft_id', draftId);
+    setAdvNav('adv-create');
+  };
+  const removeDraft = (draftId) => {
+    if (!authUser) return;
+    deleteDraft(authUser.id, draftId);
+    setDrafts(listDrafts(authUser.id));
+  };
   const [campaignScreens, setCampaignScreens] = useState({}); // map: campaignId -> [{screen_id, status}]
   const [delivery, setDelivery] = useState([]);
   const [health, setHealth] = useState(null);
@@ -157,6 +174,8 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
         subtitle="Your campaign performance at a glance"
         actions={<Btn onClick={() => setAdvNav('adv-create')}>+ New Campaign</Btn>}
       />
+
+      <DraftsCard drafts={drafts} onResume={resumeDraft} onDelete={removeDraft} />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
         <KPI label="Spent to Date" value={`$${totalSpent.toLocaleString()}`}         sub={`${totalSpend > 0 ? Math.round((totalSpent / totalSpend) * 100) : 0}% of $${totalSpend.toLocaleString()} budget`} color={C.blue} icon="💰" />

@@ -15,6 +15,7 @@ import { isValidDestinationUrl, normalizeDestinationUrl } from '../../lib/destin
 import { buildPreviewCampaign } from '../../lib/buildPreviewCampaign.js';
 import { sanitizeText } from '../../lib/sanitizeText.js';
 import { makeBlankCreative, reconcileAssignments } from '../../lib/creativeAssignment.js';
+import { mostRecentDraft, getDraft, saveDraft, deleteDraft } from '../../lib/campaignDrafts.js';
 import { Stepper } from './createCampaign/Stepper.jsx';
 import { StepTargeting } from './createCampaign/StepTargeting.jsx';
 import { StepCreative } from './createCampaign/StepCreative.jsx';
@@ -23,6 +24,50 @@ import { StepBudgetReview } from './createCampaign/StepBudgetReview.jsx';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STEP_LABELS = ['Targeting', 'Creative', 'Budget & Schedule'];
+
+// Shared by the initial useState and by "Start fresh" (discarding a resumed
+// draft) -- a plain function, not inlined in useState, so both call sites
+// stay in sync as fields get added.
+function blankForm(presetScreenIds) {
+  return {
+    name: '',
+    area_type: 'city',
+    country: 'CA',
+    state: '',
+    city: '',
+    radius_center_lat: null,
+    radius_center_lon: null,
+    radius_km: 10,
+    env_filter: 'any',
+    venue_filter: '',
+    selected_screen_ids: presetScreenIds && presetScreenIds.length > 0 ? presetScreenIds : [],
+    creatives: [],  // StepCreative lazily seeds a blank one; see BLANK_CREATIVE there
+    budget_level: 'unified',
+    budget_mode: 'total',
+    budget: '',
+    start_date: '',
+    end_date: '',
+    schedule_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    time_start: '07:00',
+    time_end: '22:00',
+    duration: 15,
+    slots: 10,
+    start_when: 'partial',
+    holdout_enabled: false,
+  };
+}
+
+// Autosave only kicks in once the advertiser has actually put something into
+// the draft -- otherwise every accidental "New Campaign" click (then
+// immediately backing out) would leave a phantom empty draft cluttering the
+// drafts list.
+function hasDraftContent(form) {
+  return !!(
+    form.name || form.city || form.state || form.radius_center_lat ||
+    form.selected_screen_ids.length > 0 || form.budget ||
+    form.creatives.some(c => c.media_url || c.destination_url)
+  );
+}
 
 function StepPay({ campaign, onPay, onSkip, paying, err, requiresAction, onGoToBilling }) {
   return (
@@ -65,7 +110,7 @@ function StepPay({ campaign, onPay, onSkip, paying, err, requiresAction, onGoToB
 
 // ─── Main Wizard ─────────────────────────────────────────────────────────────
 
-export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoading = false, campaigns = [], existingCampaign = null, presetScreenIds = null, duplicateFrom = null }) {
+export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoading = false, campaigns = [], existingCampaign = null, presetScreenIds = null, duplicateFrom = null, resumeDraftId = null }) {
   const { user, profile, activeAccount } = useAuth();
   const navigate = useNavigate();
   const isDelegate = activeAccount && !activeAccount.isOwn;
@@ -80,32 +125,57 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
   const [payErr, setPayErr] = useState(null);
   const [requiresAction, setRequiresAction] = useState(false);
 
-  const [form, setForm] = useState(() => ({
-    name: '',
-    area_type: 'city',
-    country: 'CA',
-    state: '',
-    city: '',
-    radius_center_lat: null,
-    radius_center_lon: null,
-    radius_km: 10,
-    env_filter: 'any',
-    venue_filter: '',
-    selected_screen_ids: presetScreenIds && presetScreenIds.length > 0 ? presetScreenIds : [],
-    creatives: [],  // StepCreative lazily seeds a blank one; see BLANK_CREATIVE there
-    budget_level: 'unified',
-    budget_mode: 'total',
-    budget: '',
-    start_date: '',
-    end_date: '',
-    schedule_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    time_start: '07:00',
-    time_end: '22:00',
-    duration: 15,
-    slots: 10,
-    start_when: 'partial',
-    holdout_enabled: false,
-  }));
+  const [form, setForm] = useState(() => blankForm(presetScreenIds));
+
+  // Draft autosave only applies to a genuinely fresh "New Campaign" session
+  // -- not editing an existing campaign, not duplicating one, and not a
+  // screen-invite signup (whose preset selection is authoritative and
+  // shouldn't be silently swapped out for an unrelated resumed draft).
+  const isFreshDraftFlow = !existingCampaign && !duplicateFrom && !(presetScreenIds && presetScreenIds.length > 0);
+  const draftIdRef = useRef(null);
+  const [resumedDraft, setResumedDraft] = useState(null); // { name, updated_at } | null
+
+  // On mount, silently resume the most recent in-progress draft (if any)
+  // rather than starting blank -- runs once; isFreshDraftFlow and user don't
+  // change identity while this wizard instance is mounted.
+  useEffect(() => {
+    if (!isFreshDraftFlow || !user) return;
+    // An explicit resumeDraftId (from DraftsCard's "Resume" click) wins over
+    // "most recent" -- an advertiser picking an older draft from the list
+    // should get exactly that one, not silently get bounced to whichever
+    // draft happens to be newest.
+    const draft = resumeDraftId ? getDraft(user.id, resumeDraftId) : mostRecentDraft(user.id);
+    if (draft) {
+      draftIdRef.current = draft.id;
+      setForm(draft.form);
+      setStep(draft.step ?? 0);
+      setResumedDraft({ name: draft.name, updated_at: draft.updated_at });
+    } else {
+      draftIdRef.current = crypto.randomUUID();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function startFresh() {
+    if (user) deleteDraft(user.id, draftIdRef.current);
+    draftIdRef.current = crypto.randomUUID();
+    setForm(blankForm(null));
+    setStep(0);
+    setResumedDraft(null);
+    brandKitSeeded.current = false;
+  }
+
+  // Debounced autosave -- skipped once the wizard has moved to the payment
+  // step (a submitted campaign is no longer a "draft"), and gated on actual
+  // content so an untouched wizard never writes a phantom draft.
+  useEffect(() => {
+    if (!isFreshDraftFlow || !user || !draftIdRef.current || step >= 3) return;
+    if (!hasDraftContent(form)) return;
+    const t = setTimeout(() => {
+      saveDraft(user.id, draftIdRef.current, { step, form });
+    }, 800);
+    return () => clearTimeout(t);
+  }, [form, step, isFreshDraftFlow, user]);
 
   // Screen matching
   const matchedScreens = (() => {
@@ -470,6 +540,11 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
         });
       }
 
+      // Submitted successfully -- this is no longer a draft in progress.
+      if (isFreshDraftFlow && user && draftIdRef.current) {
+        deleteDraft(user.id, draftIdRef.current);
+      }
+
       setSubmitting(false);
       setCreated({
         id: campaignId,
@@ -563,6 +638,22 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
             fontSize: 12, fontWeight: 600, color: '#fbbf24', fontFamily: F.sans,
             textDecoration: 'underline', whiteSpace: 'nowrap',
           }}>Set up billing →</a>
+        </div>
+      )}
+      {step < 3 && resumedDraft && (
+        <div style={{
+          maxWidth: 620, margin: '0 auto 16px',
+          background: C.purpleSoft, border: `1px solid ${C.purple}`,
+          borderRadius: 10, padding: '10px 16px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        }}>
+          <span style={{ fontSize: 12, color: C.text, fontFamily: F.sans }}>
+            Continuing draft: <strong>{resumedDraft.name}</strong>
+          </span>
+          <button onClick={startFresh} style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 12, fontWeight: 600, color: C.purple, fontFamily: F.sans, textDecoration: 'underline',
+          }}>Start fresh</button>
         </div>
       )}
       {step < 3 && <Stepper step={step} labels={STEP_LABELS} onCancel={onCancel} />}
