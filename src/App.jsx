@@ -456,6 +456,7 @@ function AppInner() {
           canReview={canReview}
           setCampaigns={setCampaigns}
           onApprovalChange={bumpApprovalRefresh}
+          isAdvertiserView={isAdvertiserDetail}
           onAddTargeting={isAdvertiserDetail ? (c) => {
             setAddingToCampaign({ id: c.campaign_id, name: c.parentName || c.campaign_name || c.advertiser });
             navTo('adv-create', { keepAddingToCampaign: true });
@@ -478,10 +479,17 @@ function AppInner() {
           existingCampaign={addingToCampaign}
           presetScreenIds={presetScreenIds}
           duplicateFrom={duplicatingCampaign}
+          // Set by DraftsCard's "Resume" click (AdvDashboard) right before
+          // navigating here -- read directly rather than via useState so a
+          // second "Continue a draft" click while already on this route
+          // (unlikely, but cheap to get right) picks up the new value
+          // without a stale-closure remount.
+          resumeDraftId={sessionStorage.getItem('adgrid_resume_draft_id')}
           onSave={c => {
             setCampaigns(p => [c, ...p]);
             setAddingToCampaign(null);
             setDuplicatingCampaign(null);
+            sessionStorage.removeItem('adgrid_resume_draft_id');
             if (presetScreenIds) {
               sessionStorage.removeItem('adgrid_preset_screen_id');
               sessionStorage.removeItem('adgrid_pending_screen_invite_token');
@@ -492,6 +500,7 @@ function AppInner() {
           onCancel={() => {
             setAddingToCampaign(null);
             setDuplicatingCampaign(null);
+            sessionStorage.removeItem('adgrid_resume_draft_id');
             if (presetScreenIds) {
               sessionStorage.removeItem('adgrid_preset_screen_id');
               sessionStorage.removeItem('adgrid_pending_screen_invite_token');
