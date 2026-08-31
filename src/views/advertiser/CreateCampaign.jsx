@@ -101,6 +101,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
     schedule_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     time_start: '07:00',
     time_end: '22:00',
+    dayparting: null, // null = same time every day; else { Mon: {time_start,time_end}, ... }
     duration: 15,
     slots: 10,
     start_when: 'partial',
@@ -243,6 +244,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
       schedule_days: c.schedule_days || c.days || ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
       time_start: c.time_start || c.timeStart || '07:00',
       time_end: c.time_end || c.timeEnd || '22:00',
+      dayparting: c.dayparting ?? null,
       duration: c.duration || 15,
       slots: c.slots || 10,
 
@@ -330,6 +332,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
         schedule_days:         form.schedule_days,
         time_start:            form.time_start,
         time_end:              form.time_end,
+        dayparting:            form.dayparting,
         duration:              parseInt(form.duration, 10) || 15,
         slots:                 parseInt(form.slots, 10) || 10,
         billed_to_profile_id:  canChooseBilling && billedTo === 'agency' ? user.id : null,
@@ -500,6 +503,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
         days: form.schedule_days,
         timeStart: form.time_start,
         timeEnd: form.time_end,
+        dayparting: form.dayparting,
         duration: parseInt(form.duration, 10) || 15,
         slots: parseInt(form.slots, 10) || 10,
         spent: 0, impressions: 0, scans: 0,
