@@ -60,7 +60,7 @@ function healthLabel(screen) {
   return { label: 'Offline', color: C.red };
 }
 
-function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByScreen, onApproved, onRejected, setCampaigns }) {
+function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByScreen, onApproved, onRejected, setCampaigns, index = 0 }) {
   const { isMobile } = useBreakpoint();
   const confirm = useConfirm();
   const [rejectScreenId, setRejectScreenId] = useState(null);
@@ -218,7 +218,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
     : null;
 
   return (
-    <Card style={{ marginBottom: 16, padding: 0, overflow: 'hidden' }}>
+    <Card className="fade-in" style={{ marginBottom: 16, padding: 0, overflow: 'hidden', animationDelay: `${Math.min(index, 8) * 40}ms` }}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
@@ -303,7 +303,13 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
                   : [];
 
                 return (
-                  <div key={row.screen_id} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div key={row.screen_id} style={{
+                    display: 'flex', flexDirection: 'column', gap: 6,
+                    padding: 6, margin: -6, borderRadius: 8, transition: 'background-color 150ms ease',
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = C.surfaceAlt}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <div style={{ flex: 1, minWidth: 120 }}>
                         <div style={{ fontSize: 12, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{screen?.name || row.screen_id}</div>
@@ -668,15 +674,16 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [], onAppro
       </Card>
 
       {totalPending === 0 ? (
-        <div style={{ textAlign: 'center', padding: '64px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
+        <div className="fade-in" style={{ textAlign: 'center', padding: '64px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
           <div style={{ fontSize: 36, marginBottom: 12 }}>✓</div>
           <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>All clear</div>
           <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>No campaigns are waiting for review.</div>
         </div>
       ) : (
-        enriched.map(c => (
+        enriched.map((c, i) => (
           <MultiScreenCampaignCard
             key={c.id}
+            index={i}
             campaign={c}
             myScreens={myScreens}
             allScreens={dbScreens}

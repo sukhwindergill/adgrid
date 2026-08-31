@@ -208,6 +208,16 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
       d.appUrl ?? "",
     ),
   }),
+  dispute_won_resumed: (d) => ({
+    title: "Campaign resumed",
+    body: "The payment dispute on your campaign was resolved in your favor — it's back on schedule.",
+    html: emailHtml(
+      "Campaign resumed",
+      "The payment dispute we paused your campaign for was resolved in your favor. Your campaign is scheduled again and will keep airing as planned.",
+      "View Campaign",
+      d.appUrl ?? "",
+    ),
+  }),
   connect_account_restricted: (d) => ({
     title: "Your payout account needs attention",
     body: "Stripe has flagged your connected account — new payouts are on hold until it's resolved.",

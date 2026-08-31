@@ -16,6 +16,7 @@ export class ErrorBoundary extends Component {
 
   render() {
     if (this.state.error) {
+      if (this.props.fallback) return this.props.fallback(this.state.error);
       return (
         <div style={{
           padding: '40px 32px', margin: 24, borderRadius: 12,

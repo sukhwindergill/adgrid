@@ -712,7 +712,31 @@ function AccountHubRoute() {
   )
 }
 
+// Unattended kiosk: no one is there to click "Try again", and a caught JS
+// exception doesn't crash the Chromium process, so systemd's watchdog
+// (adgrid-display-watchdog.service) never sees it — the tab just stays
+// blank forever unless something inside the page itself recovers. Reloading
+// the whole document re-runs DisplayPlayer's initial fetch from scratch,
+// which is the same recovery path a fresh boot gets.
+function DisplayCrashFallback() {
+  useEffect(() => {
+    const t = setTimeout(() => window.location.reload(), 5000);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: '#050a10', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', fontFamily: "'Inter', sans-serif", letterSpacing: 1 }}>
+        RECONNECTING…
+      </div>
+    </div>
+  );
+}
+
 function DisplayPlayerRoute() {
   const { token } = useParams();
-  return <DisplayPlayer screenToken={token} />;
+  return (
+    <ErrorBoundary fallback={() => <DisplayCrashFallback />}>
+      <DisplayPlayer screenToken={token} />
+    </ErrorBoundary>
+  );
 }

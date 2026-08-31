@@ -184,6 +184,55 @@ Deno.serve(async (req: Request) => {
       break;
     }
 
+    // Previously unhandled: a merchant-won dispute returns the disputed funds
+    // to the platform, but nothing resumed the booking pauseAndAlert() froze
+    // on charge.dispute.created — it stayed paused/failed indefinitely even
+    // though the money is intact and the campaign should keep airing.
+    // (A "lost" dispute needs no extra handling: charge.refunded already
+    // fired for the loss and reverseOperatorTransfers already clawed back
+    // the operator's cut via that path.)
+    //
+    // Treat "warning_closed" the same as "won" — it's Stripe's status for an
+    // inquiry dispute closed with funds returned to the platform and no
+    // formal loss, functionally identical to a win for resuming the booking.
+    case "charge.dispute.closed": {
+      const dispute = event.data.object as Stripe.Dispute;
+      if (dispute.status !== "won" && dispute.status !== "warning_closed") break;
+      const paymentIntentId = typeof dispute.payment_intent === "string" ? dispute.payment_intent : dispute.payment_intent?.id;
+      if (!paymentIntentId) break;
+
+      const booking = await bookingForPaymentIntent(paymentIntentId);
+      if (!booking || booking.payment_status !== "failed" || booking.status !== "paused") break;
+
+      const { error: resumeError } = await supabase
+        .from("bookings")
+        .update({ payment_status: "paid", status: "scheduled" })
+        .eq("id", booking.id);
+
+      if (resumeError) {
+        // Don't tell the advertiser it resumed if it didn't — leave the
+        // booking paused (as-is) so this reads as "needs attention" the same
+        // way a failed transfer reversal does above, rather than silently
+        // reporting success on a write that never landed.
+        console.error(`[stripe-webhook] failed to resume booking ${booking.id} after dispute win:`, resumeError.message);
+        break;
+      }
+
+      await notifyAdvertiser(booking.advertiser_id, "dispute_won_resumed", {
+        appUrl: Deno.env.get("PUBLIC_APP_URL") ?? "",
+      });
+
+      // Deliberately NOT auto-re-paying the operator transfer reverseOperatorTransfers()
+      // clawed back on dispute.created — re-issuing platform funds via a fresh
+      // stripe.transfers.create is a real money movement we don't want to fire
+      // unattended from a webhook. Surface it for manual reconciliation instead.
+      console.error(
+        `[stripe-webhook] dispute won for booking ${booking.id} — operator transfer reversal ` +
+        `from charge.dispute.created needs manual re-payment review, not auto-reversed here.`,
+      );
+      break;
+    }
+
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
       if (session.mode !== "setup") break;

@@ -12,6 +12,7 @@ const TYPE_ICONS = {
   scan_milestone: "🎯",
   weekly_report: "📊",
   payment_failed: "❌",
+  dispute_won_resumed: "✅",
   new_advertiser: "👤",
   campaign_submitted: "📋",
   payout_completed: "💰",

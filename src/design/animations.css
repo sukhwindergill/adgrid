@@ -22,3 +22,9 @@
   background-size: 800px 100%;
   animation: skeleton 1.4s ease infinite;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in, .pulse, .skeleton-shimmer {
+    animation: none !important;
+  }
+}
