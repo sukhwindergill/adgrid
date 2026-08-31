@@ -9,10 +9,11 @@ import { buildLocationIndex, distinctCountries, distinctStates } from '../../../
 import { PillGroup } from './PillGroup.jsx';
 import { LocationSearch } from './LocationSearch.jsx';
 import { ScreenMap } from './ScreenMap.jsx';
+import { TopScreensInsight } from './TopScreensInsight.jsx';
 
 const countryLabel = code => COUNTRIES.find(c => c.code === code)?.label ?? code;
 
-export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount, allScreens, screensLoading = false, onPrevCampaigns, existingCampaign = null }) {
+export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount, allScreens, screensLoading = false, onPrevCampaigns, existingCampaign = null, pastCampaignIds = [] }) {
   const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
 
   // allScreens.length === 0 is ambiguous by itself -- true both while the
@@ -203,6 +204,14 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
               ))}
             </SelInput>
           </div>
+
+          <TopScreensInsight
+            pastCampaignIds={pastCampaignIds}
+            allScreens={allScreens}
+            currentVenueFilter={form.venue_filter}
+            currentEnvFilter={form.env_filter}
+            onApply={profile => setForm(s => ({ ...s, venue_filter: profile.venue_category, env_filter: profile.environment }))}
+          />
         </div>
 
         {reachSummary && (
