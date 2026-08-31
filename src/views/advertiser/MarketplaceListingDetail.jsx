@@ -92,7 +92,13 @@ export function MarketplaceListingDetail({ listingId, onBack }) {
       </label>
 
       <div style={{ marginTop: 12 }}>
-        <Btn variant="primary" onClick={handleBook} loading={booking}>Book this placement</Btn>
+        {/* Gated (go-live blocker): marketplace-book stubs payment today, see
+            supabase/functions/marketplace-book/index.ts. Disable proactively
+            instead of letting advertisers click through to the server's 503. */}
+        <Btn variant="primary" onClick={handleBook} loading={booking} disabled>Booking coming soon</Btn>
+        <div style={{ marginTop: 6, fontFamily: F.sans, fontSize: 12, color: C.textSub }}>
+          Payment for marketplace bookings is being finalized — check back soon.
+        </div>
       </div>
 
       <div style={{ marginTop: 24 }}>

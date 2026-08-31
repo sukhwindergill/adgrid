@@ -32,6 +32,21 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS });
   }
 
+  // GATED (go-live blocker): marketplace booking has never actually charged
+  // the advertiser -- the confirm/notify flow below still locks the
+  // screen(s) exclusively and confirms the booking on a stub payment
+  // (payment_status: "stubbed", payment_intent_id: `stub_...`). Fine
+  // pre-launch (fully testable independent of payment wiring), not with
+  // real operators' inventory on the line. Refuse until the real charge
+  // call replaces the stub — see the TODO(payments-integration) preserved
+  // below on the code path this bypasses. Remove this block (and un-comment
+  // the path below) once that lands.
+  return new Response(
+    JSON.stringify({ error: "Marketplace booking is temporarily unavailable while we finish payment integration. Please check back soon." }),
+    { status: 503, headers: CORS },
+  );
+
+  /* eslint-disable no-unreachable -- gated above until payments-integration lands
   const { listingId, autoRenew } = await req.json();
   if (!listingId) {
     return new Response(JSON.stringify({ error: "listingId required" }), { status: 400, headers: CORS });
@@ -97,4 +112,5 @@ Deno.serve(async (req: Request) => {
   await notify(listing.operator_id, "marketplace_booking_confirmed", { listingId, bookingId, role: "operator" });
 
   return new Response(JSON.stringify({ bookingId }), { headers: CORS });
+  */
 });
