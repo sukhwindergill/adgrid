@@ -5,6 +5,8 @@ import { C, F } from '../../design/tokens.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { periodDelta, splitByPeriod } from '../../lib/periodDelta.js';
 import { useToast } from '../../components/primitives/Toast.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
@@ -53,6 +55,7 @@ function useFailedTransfers() {
 
 export function Billing() {
   const toast = useToast();
+  const { profile } = useAuth();
   const [tab, setTab]         = useState('overview');
   const [payingOut, setPaying] = useState(false);
   const { data, loading, error, refresh } = useBilling();
@@ -64,9 +67,12 @@ export function Billing() {
   const balance       = data?.balance;
   const connectStatus = data?.connectStatus;
 
+  // Real per-operator share (profiles.owner_revenue_share), not a hardcoded
+  // 40% — an operator on a custom rate previously saw a wrong number here.
+  const ownerRevenueShare = profile?.owner_revenue_share ?? DEFAULT_OWNER_REVENUE_SHARE;
   const totalCharged  = charges.reduce((a, c) => a + c.amount, 0);
-  const platformNet   = Math.round(totalCharged * 0.12);
-  const ownerShare    = Math.round(totalCharged * 0.88 * 0.40);
+  const { platform: platformNet, owner: ownerShare, pool: networkPool } = computeRevenueSplit(totalCharged, ownerRevenueShare);
+  const ownerPct = Math.round(ownerRevenueShare * 100);
   const availableOut  = balance?.available ?? 0;
   const pendingIn     = balance?.pending ?? 0;
 
@@ -135,13 +141,13 @@ export function Billing() {
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Revenue Split</div>
             <div style={{ height: 8, borderRadius: 4, overflow: 'hidden', display: 'flex', marginBottom: 14 }}>
               <div style={{ width: '12%', background: C.blue }} />
-              <div style={{ width: '35%', background: C.green }} />
+              <div style={{ width: `${ownerPct}%`, background: C.green }} />
               <div style={{ flex: 1, background: C.surfaceAlt }} />
             </div>
             {[
               ['Platform (12%)', `$${platformNet.toLocaleString()}`, C.blue],
-              ['Screen Owners (40%)', `$${ownerShare.toLocaleString()}`, C.green],
-              ['Network Pool (48%)', `$${(totalCharged - platformNet - ownerShare).toLocaleString()}`, C.textSub],
+              [`Screen Owners (${ownerPct}%)`, `$${ownerShare.toLocaleString()}`, C.green],
+              ['Network Pool', `$${networkPool.toLocaleString()}`, C.textSub],
             ].map(([l, v, c]) => (
               <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
                 <span style={{ fontSize: 13, color: C.textMid }}>{l}</span>

@@ -18,6 +18,7 @@ import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS } from 
 import { healthSignal, cvAgentSignal } from '../../lib/screenHealth.js';
 import { checkAndGoLive } from '../../lib/screenGoLive.js';
 import { ScreenLocationPicker } from '../../components/ScreenLocationPicker.jsx';
+import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
 
 async function startStripeConnect(setConnecting) {
   setConnecting(true);
@@ -354,6 +355,9 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   }, [tab, screen]);
 
   const totalCampRevenue = screenCampaigns.reduce((a, c) => a + (c.budget || 0), 0);
+  const ownerRevenueShare = profile?.owner_revenue_share ?? DEFAULT_OWNER_REVENUE_SHARE;
+  const ownerPct = Math.round(ownerRevenueShare * 100);
+  const { platform: platformSplit, owner: ownerSplit, pool: poolSplit } = computeRevenueSplit(totalCampRevenue, ownerRevenueShare);
 
   // Loading state for the screen record itself
   if (loading) {
@@ -562,13 +566,13 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
           <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Revenue Split</div>
           <div style={{ height: 6, borderRadius: 3, overflow: 'hidden', display: 'flex', marginBottom: 12 }}>
             <div style={{ width: '12%', background: C.blue }} />
-            <div style={{ width: '35%', background: C.green }} />
+            <div style={{ width: `${ownerPct}%`, background: C.green }} />
             <div style={{ flex: 1, background: C.surfaceAlt }} />
           </div>
           {[
-            ['Platform (12%)', `$${Math.round(totalCampRevenue * 0.12).toLocaleString()}`, C.blue],
-            ['Owner (40%)', `$${Math.round(totalCampRevenue * 0.88 * 0.40).toLocaleString()}`, C.green],
-            ['Network pool', `$${Math.round(totalCampRevenue * 0.88 * 0.60).toLocaleString()}`, C.textSub],
+            ['Platform (12%)', `$${platformSplit.toLocaleString()}`, C.blue],
+            [`Owner (${ownerPct}%)`, `$${ownerSplit.toLocaleString()}`, C.green],
+            ['Network pool', `$${poolSplit.toLocaleString()}`, C.textSub],
           ].map(([l, v, c]) => (
             <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
               <span style={{ fontSize: 12, color: C.textSub }}>{l}</span>
