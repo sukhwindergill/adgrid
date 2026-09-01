@@ -30,7 +30,7 @@ const SUGGESTED = [
 
 const EMPTY_DRAFT = { name: '', metric: 'cost_per_scan', comparator: 'gt', threshold: '', action: 'notify' };
 
-export function AutomationRulesView({ user, ownerSide = 'advertiser' }) {
+export function AutomationRulesView({ user, ownerSide = 'advertiser', setNav }) {
   const toast = useToast();
   const { isMobile } = useBreakpoint();
   const [rules, setRules] = useState([]);
@@ -92,6 +92,24 @@ export function AutomationRulesView({ user, ownerSide = 'advertiser' }) {
   return (
     <div>
       <PageHeader title="Alerts & Rules" subtitle="Get told when something is wrong — or have AdGrid act on it for you" />
+
+      {ownerSide === 'operator' && setNav && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+          padding: '12px 16px', marginBottom: 20, background: C.surfaceAlt, border: `1px solid ${C.border}`,
+          borderRadius: 8, fontFamily: F.sans,
+        }}>
+          <div style={{ fontSize: 12, color: C.textSub, lineHeight: 1.5 }}>
+            These are budget, pacing, and delivery alerts. Auto-approving <strong>campaigns</strong> for
+            review is a separate setting.
+          </div>
+          <button onClick={() => setNav('op-settings')} style={{
+            padding: '6px 14px', borderRadius: 6, border: `1px solid ${C.purple}`,
+            background: 'transparent', color: C.purple, fontSize: 12, fontWeight: 600,
+            cursor: 'pointer', whiteSpace: 'nowrap',
+          }}>Open Settings → Review →</button>
+        </div>
+      )}
 
       {!loading && rules.length === 0 && (
         <Card style={{ padding: 20, marginBottom: 20 }}>

@@ -183,7 +183,7 @@ function SecurityTab() {
   );
 }
 
-function ReviewTab({ profile }) {
+export function ReviewTab({ profile, setNav }) {
   const [policy, setPolicy] = useState({ enabled: false, auto_approve_categories: [], min_completed_campaigns: 1 });
   const [slaHours, setSlaHours] = useState(24);
   const [categories, setCategories] = useState([]);
@@ -264,6 +264,24 @@ function ReviewTab({ profile }) {
         How long you get to review a campaign before it is dropped from your screens.
         A dropped campaign is revenue you do not earn.
       </div>
+
+      {setNav && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+          padding: '12px 16px', marginBottom: 24, background: C.surfaceAlt, border: `1px solid ${C.border}`,
+          borderRadius: 8, fontFamily: F.sans,
+        }}>
+          <div style={{ fontSize: 12, color: C.textSub, lineHeight: 1.5 }}>
+            This is auto-approval for <strong>campaigns</strong>. For budget pacing, cost-per-scan, or
+            offline-screen alerts, that's a separate page.
+          </div>
+          <button onClick={() => setNav('rules')} style={{
+            padding: '6px 14px', borderRadius: 6, border: `1px solid ${C.purple}`,
+            background: 'transparent', color: C.purple, fontSize: 12, fontWeight: 600,
+            cursor: 'pointer', whiteSpace: 'nowrap',
+          }}>Open Alerts & Rules →</button>
+        </div>
+      )}
 
       <Field label="Review window (hours)">
         <SettingsInput type="number" value={slaHours} onChange={e => setSlaHours(e.target.value)} />
@@ -758,7 +776,7 @@ function VerificationTab({ profile }) {
   );
 }
 
-export function OperatorSettingsView() {
+export function OperatorSettingsView({ setNav } = {}) {
   const { profile: authProfile } = useAuth();
   const [profile, setProfile] = useState(authProfile);
   const [tab, setTab] = useState('profile');
@@ -794,7 +812,7 @@ export function OperatorSettingsView() {
 
       {tab === 'profile'       && <ProfileTab profile={profile} onSaved={updates => setProfile(p => ({ ...p, ...updates }))} />}
       {tab === 'security'      && <SecurityTab />}
-      {tab === 'review'        && <ReviewTab profile={profile} />}
+      {tab === 'review'        && <ReviewTab profile={profile} setNav={setNav} />}
       {tab === 'notifications' && <NotificationsTab profile={profile} />}
       {tab === 'team'          && <TeamTab profile={profile} />}
       {tab === 'payouts'       && <PayoutsTab profile={profile} />}

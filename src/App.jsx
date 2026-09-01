@@ -600,10 +600,10 @@ function AppInner() {
     if (active === 'billing')      return <Billing campaigns={operatorCampaigns} />;
     if (active === 'advertisers')  return <AdvertisersView onImpersonate={startImpersonation} />;
     if (active === 'signals')      return <SignalsView campaigns={operatorCampaigns} />;
-    if (active === 'rules')        return <AutomationRulesView user={user} ownerSide="operator" />;
+    if (active === 'rules')        return <AutomationRulesView user={user} ownerSide="operator" setNav={navTo} />;
     if (active === 'integrations') return <IntegrationsView />;
     if (active === 'display')      return <DisplayView campaigns={operatorCampaigns} />;
-    if (active === 'op-settings')  return <OperatorSettingsView />;
+    if (active === 'op-settings')  return <OperatorSettingsView setNav={navTo} />;
     return <Dashboard campaigns={operatorCampaigns} setNav={navTo} loading={dataLoading} />;
   };
 
