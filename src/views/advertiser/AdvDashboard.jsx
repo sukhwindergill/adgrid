@@ -19,8 +19,11 @@ import { estimateReach, averageFrequency } from '../../lib/reach.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { listDrafts, deleteDraft } from '../../lib/campaignDrafts.js';
 import { DraftsCard } from './createCampaign/DraftsCard.jsx';
+import { normalizeBooking } from '../../lib/normalizeBooking.js';
 
-export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
+const RECENT_CAMPAIGNS_LIMIT = 20;
+
+export function AdvDashboard({ user, setAdvNav, advertiserId }) {
   const { isMobile } = useBreakpoint();
   // Drafts are stored per real signed-in user (see campaignDrafts.js), not
   // per impersonated/delegate account -- `user` here can be a display-only
@@ -36,6 +39,22 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
     deleteDraft(authUser.id, draftId);
     setDrafts(listDrafts(authUser.id));
   };
+
+  // Owns its own scoped fetch instead of receiving App.jsx's app-wide,
+  // unbounded `campaigns` array (see the "decouple from the app-wide
+  // unbounded bookings fetch" series -- ApprovalQueue, Campaigns.jsx, and
+  // operator Dashboard were slices 1-3). The most-recent 20 bookings cover
+  // the campaign cards and delivery/health widgets below, which only ever
+  // display a handful anyway ("Your Campaigns" here mirrors "View all →"
+  // into the real paginated Campaigns.jsx browse page for anything older).
+  //
+  // "Spent to Date" is a different case: it genuinely means all-time spend,
+  // where a bounded recent-N fetch would silently understate it. That KPI
+  // is computed server-side via the advertiser_lifetime_totals RPC instead
+  // (see supabase/migrations/20260901165732_advertiser_lifetime_totals.sql)
+  // rather than requiring the full unbounded history client-side.
+  const [myCampaigns, setMyCampaigns] = useState([]);
+  const [lifetimeTotals, setLifetimeTotals] = useState({ total_spend: 0, total_scans: 0, total_budget: 0 });
   const [campaignScreens, setCampaignScreens] = useState({}); // map: campaignId -> [{screen_id, status}]
   const [delivery, setDelivery] = useState([]);
   const [health, setHealth] = useState(null);
@@ -43,10 +62,19 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
   const [screenCoords, setScreenCoords] = useState({}); // screen_id -> {lat, lon}
 
   useEffect(() => {
+    if (!advertiserId) return;
+    supabase.from('bookings').select('*')
+      .eq('advertiser_id', advertiserId)
+      .order('created_at', { ascending: false })
+      .limit(RECENT_CAMPAIGNS_LIMIT)
+      .then(({ data }) => setMyCampaigns((data || []).map(normalizeBooking)));
+    supabase.rpc('advertiser_lifetime_totals', { p_advertiser_id: advertiserId })
+      .then(({ data }) => { if (data?.[0]) setLifetimeTotals(data[0]); });
+  }, [advertiserId]);
+
+  useEffect(() => {
     const fetchCampaignScreens = async () => {
-      const myCampaignIds = campaigns
-        .filter(c => c.advertiser_id === advertiserId)
-        .map(c => c.id);
+      const myCampaignIds = myCampaigns.map(c => c.id);
 
       if (myCampaignIds.length === 0) return;
 
@@ -80,15 +108,13 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
     };
 
     fetchCampaignScreens();
-  }, [campaigns, advertiserId]);
+  }, [myCampaigns, advertiserId]);
 
   // Delivery comes from campaign_delivery_daily — the single source that
   // derives impressions from proof of play, never a denormalized write.
   useEffect(() => {
     const fetchDelivery = async () => {
-      const myCampaignIds = campaigns
-        .filter(c => c.advertiser_id === advertiserId)
-        .map(c => c.id);
+      const myCampaignIds = myCampaigns.map(c => c.id);
       if (myCampaignIds.length === 0) { setDelivery([]); return; }
 
       const { data, error } = await supabase
@@ -99,16 +125,14 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
       if (!error && data) setDelivery(data);
     };
     fetchDelivery();
-  }, [campaigns, advertiserId]);
+  }, [myCampaigns]);
 
   // Delivery health rolls reconciliation up per campaign; sum it into one
   // account-level number. Only CLOSED days are reconciled, so a running
   // campaign legitimately contributes less than its full flight.
   useEffect(() => {
     const fetchHealth = async () => {
-      const myCampaignIds = campaigns
-        .filter(c => c.advertiser_id === advertiserId)
-        .map(c => c.id);
+      const myCampaignIds = myCampaigns.map(c => c.id);
       if (myCampaignIds.length === 0) { setHealth(null); return; }
 
       const { data, error } = await supabase
@@ -129,11 +153,13 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
       });
     };
     fetchHealth();
-  }, [campaigns, advertiserId]);
+  }, [myCampaigns]);
 
-  const myCampaigns = campaigns.filter(c => c.advertiser_id === advertiserId);
-  const totalSpend  = myCampaigns.reduce((a, c) => a + c.budget, 0);
-  const totalSpent  = myCampaigns.reduce((a, c) => a + c.spent, 0);
+  // Lifetime, all-time totals -- see the RPC fetch above. Budget/spend
+  // here are deliberately NOT derived from myCampaigns (bounded to the 20
+  // most recent) since "Spent to Date" means the account's real history.
+  const totalSpend = Number(lifetimeTotals.total_budget) || 0;
+  const totalSpent = Number(lifetimeTotals.total_spend) || 0;
 
   const sum = key => delivery.reduce((a, r) => a + (Number(r[key]) || 0), 0);
   const totalPlays    = sum('plays');
