@@ -6,18 +6,41 @@ import { KPI } from '../../components/primitives/KPI.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { useOperatorCampaignIds } from '../../hooks/useOperatorCampaignIds.js';
+import { normalizeBooking } from '../../lib/normalizeBooking.js';
 import { groupByCampaignId, rollupGroup } from '../../lib/campaignRollup.js';
 import { CampaignRow } from './CampaignRow.jsx';
 import { CampaignComparisonTable } from '../../components/shared/CampaignComparisonTable.jsx';
 import { pluralize } from '../../lib/pluralize.js';
 
+const PAGE_SIZE = 25;
+const STATUS_TABS = [['all', 'All'], ['active', 'Active'], ['scheduled', 'Scheduled'], ['pending_review', 'Pending Review'], ['paused', 'Paused'], ['completed', 'Completed']];
 
-export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, loadError, loading = false, onNewCampaign, allowCancel = false, canReview = false, onApprovalChange }) {
+// Owns its own paginated, server-scoped `bookings` fetch instead of
+// filtering the app-wide unbounded array (App.jsx's `campaigns` state --
+// see PR "decouple ApprovalQueue from the app-wide unbounded bookings
+// fetch" for the root problem this and the sibling slices work through).
+// This is the actual "browse everything" page, so it's the one place a
+// real page/tab UI genuinely earns its keep rather than a bounded cap.
+//
+// Two header stats stayed exact (Total Campaigns, Active Now -- cheap
+// COUNT queries at any scale); Total Booked $ and Total Scans were
+// dropped rather than kept as a full-history SUM on every tab switch --
+// see Revenue.jsx for exact spend totals.
+export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScreens = [], setCampaigns, setDetail, loadError, loading = false, onNewCampaign, allowCancel = false, canReview = false, onApprovalChange }) {
   const [filter, setFilter] = useState('all');
   const [city, setCity]     = useState('All');
   const [campaignScreens, setCampaignScreens] = useState({});
   const [screenData, setScreenData] = useState({});
   const { isMobile } = useBreakpoint();
+
+  // Only populated in operator mode (advertiserId is null then). RLS
+  // already scopes `bookings` reads to what the caller may see, but the
+  // operator side still needs this id set to know *which* rows among
+  // everything RLS would allow are theirs -- same pattern ApprovalQueue
+  // uses, not a new one.
+  const operatorCampaignIds = useOperatorCampaignIds(advertiserId ? [] : (operatorScreenIds || []));
+  const operatorIdsKey = [...operatorCampaignIds].sort().join(',');
 
   const [compareMode, setCompareMode] = useState(false);
   const [compareIds, setCompareIds] = useState(new Set());
@@ -28,24 +51,76 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
   });
   const exitCompare = () => { setCompareMode(false); setCompareIds(new Set()); };
 
-  // Fetch campaign_screens data for all campaigns
+  const [rows, setRows] = useState([]);
+  const [rowsLoading, setRowsLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+  const [activeCount, setActiveCount] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  function scopedQuery(builder) {
+    return advertiserId ? builder.eq('advertiser_id', advertiserId) : builder.in('id', [...operatorCampaignIds]);
+  }
+
+  // Resets to page 1 whenever the status tab or scope changes -- a stale
+  // "load more" cursor from a different tab/account would silently mix
+  // pages together.
   useEffect(() => {
-    if (campaigns.length === 0) return;
+    if (!advertiserId && operatorCampaignIds.size === 0) { setRows([]); setTotalCount(0); setRowsLoading(false); return; }
+    setRowsLoading(true);
+    let query = scopedQuery(supabase.from('bookings').select('*', { count: 'exact' }))
+      .order('created_at', { ascending: false })
+      .range(0, PAGE_SIZE - 1);
+    if (filter !== 'all') query = query.eq('status', filter);
+    query.then(({ data, count }) => {
+      setRows((data || []).map(normalizeBooking));
+      setTotalCount(count ?? 0);
+      setHasMore((count ?? 0) > (data || []).length);
+      setRowsLoading(false);
+    });
+  }, [filter, advertiserId, operatorIdsKey]);
+
+  // Active-Now count is independent of the selected status tab (same as
+  // the old "Active Now" tile always showing the real active count
+  // regardless of which filter button was pressed).
+  useEffect(() => {
+    if (!advertiserId && operatorCampaignIds.size === 0) { setActiveCount(0); return; }
+    scopedQuery(supabase.from('bookings').select('id', { count: 'exact', head: true })).eq('status', 'active')
+      .then(({ count }) => setActiveCount(count ?? 0));
+  }, [advertiserId, operatorIdsKey]);
+
+  const loadMore = () => {
+    setLoadingMore(true);
+    let query = scopedQuery(supabase.from('bookings').select('*', { count: 'exact' }))
+      .order('created_at', { ascending: false })
+      .range(rows.length, rows.length + PAGE_SIZE - 1);
+    if (filter !== 'all') query = query.eq('status', filter);
+    query.then(({ data, count }) => {
+      setRows(prev => [...prev, ...(data || []).map(normalizeBooking)]);
+      setTotalCount(count ?? 0);
+      setHasMore((count ?? 0) > rows.length + (data || []).length);
+      setLoadingMore(false);
+    });
+  };
+
+  // Fetch campaign_screens data for the currently loaded page only -- city
+  // filtering and the approved/pending badge below are scoped to what's on
+  // screen, not the account's full history.
+  useEffect(() => {
+    if (rows.length === 0) return;
 
     async function fetchCampaignScreens() {
       try {
-        // Fetch all campaign_screens rows
         const { data: screenRows, error: screenErr } = await supabase
           .from('campaign_screens')
           .select('campaign_id, screen_id, status')
-          .in('campaign_id', campaigns.map(c => c.id));
+          .in('campaign_id', rows.map(c => c.id));
 
         if (screenErr) {
           console.error('Failed to fetch campaign_screens:', screenErr);
           return;
         }
 
-        // Build a map of campaign_id -> [campaign_screens]
         const screensByCampaign = {};
         screenRows?.forEach(row => {
           if (!screensByCampaign[row.campaign_id]) {
@@ -54,7 +129,6 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
           screensByCampaign[row.campaign_id].push(row);
         });
 
-        // Fetch screen details for all unique screen_ids
         const screenIds = [...new Set(screenRows?.map(s => s.screen_id) || [])];
         if (screenIds.length > 0) {
           const { data: screens, error: screenDetailErr } = await supabase
@@ -67,7 +141,6 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
             return;
           }
 
-          // Build a map of screen_id -> screen details
           const screenMap = {};
           screens?.forEach(s => {
             screenMap[s.id] = s;
@@ -82,19 +155,19 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
     }
 
     fetchCampaignScreens();
-  }, [campaigns]);
+  }, [rows]);
 
   const [campaignParents, setCampaignParents] = useState({}); // campaignParentId -> { id, name }
 
   useEffect(() => {
-    const ids = [...new Set(campaigns.map(c => c.campaign_id).filter(Boolean))];
+    const ids = [...new Set(rows.map(c => c.campaign_id).filter(Boolean))];
     if (ids.length === 0) { setCampaignParents({}); return; }
     supabase.from('campaigns').select('id, name').in('id', ids).then(({ data }) => {
       const byId = {};
       (data || []).forEach(row => { byId[row.id] = row; });
       setCampaignParents(byId);
     });
-  }, [campaigns.map(c => c.campaign_id).join(',')]);
+  }, [rows.map(c => c.campaign_id).join(',')]);
 
   const [expandedGroups, setExpandedGroups] = useState(new Set());
   const toggleGroup = (id) => setExpandedGroups(prev => {
@@ -103,7 +176,7 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
     return next;
   });
 
-  if (loading) {
+  if (loading || rowsLoading) {
     return (
       <div>
         <div style={{ marginBottom: 24 }}><SkeletonRow cols={4} /></div>
@@ -114,17 +187,21 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
     );
   }
 
-  function exportCSV(rows) {
+  // Exports exactly what's currently loaded (respecting the status tab and
+  // however many pages have been paged in) -- not a silent full-history
+  // pull, which is the same unbounded-fetch trap this whole refactor
+  // exists to close.
+  function exportCSV(exportRows) {
     const headers = ['ID', 'Advertiser', 'Screen Count', 'City', 'Status', 'Budget', 'Start', 'End', 'Impressions', 'Scans'];
     const escape = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const lines = rows.map(c => {
+    const lines = exportRows.map(c => {
       const screens = campaignScreens[c.id] || [];
       const screenCount = screens.length;
       const cities = [...new Set(screens.map(s => screenData[s.screen_id]?.city).filter(Boolean))];
       const displayCity = cities.length === 1 ? cities[0] : (c.city || '');
       return [
-        c.id, c.advertiser, screenCount, displayCity, c.status,
-        c.budget, c.start, c.end, c.impressions ?? 0, c.scans ?? 0,
+        c.id, c.advertiser_name || c.advertiser, screenCount, displayCity, c.status,
+        c.budget, c.start_date || c.start, c.end_date || c.end, c.impressions ?? 0, c.scans ?? 0,
       ].map(escape).join(',');
     });
     const csv = [headers.join(','), ...lines].join('\n');
@@ -136,7 +213,9 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
     URL.revokeObjectURL(a.href);
   }
 
-  // Build list of unique cities from campaign_screens
+  // City list, like campaignScreens above, is built from the loaded page(s)
+  // only -- filtering by a city that only appears on a page not yet loaded
+  // won't show in this dropdown until that page is paged in.
   const allCities = new Set();
   allCities.add('All');
   Object.values(campaignScreens).forEach(screens => {
@@ -147,18 +226,13 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
   });
   const cities = Array.from(allCities);
 
-  const shown  = campaigns
-    .filter(c => filter === 'all' || c.status === filter)
-    .filter(c => {
-      if (city === 'All') return true;
-      const screens = campaignScreens[c.id] || [];
-      return screens.some(s => screenData[s.screen_id]?.city === city);
-    });
+  const shown = rows.filter(c => {
+    if (city === 'All') return true;
+    const screens = campaignScreens[c.id] || [];
+    return screens.some(s => screenData[s.screen_id]?.city === city);
+  });
 
-  // Same badgeStatus/screenCount derivation as the per-group enrichment
-  // below, applied just to the (typically small) selected set — for the
-  // comparison table, which needs a flat list rather than the grouped one.
-  const compareCampaigns = campaigns
+  const compareCampaigns = rows
     .filter(c => compareIds.has(c.id))
     .map(c => {
       const screens = campaignScreens[c.id] || [];
@@ -181,7 +255,7 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
       )}
 
       <PageHeader title="Campaigns"
-        subtitle={`${campaigns.filter(c => c.status === 'active').length} active · ${campaigns.filter(c => c.status === 'scheduled').length} scheduled · ${campaigns.filter(c => c.status === 'pending_review').length} pending review · ${campaigns.filter(c => c.status === 'paused').length} paused`}
+        subtitle={`${totalCount} ${filter === 'all' ? 'total' : STATUS_TABS.find(([v]) => v === filter)?.[1].toLowerCase()}`}
         actions={<>
           <Btn variant={compareMode ? 'primary' : 'secondary'} size="sm" onClick={() => compareMode ? exitCompare() : setCompareMode(true)}>
             {compareMode ? '✕ Exit Compare' : '⇄ Compare'}
@@ -200,16 +274,14 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
           )
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
-        <KPI label="Total Campaigns" value={campaigns.length} icon="📋" />
-        <KPI label="Active Now"      value={campaigns.filter(c => c.status === 'active').length} color={C.green} icon="▶" />
-        <KPI label="Total Booked"    value={`$${campaigns.reduce((a, c) => a + c.budget, 0).toLocaleString()}`} icon="💰" />
-        <KPI label="Total Scans"     value={campaigns.reduce((a, c) => a + c.scans, 0)} color={C.purple} icon="📲" />
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(2,1fr)', gap: 12, marginBottom: 24, maxWidth: isMobile ? '100%' : 400 }}>
+        <KPI label="Total Campaigns" value={totalCount} icon="📋" />
+        <KPI label="Active Now"      value={activeCount} color={C.green} icon="▶" />
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ display: 'flex', gap: 4 }}>
-          {[['all', 'All'], ['active', 'Active'], ['scheduled', 'Scheduled'], ['pending_review', 'Pending Review'], ['paused', 'Paused'], ['completed', 'Completed']].map(([v, l]) => (
+          {STATUS_TABS.map(([v, l]) => (
             <button key={v} onClick={() => setFilter(v)} style={{
               padding: '6px 14px', borderRadius: 20,
               border: `1px solid ${filter === v ? C.purple : C.border}`,
@@ -229,7 +301,7 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
       {shown.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '56px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
-          {campaigns.length === 0 ? (
+          {totalCount === 0 && filter === 'all' ? (
             <>
               <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>
                 No campaigns yet
@@ -264,11 +336,6 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
                 if (hasPending && hasApproved) badgeStatus = 'partially_approved';
               }
               const cities = [...new Set(screens.map(s => screenData[s.screen_id]?.city).filter(Boolean))];
-              // Resolved from the fetched campaigns-parent row, not the booking's
-              // own campaign_name -- a booking added via "+ Add targeting group"
-              // never has campaign_name set (its name field is hidden), so that
-              // column can't be trusted as the parent name once a campaign has
-              // more than one targeting group.
               const parentName = campaignParents[c.campaign_id]?.name;
               return { ...c, badgeStatus, screenCount: screens.length, displayCity: cities.length === 1 ? cities[0] : (c.city || ''), parentName };
             });
@@ -282,7 +349,7 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
               );
             }
 
-            const parentName = withBadge[0].parentName || withBadge[0].advertiser;
+            const parentName = withBadge[0].parentName || withBadge[0].advertiser_name || withBadge[0].advertiser;
             const rollup = rollupGroup(withBadge);
             const totalScreens = withBadge.reduce((a, c) => a + c.screenCount, 0);
             const expanded = expandedGroups.has(groupId);
@@ -321,6 +388,11 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
               </div>
             );
           })}
+          {hasMore && (
+            <Btn variant="secondary" onClick={loadMore} disabled={loadingMore} style={{ alignSelf: 'center', marginTop: 8 }}>
+              {loadingMore ? 'Loading…' : `Load more (${totalCount - rows.length} remaining)`}
+            </Btn>
+          )}
         </div>
       )}
     </div>
