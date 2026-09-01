@@ -15,6 +15,8 @@ import { healthSignal } from '../../lib/screenHealth.js';
 import { useOperatorBilling } from '../../hooks/useOperatorBilling.js';
 import { MoneySummaryCard } from '../../components/shared/MoneySummaryCard.jsx';
 import { DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
+import { useOperatorCampaignIds } from '../../hooks/useOperatorCampaignIds.js';
+import { normalizeBooking } from '../../lib/normalizeBooking.js';
 
 // B14 fix: nothing previously told an operator their payouts weren't set
 // up — money was captured from advertisers but the transfer to the
@@ -86,11 +88,40 @@ function HourlyChart({ data }) {
   );
 }
 
-export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
+export function Dashboard({ dbScreens = [], setNav, loading }) {
   const { isMobile } = useBreakpoint();
   const { profile } = useAuth();
   const [hourlyData, setHourlyData] = useState(Array(24).fill(0));
   const { data: billing } = useOperatorBilling();
+
+  // Owns its own scoped fetch instead of receiving App.jsx's app-wide,
+  // unbounded `campaigns` array (see the "decouple from the app-wide
+  // unbounded bookings fetch" series -- this is slice 3, ApprovalQueue and
+  // Campaigns.jsx were 1 and 2). Only 'active' and 'scheduled' bookings are
+  // fetched -- what this dashboard actually needs (the live campaign
+  // cards, "what's currently running") -- rather than the account's full
+  // completed/cancelled history. That's a real, deliberate scope change
+  // from the old "Total Booked"/"QR Scans" tiles, which used to sum every
+  // booking ever made; they're relabeled below to say "active" rather than
+  // silently showing a smaller number under the same old label.
+  const myScreenIds = dbScreens.map(s => s.id);
+  const operatorCampaignIds = useOperatorCampaignIds(myScreenIds);
+  const operatorIdsKey = [...operatorCampaignIds].sort().join(',');
+  const [currentCampaigns, setCurrentCampaigns] = useState([]);
+  const [activeLoading, setActiveLoading] = useState(true);
+
+  useEffect(() => {
+    if (operatorCampaignIds.size === 0) { setCurrentCampaigns([]); setActiveLoading(false); return; }
+    setActiveLoading(true);
+    supabase.from('bookings').select('*')
+      .in('id', [...operatorCampaignIds])
+      .in('status', ['active', 'scheduled'])
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        setCurrentCampaigns((data || []).map(normalizeBooking));
+        setActiveLoading(false);
+      });
+  }, [operatorIdsKey]);
 
   useEffect(() => {
     const today = new Date();
@@ -115,17 +146,17 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
   // therefore shows no trend arrow rather than a made-up one.
   const totalRev    = dbScreens.reduce((a, s) => a + (s.revenue ?? s.monthly_revenue ?? 0), 0);
   const totalImpr   = dbScreens.reduce((a, s) => a + (s.impressions ?? 0), 0);
-  const active      = campaigns.filter(c => c.status === 'active');
-  const totalScans  = campaigns.reduce((a, c) => a + c.scans, 0);
-  const totalSpend  = campaigns.reduce((a, c) => a + c.budget, 0);
-  const totalSpent  = campaigns.reduce((a, c) => a + c.spent, 0);
+  const active      = currentCampaigns.filter(c => c.status === 'active');
+  const totalScans  = currentCampaigns.reduce((a, c) => a + c.scans, 0);
+  const totalSpend  = currentCampaigns.reduce((a, c) => a + c.budget, 0);
+  const totalSpent  = currentCampaigns.reduce((a, c) => a + c.spent, 0);
   const liveScreens = dbScreens.filter(s => s.status === 'live');
-  const allImpr     = campaigns.reduce((a, c) => a + (c.impressions || 0), 0);
+  const allImpr     = currentCampaigns.reduce((a, c) => a + (c.impressions || 0), 0);
   const avgCPM      = allImpr > 0 ? `$${((totalSpend / allImpr) * 1000).toFixed(2)}` : '—';
 
   const kpiCols = isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)';
 
-  if (loading) {
+  if (loading || activeLoading) {
     return (
       <div>
         <div style={{ height: 28, marginBottom: 28 }} />
@@ -188,8 +219,8 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
       <div style={{ display: 'grid', gridTemplateColumns: kpiCols, gap: 14, marginBottom: 24 }}>
         <KPI label="Network Revenue"  value={`$${totalRev.toLocaleString()}`}               sub="this month" icon="💰" />
         <KPI label="Active Campaigns" value={active.length}                                  sub="running now" icon="▶" />
-        <KPI label="Total Booked"     value={`$${totalSpend.toLocaleString()}`}              sub="campaign budgets" icon="📋" />
-        <KPI label="QR Scans"         value={totalScans}                                     sub="consented leads" color={C.green} icon="📲" />
+        <KPI label="Active Budget"    value={`$${totalSpend.toLocaleString()}`}              sub="running + scheduled" icon="📋" />
+        <KPI label="Active Scans"     value={totalScans}                                     sub="running + scheduled" color={C.green} icon="📲" />
       </div>
 
       {/* Budget strip */}
