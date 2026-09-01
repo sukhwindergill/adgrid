@@ -24,7 +24,7 @@ export function PrivacyPolicy() {
       <div style={inner}>
         <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Privacy Policy' }]} />
         <h1 style={h1}>Privacy Policy</h1>
-        <p style={{ ...p, color: 'rgba(255,255,255,0.5)' }}>Last updated: June 29, 2026</p>
+        <p style={{ ...p, color: 'rgba(255,255,255,0.5)' }}>Last updated: August 31, 2026</p>
 
         <h2 style={h2}>Who we are</h2>
         <p style={p}>
@@ -67,6 +67,13 @@ export function PrivacyPolicy() {
           <strong>Usage data:</strong> standard server logs (IP address, browser type,
           pages visited) retained for up to 90 days for security and debugging purposes.
         </p>
+        <p style={p}>
+          <strong>Marketplace messages:</strong> when an advertiser and a screen operator
+          message each other about an exclusive placement listing through AdGrid's
+          marketplace, we store the message content, sender, and timestamp so both parties
+          can see the conversation. We do not read or use this content for any purpose
+          other than delivering it and, where relevant, resolving a support request.
+        </p>
 
         <h2 style={h2}>How we use your data</h2>
         <p style={p}>
@@ -78,8 +85,9 @@ export function PrivacyPolicy() {
 
         <h2 style={h2}>Data retention</h2>
         <p style={p}>
-          Account data is retained for the life of your account and for 90 days following
-          account deletion, after which it is permanently deleted. Screen telemetry,
+          Account data — including marketplace messages — is retained for the life of your
+          account and for 90 days following account deletion, after which it is permanently
+          deleted. Screen telemetry,
           heartbeat records, and aggregate audience-measurement statistics are retained for
           12 months, then automatically deleted. QR scan events are retained for 24 months
           to support campaign analytics, then automatically deleted. Stripe retains payment
