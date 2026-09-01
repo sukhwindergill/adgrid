@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase.js';
 import { C, F } from '../../design/tokens.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { periodDelta, splitByPeriod } from '../../lib/periodDelta.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
+import { useOperatorCampaignIds } from '../../hooks/useOperatorCampaignIds.js';
+import { normalizeBooking } from '../../lib/normalizeBooking.js';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
@@ -13,18 +16,41 @@ import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { SkeletonRow, SkeletonTable } from '../../components/ui/Skeleton.jsx';
 
-export function Revenue({ campaigns, loading = false }) {
-  const [period, setPeriod] = useState(null);
+// Owns its own scoped `bookings` fetch instead of App.jsx's app-wide,
+// unbounded array (slice 4 of the "decouple from the app-wide unbounded
+// bookings fetch" series -- ApprovalQueue, Campaigns.jsx, and both
+// Dashboards were 1-3). Unlike those, this page's by-city breakdown and
+// per-campaign table genuinely need row-level data, not just a sum -- an
+// aggregate RPC (see AdvDashboard's advertiser_lifetime_totals) doesn't
+// cover it. Default period is 30 days (bounded) instead of "All"
+// (unbounded) -- "All" stays available, it's just no longer what every
+// page load fetches by default.
+export function Revenue({ operatorScreenIds = [] }) {
+  const [period, setPeriod] = useState(30);
   const { isMobile } = useBreakpoint();
   const { profile } = useAuth();
   const ownerRevenueShare = profile?.owner_revenue_share ?? DEFAULT_OWNER_REVENUE_SHARE;
   const ownerPct = Math.round(ownerRevenueShare * 100);
 
-  const filteredCampaigns = period === null ? campaigns : campaigns.filter(c => {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - period);
-    return new Date(c.start_date) >= cutoff;
-  });
+  const operatorCampaignIds = useOperatorCampaignIds(operatorScreenIds);
+  const operatorIdsKey = [...operatorCampaignIds].sort().join(',');
+  const [filteredCampaigns, setFilteredCampaigns] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (operatorCampaignIds.size === 0) { setFilteredCampaigns([]); setLoading(false); return; }
+    setLoading(true);
+    let query = supabase.from('bookings').select('*').in('id', [...operatorCampaignIds]);
+    if (period !== null) {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - period);
+      query = query.gte('start_date', cutoff.toISOString());
+    }
+    query.then(({ data }) => {
+      setFilteredCampaigns((data || []).map(normalizeBooking));
+      setLoading(false);
+    });
+  }, [period, operatorIdsKey]);
 
   if (loading) {
     return (

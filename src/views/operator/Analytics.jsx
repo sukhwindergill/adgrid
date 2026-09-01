@@ -11,6 +11,10 @@ import { Table } from '../../components/primitives/Table.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { BenchmarkRow } from '../../components/shared/BenchmarkRow.jsx';
+import { useOperatorCampaignIds } from '../../hooks/useOperatorCampaignIds.js';
+import { normalizeBooking } from '../../lib/normalizeBooking.js';
+
+const RECENT_CAMPAIGNS_LIMIT = 50;
 
 const EMPTY_HOURLY = Array(24).fill(0);
 const EMPTY_DAY    = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
@@ -149,7 +153,15 @@ function useImpressionStats(period = 7, customFrom = '', customTo = '') {
   return { stats, loading, hasReal, impressionTrend };
 }
 
-export function Analytics({ campaigns }) {
+// Owns its own scoped `bookings` fetch instead of App.jsx's app-wide,
+// unbounded array (slice 4 of the "decouple from the app-wide unbounded
+// bookings fetch" series). Bounded to the 50 most recent bookings --
+// this page's real headline data is the CV-verified impression stats
+// (useImpressionStats above, independently fetched and already scoped
+// per period); the campaigns-derived KPIs and table are secondary
+// "recent activity" context, not an all-time ledger -- Revenue.jsx is
+// where exact historical totals live.
+export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
   const [filters, setFilters] = useState({ gender: '', age: '' });
   const [period, setPeriod] = useState(7); // 7 | 30 | 90 | 'custom'
   const [customFrom, setCustomFrom] = useState('');
@@ -157,6 +169,27 @@ export function Analytics({ campaigns }) {
   const { isMobile } = useBreakpoint();
   const { stats, loading, hasReal, impressionTrend } = useImpressionStats(period, customFrom, customTo);
   const [benchmark, setBenchmark] = useState(null);
+
+  const operatorCampaignIds = useOperatorCampaignIds(advertiserId ? [] : operatorScreenIds);
+  const operatorIdsKey = [...operatorCampaignIds].sort().join(',');
+  const [campaigns, setCampaigns] = useState([]);
+
+  useEffect(() => {
+    if (advertiserId) {
+      supabase.from('bookings').select('*')
+        .eq('advertiser_id', advertiserId)
+        .order('created_at', { ascending: false })
+        .limit(RECENT_CAMPAIGNS_LIMIT)
+        .then(({ data }) => setCampaigns((data || []).map(normalizeBooking)));
+      return;
+    }
+    if (operatorCampaignIds.size === 0) { setCampaigns([]); return; }
+    supabase.from('bookings').select('*')
+      .in('id', [...operatorCampaignIds])
+      .order('created_at', { ascending: false })
+      .limit(RECENT_CAMPAIGNS_LIMIT)
+      .then(({ data }) => setCampaigns((data || []).map(normalizeBooking)));
+  }, [advertiserId, operatorIdsKey]);
 
   useEffect(() => {
     // Match on the venue mix this account actually runs on. With one
@@ -307,7 +340,7 @@ export function Analytics({ campaigns }) {
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
         <KPI label="Total Impressions" value={hasReal ? totalPeople.toLocaleString() : `${(totalImpr / 1000).toFixed(1)}K`} sub={hasReal ? 'verified by CV' : 'estimated'} trend={hasReal ? impressionTrend : null} trendLabel={`vs prior ${period === 'custom' ? 'range' : period + ' days'}`} icon="👁" />
         <KPI label={hasReal ? 'Avg Dwell Time' : 'Avg CPM'} value={hasReal ? `${avgDwell}s` : `$${avgCPM} CPM`} sub={hasReal ? 'seconds on screen' : 'cost per 1,000'} color={C.blue} icon={hasReal ? '⏱' : '💲'} />
-        <KPI label="QR Scans"          value={totalScans} sub="total scans" color={C.green} icon="📲" />
+        <KPI label="QR Scans"          value={totalScans} sub="recent campaigns" color={C.green} icon="📲" />
         <KPI label={hasReal ? 'Avg Attention' : 'Scan Rate'} value={hasReal ? `${avgAttn}%` : `${scanRate}%`} sub={hasReal ? 'frontal attention score' : 'scans / impressions'} icon="📊" />
       </div>
 

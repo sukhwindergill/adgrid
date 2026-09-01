@@ -545,7 +545,7 @@ function AppInner() {
         }
         return <MarketplaceView onSelectListing={id => setSelectedListingId(id)} />;
       }
-      if (active === 'adv-analytics')    return <Analytics campaigns={advertiserCampaigns} loading={dataLoading} />;
+      if (active === 'adv-analytics')    return <Analytics advertiserId={currentAdvertiserId} />;
       if (active === 'adv-audience')     return <ScansView impersonatingId={impersonating?.id ?? null} />;
       if (active === 'adv-rules')        return <AutomationRulesView user={user} ownerSide="advertiser" />;
       if (active === 'adv-billing')      return <AdvertiserBillingView />;
@@ -594,10 +594,10 @@ function AppInner() {
     if (active === 'marketplace-listings') {
       return <MarketplaceListingsView operatorId={impersonating?.id ?? user.id} myScreens={myScreens} />;
     }
-    if (active === 'analytics')    return <Analytics campaigns={operatorCampaigns} loading={dataLoading} />;
-    if (active === 'audience')     return <Audience campaigns={operatorCampaigns} />;
-    if (active === 'revenue')      return <Revenue campaigns={operatorCampaigns} loading={dataLoading} />;
-    if (active === 'billing')      return <Billing campaigns={operatorCampaigns} />;
+    if (active === 'analytics')    return <Analytics operatorScreenIds={visibleMyScreens.map(s => s.id)} />;
+    if (active === 'audience')     return <Audience />;
+    if (active === 'revenue')      return <Revenue operatorScreenIds={visibleMyScreens.map(s => s.id)} />;
+    if (active === 'billing')      return <Billing />;
     if (active === 'advertisers')  return <AdvertisersView onImpersonate={startImpersonation} />;
     if (active === 'signals')      return <SignalsView campaigns={operatorCampaigns} />;
     if (active === 'rules')        return <AutomationRulesView user={user} ownerSide="operator" setNav={navTo} />;
