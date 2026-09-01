@@ -14,6 +14,7 @@ import { TrendSparkline } from '../../components/shared/TrendSparkline.jsx';
 import { DeliveryHealthCard } from '../../components/shared/DeliveryHealthCard.jsx';
 import { ApprovalTracker } from '../../components/shared/ApprovalTracker.jsx';
 import { PacingDot } from '../../components/shared/PacingDot.jsx';
+import { PacingCard } from '../../components/shared/PacingCard.jsx';
 import { estimateReach, averageFrequency } from '../../lib/reach.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { listDrafts, deleteDraft } from '../../lib/campaignDrafts.js';
@@ -173,6 +174,14 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
   const { reach, hasUnknownPositions } = estimateReach(perScreen);
   const frequency = averageFrequency(totalImpr, reach);
 
+  // PacingCard (elapsed vs spent, projected final spend) was built for this
+  // audience but only ever got wired into the operator's CampaignDetail —
+  // advertisers had no budget-pacing forecast anywhere, only the small
+  // color-dot indicator on each campaign row below. Surface it for active
+  // campaigns here; capped so a heavy account doesn't turn the dashboard
+  // into a wall of cards.
+  const activeCampaigns = myCampaigns.filter(c => c.status === 'active').slice(0, 3);
+
   // Flat list of every booked screen, for the approval tracker.
   const approvalRows = Object.values(campaignScreens)
     .flat()
@@ -235,6 +244,19 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
       <div style={{ marginBottom: 24 }}>
         <DeliveryHealthCard health={health} currency={myCampaigns[0]?.currency} />
       </div>
+
+      {activeCampaigns.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          {activeCampaigns.length > 1 && (
+            <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 10 }}>Budget Pacing</h2>
+          )}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${activeCampaigns.length}, 1fr)`, gap: 16 }}>
+            {activeCampaigns.map(c => (
+              <PacingCard key={c.id} startDate={c.start} endDate={c.end} spent={c.spent} budget={c.budget} currency={c.currency} />
+            ))}
+          </div>
+        </div>
+      )}
 
       <ApprovalTracker rows={approvalRows} />
 
