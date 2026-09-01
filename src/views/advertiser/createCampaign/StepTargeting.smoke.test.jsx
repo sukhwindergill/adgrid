@@ -124,7 +124,7 @@ describe('StepTargeting', () => {
         onPrevCampaigns={null}
       />
     );
-    expect(screen.getByText('Loading…')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Loading locations…')).toBeInTheDocument();
     expect(screen.queryByText(/No screens are live on the network yet/)).not.toBeInTheDocument();
   });
 
@@ -140,7 +140,7 @@ describe('StepTargeting', () => {
       />
     );
     expect(screen.getByText(/No screens are live on the network yet/)).toBeInTheDocument();
-    expect(screen.queryByText('Loading…')).not.toBeInTheDocument();
-    expect(screen.getByText('No screens yet')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('Loading locations…')).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText('No screens yet')).toBeInTheDocument();
   });
 });

@@ -56,3 +56,38 @@ export function distinctStates(index, country) {
   }
   return out.sort();
 }
+
+// Flattens the city-level index into one list spanning all three
+// granularities (country / state / city) so a single combobox can offer
+// "United States", "Ontario", and "Toronto" side by side, each tagged with
+// its level. Screen counts roll up: a country entry's count is the sum of
+// every city under it, same for state. Used by the consolidated targeting
+// combobox in StepTargeting — replaces the old stacked Country/State/City
+// selects.
+export function buildFlatLocationOptions(index) {
+  const countries = new Map(); // code -> { count, hasCoords }
+  const states = new Map();    // "country|state" -> { country, state, count, hasCoords }
+  const cities = [];
+
+  for (const e of index) {
+    if (e.country) {
+      const c = countries.get(e.country) ?? { count: 0, hasCoords: false };
+      c.count += e.count;
+      c.hasCoords = c.hasCoords || e.hasCoords;
+      countries.set(e.country, c);
+    }
+    if (e.country && e.state) {
+      const key = `${e.country}|${e.state}`;
+      const s = states.get(key) ?? { country: e.country, state: e.state, count: 0, hasCoords: false };
+      s.count += e.count;
+      s.hasCoords = s.hasCoords || e.hasCoords;
+      states.set(key, s);
+    }
+    cities.push({ level: 'city', country: e.country, state: e.state, city: e.city, count: e.count, hasCoords: e.hasCoords, centroidLat: e.centroidLat, centroidLon: e.centroidLon });
+  }
+
+  const countryOpts = [...countries.entries()].map(([country, v]) => ({ level: 'country', country, count: v.count, hasCoords: v.hasCoords }));
+  const stateOpts = [...states.values()].map(v => ({ level: 'state', country: v.country, state: v.state, count: v.count, hasCoords: v.hasCoords }));
+
+  return [...countryOpts, ...stateOpts, ...cities];
+}
