@@ -27,7 +27,15 @@ Deno.serve(async (req: Request) => {
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) return new Response("Unauthorized", { status: 401, headers: CORS });
 
+  // Bare `${origin}/billing` doesn't match any real route -- the dashboard
+  // lives entirely under /app/* with client-side (not URL-based) navigation
+  // between views, so returning there hit the catch-all NotFound page.
+  // Accept the client's actual current URL instead (same pattern
+  // create-connect-account already uses for its returnUrl), falling back to
+  // /app only if the client didn't send one.
   const origin = req.headers.get("origin") ?? Deno.env.get("SITE_URL")!;
+  const body = await req.json().catch(() => ({}));
+  const returnUrl: string = body?.returnUrl || `${origin}/app`;
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -56,8 +64,8 @@ Deno.serve(async (req: Request) => {
       mode: "setup",
       customer: customerId,
       currency: profile?.preferred_currency ?? "cad",
-      success_url: `${origin}/billing?setup=success`,
-      cancel_url: `${origin}/billing?setup=cancelled`,
+      success_url: `${returnUrl}${returnUrl.includes("?") ? "&" : "?"}setup=success`,
+      cancel_url: `${returnUrl}${returnUrl.includes("?") ? "&" : "?"}setup=cancelled`,
     });
 
     return new Response(JSON.stringify({ url: session.url }), { headers: CORS });

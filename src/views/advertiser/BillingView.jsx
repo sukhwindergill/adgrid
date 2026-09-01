@@ -58,7 +58,8 @@ export default function BillingView() {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/setup-billing`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ returnUrl: window.location.href.split("?")[0] }),
       });
       const body = await res.json();
       if (!res.ok || !body.url) throw new Error(body.error ?? "Failed to start setup");
