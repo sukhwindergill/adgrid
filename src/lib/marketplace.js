@@ -89,6 +89,69 @@ export async function fetchListingScreens(listingId) {
   return (data ?? []).map(r => r.screen_id);
 }
 
+// An advertiser's own confirmed marketplace bookings. marketplace_listings
+// RLS lets an advertiser read a listing only while it's 'active' or via the
+// new "advertiser_reads_own_booked_listings" policy (once booked) -- so this
+// join only ever sees listings this advertiser is actually allowed to see,
+// same guarantee fetchListing already relies on for the browse/detail flow.
+// Explicit multi-query join rather than a PostgREST embed, matching this
+// file's existing style (see fetchListingScreens above).
+export async function fetchAdvertiserBookings(advertiserId) {
+  const { data: bookings, error } = await supabase
+    .from('marketplace_bookings')
+    .select('*')
+    .eq('advertiser_id', advertiserId)
+    .order('booked_at', { ascending: false });
+  if (error) throw error;
+  if (!bookings || bookings.length === 0) return [];
+
+  const listingIds = [...new Set(bookings.map(b => b.listing_id))];
+  const { data: listings, error: listingsErr } = await supabase
+    .from('marketplace_listings')
+    .select('id, screen_id, is_bundle, start_date, end_date, status, auto_renew')
+    .in('id', listingIds);
+  if (listingsErr) throw listingsErr;
+  const listingById = new Map((listings ?? []).map(l => [l.id, l]));
+
+  const screenIds = [...new Set((listings ?? []).map(l => l.screen_id).filter(Boolean))];
+  const { data: screens } = screenIds.length > 0
+    ? await supabase.from('advertiser_screens').select('id, name').in('id', screenIds)
+    : { data: [] };
+  const screenNameById = new Map((screens ?? []).map(s => [s.id, s.name]));
+
+  return bookings.map(b => {
+    const listing = listingById.get(b.listing_id) ?? null;
+    return {
+      ...b,
+      listing,
+      screen_name: listing ? screenNameById.get(listing.screen_id) ?? null : null,
+    };
+  });
+}
+
+// An operator's bookings across all of their own marketplace listings.
+// marketplace_listings' "operator_manages_own_listings" policy (FOR ALL,
+// operator_id = auth.uid()) already covers reading a listing regardless of
+// its status, so this needs no new RLS -- unlike the advertiser side above.
+export async function fetchOperatorBookings(operatorId) {
+  const { data: listings, error: listingsErr } = await supabase
+    .from('marketplace_listings')
+    .select('id, screen_id, is_bundle, start_date, end_date')
+    .eq('operator_id', operatorId);
+  if (listingsErr) throw listingsErr;
+  if (!listings || listings.length === 0) return [];
+
+  const listingById = new Map(listings.map(l => [l.id, l]));
+  const { data: bookings, error } = await supabase
+    .from('marketplace_bookings')
+    .select('*')
+    .in('listing_id', listings.map(l => l.id))
+    .order('booked_at', { ascending: false });
+  if (error) throw error;
+
+  return (bookings ?? []).map(b => ({ ...b, listing: listingById.get(b.listing_id) ?? null }));
+}
+
 export async function cancelListing(listingId) {
   const { error } = await supabase
     .from('marketplace_listings').update({ status: 'cancelled' }).eq('id', listingId);

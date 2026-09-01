@@ -1,11 +1,75 @@
 import { useState, useEffect } from 'react';
 import { C, F } from '../../design/tokens.js';
 import { Btn } from '../../components/primitives/Btn.jsx';
-import { fetchOperatorListings, cancelListing } from '../../lib/marketplace.js';
+import { Tabs } from '../../components/primitives/Tabs.jsx';
+import { fetchOperatorListings, fetchOperatorBookings, cancelListing } from '../../lib/marketplace.js';
 import { MarketplaceListingForm } from './MarketplaceListingForm.jsx';
 import { useToast } from '../../components/primitives/Toast.jsx';
 
+const BOOKING_STATUS_LABEL = {
+  confirmed: 'Confirmed',
+  active: 'Active',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+};
+
+const PAYMENT_STATUS_LABEL = {
+  unpaid: 'Unpaid',
+  paid: 'Paid',
+};
+
+// No advertiser name/email is shown here -- the rest of the marketplace
+// feature (thread messages included) never surfaces one party's identity to
+// the other beyond what they've chosen to say, and there's no existing safe
+// accessor for it from the operator side. Booking id is enough for an
+// operator to match a payout against.
+function OperatorBookings({ operatorId }) {
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchOperatorBookings(operatorId).then(data => { setBookings(data ?? []); setLoading(false); });
+  }, [operatorId]);
+
+  if (loading) return <div style={{ fontFamily: F.sans, color: C.textMuted, padding: '24px 0' }}>Loading bookings…</div>;
+
+  if (bookings.length === 0) {
+    return (
+      <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMuted, padding: '24px 0' }}>
+        None of your listings have been booked yet.
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {bookings.map(b => (
+        <div key={b.id} style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8,
+          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 12,
+        }}>
+          <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMid }}>
+            {b.listing?.is_bundle && <span style={{ color: C.purple, fontWeight: 600 }}>Bundle · </span>}
+            ${(b.price_cents / 100).toFixed(0)} · {b.listing ? `${b.listing.start_date} – ${b.listing.end_date}` : 'listing removed'}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: F.sans, fontSize: 12 }}>
+            <span style={{ color: C.textSub }}>{PAYMENT_STATUS_LABEL[b.payment_status] ?? b.payment_status}</span>
+            <span style={{
+              padding: '2px 8px', borderRadius: 999, fontWeight: 600,
+              color: b.status === 'cancelled' ? C.red : C.purple,
+              background: b.status === 'cancelled' ? C.redSoft : C.purpleSoft,
+            }}>
+              {BOOKING_STATUS_LABEL[b.status] ?? b.status}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function MarketplaceListingsView({ operatorId, myScreens }) {
+  const [tab, setTab] = useState('listings');
   const [listings, setListings] = useState([]);
   const [creatingFor, setCreatingFor] = useState(null);
   const [cancellingId, setCancellingId] = useState(null);
@@ -38,7 +102,15 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
         Marketplace listings
       </h2>
 
-      {creatingFor ? (
+      <Tabs
+        tabs={[{ id: 'listings', label: 'Listings' }, { id: 'bookings', label: 'Bookings' }]}
+        active={tab}
+        onChange={setTab}
+      />
+
+      {tab === 'bookings' ? (
+        <OperatorBookings operatorId={operatorId} />
+      ) : creatingFor ? (
         <MarketplaceListingForm
           screenId={creatingFor}
           onCreated={() => { setCreatingFor(null); reload(); }}
