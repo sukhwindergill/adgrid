@@ -4,12 +4,18 @@ import { supabase } from "../../lib/supabase.js";
 import { useToast } from "../../components/primitives/Toast.jsx";
 import { useConfirm } from "../../components/primitives/ConfirmModal.jsx";
 import { useBreakpoint } from "../../lib/useBreakpoint.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const STATUS_COLORS = {
   paid: { bg: "#f0fdf4", color: "#16a34a" },
   open: { bg: "#fffbeb", color: "#d97706" },
   failed: { bg: "#fef2f2", color: "#dc2626" },
   void: { bg: "#f9fafb", color: "#6b7280" },
+};
+
+const REASON_LABEL = {
+  screen_offline: "Screen was offline",
+  underdelivered: "Screen under-delivered",
 };
 
 function Badge({ status }) {
@@ -22,8 +28,87 @@ function Badge({ status }) {
   );
 }
 
+// profiles.credits is written by supabase/functions/reconcile-delivery when a
+// screen under-delivers, but nothing in the advertiser UI ever showed the
+// resulting balance or explained which day earned it — an advertiser could
+// be sitting on real account credit with no way to know it exists.
+function useDeliveryCredits() {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const toast = useToast();
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      // RLS scopes delivery_reconciliation to the caller's own campaigns
+      // (advertiser_view_own_reconciliation), so no explicit filter needed.
+      const { data: recon, error: reconErr } = await supabase
+        .from("delivery_reconciliation")
+        .select("campaign_id, screen_id, day, reason, credit_amount, currency, credited_at")
+        .gt("credit_amount", 0)
+        .not("credited_at", "is", null)
+        .order("day", { ascending: false })
+        .limit(50);
+
+      if (cancelled) return;
+      // B: a failed query used to render identically to "no credits" --
+      // the advertiser had no way to tell a real balance from a fetch
+      // that silently errored, exactly the visibility gap this hook
+      // exists to close. Surface it instead of hiding it.
+      if (reconErr) {
+        console.error("Failed to load delivery credits:", reconErr.message);
+        setError(reconErr.message);
+        setLoading(false);
+        return;
+      }
+      if (!recon || recon.length === 0) { setRows([]); setLoading(false); return; }
+
+      // delivery_reconciliation stores raw campaign/screen ids — resolve the
+      // human-readable names from bookings in a second pass rather than
+      // relying on a PostgREST FK embed (bookings.id is referenced by more
+      // than one table, which makes embeds ambiguous).
+      const campaignIds = [...new Set(recon.map(r => r.campaign_id))];
+      const { data: bookings, error: bookingsErr } = await supabase
+        .from("bookings")
+        .select("id, campaign_name, screen_name")
+        .in("id", campaignIds);
+
+      if (cancelled) return;
+      if (bookingsErr) {
+        // Names are cosmetic (byId lookups already fall back to generic
+        // labels below) -- log and toast but still show the credit rows
+        // themselves rather than hiding real balances over a display-only
+        // failure.
+        console.error("Failed to load campaign names for delivery credits:", bookingsErr.message);
+        toast.error("Couldn't load campaign names for some delivery credits.");
+      }
+      const byId = Object.fromEntries((bookings ?? []).map(b => [b.id, b]));
+
+      setRows(recon.map(r => ({
+        ...r,
+        campaignName: byId[r.campaign_id]?.campaign_name ?? "Campaign",
+        screenName: byId[r.campaign_id]?.screen_name ?? "Screen",
+      })));
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+    // toast (from useToast()) is a fresh context-value object on every
+    // ToastProvider render, not a stable identity -- depending on it would
+    // refire this fetch whenever any unrelated toast fires anywhere else in
+    // the app while this view is mounted. Fetch once on mount, same as
+    // before this hook cared about errors at all.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return { rows, loading, error };
+}
+
 export default function BillingView() {
   const { isMobile } = useBreakpoint();
+  const { profile } = useAuth();
+  const { rows: creditRows, loading: creditsLoading, error: creditsError } = useDeliveryCredits();
+  const accountCredit = Number(profile?.credits ?? 0);
   const [data, setData] = useState({ invoices: [], paymentMethods: [], portalUrl: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -143,6 +228,24 @@ export default function BillingView() {
   return (
     <div style={{ padding: isMobile ? "20px 16px" : "32px 40px", fontFamily: F.sans, maxWidth: 900 }}>
       <h2 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: "0 0 28px" }}>Billing</h2>
+
+      {accountCredit > 0 && (
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12,
+          background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12,
+          padding: "16px 24px", marginBottom: 24,
+        }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#16a34a", marginBottom: 2 }}>Account Credit</div>
+            <div style={{ fontSize: 12, color: C.textSub }}>
+              Applied automatically to your next charge. Comes from delivery shortfalls credited below.
+            </div>
+          </div>
+          <div style={{ fontSize: 26, fontWeight: 700, color: "#16a34a", fontFamily: F.mono }}>
+            ${accountCredit.toFixed(2)}
+          </div>
+        </div>
+      )}
 
       <div style={{
         background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
@@ -267,6 +370,50 @@ export default function BillingView() {
           </div>
         )}
       </div>
+
+      {!creditsLoading && creditsError && (
+        <div style={{
+          background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12,
+          padding: "14px 24px", marginTop: 24, fontSize: 13, color: "#b91c1c",
+        }}>
+          Couldn't load your delivery credits — try refreshing. If this keeps happening, contact support.
+        </div>
+      )}
+
+      {!creditsLoading && !creditsError && creditRows.length > 0 && (
+        <div style={{
+          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
+          overflow: "hidden", marginTop: 24,
+        }}>
+          <div style={{ padding: "14px 24px", borderBottom: `1px solid ${C.border}`, fontSize: 15, fontWeight: 600, color: C.text }}>
+            Delivery Credits
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 560 }}>
+              <thead>
+                <tr style={{ background: C.bg }}>
+                  {["Day", "Campaign", "Screen", "Reason", "Credited"].map((h) => (
+                    <th key={h} style={{ padding: "10px 20px", textAlign: "left", color: C.textSub, fontWeight: 500, borderBottom: `1px solid ${C.border}` }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {creditRows.map((r) => (
+                  <tr key={`${r.campaign_id}-${r.screen_id}-${r.day}`} style={{ borderBottom: `1px solid ${C.border}` }}>
+                    <td style={{ padding: "12px 20px", color: C.text, fontFamily: F.mono, fontSize: 12 }}>{r.day}</td>
+                    <td style={{ padding: "12px 20px", color: C.text }}>{r.campaignName}</td>
+                    <td style={{ padding: "12px 20px", color: C.text }}>{r.screenName}</td>
+                    <td style={{ padding: "12px 20px", color: C.textSub }}>{REASON_LABEL[r.reason] ?? r.reason}</td>
+                    <td style={{ padding: "12px 20px", color: "#16a34a", fontWeight: 600, fontFamily: F.mono }}>
+                      +${Number(r.credit_amount).toFixed(2)} {String(r.currency ?? "CAD").toUpperCase()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
