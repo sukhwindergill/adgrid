@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { expandCreativeAssignments } from "../_shared/creativeSelection.ts";
 import { clampDurationToScreen } from "../_shared/adDuration.ts";
-import { resolveDayWindow } from "../_shared/dayparting.ts";
+import { resolveDayWindow, isTimeInWindow } from "../_shared/dayparting.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -138,7 +138,7 @@ Deno.serve(async (req: Request) => {
           b.time_start as string | null,
           b.time_end as string | null,
         );
-        const inTime = currentTime >= window.time_start && currentTime <= window.time_end;
+        const inTime = isTimeInWindow(currentTime, window.time_start, window.time_end);
         if (!inDay || !inTime) continue;
 
         const assignments = creativesByTargeting.get(b.id as string) ?? [];
