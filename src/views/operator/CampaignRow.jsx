@@ -8,7 +8,7 @@ import { pluralize } from '../../lib/pluralize.js';
 import { useConfirm } from '../../components/primitives/ConfirmModal.jsx';
 import { useToast } from '../../components/primitives/Toast.jsx';
 
-export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel, canReview, setDetail, setCampaigns, onApprovalChange }) {
+export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel, canReview, setDetail, setCampaigns, onApprovalChange, compareMode = false, compareSelected = false, onToggleCompare }) {
   const pct = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
   const isPending = c.status === 'pending_review';
   // The partially_approved derivation needs campaignScreens data, which this
@@ -20,16 +20,27 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
 
   return (
     <div
-      onClick={e => { if (!e.defaultPrevented) setDetail(c); }}
+      onClick={e => { if (e.defaultPrevented) return; compareMode ? onToggleCompare?.(c.id) : setDetail(c); }}
       style={{
         background: isPending ? C.amberSoft : C.surface,
-        border: `1px solid ${isPending ? C.amberBorder : C.border}`,
+        border: `1px solid ${compareMode && compareSelected ? C.purple : isPending ? C.amberBorder : C.border}`,
         borderRadius: 12, padding: '16px 20px', cursor: 'pointer', transition: 'all 0.15s',
+        display: 'flex', alignItems: 'flex-start', gap: 12,
       }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = isPending ? C.amber : C.purpleBorder; e.currentTarget.style.boxShadow = '0 4px 12px rgba(124,58,237,0.08)'; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = isPending ? C.amberBorder : C.border; e.currentTarget.style.boxShadow = 'none'; }}
+      onMouseEnter={e => { if (!compareMode) { e.currentTarget.style.borderColor = isPending ? C.amber : C.purpleBorder; e.currentTarget.style.boxShadow = '0 4px 12px rgba(124,58,237,0.08)'; } }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = compareMode && compareSelected ? C.purple : isPending ? C.amberBorder : C.border; e.currentTarget.style.boxShadow = 'none'; }}
     >
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 180px 120px 80px 110px 110px', gap: 16, alignItems: 'start' }}>
+      {compareMode && (
+        <input
+          type="checkbox"
+          checked={compareSelected}
+          onChange={() => onToggleCompare?.(c.id)}
+          onClick={e => e.stopPropagation()}
+          aria-label={`Select ${c.advertiser} for comparison`}
+          style={{ marginTop: 3, width: 16, height: 16, flexShrink: 0, cursor: 'pointer', accentColor: C.purple }}
+        />
+      )}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 180px 120px 80px 110px 110px', gap: 16, alignItems: 'start', flex: 1, minWidth: 0 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
             <div style={{ fontWeight: 600, color: C.text, fontFamily: F.sans }}>{c.advertiser}</div>
