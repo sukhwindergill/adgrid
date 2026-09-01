@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
@@ -6,19 +6,31 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
-import { SCREENS } from '../../lib/data.js';
+import { useOperatorScreenCampaignRows } from '../../hooks/useOperatorScreenCampaignRows.js';
 
 const BOOSTS = { 'Food & Beverage': { morning: 2, cold: 1, highFoot: 2 }, 'Health & Fitness': { morning: 3, weekend: 2, sunny: 2 }, 'Fashion & Retail': { weekend: 2, highFoot: 3, sunny: 1 }, 'Finance & Banking': { morning: 3, weekday: 2 }, Entertainment: { evening: 3, weekend: 3 }, Technology: { morning: 1, weekday: 2 } };
 
-export function SignalsView({ campaigns }) {
+// Used to filter on `c.screenId`, a field no real booking row has (which
+// screens a campaign runs on lives in the campaign_screens junction table,
+// not a flat field on the booking) -- always rendered empty against live
+// data. useOperatorScreenCampaignRows flattens that junction into real
+// per-screen rows; `screens` (the operator's live screens, not the old
+// SCREENS fixture) drives the screen picker.
+export function SignalsView({ operatorScreenIds = [], screens = [] }) {
   const { isMobile } = useBreakpoint();
   const now = new Date();
   const [hour, setHour]     = useState(now.getHours());
   const [day, setDay]       = useState(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][now.getDay()]);
   const [weather, setWeather] = useState('Sunny');
-  const [screen, setScreen] = useState(SCREENS[0].id);
+  const liveScreens = screens.filter(s => s.status === 'live');
+  const [screen, setScreen] = useState(liveScreens[0]?.id ?? null);
+  useEffect(() => {
+    if (!screen && liveScreens[0]) setScreen(liveScreens[0].id);
+  }, [liveScreens.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const [liveMode, setLive] = useState(true);
   const [simming, setSimming] = useState(false);
+
+  const { rows: campaigns } = useOperatorScreenCampaignRows(operatorScreenIds, screens);
 
   const foot = (() => {
     const wknd = day === 'Sat' || day === 'Sun';
@@ -58,7 +70,7 @@ export function SignalsView({ campaigns }) {
           <Card>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Context Signals</div>
             <SelInput label="Screen" value={screen} onChange={e => setScreen(e.target.value)} style={{ marginBottom: 12 }}>
-              {SCREENS.filter(s => s.status === 'live').map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              {liveScreens.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </SelInput>
             <div style={{ marginBottom: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -100,7 +112,7 @@ export function SignalsView({ campaigns }) {
             <div style={{ background: 'linear-gradient(135deg, #f5f3ff, #ecfdf5)', border: `1px solid ${C.purpleBorder}`, borderRadius: 12, padding: 20, marginBottom: 16 }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: C.purple, letterSpacing: '0.5px', marginBottom: 4, fontFamily: F.sans }}>NOW PLAYING — HIGHEST SIGNAL MATCH</div>
               <div style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{winner.advertiser}</div>
-              <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>{winner.category} · {winner.screen}</div>
+              <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>{winner.category} · {winner.screenName}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ fontSize: 40, fontWeight: 800, color: scoreColor(winner.score), fontFamily: F.mono, lineHeight: 1 }}>{winner.score}</div>
                 <div style={{ flex: 1 }}>

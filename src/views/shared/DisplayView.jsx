@@ -3,7 +3,7 @@ import { C, F } from '../../design/tokens.js';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
-import { SCREENS } from '../../lib/data.js';
+import { useOperatorScreenCampaignRows } from '../../hooks/useOperatorScreenCampaignRows.js';
 
 const HOUR_LABELS = ['12a','1','2','3','4','5','6','7','8','9','10','11','12p','1','2','3','4','5','6','7','8','9','10','11'];
 
@@ -80,18 +80,24 @@ function TimelineBar({ campaigns }) {
   );
 }
 
-export function DisplayView({ campaigns = [] }) {
+// Used to filter on `c.screenId`, a field no real booking row has (which
+// screens a campaign runs on lives in the campaign_screens junction table)
+// -- always rendered "No screens with campaigns" against live data.
+// useOperatorScreenCampaignRows flattens that junction into real
+// per-screen rows, each carrying a real screenId/screenName/city.
+export function DisplayView({ operatorScreenIds = [], screens: operatorScreens = [] }) {
   const now = new Date();
   const nowH = now.getHours() + now.getMinutes() / 60;
+
+  const { rows: campaigns } = useOperatorScreenCampaignRows(operatorScreenIds, operatorScreens);
 
   const screenMap = {};
   campaigns.forEach(c => {
     if (!screenMap[c.screenId]) {
-      const meta = SCREENS.find(s => s.id === c.screenId);
       screenMap[c.screenId] = {
         id: c.screenId,
-        name: c.screen || meta?.name || c.screenId,
-        city: c.city || meta?.city || '',
+        name: c.screenName,
+        city: c.city,
         campaigns: [],
       };
     }

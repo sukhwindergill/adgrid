@@ -586,10 +586,10 @@ function AppInner() {
     if (active === 'revenue')      return <Revenue operatorScreenIds={visibleMyScreens.map(s => s.id)} />;
     if (active === 'billing')      return <Billing />;
     if (active === 'advertisers')  return <AdvertisersView onImpersonate={startImpersonation} />;
-    if (active === 'signals')      return <SignalsView campaigns={operatorCampaigns} />;
+    if (active === 'signals')      return <SignalsView operatorScreenIds={visibleMyScreens.map(s => s.id)} screens={visibleMyScreens} />;
     if (active === 'rules')        return <AutomationRulesView user={user} ownerSide="operator" setNav={navTo} />;
     if (active === 'integrations') return <IntegrationsView />;
-    if (active === 'display')      return <DisplayView campaigns={operatorCampaigns} />;
+    if (active === 'display')      return <DisplayView operatorScreenIds={visibleMyScreens.map(s => s.id)} screens={visibleMyScreens} />;
     if (active === 'op-settings')  return <OperatorSettingsView setNav={navTo} />;
     return <Dashboard setNav={navTo} loading={dataLoading} />;
   };
