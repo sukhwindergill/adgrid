@@ -9,7 +9,8 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { pluralize } from '../../lib/pluralize.js';
-import { periodDelta, splitByPeriod } from '../../lib/periodDelta.js';
+import { periodDelta, splitByPeriod, dailySeries } from '../../lib/periodDelta.js';
+import { TrendSparkline } from '../../components/shared/TrendSparkline.jsx';
 import { DeliveryHealthCard } from '../../components/shared/DeliveryHealthCard.jsx';
 import { ApprovalTracker } from '../../components/shared/ApprovalTracker.jsx';
 import { PacingDot } from '../../components/shared/PacingDot.jsx';
@@ -150,6 +151,15 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
   const imprPeriods = splitByPeriod(delivery, 'day', 'impressions', 30);
   const imprTrend   = periodDelta(imprPeriods.current, imprPeriods.prior);
 
+  // Efficiency framing — raw totals alone don't say whether the money is
+  // working. Null (not $0 or "—" as a fake number) when there's nothing to
+  // divide by yet, same honesty rule as periodDelta above.
+  const cpm         = totalImpr > 0 ? (totalSpent / totalImpr) * 1000 : null;
+  const costPerScan = billableScans > 0 ? totalSpent / billableScans : null;
+
+  const impressionSeries = dailySeries(delivery, 'day', 'impressions', 30);
+  const scanSeries        = dailySeries(delivery, 'day', 'billable_scans', 30);
+
   // Reach: impressions summed per screen, then discounted for screens whose
   // audiences overlap. Modelled, never measured — labelled as an estimate.
   const perScreen = Object.values(
@@ -186,6 +196,26 @@ export function AdvDashboard({ user, campaigns, setAdvNav, advertiserId }) {
              sub={filteredScans > 0 ? `${filteredScans} filtered as bot/duplicate` : 'leads captured'}
              color={C.green} icon="📲" />
       </div>
+
+      {(cpm !== null || costPerScan !== null) && (
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
+          <KPI label="CPM" value={cpm === null ? '—' : `$${cpm.toFixed(2)}`} sub="cost per 1,000 impressions" icon="📈" />
+          <KPI label="Cost per Scan" value={costPerScan === null ? '—' : `$${costPerScan.toFixed(2)}`} sub="spend ÷ billable scans" color={C.green} icon="🎯" />
+        </div>
+      )}
+
+      {delivery.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
+          <Card>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Impressions — last 30 days</div>
+            <TrendSparkline data={impressionSeries} color={C.purple} formatValue={v => v.toLocaleString()} />
+          </Card>
+          <Card>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Billable scans — last 30 days</div>
+            <TrendSparkline data={scanSeries} color={C.green} formatValue={v => v.toLocaleString()} />
+          </Card>
+        </div>
+      )}
 
       {reach > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
