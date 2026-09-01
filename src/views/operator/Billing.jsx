@@ -35,6 +35,32 @@ function useBilling() {
   return { data, loading, error, refresh: fetch_ };
 }
 
+// The Charges tab used to reimplement a charge list from `bookings` (gross
+// budget only, platform fee computed client-side). get-stripe-charges reads
+// the real Stripe charge objects on the operator's own Connect account —
+// actual amount charged and Stripe's own application_fee_amount, not an
+// assumed 12%. It existed unused until now (see get-stripe-charges/index.ts
+// for the accompanying fix: it previously queried the platform's Stripe
+// account instead of the operator's connected one).
+function useStripeCharges() {
+  const [charges, setCharges] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setLoading(false); return; }
+      const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/get-stripe-charges`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (res.ok) setCharges(await res.json());
+      setLoading(false);
+    })();
+  }, []);
+
+  return { stripeCharges: charges, stripeChargesLoading: loading };
+}
+
 // B16: operator_transfers.status = 'failed' rows previously existed only in
 // the database — nothing on this page (or anywhere else) ever read them, so
 // a failed payout was invisible until someone happened to run raw SQL.
@@ -58,6 +84,7 @@ export function Billing() {
   const { data, loading, error, refresh } = useBilling();
   const { isMobile } = useBreakpoint();
   const failedTransfers = useFailedTransfers();
+  const { stripeCharges, stripeChargesLoading } = useStripeCharges();
 
   const charges       = data?.charges ?? [];
   const payouts       = data?.payouts ?? [];
@@ -176,7 +203,9 @@ export function Billing() {
       )}
 
       {tab === 'charges' && (
-        charges.length === 0 ? (
+        stripeChargesLoading ? (
+          <SkeletonTable rows={5} cols={5} />
+        ) : stripeCharges.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
             <div style={{ fontSize: 28, marginBottom: 8 }}>💳</div>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>No charges yet</div>
@@ -185,15 +214,14 @@ export function Billing() {
         ) : (
           <Table
             columns={[
-              { key: 'id',         label: 'Payment ID',  render: v => <span style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub }}>{String(v).slice(0, 20)}…</span> },
-              { key: 'advertiser', label: 'Advertiser' },
-              { key: 'screen',     label: 'Screen' },
-              { key: 'date',       label: 'Date',        render: v => <span style={{ fontFamily: F.mono, fontSize: 11 }}>{v}</span> },
-              { key: 'amount',     label: 'Gross',       render: v => <span style={{ fontWeight: 600, fontFamily: F.mono }}>${Number(v).toLocaleString()}</span> },
-              { key: 'amount',     label: 'Platform (12%)', render: v => <span style={{ color: C.blue, fontFamily: F.mono }}>${Math.round(v * 0.12).toLocaleString()}</span> },
-              { key: 'status',     label: 'Status',      render: v => <Badge status={v} /> },
+              { key: 'id',          label: 'Payment ID',   render: v => <span style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub }}>{String(v).slice(0, 20)}…</span> },
+              { key: 'description', label: 'Description',  render: v => v || '—' },
+              { key: 'created',     label: 'Date',          render: v => <span style={{ fontFamily: F.mono, fontSize: 11 }}>{new Date(v).toLocaleDateString()}</span> },
+              { key: 'amount',      label: 'Gross',         render: v => <span style={{ fontWeight: 600, fontFamily: F.mono }}>${Number(v).toLocaleString()}</span> },
+              { key: 'fee',         label: 'Platform Fee',  render: v => <span style={{ color: C.blue, fontFamily: F.mono }}>${Number(v).toLocaleString()}</span> },
+              { key: 'status',      label: 'Status',        render: v => <Badge status={v} /> },
             ]}
-            rows={charges} />
+            rows={stripeCharges} />
         )
       )}
 
