@@ -24,7 +24,7 @@ export function TermsOfService() {
       <div style={inner}>
         <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Terms of Service' }]} />
         <h1 style={h1}>Terms of Service</h1>
-        <p style={{ ...p, color: 'rgba(255,255,255,0.5)' }}>Last updated: June 29, 2026</p>
+        <p style={{ ...p, color: 'rgba(255,255,255,0.5)' }}>Last updated: August 31, 2026</p>
 
         <h2 style={h2}>1. Acceptance</h2>
         <p style={p}>
@@ -39,7 +39,12 @@ export function TermsOfService() {
           who wish to display digital advertising with screen owners and operators
           ("Operators") who make display screens available on the network. AdGrid is not
           a party to individual advertising agreements between Advertisers and Operators
-          beyond facilitating the booking and payment flow.
+          beyond facilitating the booking and payment flow. AdGrid also offers a
+          marketplace where Operators may list specific screens for exclusive placement
+          over a chosen date range, and Advertisers and Operators may message each other
+          about a listing before booking. Marketplace booking is not currently accepting
+          payment; where a listing is marked as available for booking, the same content,
+          payment, and approval terms in these sections apply.
         </p>
 
         <h2 style={h2}>3. Acceptable use</h2>
@@ -48,7 +53,9 @@ export function TermsOfService() {
           any third-party intellectual property, privacy, or other rights; transmit
           malware or harmful code; attempt to gain unauthorised access to any part of the
           platform; scrape or systematically extract data; or circumvent any rate limit,
-          access control, or security measure.
+          access control, or security measure. Marketplace messages must not be used to
+          harass, solicit business outside the platform in violation of these Terms, or
+          share content that would violate section 4 if submitted as ad creative.
         </p>
 
         <h2 style={h2}>4. Advertiser content rules</h2>
