@@ -4,6 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { ToastProvider } from '../../components/primitives/Toast.jsx';
 
 vi.mock('../../lib/supabase.js', () => ({
   supabase: {
@@ -18,15 +19,24 @@ vi.mock('../../context/AuthContext.jsx', () => ({
     activeAccount: null,
   }),
 }));
+// SavedAudiencesBar (inside StepTargeting) — inert for this autosave smoke test.
+vi.mock('../../lib/targetingTemplates.js', () => ({
+  listTargetingTemplates: () => Promise.resolve([]),
+  saveTargetingTemplate: () => Promise.resolve({}),
+  deleteTargetingTemplate: () => Promise.resolve(),
+  applyTargetingTemplate: (t) => t,
+}));
 
 import { CreateCampaign } from './CreateCampaign.jsx';
 import { listDrafts } from '../../lib/campaignDrafts.js';
 
 function renderWizard() {
   return render(
-    <MemoryRouter>
-      <CreateCampaign onSave={() => {}} onCancel={() => {}} dbScreens={[]} campaigns={[]} />
-    </MemoryRouter>
+    <ToastProvider>
+      <MemoryRouter>
+        <CreateCampaign onSave={() => {}} onCancel={() => {}} dbScreens={[]} campaigns={[]} />
+      </MemoryRouter>
+    </ToastProvider>
   );
 }
 
