@@ -383,7 +383,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
   );
 }
 
-export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [], onApprovalChange }) {
+export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }) {
   const { user, profile } = useAuth();
   const ownerRevenueShare = profile?.owner_revenue_share ?? DEFAULT_OWNER_REVENUE_SHARE;
   const confirm = useConfirm();
@@ -430,6 +430,20 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [], onAppro
         grouped[row.campaign_id].push(row);
       });
       setCampaignScreens(grouped);
+    });
+  }, [relevantCampaignIds.join(',')]);
+
+  // Booking rows for exactly the campaigns this queue is about to render --
+  // NOT the app-wide `campaigns` list (App.jsx's unbounded, unpaginated
+  // fetch of every booking ever made on the account). The queue only ever
+  // needs the handful of bookings with a pending screen among myScreens;
+  // pulling the full account history to filter it client-side doesn't scale
+  // as an operator's booking count grows over months/years of real use.
+  const [bookingsById, setBookingsById] = useState({});
+  useEffect(() => {
+    if (relevantCampaignIds.length === 0) { setBookingsById({}); return; }
+    supabase.from('bookings').select('*').in('id', relevantCampaignIds).then(({ data }) => {
+      setBookingsById(Object.fromEntries((data || []).map(b => [b.id, b])));
     });
   }, [relevantCampaignIds.join(',')]);
 
@@ -484,10 +498,13 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [], onAppro
   // handleApproved/handleRejected/bulkApproveAll never prune, so treating
   // it as the source of truth for "is this still pending" would leave
   // fully-resolved campaigns rendering as ghost cards until remount.
-  const myPendingCampaigns = campaigns.filter(c => {
-    const rows = campaignScreens[c.id] || [];
-    return rows.some(row => myScreens.some(s => s.id === row.screen_id) && row.status === 'pending');
-  });
+  const myPendingCampaigns = relevantCampaignIds
+    .map(id => bookingsById[id])
+    .filter(Boolean)
+    .filter(c => {
+      const rows = campaignScreens[c.id] || [];
+      return rows.some(row => myScreens.some(s => s.id === row.screen_id) && row.status === 'pending');
+    });
 
   const enriched = myPendingCampaigns.map(c => ({
     ...c,

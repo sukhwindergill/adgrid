@@ -29,6 +29,9 @@ function makeQuery(state, resolve) {
 function respond(state) {
   const { table, selectCols, updatePayload, filters } = state;
   if (table === 'campaign_creative_screens') return { data: [], error: null };
+  if (table === 'bookings') {
+    return { data: campaigns.filter(c => (filters.id?.vals ?? []).includes(c.id)), error: null };
+  }
   if (table !== 'campaign_screens') return { data: [], error: null };
 
   if (updatePayload) {
@@ -90,7 +93,7 @@ describe('ApprovalQueue bulkApproveAll partial failure', () => {
   it('leaves a failed campaign pending and shows it in an error banner instead of silently succeeding', async () => {
     const onApprovalChange = vi.fn();
     render(
-      <ApprovalQueue campaigns={campaigns} setCampaigns={() => {}} dbScreens={dbScreens} onApprovalChange={onApprovalChange} />
+      <ApprovalQueue setCampaigns={() => {}} dbScreens={dbScreens} onApprovalChange={onApprovalChange} />
     );
 
     const bulkBtn = await screen.findByText(/Approve all pending/);
