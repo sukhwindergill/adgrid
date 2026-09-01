@@ -6,6 +6,7 @@ import { SUPABASE_FUNCTIONS_URL } from './lib/constants.js';
 import { useToast } from './components/primitives/Toast.jsx';
 import { usePendingApprovalCount } from './hooks/usePendingApprovalCount.js';
 import { useOperatorCampaignIds } from './hooks/useOperatorCampaignIds.js';
+import { normalizeBooking } from './lib/normalizeBooking.js';
 
 import { LoginPage } from './components/login/LoginPage.jsx';
 import { GlobalHeader } from './components/layout/GlobalHeader.jsx';
@@ -265,21 +266,7 @@ function AppInner() {
     const screens = screensRes.data
     const ownedScreens = myScreensRes.data
     if (bookings && bookings.length > 0) {
-      setCampaigns(bookings.map(b => ({
-        ...b,
-        advertiser: b.advertiser_name,
-        screen: b.screen_name,
-        start: b.start_date,
-        end: b.end_date,
-        days: b.schedule_days,
-        timeStart: b.time_start,
-        timeEnd: b.time_end,
-        spent: b.spent ?? 0,
-        scans: b.scans ?? 0,
-        color: b.accent_color,
-        destination: b.destination_url,
-        cta: b.cta_text,
-      })))
+      setCampaigns(bookings.map(normalizeBooking))
     } else {
       setCampaigns([])
     }
@@ -538,7 +525,7 @@ function AppInner() {
           }}
         />
       );
-      if (active === 'adv-campaigns')    return <Campaigns campaigns={advertiserCampaigns} dbScreens={visibleDbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} allowCancel />;
+      if (active === 'adv-campaigns')    return <Campaigns advertiserId={currentAdvertiserId} dbScreens={visibleDbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} allowCancel />;
       if (active === 'adv-marketplace') {
         if (selectedListingId) {
           return <MarketplaceListingDetail listingId={selectedListingId} onBack={() => setSelectedListingId(null)} />;
@@ -590,7 +577,7 @@ function AppInner() {
       return <ScreenDetailView screenId={selectedScreenId} onBack={() => navTo('screens')} profile={profile} onScreenUpdated={updated => setMyScreens(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s))} />;
     }
     if (active === 'notif-prefs')   return <NotificationPrefsView />;
-    if (active === 'campaigns')    return <Campaigns campaigns={operatorCampaigns} dbScreens={visibleMyScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} canReview={canReview} onApprovalChange={bumpApprovalRefresh} />;
+    if (active === 'campaigns')    return <Campaigns operatorScreenIds={visibleMyScreens.map(s => s.id)} dbScreens={visibleMyScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} canReview={canReview} onApprovalChange={bumpApprovalRefresh} />;
     if (active === 'marketplace-listings') {
       return <MarketplaceListingsView operatorId={impersonating?.id ?? user.id} myScreens={myScreens} />;
     }
