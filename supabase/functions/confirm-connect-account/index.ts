@@ -26,14 +26,17 @@ const CORS = {
 // only mark active when the account can actually receive transfers.
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
-  if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: CORS });
+  // B: plain-text error bodies here used to make any caller's res.json()
+  // throw instead of reading a real error message -- same class of bug as
+  // create-connect-account. Every response is JSON now.
+  if (req.method !== "POST") return new Response(JSON.stringify({ error: "Method Not Allowed" }), { status: 405, headers: CORS });
 
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return new Response("Unauthorized", { status: 401, headers: CORS });
+  if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: CORS });
 
   const token = authHeader.replace("Bearer ", "");
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) return new Response("Unauthorized", { status: 401, headers: CORS });
+  if (authError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: CORS });
 
   const { data: profile } = await supabase
     .from("profiles")

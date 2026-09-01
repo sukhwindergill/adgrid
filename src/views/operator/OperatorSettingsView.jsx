@@ -503,24 +503,95 @@ function TeamTab({ profile }) {
 }
 
 function PayoutsTab({ profile }) {
+  const { refreshProfile } = useAuth();
   const [connecting, setConnecting] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [msg, setMsg] = useState(null);
   const connectStatus = profile?.connect_status;
 
+  // Return leg of the Stripe Connect onboarding redirect (create-connect-account's
+  // account_onboarding link comes back here with ?connect=success&state=... or
+  // ?connect=refresh). Landing back on this page after Stripe never used to do
+  // anything -- connect_status stayed 'pending' forever regardless of whether
+  // onboarding actually finished, because nothing ever called
+  // confirm-connect-account to check with Stripe and flip it.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const connect = params.get('connect');
+    if (!connect) return;
+
+    const cleanUrl = () => {
+      params.delete('connect');
+      params.delete('state');
+      const rest = params.toString();
+      window.history.replaceState({}, '', window.location.pathname + (rest ? `?${rest}` : ''));
+    };
+
+    if (connect === 'refresh') {
+      setMsg({ text: 'Stripe onboarding was interrupted — click Connect with Stripe to try again.', ok: false });
+      cleanUrl();
+      return;
+    }
+
+    if (connect === 'success') {
+      const returnedState = params.get('state');
+      const expectedState = sessionStorage.getItem('stripe_connect_state');
+      cleanUrl();
+      if (!returnedState || !expectedState || returnedState !== expectedState) {
+        setMsg({ text: 'Could not verify the Stripe redirect — if you just finished onboarding, refresh in a minute.', ok: false });
+        return;
+      }
+      sessionStorage.removeItem('stripe_connect_state');
+      setConfirming(true);
+      (async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { setMsg({ text: 'Session expired. Please log in again.', ok: false }); setConfirming(false); return; }
+        const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/confirm-connect-account`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        });
+        const json = await res.json().catch(() => ({}));
+        setConfirming(false);
+        if (!res.ok) { setMsg({ text: json.error ?? 'Could not confirm your Stripe account.', ok: false }); return; }
+        await refreshProfile();
+        setMsg(
+          json.connectStatus === 'active'
+            ? { text: 'Stripe account connected — payouts are now active.', ok: true }
+            : { text: "Stripe onboarding submitted, but your account isn't fully verified yet. We'll update your status once Stripe finishes reviewing it.", ok: true }
+        );
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function startConnect() {
     setConnecting(true);
+    setMsg(null);
     const state = crypto.randomUUID();
     sessionStorage.setItem('stripe_connect_state', state);
+    const returnUrl = window.location.origin + window.location.pathname;
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setMsg('Session expired. Please log in again.'); setConnecting(false); return; }
-    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-connect-account`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ state }),
-    });
-    const json = await res.json();
+    if (!session) { setMsg({ text: 'Session expired. Please log in again.', ok: false }); setConnecting(false); return; }
+    let res;
+    try {
+      res = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-connect-account`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ returnUrl, state }),
+      });
+    } catch {
+      setMsg({ text: 'Could not reach Stripe. Check your connection and try again.', ok: false });
+      setConnecting(false);
+      return;
+    }
+    // B: create-connect-account's error responses aren't guaranteed JSON (some
+    // are plain text) -- res.json() on those used to throw an uncaught
+    // SyntaxError, which left `connecting` stuck true and the button spinning
+    // forever with no feedback. .catch(() => ({})) makes a non-JSON or empty
+    // body degrade to a generic message instead of hanging.
+    const json = await res.json().catch(() => ({}));
     if (!res.ok || !json.url) {
-      setMsg(json.error ?? 'Failed to start Stripe Connect');
+      setMsg({ text: json.error ?? 'Failed to start Stripe Connect', ok: false });
       setConnecting(false);
       return;
     }
@@ -544,7 +615,9 @@ function PayoutsTab({ profile }) {
             {connectStatus === 'active' ? 'Connected' : connectStatus ? 'Pending verification' : 'Not connected'}
           </div>
         </div>
-        {connectStatus === 'active' ? (
+        {confirming ? (
+          <div style={{ fontSize: 13, color: C.textSub }}>Confirming your Stripe account…</div>
+        ) : connectStatus === 'active' ? (
           <div style={{ fontSize: 13, color: C.textSub }}>
             Your Stripe account is connected. Payouts are processed automatically when campaigns complete.
           </div>
@@ -560,9 +633,9 @@ function PayoutsTab({ profile }) {
             <Btn onClick={startConnect} disabled={connecting}>
               {connecting ? 'Redirecting to Stripe…' : 'Connect with Stripe'}
             </Btn>
-            {msg && <div style={{ fontSize: 12, color: C.red, marginTop: 8 }}>{msg}</div>}
           </>
         )}
+        {msg && <div style={{ fontSize: 12, color: msg.ok ? C.green : C.red, marginTop: 8 }}>{msg.text}</div>}
       </Card>
 
       <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>
