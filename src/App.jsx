@@ -555,7 +555,7 @@ function AppInner() {
       return <AdvDashboard user={displayUser} campaigns={advertiserCampaigns} setAdvNav={navTo} advertiserId={impersonating?.id ?? user.id} />;
     }
 
-    if (active === 'overview')     return <Dashboard campaigns={operatorCampaigns} dbScreens={visibleMyScreens} setNav={navTo} loading={dataLoading} />;
+    if (active === 'overview')     return <Dashboard dbScreens={visibleMyScreens} setNav={navTo} loading={dataLoading} />;
     if (active === 'screen-onboard') return (
       <ScreenOnboardView
         onComplete={(newScreen) => {
@@ -604,7 +604,7 @@ function AppInner() {
     if (active === 'integrations') return <IntegrationsView />;
     if (active === 'display')      return <DisplayView campaigns={operatorCampaigns} />;
     if (active === 'op-settings')  return <OperatorSettingsView setNav={navTo} />;
-    return <Dashboard campaigns={operatorCampaigns} setNav={navTo} loading={dataLoading} />;
+    return <Dashboard setNav={navTo} loading={dataLoading} />;
   };
 
   return (
