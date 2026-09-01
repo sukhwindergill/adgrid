@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { periodDelta, splitByPeriod } from './periodDelta.js';
+import { periodDelta, splitByPeriod, dailySeries } from './periodDelta.js';
 
 describe('periodDelta', () => {
   it('returns positive percent growth', () => {
@@ -49,5 +49,31 @@ describe('splitByPeriod', () => {
     const { current, prior } = splitByPeriod(rows, 'at', null, 7, now);
     expect(current).toBe(2);
     expect(prior).toBe(1);
+  });
+});
+
+describe('dailySeries', () => {
+  const now = new Date('2026-07-24T12:00:00Z');
+
+  it('returns exactly `days` points, oldest first, ending today', () => {
+    const series = dailySeries([], 'day', 'v', 5, now);
+    expect(series.map(p => p.day)).toEqual(['2026-07-20', '2026-07-21', '2026-07-22', '2026-07-23', '2026-07-24']);
+  });
+
+  it('zero-fills days with no matching row instead of skipping them', () => {
+    const rows = [{ day: '2026-07-22', v: 30 }];
+    const series = dailySeries(rows, 'day', 'v', 5, now);
+    expect(series.map(p => p.value)).toEqual([0, 0, 30, 0, 0]);
+  });
+
+  it('sums multiple rows landing on the same day', () => {
+    const rows = [{ day: '2026-07-24T01:00:00Z', v: 10 }, { day: '2026-07-24T20:00:00Z', v: 5 }];
+    const series = dailySeries(rows, 'day', 'v', 1, now);
+    expect(series).toEqual([{ day: '2026-07-24', value: 15 }]);
+  });
+
+  it('ignores rows with an unparseable date', () => {
+    const series = dailySeries([{ day: 'not-a-date', v: 999 }], 'day', 'v', 3, now);
+    expect(series.every(p => p.value === 0)).toBe(true);
   });
 });
