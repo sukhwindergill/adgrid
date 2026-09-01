@@ -28,16 +28,22 @@ Deno.serve(async (req: Request) => {
   // cause behind connect_status staying null for every operator to date.
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
+  // B: every error path below used to return plain text, not JSON. The
+  // client always calls res.json() on the response -- a plain-text body
+  // makes that throw an uncaught SyntaxError instead of surfacing the real
+  // error, which left the "Connect with Stripe" button stuck on
+  // "Redirecting to Stripe…" forever with no feedback. Every response here
+  // is JSON now so res.json() never blows up, no matter which branch fires.
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return new Response("Unauthorized", { status: 401, headers: CORS });
+  if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: CORS });
 
   const token = authHeader.replace("Bearer ", "");
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) return new Response("Unauthorized", { status: 401, headers: CORS });
+  if (authError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: CORS });
 
   const { returnUrl, state } = await req.json();
-  if (!returnUrl) return new Response("Missing returnUrl", { status: 400, headers: CORS });
-  if (!state) return new Response("Missing state", { status: 400, headers: CORS });
+  if (!returnUrl) return new Response(JSON.stringify({ error: "Missing returnUrl" }), { status: 400, headers: CORS });
+  if (!state) return new Response(JSON.stringify({ error: "Missing state" }), { status: 400, headers: CORS });
 
   // Only operators may create Connect (payout) accounts
   const { data: profile } = await supabase
@@ -47,7 +53,7 @@ Deno.serve(async (req: Request) => {
     .single();
 
   if (profile?.role !== "operator") {
-    return new Response("Forbidden — operators only", { status: 403, headers: CORS });
+    return new Response(JSON.stringify({ error: "Forbidden — operators only" }), { status: 403, headers: CORS });
   }
 
   let accountId = profile.stripe_connect_account_id;
