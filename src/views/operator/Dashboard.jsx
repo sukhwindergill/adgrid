@@ -12,6 +12,9 @@ import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { SectionHeader } from '../../components/primitives/SectionHeader.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { healthSignal } from '../../lib/screenHealth.js';
+import { useOperatorBilling } from '../../hooks/useOperatorBilling.js';
+import { MoneySummaryCard } from '../../components/shared/MoneySummaryCard.jsx';
+import { DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
 
 // B14 fix: nothing previously told an operator their payouts weren't set
 // up — money was captured from advertisers but the transfer to the
@@ -87,6 +90,7 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
   const { isMobile } = useBreakpoint();
   const { profile } = useAuth();
   const [hourlyData, setHourlyData] = useState(Array(24).fill(0));
+  const { data: billing } = useOperatorBilling();
 
   useEffect(() => {
     const today = new Date();
@@ -142,6 +146,14 @@ export function Dashboard({ campaigns, dbScreens = [], setNav, loading }) {
       {dbScreens.length > 0 && profile?.connect_status !== 'active' && (
         <PayoutsWarningBanner onFix={() => setNav?.('op-settings')} />
       )}
+
+      <MoneySummaryCard
+        balance={billing?.balance}
+        connectStatus={billing?.connectStatus}
+        totalSpent={totalSpent}
+        ownerRevenueShare={profile?.owner_revenue_share ?? DEFAULT_OWNER_REVENUE_SHARE}
+        setNav={setNav}
+      />
 
       {/* Hero: live counter */}
       <Card style={{ marginBottom: 24, padding: 28, background: 'linear-gradient(135deg, #f5f3ff, #eff6ff)' }}>
