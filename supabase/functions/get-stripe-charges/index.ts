@@ -34,7 +34,7 @@ Deno.serve(async (req: Request) => {
     // Check operator role
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, stripe_connect_account_id, connect_status')
       .eq('id', user.id)
       .single();
 
@@ -42,11 +42,26 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: CORS });
     }
 
-    const charges = await stripe.charges.list({ limit: 50 });
+    // BUG FIX: this previously called stripe.charges.list() with no
+    // `stripeAccount`, which lists charges on the *platform's* Stripe
+    // account — every operator calling this endpoint would see the same
+    // platform-wide charge list (or none, depending on how charges are
+    // created), not their own. Charges belonging to a specific operator only
+    // exist on their Connect account, same as the balance/payouts lookup in
+    // operator-billing/index.ts.
+    if (!profile.stripe_connect_account_id || profile.connect_status !== 'active') {
+      return new Response(JSON.stringify([]), { headers: CORS });
+    }
+
+    const charges = await stripe.charges.list(
+      { limit: 50 },
+      { stripeAccount: profile.stripe_connect_account_id },
+    );
     const result = charges.data.map(c => ({
       id: c.id,
       amount: c.amount / 100,
       fee: c.application_fee_amount ? c.application_fee_amount / 100 : 0,
+      currency: c.currency,
       status: c.status,
       created: new Date(c.created * 1000).toISOString(),
       description: c.description,
