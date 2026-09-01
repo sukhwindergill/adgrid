@@ -10,6 +10,7 @@ import { PillGroup } from './PillGroup.jsx';
 import { LocationSearch } from './LocationSearch.jsx';
 import { ScreenMap } from './ScreenMap.jsx';
 import { TopScreensInsight } from './TopScreensInsight.jsx';
+import { SavedAudiencesBar } from './SavedAudiencesBar.jsx';
 
 const countryLabel = code => COUNTRIES.find(c => c.code === code)?.label ?? code;
 
@@ -79,6 +80,8 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
             </button>
           </div>
         )}
+
+        <SavedAudiencesBar form={form} onApply={fields => setForm(s => ({ ...s, ...fields }))} />
 
         <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Area type</div>
