@@ -143,15 +143,18 @@ function AppInner() {
   // resolved against campaign_screens rather than trusted from the
   // booking row itself.
   const currentAdvertiserId = impersonating?.id ?? user?.id;
+  // Same is_demo gate as visibleDbScreens/visibleMyScreens above -- fake
+  // bookings only show once demo mode is switched on, from either side.
+  const visibleCampaigns = useMemo(() => demoMode ? campaigns : campaigns.filter(c => !c.is_demo), [campaigns, demoMode]);
   const advertiserCampaigns = useMemo(
-    () => campaigns.filter(c => c.advertiser_id === currentAdvertiserId),
-    [campaigns, currentAdvertiserId]
+    () => visibleCampaigns.filter(c => c.advertiser_id === currentAdvertiserId),
+    [visibleCampaigns, currentAdvertiserId]
   );
   const myScreenIds = useMemo(() => myScreens.map(s => s.id), [myScreens]);
   const operatorCampaignIds = useOperatorCampaignIds(myScreenIds);
   const operatorCampaigns = useMemo(
-    () => campaigns.filter(c => operatorCampaignIds.has(c.id)),
-    [campaigns, operatorCampaignIds]
+    () => visibleCampaigns.filter(c => operatorCampaignIds.has(c.id)),
+    [visibleCampaigns, operatorCampaignIds]
   );
 
   // Derive active from current URL path
@@ -482,7 +485,7 @@ function AppInner() {
     }
 
     if (isAdv) {
-      if (active === 'adv-overview')     return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navTo} advertiserId={impersonating?.id ?? user.id} />;
+      if (active === 'adv-overview')     return <AdvDashboard user={displayUser} campaigns={advertiserCampaigns} setAdvNav={navTo} advertiserId={impersonating?.id ?? user.id} />;
       if (active === 'adv-create')       return (
         <CreateCampaign
           dbScreens={visibleDbScreens}
@@ -536,7 +539,7 @@ function AppInner() {
       if (active === 'adv-integrations') return <AdvIntegrationsView />;
       if (active === 'adv-settings')     return <SettingsView />;
       if (active === 'notif-prefs')      return <NotificationPrefsView />;
-      return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navTo} advertiserId={impersonating?.id ?? user.id} />;
+      return <AdvDashboard user={displayUser} campaigns={advertiserCampaigns} setAdvNav={navTo} advertiserId={impersonating?.id ?? user.id} />;
     }
 
     if (active === 'overview')     return <Dashboard campaigns={operatorCampaigns} dbScreens={visibleMyScreens} setNav={navTo} loading={dataLoading} />;
