@@ -55,6 +55,28 @@ async function transferOperatorPayout(
 
   if (!profile?.stripe_connect_account_id || profile.connect_status !== "active") {
     console.warn(`[marketplace-book] operator ${operatorId} has no active Connect account — skipping transfer for booking ${bookingId}`);
+    // Previously this returned here with no trace anywhere: no transfer row,
+    // no notification -- the operator's Bookings view would show the
+    // advertiser's payment as "Paid" with nothing to suggest their own
+    // payout never happened. Log it as pending_connect and tell them, same
+    // as a real transfer failure below -- the fix is the same either way
+    // (finish Connect onboarding), so the message can be too.
+    await supabase.from("marketplace_operator_transfers").upsert(
+      {
+        booking_id: bookingId,
+        operator_id: operatorId,
+        amount: priceCents / 100,
+        currency: MARKETPLACE_CURRENCY,
+        stripe_transfer_id: null,
+        status: "pending_connect",
+      },
+      { onConflict: "booking_id" },
+    );
+    await notify(operatorId, "payout_transfer_failed", {
+      amount: (priceCents / 100).toFixed(2),
+      currency: MARKETPLACE_CURRENCY,
+      appUrl: Deno.env.get("PUBLIC_APP_URL") ?? "",
+    });
     return;
   }
 

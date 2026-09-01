@@ -148,8 +148,25 @@ export async function fetchOperatorBookings(operatorId) {
     .in('listing_id', listings.map(l => l.id))
     .order('booked_at', { ascending: false });
   if (error) throw error;
+  if (!bookings || bookings.length === 0) return [];
 
-  return (bookings ?? []).map(b => ({ ...b, listing: listingById.get(b.listing_id) ?? null }));
+  // The operator's own *payout* status is a separate thing from the
+  // advertiser's payment_status on the booking row above (which is always
+  // "paid" here -- marketplace-book only ever confirms a booking after a
+  // successful charge). Without this, an operator whose Connect account
+  // isn't active would see every booking read "Paid" with nothing
+  // suggesting their own transfer never happened.
+  const { data: transfers } = await supabase
+    .from('marketplace_operator_transfers')
+    .select('booking_id, status')
+    .in('booking_id', bookings.map(b => b.id));
+  const transferStatusByBooking = new Map((transfers ?? []).map(t => [t.booking_id, t.status]));
+
+  return bookings.map(b => ({
+    ...b,
+    listing: listingById.get(b.listing_id) ?? null,
+    payout_status: transferStatusByBooking.get(b.id) ?? null,
+  }));
 }
 
 export async function cancelListing(listingId) {
