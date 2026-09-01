@@ -8,6 +8,7 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { groupByCampaignId, rollupGroup } from '../../lib/campaignRollup.js';
 import { CampaignRow } from './CampaignRow.jsx';
+import { CampaignComparisonTable } from '../../components/shared/CampaignComparisonTable.jsx';
 import { pluralize } from '../../lib/pluralize.js';
 
 
@@ -17,6 +18,15 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
   const [campaignScreens, setCampaignScreens] = useState({});
   const [screenData, setScreenData] = useState({});
   const { isMobile } = useBreakpoint();
+
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareIds, setCompareIds] = useState(new Set());
+  const toggleCompare = (id) => setCompareIds(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+  const exitCompare = () => { setCompareMode(false); setCompareIds(new Set()); };
 
   // Fetch campaign_screens data for all campaigns
   useEffect(() => {
@@ -145,6 +155,22 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
       return screens.some(s => screenData[s.screen_id]?.city === city);
     });
 
+  // Same badgeStatus/screenCount derivation as the per-group enrichment
+  // below, applied just to the (typically small) selected set — for the
+  // comparison table, which needs a flat list rather than the grouped one.
+  const compareCampaigns = campaigns
+    .filter(c => compareIds.has(c.id))
+    .map(c => {
+      const screens = campaignScreens[c.id] || [];
+      let badgeStatus = c.status;
+      if (c.status === 'approved' || c.status === 'scheduled') {
+        const hasPending = screens.some(s => s.status === 'pending');
+        const hasApproved = screens.some(s => s.status === 'approved' || s.status === 'auto_approved');
+        if (hasPending && hasApproved) badgeStatus = 'partially_approved';
+      }
+      return { ...c, badgeStatus, screenCount: screens.length };
+    });
+
   return (
     <div>
 
@@ -156,7 +182,23 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
 
       <PageHeader title="Campaigns"
         subtitle={`${campaigns.filter(c => c.status === 'active').length} active · ${campaigns.filter(c => c.status === 'scheduled').length} scheduled · ${campaigns.filter(c => c.status === 'pending_review').length} pending review · ${campaigns.filter(c => c.status === 'paused').length} paused`}
-        actions={<><Btn variant="secondary" size="sm" onClick={() => exportCSV(shown)}>↓ Export CSV</Btn><Btn onClick={onNewCampaign}>+ New Campaign</Btn></>} />
+        actions={<>
+          <Btn variant={compareMode ? 'primary' : 'secondary'} size="sm" onClick={() => compareMode ? exitCompare() : setCompareMode(true)}>
+            {compareMode ? '✕ Exit Compare' : '⇄ Compare'}
+          </Btn>
+          <Btn variant="secondary" size="sm" onClick={() => exportCSV(shown)}>↓ Export CSV</Btn>
+          <Btn onClick={onNewCampaign}>+ New Campaign</Btn>
+        </>} />
+
+      {compareMode && (
+        compareCampaigns.length > 0
+          ? <CampaignComparisonTable campaigns={compareCampaigns} onRemove={toggleCompare} />
+          : (
+            <div style={{ padding: '14px 20px', marginBottom: 20, background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 13, color: C.textSub, fontFamily: F.sans }}>
+              Select two or more campaigns below to compare spend, CPM, and cost per scan side by side.
+            </div>
+          )
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
         <KPI label="Total Campaigns" value={campaigns.length} icon="📋" />
@@ -235,7 +277,8 @@ export function Campaigns({ campaigns, dbScreens = [], setCampaigns, setDetail, 
               const c = withBadge[0];
               return (
                 <CampaignRow key={c.id} c={c} screenCount={c.screenCount} displayCity={c.displayCity}
-                  isMobile={isMobile} allowCancel={allowCancel} canReview={canReview} setDetail={setDetail} setCampaigns={setCampaigns} onApprovalChange={onApprovalChange} />
+                  isMobile={isMobile} allowCancel={allowCancel} canReview={canReview} setDetail={setDetail} setCampaigns={setCampaigns} onApprovalChange={onApprovalChange}
+                  compareMode={compareMode} compareSelected={compareIds.has(c.id)} onToggleCompare={toggleCompare} />
               );
             }
 
