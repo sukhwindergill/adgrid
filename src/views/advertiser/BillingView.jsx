@@ -35,13 +35,15 @@ function Badge({ status }) {
 function useDeliveryCredits() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const toast = useToast();
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       // RLS scopes delivery_reconciliation to the caller's own campaigns
       // (advertiser_view_own_reconciliation), so no explicit filter needed.
-      const { data: recon } = await supabase
+      const { data: recon, error: reconErr } = await supabase
         .from("delivery_reconciliation")
         .select("campaign_id, screen_id, day, reason, credit_amount, currency, credited_at")
         .gt("credit_amount", 0)
@@ -50,6 +52,16 @@ function useDeliveryCredits() {
         .limit(50);
 
       if (cancelled) return;
+      // B: a failed query used to render identically to "no credits" --
+      // the advertiser had no way to tell a real balance from a fetch
+      // that silently errored, exactly the visibility gap this hook
+      // exists to close. Surface it instead of hiding it.
+      if (reconErr) {
+        console.error("Failed to load delivery credits:", reconErr.message);
+        setError(reconErr.message);
+        setLoading(false);
+        return;
+      }
       if (!recon || recon.length === 0) { setRows([]); setLoading(false); return; }
 
       // delivery_reconciliation stores raw campaign/screen ids — resolve the
@@ -57,13 +69,22 @@ function useDeliveryCredits() {
       // relying on a PostgREST FK embed (bookings.id is referenced by more
       // than one table, which makes embeds ambiguous).
       const campaignIds = [...new Set(recon.map(r => r.campaign_id))];
-      const { data: bookings } = await supabase
+      const { data: bookings, error: bookingsErr } = await supabase
         .from("bookings")
         .select("id, campaign_name, screen_name")
         .in("id", campaignIds);
-      const byId = Object.fromEntries((bookings ?? []).map(b => [b.id, b]));
 
       if (cancelled) return;
+      if (bookingsErr) {
+        // Names are cosmetic (byId lookups already fall back to generic
+        // labels below) -- log and toast but still show the credit rows
+        // themselves rather than hiding real balances over a display-only
+        // failure.
+        console.error("Failed to load campaign names for delivery credits:", bookingsErr.message);
+        toast.error("Couldn't load campaign names for some delivery credits.");
+      }
+      const byId = Object.fromEntries((bookings ?? []).map(b => [b.id, b]));
+
       setRows(recon.map(r => ({
         ...r,
         campaignName: byId[r.campaign_id]?.campaign_name ?? "Campaign",
@@ -72,15 +93,21 @@ function useDeliveryCredits() {
       setLoading(false);
     })();
     return () => { cancelled = true; };
+    // toast (from useToast()) is a fresh context-value object on every
+    // ToastProvider render, not a stable identity -- depending on it would
+    // refire this fetch whenever any unrelated toast fires anywhere else in
+    // the app while this view is mounted. Fetch once on mount, same as
+    // before this hook cared about errors at all.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { rows, loading };
+  return { rows, loading, error };
 }
 
 export default function BillingView() {
   const { isMobile } = useBreakpoint();
   const { profile } = useAuth();
-  const { rows: creditRows, loading: creditsLoading } = useDeliveryCredits();
+  const { rows: creditRows, loading: creditsLoading, error: creditsError } = useDeliveryCredits();
   const accountCredit = Number(profile?.credits ?? 0);
   const [data, setData] = useState({ invoices: [], paymentMethods: [], portalUrl: null });
   const [loading, setLoading] = useState(true);
@@ -344,7 +371,16 @@ export default function BillingView() {
         )}
       </div>
 
-      {!creditsLoading && creditRows.length > 0 && (
+      {!creditsLoading && creditsError && (
+        <div style={{
+          background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12,
+          padding: "14px 24px", marginTop: 24, fontSize: 13, color: "#b91c1c",
+        }}>
+          Couldn't load your delivery credits — try refreshing. If this keeps happening, contact support.
+        </div>
+      )}
+
+      {!creditsLoading && !creditsError && creditRows.length > 0 && (
         <div style={{
           background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
           overflow: "hidden", marginTop: 24,
