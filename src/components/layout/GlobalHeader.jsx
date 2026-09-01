@@ -3,7 +3,7 @@ import { C, F, glass } from '../../design/tokens.js';
 import NotificationBell from '../NotificationBell.jsx';
 import { AccountSwitcher } from './AccountSwitcher.jsx';
 
-export function GlobalHeader({ user, onSignOut }) {
+export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const initials = (user?.name || user?.email || 'U').slice(0, 2).toUpperCase();
 
@@ -73,6 +73,42 @@ export function GlobalHeader({ user, onSignOut }) {
                   {user?.email}
                 </div>
               </div>
+
+              {/* Demo mode toggle — shows seeded fake screens (spread across
+                  several countries/cities) so the product can be demoed
+                  before real operators have onboarded. Off by default. */}
+              {onToggleDemoMode && (
+                <button
+                  onClick={() => onToggleDemoMode()}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: '8px 16px',
+                    background: 'none',
+                    border: 'none',
+                    borderBottom: `1px solid ${C.border}`,
+                    fontFamily: F.sans,
+                    fontSize: 13,
+                    color: C.text,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span>Demo mode <span style={{ color: C.textMuted, fontSize: 11 }}>(fake screens)</span></span>
+                  <span style={{
+                    display: 'inline-block', width: 30, height: 17, borderRadius: 999,
+                    background: demoMode ? '#7c3aed' : '#d4d4d4', position: 'relative', transition: 'background 0.15s',
+                    flexShrink: 0,
+                  }}>
+                    <span style={{
+                      position: 'absolute', top: 2, left: demoMode ? 15 : 2, width: 13, height: 13,
+                      borderRadius: '50%', background: '#fff', transition: 'left 0.15s',
+                    }} />
+                  </span>
+                </button>
+              )}
 
               {/* Sign out */}
               <button

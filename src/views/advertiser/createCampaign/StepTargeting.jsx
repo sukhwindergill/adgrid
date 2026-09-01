@@ -1,11 +1,11 @@
 // src/views/advertiser/createCampaign/StepTargeting.jsx
-import { useMemo, useEffect } from 'react';
+import { useMemo } from 'react';
 import { C, F } from '../../../design/tokens.js';
 import { Card } from '../../../components/primitives/Card.jsx';
 import { Inp } from '../../../components/primitives/Inp.jsx';
 import { SelInput } from '../../../components/primitives/SelInput.jsx';
 import { VENUE_TAXONOMY, COUNTRIES } from '../../../lib/venueTypes.js';
-import { buildLocationIndex, distinctCountries, distinctStates } from '../../../lib/locationIndex.js';
+import { buildLocationIndex, buildFlatLocationOptions } from '../../../lib/locationIndex.js';
 import { PillGroup } from './PillGroup.jsx';
 import { LocationSearch } from './LocationSearch.jsx';
 import { ScreenMap } from './ScreenMap.jsx';
@@ -26,8 +26,7 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
   const loading = screensLoading;
   const noInventory = !screensLoading && allScreens.length === 0;
   const locationIndex = useMemo(() => buildLocationIndex(allScreens), [allScreens]);
-  const countryOptions = useMemo(() => distinctCountries(locationIndex), [locationIndex]);
-  const stateOptions = useMemo(() => distinctStates(locationIndex, form.country), [locationIndex, form.country]);
+  const flatLocationOptions = useMemo(() => buildFlatLocationOptions(locationIndex), [locationIndex]);
   // Radius mode can only center on a city with at least one geocoded screen —
   // a city index entry with no coordinates has nothing to average into a
   // centroid, so it's excluded here rather than offered and then failing silently.
@@ -45,17 +44,6 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
     [form.radius_center_lat, form.radius_center_lon]
   );
   const radiusResolved = form.area_type === 'radius' && form.radius_center_lat != null && form.radius_center_lon != null;
-
-  useEffect(() => {
-    if (loading || countryOptions.length === 0) return;
-    if (!countryOptions.includes(form.country)) {
-      setField('country', countryOptions[0]);
-    }
-    // Only re-check when the available options actually change (inventory
-    // loads / changes) or when country itself changes — not on every
-    // keystroke elsewhere in the form.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, countryOptions, form.country]);
 
   return (
     <div style={{ maxWidth: 620, margin: '0 auto' }}>
@@ -96,41 +84,32 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
           <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Area type</div>
           <PillGroup
             options={[
-              { value: 'country', label: 'Country' },
-              { value: 'state',   label: 'State / Province' },
-              { value: 'city',    label: 'City' },
-              { value: 'radius',  label: 'Radius' },
+              { value: 'location', label: 'Location' },
+              { value: 'radius',   label: 'Radius' },
             ]}
-            value={form.area_type}
-            onChange={v => setField('area_type', v)}
+            value={form.area_type === 'radius' ? 'radius' : 'location'}
+            onChange={v => setField('area_type', v === 'radius' ? 'radius' : (form.city ? 'city' : form.state ? 'state' : 'country'))}
           />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <SelInput label="Country" value={form.country} disabled={loading} onChange={e => setForm(s => ({ ...s, country: e.target.value, radius_center_lat: null, radius_center_lon: null }))}>
-            {countryOptions.length > 0
-              ? countryOptions.map(code => <option key={code} value={code}>{countryLabel(code)}</option>)
-              : <option value={form.country}>{loading ? 'Loading…' : noInventory ? 'No screens yet' : countryLabel(form.country)}</option>}
-          </SelInput>
-
-          {(form.area_type === 'state' || form.area_type === 'city' || form.area_type === 'radius') && (
-            <SelInput label="State / Province" value={form.state} disabled={loading} onChange={e => setForm(s => ({ ...s, state: e.target.value, radius_center_lat: null, radius_center_lon: null }))}>
-              <option value="">Select…</option>
-              {stateOptions.map(s => <option key={s} value={s}>{s}</option>)}
-            </SelInput>
-          )}
-
-          {form.area_type === 'city' && (
+          {form.area_type !== 'radius' && (
             <div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 5 }}>City</div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 5 }}>Where</div>
               <LocationSearch
-                locations={locationIndex}
-                scopeCountry={form.country}
-                scopeState={form.state || undefined}
-                value={form.city}
+                options={flatLocationOptions}
+                value={form.city || form.state || (form.country ? countryLabel(form.country) : '')}
                 loading={loading}
-                placeholder="Search a city…"
-                onSelect={entry => setForm(s => ({ ...s, country: entry.country, state: entry.state, city: entry.city, radius_center_lat: null, radius_center_lon: null }))}
+                placeholder={loading ? 'Loading…' : noInventory ? 'No screens yet' : 'Search a country, state/province, or city…'}
+                onSelect={entry => setForm(s => ({
+                  ...s,
+                  area_type: entry.level,
+                  country: entry.country,
+                  state: entry.level === 'country' ? '' : entry.state ?? '',
+                  city: entry.level === 'city' ? entry.city : '',
+                  radius_center_lat: null,
+                  radius_center_lon: null,
+                }))}
               />
             </div>
           )}
@@ -139,7 +118,7 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
             <div>
               <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 5 }}>City</div>
               <LocationSearch
-                locations={radiusLocations}
+                options={radiusLocations.map(e => ({ level: 'city', ...e }))}
                 value={form.city}
                 loading={loading}
                 placeholder="Search a city to center the radius on…"

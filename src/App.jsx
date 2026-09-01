@@ -104,6 +104,18 @@ function AppInner() {
   const [campaigns,        setCampaigns]     = useState([]);
   const [dbScreens,        setDbScreens]     = useState([]); // advertiser-safe: live screens, no revenue/cpm
   const [myScreens,        setMyScreens]     = useState([]); // operator's own screens, full columns
+  // Demo mode: shows the seeded is_demo=true screens (fake inventory across
+  // several countries/cities, used to make the product demoable before real
+  // operators have onboarded). Off by default so real users never see fake
+  // inventory; persisted per-browser so it survives a refresh mid-demo.
+  const [demoMode, setDemoMode] = useState(() => {
+    try { return localStorage.getItem('adgrid:demoMode') === '1'; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('adgrid:demoMode', demoMode ? '1' : '0'); } catch { /* ignore */ }
+  }, [demoMode]);
+  const visibleDbScreens = useMemo(() => demoMode ? dbScreens : dbScreens.filter(s => !s.is_demo), [dbScreens, demoMode]);
+  const visibleMyScreens = useMemo(() => demoMode ? myScreens : myScreens.filter(s => !s.is_demo), [myScreens, demoMode]);
   const [detail,           setDetail]        = useState(null);
   const [addingToCampaign, setAddingToCampaign] = useState(null); // { id, name } | null
   const [duplicatingCampaign, setDuplicatingCampaign] = useState(null); // campaign object | null
@@ -215,9 +227,9 @@ function AppInner() {
     const [bookingsRes, screensRes, myScreensRes] = await Promise.all([
       bookingsQuery,
       // Advertiser-safe view: live screens only, no monthly_revenue.
-      supabase.from('advertiser_screens').select('id,name,owner_name,owner_type,city,state,country,location,status,lat,lon,venue_category,venue_subtype,environment,screen_position,display_size,monthly_traffic_estimate,cpm_floor,operating_hours_start,operating_hours_end,auto_approve,screen_photos,screen_photo_frames,content_categories_blocked,timezone,max_ad_duration,operator_id,last_seen,health_status,resolution_w,resolution_h,accepted_formats,max_file_mb').order('name'),
+      supabase.from('advertiser_screens').select('id,name,owner_name,owner_type,city,state,country,location,status,lat,lon,venue_category,venue_subtype,environment,screen_position,display_size,monthly_traffic_estimate,cpm_floor,operating_hours_start,operating_hours_end,auto_approve,screen_photos,screen_photo_frames,content_categories_blocked,timezone,max_ad_duration,operator_id,last_seen,health_status,resolution_w,resolution_h,accepted_formats,max_file_mb,is_demo').order('name'),
       // Operator's own screens: full columns, but only rows they own.
-      supabase.from('screens').select('id,name,owner_name,owner_type,city,state,country,location,status,lat,lon,venue_category,venue_subtype,environment,screen_position,display_size,monthly_traffic_estimate,cpm_floor,operating_hours_start,operating_hours_end,auto_approve,screen_photos,content_categories_blocked,timezone,max_ad_duration,monthly_revenue,operator_id,last_seen,health_status,resolution_w,resolution_h,accepted_formats,max_file_mb').eq('operator_id', user.id).order('name'),
+      supabase.from('screens').select('id,name,owner_name,owner_type,city,state,country,location,status,lat,lon,venue_category,venue_subtype,environment,screen_position,display_size,monthly_traffic_estimate,cpm_floor,operating_hours_start,operating_hours_end,auto_approve,screen_photos,content_categories_blocked,timezone,max_ad_duration,monthly_revenue,operator_id,last_seen,health_status,resolution_w,resolution_h,accepted_formats,max_file_mb,is_demo').eq('operator_id', user.id).order('name'),
     ])
 
     if (bookingsRes.error) {
@@ -473,7 +485,7 @@ function AppInner() {
       if (active === 'adv-overview')     return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navTo} advertiserId={impersonating?.id ?? user.id} />;
       if (active === 'adv-create')       return (
         <CreateCampaign
-          dbScreens={dbScreens}
+          dbScreens={visibleDbScreens}
           screensLoading={dataLoading}
           campaigns={advertiserCampaigns}
           existingCampaign={addingToCampaign}
@@ -510,7 +522,7 @@ function AppInner() {
           }}
         />
       );
-      if (active === 'adv-campaigns')    return <Campaigns campaigns={advertiserCampaigns} dbScreens={dbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} allowCancel />;
+      if (active === 'adv-campaigns')    return <Campaigns campaigns={advertiserCampaigns} dbScreens={visibleDbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} allowCancel />;
       if (active === 'adv-marketplace') {
         if (selectedListingId) {
           return <MarketplaceListingDetail listingId={selectedListingId} onBack={() => setSelectedListingId(null)} />;
@@ -527,7 +539,7 @@ function AppInner() {
       return <AdvDashboard user={displayUser} campaigns={campaigns} setAdvNav={navTo} advertiserId={impersonating?.id ?? user.id} />;
     }
 
-    if (active === 'overview')     return <Dashboard campaigns={operatorCampaigns} dbScreens={myScreens} setNav={navTo} loading={dataLoading} />;
+    if (active === 'overview')     return <Dashboard campaigns={operatorCampaigns} dbScreens={visibleMyScreens} setNav={navTo} loading={dataLoading} />;
     if (active === 'screen-onboard') return (
       <ScreenOnboardView
         onComplete={(newScreen) => {
@@ -556,13 +568,13 @@ function AppInner() {
         onStartOnboard={() => navTo('screen-onboard')}
       />
     );
-    if (active === 'approval')      return <ApprovalQueue campaigns={operatorCampaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} dbScreens={myScreens} onApprovalChange={bumpApprovalRefresh} />;
+    if (active === 'approval')      return <ApprovalQueue campaigns={operatorCampaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} dbScreens={visibleMyScreens} onApprovalChange={bumpApprovalRefresh} />;
     if (active === 'screen-detail') {
       if (!selectedScreenId) { navTo('screens'); return null; }
       return <ScreenDetailView screenId={selectedScreenId} onBack={() => navTo('screens')} profile={profile} onScreenUpdated={updated => setMyScreens(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s))} />;
     }
     if (active === 'notif-prefs')   return <NotificationPrefsView />;
-    if (active === 'campaigns')    return <Campaigns campaigns={operatorCampaigns} dbScreens={myScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} canReview={canReview} onApprovalChange={bumpApprovalRefresh} />;
+    if (active === 'campaigns')    return <Campaigns campaigns={operatorCampaigns} dbScreens={visibleMyScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} canReview={canReview} onApprovalChange={bumpApprovalRefresh} />;
     if (active === 'marketplace-listings') {
       return <MarketplaceListingsView operatorId={impersonating?.id ?? user.id} myScreens={myScreens} />;
     }
@@ -600,6 +612,8 @@ function AppInner() {
         <GlobalHeader
           user={displayUser}
           onSignOut={signOut}
+          demoMode={demoMode}
+          onToggleDemoMode={() => setDemoMode(d => !d)}
         />
       }
     >
