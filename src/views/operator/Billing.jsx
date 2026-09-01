@@ -13,27 +13,7 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
 import { SkeletonRow, SkeletonTable } from '../../components/ui/Skeleton.jsx';
-
-function useBilling() {
-  const [data, setData]     = useState(null);
-  const [loading, setLoad]  = useState(true);
-  const [error, setError]   = useState(null);
-
-  const fetch_ = async () => {
-    setLoad(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setLoad(false); return; }
-    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/operator-billing?action=summary`, {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    });
-    if (!res.ok) { setError('Failed to load billing data'); setLoad(false); return; }
-    setData(await res.json());
-    setLoad(false);
-  };
-
-  useEffect(() => { fetch_(); }, []);
-  return { data, loading, error, refresh: fetch_ };
-}
+import { useOperatorBilling } from '../../hooks/useOperatorBilling.js';
 
 // B16: operator_transfers.status = 'failed' rows previously existed only in
 // the database — nothing on this page (or anywhere else) ever read them, so
@@ -55,7 +35,7 @@ export function Billing() {
   const toast = useToast();
   const [tab, setTab]         = useState('overview');
   const [payingOut, setPaying] = useState(false);
-  const { data, loading, error, refresh } = useBilling();
+  const { data, loading, error, refresh } = useOperatorBilling();
   const { isMobile } = useBreakpoint();
   const failedTransfers = useFailedTransfers();
 
