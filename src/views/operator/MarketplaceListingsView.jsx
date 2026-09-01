@@ -13,9 +13,16 @@ const BOOKING_STATUS_LABEL = {
   cancelled: 'Cancelled',
 };
 
-const PAYMENT_STATUS_LABEL = {
-  unpaid: 'Unpaid',
-  paid: 'Paid',
+// This is the operator's own *payout* status (marketplace_operator_transfers),
+// not the advertiser's payment_status on the booking -- that's always "paid"
+// by the time a booking exists at all (marketplace-book only confirms after
+// a successful charge), so showing it here would tell an operator nothing
+// about whether they actually got paid.
+const PAYOUT_STATUS = {
+  transferred:      { label: 'Payout sent',                          color: 'green' },
+  failed:           { label: 'Payout failed — check Connect account', color: 'red' },
+  pending_connect:  { label: 'Payout pending — set up Connect payouts', color: 'amber' },
+  null:             { label: 'Payout pending',                        color: 'amber' },
 };
 
 // No advertiser name/email is shown here -- the rest of the marketplace
@@ -43,27 +50,30 @@ function OperatorBookings({ operatorId }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {bookings.map(b => (
-        <div key={b.id} style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8,
-          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 12,
-        }}>
-          <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMid }}>
-            {b.listing?.is_bundle && <span style={{ color: C.purple, fontWeight: 600 }}>Bundle · </span>}
-            ${(b.price_cents / 100).toFixed(0)} · {b.listing ? `${b.listing.start_date} – ${b.listing.end_date}` : 'listing removed'}
+      {bookings.map(b => {
+        const payout = PAYOUT_STATUS[b.payout_status ?? 'null'] ?? { label: b.payout_status, color: 'amber' };
+        return (
+          <div key={b.id} style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8,
+            background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 12,
+          }}>
+            <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMid }}>
+              {b.listing?.is_bundle && <span style={{ color: C.purple, fontWeight: 600 }}>Bundle · </span>}
+              ${(b.price_cents / 100).toFixed(0)} · {b.listing ? `${b.listing.start_date} – ${b.listing.end_date}` : 'listing removed'}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: F.sans, fontSize: 12 }}>
+              <span style={{ color: C[payout.color] }}>{payout.label}</span>
+              <span style={{
+                padding: '2px 8px', borderRadius: 999, fontWeight: 600,
+                color: b.status === 'cancelled' ? C.red : C.purple,
+                background: b.status === 'cancelled' ? C.redSoft : C.purpleSoft,
+              }}>
+                {BOOKING_STATUS_LABEL[b.status] ?? b.status}
+              </span>
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: F.sans, fontSize: 12 }}>
-            <span style={{ color: C.textSub }}>{PAYMENT_STATUS_LABEL[b.payment_status] ?? b.payment_status}</span>
-            <span style={{
-              padding: '2px 8px', borderRadius: 999, fontWeight: 600,
-              color: b.status === 'cancelled' ? C.red : C.purple,
-              background: b.status === 'cancelled' ? C.redSoft : C.purpleSoft,
-            }}>
-              {BOOKING_STATUS_LABEL[b.status] ?? b.status}
-            </span>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

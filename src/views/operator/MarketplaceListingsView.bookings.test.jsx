@@ -5,7 +5,7 @@ vi.mock('../../lib/marketplace.js', () => ({
   fetchOperatorListings: vi.fn(() => Promise.resolve([])),
   fetchOperatorBookings: vi.fn(() => Promise.resolve([
     {
-      id: 'b1', price_cents: 50000, payment_status: 'paid', status: 'confirmed',
+      id: 'b1', price_cents: 50000, payment_status: 'paid', status: 'confirmed', payout_status: 'transferred',
       listing: { id: 'l1', is_bundle: false, start_date: '2026-09-01', end_date: '2026-09-15' },
     },
   ])),
@@ -25,14 +25,24 @@ describe('MarketplaceListingsView bookings tab', () => {
     expect(fetchOperatorBookings).not.toHaveBeenCalled();
   });
 
-  it('shows bookings on operator listings, without exposing advertiser identity', async () => {
+  it('shows the operator\'s own payout status, not the advertiser\'s payment status', async () => {
     render(<MarketplaceListingsView operatorId="op1" myScreens={[]} />);
     fireEvent.click(await screen.findByText('Bookings'));
 
     await waitFor(() => expect(fetchOperatorBookings).toHaveBeenCalledWith('op1'));
     await waitFor(() => expect(screen.getByText(/\$500/)).toBeInTheDocument());
-    expect(screen.getByText('Paid')).toBeInTheDocument();
+    expect(screen.getByText('Payout sent')).toBeInTheDocument();
     expect(screen.getByText('Confirmed')).toBeInTheDocument();
+  });
+
+  it('flags a booking with no successful transfer as pending payout', async () => {
+    fetchOperatorBookings.mockResolvedValueOnce([{
+      id: 'b2', price_cents: 30000, payment_status: 'paid', status: 'confirmed', payout_status: 'pending_connect',
+      listing: { id: 'l2', is_bundle: false, start_date: '2026-09-01', end_date: '2026-09-15' },
+    }]);
+    render(<MarketplaceListingsView operatorId="op1" myScreens={[]} />);
+    fireEvent.click(await screen.findByText('Bookings'));
+    await waitFor(() => expect(screen.getByText(/set up Connect payouts/)).toBeInTheDocument());
   });
 
   it('shows an empty state when no listings have been booked', async () => {

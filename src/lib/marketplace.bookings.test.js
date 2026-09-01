@@ -32,6 +32,9 @@ function tableMock(table) {
   if (table === 'advertiser_screens') {
     return { select: () => ({ in: () => Promise.resolve({ data: [mockScreen], error: null }) }) };
   }
+  if (table === 'marketplace_operator_transfers') {
+    return { select: () => ({ in: () => Promise.resolve({ data: [{ booking_id: 'b1', status: 'transferred' }], error: null }) }) };
+  }
   throw new Error(`unexpected table: ${table}`);
 }
 
@@ -69,8 +72,24 @@ describe('fetchAdvertiserBookings', () => {
 });
 
 describe('fetchOperatorBookings', () => {
-  it('joins each booking to its listing', async () => {
+  it('joins each booking to its listing and the operator\'s own payout status', async () => {
     const result = await fetchOperatorBookings('op-1');
-    expect(result).toEqual([{ ...mockBooking, listing: mockListing }]);
+    expect(result).toEqual([{ ...mockBooking, listing: mockListing, payout_status: 'transferred' }]);
+  });
+
+  it('reports payout_status null when no transfer row exists yet (still in flight)', async () => {
+    const { supabase } = await import('./supabase.js');
+    const spy = vi.spyOn(supabase, 'from').mockImplementation((table) => {
+      if (table === 'marketplace_operator_transfers') {
+        return { select: () => ({ in: () => Promise.resolve({ data: [], error: null }) }) };
+      }
+      return tableMock(table);
+    });
+    try {
+      const result = await fetchOperatorBookings('op-1');
+      expect(result[0].payout_status).toBeNull();
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
