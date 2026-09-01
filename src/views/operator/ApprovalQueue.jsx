@@ -13,8 +13,8 @@ import { ReadabilityPanel } from '../../components/shared/ReadabilityPanel.jsx';
 import { useConfirm } from '../../components/primitives/ConfirmModal.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
 
-const SCREEN_OWNER_SHARE = 0.70;
 const REJECT_REASONS = [
   'Inappropriate content',
   'Competitor brand',
@@ -60,7 +60,7 @@ function healthLabel(screen) {
   return { label: 'Offline', color: C.red };
 }
 
-function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByScreen, onApproved, onRejected, setCampaigns, index = 0 }) {
+function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByScreen, onApproved, onRejected, setCampaigns, index = 0, ownerRevenueShare = DEFAULT_OWNER_REVENUE_SHARE }) {
   const { isMobile } = useBreakpoint();
   const confirm = useConfirm();
   const [rejectScreenId, setRejectScreenId] = useState(null);
@@ -214,7 +214,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
 
   const totalScreens = (campaign.campaign_screens || []).length;
   const earned = campaign.budget
-    ? `~$${Math.round(campaign.budget * SCREEN_OWNER_SHARE / Math.max(1, totalScreens)).toLocaleString()}`
+    ? `~$${Math.round(computeRevenueSplit(campaign.budget, ownerRevenueShare).owner / Math.max(1, totalScreens)).toLocaleString()}`
     : null;
 
   return (
@@ -384,7 +384,8 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
 }
 
 export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [], onApprovalChange }) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const ownerRevenueShare = profile?.owner_revenue_share ?? DEFAULT_OWNER_REVENUE_SHARE;
   const confirm = useConfirm();
   const [autoApprove, setAutoApprove] = useState(false);
   const [togglingAuto, setTogglingAuto] = useState(false);
@@ -691,6 +692,7 @@ export function ApprovalQueue({ campaigns, setCampaigns, dbScreens = [], onAppro
             onApproved={handleApproved}
             onRejected={handleRejected}
             setCampaigns={setCampaigns}
+            ownerRevenueShare={ownerRevenueShare}
           />
         ))
       )}
