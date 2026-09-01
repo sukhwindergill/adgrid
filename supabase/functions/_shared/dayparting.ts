@@ -24,3 +24,16 @@ export function resolveDayWindow(
     time_end: fallbackEnd ?? "23:59",
   };
 }
+
+// Whether `currentTime` falls within [start, end]. Handles an overnight
+// window (end < start, e.g. 22:00-02:00 for a late-night venue) by treating
+// it as wrapping past midnight instead of an empty range -- a plain
+// `currentTime >= start && currentTime <= end` can never be true when
+// end < start, so a campaign scheduled for exactly that kind of window would
+// otherwise silently never play, any day it's scheduled for.
+export function isTimeInWindow(currentTime: string, start: string, end: string): boolean {
+  if (end < start) {
+    return currentTime >= start || currentTime <= end;
+  }
+  return currentTime >= start && currentTime <= end;
+}
