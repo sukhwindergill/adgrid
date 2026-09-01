@@ -94,7 +94,7 @@ async function callNotification(userId, type, data = {}) {
 // ─── AppInner (auth-gated shell) ─────────────────────────────────────────────
 
 function AppInner() {
-  const { user, profile, activeMode, setActiveMode, loading, signOut, activeAccount, grants } = useAuth();
+  const { user, profile, activeMode, setActiveMode, loading, signOut, activeAccount, grants, refreshProfile } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -107,13 +107,26 @@ function AppInner() {
   // Demo mode: shows the seeded is_demo=true screens (fake inventory across
   // several countries/cities, used to make the product demoable before real
   // operators have onboarded). Off by default so real users never see fake
-  // inventory; persisted per-browser so it survives a refresh mid-demo.
-  const [demoMode, setDemoMode] = useState(() => {
-    try { return localStorage.getItem('adgrid:demoMode') === '1'; } catch { return false; }
-  });
+  // inventory. Persisted on profiles.demo_mode (not localStorage) so it's
+  // consistent across every tab/browser/device this account logs into --
+  // localStorage was per-origin-per-browser, which meant toggling it on in
+  // one tab (e.g. localhost while testing) did nothing for prod in a fresh
+  // tab, and vice versa; easy to trip over and land back on "no screens".
+  const [demoMode, setDemoModeLocal] = useState(false);
   useEffect(() => {
-    try { localStorage.setItem('adgrid:demoMode', demoMode ? '1' : '0'); } catch { /* ignore */ }
-  }, [demoMode]);
+    setDemoModeLocal(!!profile?.demo_mode);
+  }, [profile?.demo_mode]);
+  const toggleDemoMode = useCallback(async () => {
+    const next = !demoMode;
+    setDemoModeLocal(next); // optimistic -- don't wait on the round trip to flip the switch
+    const { error } = await supabase.from('profiles').update({ demo_mode: next }).eq('id', user.id);
+    if (error) {
+      console.error('Failed to persist demo mode:', error.message);
+      setDemoModeLocal(!next); // revert on failure rather than show a toggle state that didn't actually save
+      return;
+    }
+    refreshProfile();
+  }, [demoMode, user?.id, refreshProfile]);
   const visibleDbScreens = useMemo(() => demoMode ? dbScreens : dbScreens.filter(s => !s.is_demo), [dbScreens, demoMode]);
   const visibleMyScreens = useMemo(() => demoMode ? myScreens : myScreens.filter(s => !s.is_demo), [myScreens, demoMode]);
   const [detail,           setDetail]        = useState(null);
@@ -616,7 +629,7 @@ function AppInner() {
           user={displayUser}
           onSignOut={signOut}
           demoMode={demoMode}
-          onToggleDemoMode={() => setDemoMode(d => !d)}
+          onToggleDemoMode={toggleDemoMode}
         />
       }
     >
