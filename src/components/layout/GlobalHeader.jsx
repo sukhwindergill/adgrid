@@ -96,7 +96,7 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
                     cursor: 'pointer',
                   }}
                 >
-                  <span>Demo mode <span style={{ color: C.textMuted, fontSize: 11 }}>(fake screens)</span></span>
+                  <span>Demo mode</span>
                   <span style={{
                     display: 'inline-block', width: 30, height: 17, borderRadius: 999,
                     background: demoMode ? '#7c3aed' : '#d4d4d4', position: 'relative', transition: 'background 0.15s',
