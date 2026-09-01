@@ -27,9 +27,13 @@ function makeQuery(state, resolve) {
 }
 
 function respond(state) {
-  const { table, selectCols, updatePayload } = state;
+  const { table, selectCols, filters, updatePayload } = state;
   if (table === 'campaign_creative_screens') return { data: [], error: null };
-  if (table === 'bookings') return { data: null, error: null };
+  if (table === 'bookings') {
+    if (updatePayload) return { data: null, error: null };
+    // ApprovalQueue's own bookingsById fetch, scoped to relevantCampaignIds.
+    return { data: campaigns.filter(c => (filters.id?.vals ?? []).includes(c.id)), error: null };
+  }
   if (table !== 'campaign_screens') return { data: [], error: null };
   if (updatePayload) return { data: null, error: null };
   if (selectCols === 'campaign_id') {
@@ -94,7 +98,7 @@ describe('ApprovalQueue bulkApproveAll', () => {
   it('invokes onApprovalChange exactly once for a bulk approve spanning multiple campaigns and rows', async () => {
     const onApprovalChange = vi.fn();
     render(
-      <ApprovalQueue campaigns={campaigns} setCampaigns={() => {}} dbScreens={dbScreens} onApprovalChange={onApprovalChange} />
+      <ApprovalQueue setCampaigns={() => {}} dbScreens={dbScreens} onApprovalChange={onApprovalChange} />
     );
 
     const bulkBtn = await screen.findByText(/Approve all pending/);
@@ -122,7 +126,7 @@ describe('ApprovalQueue bulkApproveAll', () => {
     })));
 
     render(
-      <ApprovalQueue campaigns={campaigns} setCampaigns={() => {}} dbScreens={dbScreens} onApprovalChange={() => {}} />
+      <ApprovalQueue setCampaigns={() => {}} dbScreens={dbScreens} onApprovalChange={() => {}} />
     );
 
     const bulkBtn = await screen.findByText(/Approve all pending/);
@@ -156,7 +160,7 @@ describe('ApprovalQueue bulkApproveAll', () => {
     })));
 
     render(
-      <ApprovalQueue campaigns={campaigns} setCampaigns={() => {}} dbScreens={dbScreens} onApprovalChange={() => {}} />
+      <ApprovalQueue setCampaigns={() => {}} dbScreens={dbScreens} onApprovalChange={() => {}} />
     );
 
     const bulkBtn = await screen.findByText(/Approve all pending/);

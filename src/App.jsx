@@ -584,7 +584,7 @@ function AppInner() {
         onStartOnboard={() => navTo('screen-onboard')}
       />
     );
-    if (active === 'approval')      return <ApprovalQueue campaigns={operatorCampaigns} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} dbScreens={visibleMyScreens} onApprovalChange={bumpApprovalRefresh} />;
+    if (active === 'approval')      return <ApprovalQueue setCampaigns={setCampaigns} setDetail={c => setDetail(c)} dbScreens={visibleMyScreens} onApprovalChange={bumpApprovalRefresh} />;
     if (active === 'screen-detail') {
       if (!selectedScreenId) { navTo('screens'); return null; }
       return <ScreenDetailView screenId={selectedScreenId} onBack={() => navTo('screens')} profile={profile} onScreenUpdated={updated => setMyScreens(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s))} />;

@@ -22,6 +22,12 @@ function makeQuery(state, resolve) {
 
 function respond(state) {
   const { table, selectCols, filters, updatePayload } = state;
+  if (table === 'bookings') {
+    // ApprovalQueue fetches booking rows directly for relevantCampaignIds
+    // instead of filtering the app-wide `campaigns` array (see
+    // src/views/operator/ApprovalQueue.jsx bookingsById).
+    return { data: campaigns.filter(c => (filters.id?.vals ?? []).includes(c.id)), error: null };
+  }
   if (table !== 'campaign_screens' && table !== 'campaign_creative_screens') {
     return { data: [], error: null };
   }
@@ -79,7 +85,7 @@ describe('ApprovalQueue onApprovalChange', () => {
   it('invokes onApprovalChange after a single-screen approve, so the sidebar badge can invalidate live', async () => {
     const onApprovalChange = vi.fn();
     render(
-      <ApprovalQueue campaigns={campaigns} setCampaigns={() => {}} dbScreens={dbScreens} onApprovalChange={onApprovalChange} />
+      <ApprovalQueue setCampaigns={() => {}} dbScreens={dbScreens} onApprovalChange={onApprovalChange} />
     );
 
     const approveButtons = await screen.findAllByText('✓ Approve');
@@ -91,7 +97,7 @@ describe('ApprovalQueue onApprovalChange', () => {
   it('does not blow up and does not call onApprovalChange before any action is taken', async () => {
     const onApprovalChange = vi.fn();
     render(
-      <ApprovalQueue campaigns={campaigns} setCampaigns={() => {}} dbScreens={dbScreens} onApprovalChange={onApprovalChange} />
+      <ApprovalQueue setCampaigns={() => {}} dbScreens={dbScreens} onApprovalChange={onApprovalChange} />
     );
     await screen.findAllByText('✓ Approve');
     expect(onApprovalChange).not.toHaveBeenCalled();
