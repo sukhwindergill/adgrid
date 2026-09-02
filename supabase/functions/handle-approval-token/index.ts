@@ -1,6 +1,7 @@
 // supabase/functions/handle-approval-token/index.ts
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { rateLimited, clientIp } from '../_shared/rateLimit.ts'
 
 serve(async (req) => {
   const url = new URL(req.url)
@@ -24,6 +25,13 @@ serve(async (req) => {
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   )
+
+  // Public token-guess surface -- throttle per IP.
+  if (await rateLimited(supabase, `handle-approval-token:${clientIp(req)}`, { limit: 20, windowSeconds: 60 })) {
+    return new Response(html('Too many requests', 'Please try again in a minute.'), {
+      status: 429, headers: { 'Content-Type': 'text/html' },
+    })
+  }
 
   const { data: tokenRow, error: tokenErr } = await supabase
     .from('approval_tokens')

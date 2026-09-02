@@ -1,5 +1,6 @@
 import Stripe from "https://esm.sh/stripe@14?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
   apiVersion: "2023-10-16",
@@ -132,6 +133,11 @@ Deno.serve(async (req: Request) => {
   const { data: { user }, error: authErr } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
   if (authErr || !user) {
     return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS });
+  }
+
+  // Booking hits Stripe (real charge) -- cap retries/scripted booking spam.
+  if (await rateLimited(supabase, `marketplace-book:${user.id}`, { limit: 20, windowSeconds: 3600 })) {
+    return new Response(JSON.stringify({ error: "Too many requests" }), { status: 429, headers: CORS });
   }
 
   const { listingId, autoRenew } = await req.json();

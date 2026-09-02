@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -44,6 +45,10 @@ Deno.serve(async (req: Request) => {
   }
   if (screen.operator_id !== user.id) {
     return new Response("Forbidden — you don't own this screen", { status: 403, headers: CORS });
+  }
+
+  if (await rateLimited(supabase, `create-screen-invite:${user.id}`, { limit: 30, windowSeconds: 3600 })) {
+    return rateLimitResponse(CORS);
   }
 
   const { data: invite, error: insertError } = await supabase

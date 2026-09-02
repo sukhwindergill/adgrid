@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -27,6 +28,11 @@ Deno.serve(async (req: Request) => {
   // Caller must be the org owner
   if (user.id !== orgProfileId) {
     return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: CORS });
+  }
+
+  // Mail-bombing / enumeration guard on the invite-send action.
+  if (await rateLimited(supabase, `invite-team-member:${user.id}`, { limit: 20, windowSeconds: 3600 })) {
+    return rateLimitResponse(CORS);
   }
 
   const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email);
