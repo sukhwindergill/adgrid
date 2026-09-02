@@ -1,8 +1,17 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'https://esm.sh/stripe@14?target=deno';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { rateLimited, rateLimitResponse } from '../_shared/rateLimit.ts';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, { apiVersion: '2024-04-10' });
+
+// check_rate_limit is service_role-only -- the request-scoped anon client
+// below (RLS'd to the caller) can't execute it, so a dedicated service
+// client backs just the rate-limit check.
+const serviceClient = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+);
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -40,6 +49,10 @@ Deno.serve(async (req: Request) => {
 
     if (!profile || profile.role !== 'operator') {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: CORS });
+    }
+
+    if (await rateLimited(serviceClient, `get-stripe-charges:${user.id}`, { limit: 30, windowSeconds: 60 })) {
+      return rateLimitResponse(CORS);
     }
 
     // BUG FIX: this previously called stripe.charges.list() with no
