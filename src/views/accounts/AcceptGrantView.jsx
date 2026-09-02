@@ -68,7 +68,7 @@ export function AcceptGrantView() {
         {error ? (
           <>
             <div style={{ fontSize: 32, marginBottom: 16 }}>⚠️</div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 8px' }}>Invite Error</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>Invite Error</h2>
             <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>{error}</p>
             <button onClick={() => navigate('/')} style={{ padding: '10px 24px', borderRadius: 10, background: C.blue, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 14, cursor: 'pointer' }}>
               Go Home
@@ -77,13 +77,13 @@ export function AcceptGrantView() {
         ) : done ? (
           <>
             <div style={{ fontSize: 32, marginBottom: 16 }}>✅</div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 8px' }}>Invite Accepted</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>Invite Accepted</h2>
             <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans }}>Redirecting to your accounts…</p>
           </>
         ) : !user ? (
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 32, marginBottom: 16 }}>📬</div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 8px' }}>You've been invited</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>You've been invited</h2>
             <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans, margin: '0 0 20px' }}>Sign in to see your invitation and accept it.</p>
             <button
               onClick={() => { sessionStorage.setItem('pending_grant', grantId); signInWithOAuth('google') }}
@@ -97,7 +97,7 @@ export function AcceptGrantView() {
         ) : (
           <>
             <div style={{ fontSize: 32, marginBottom: 16 }}>📬</div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 8px' }}>You're invited</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>You're invited</h2>
             <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans, margin: '0 0 6px' }}>
               <strong style={{ color: C.text }}>{grantorName}</strong> has given you <strong style={{ color: C.text }}>{grant?.role}</strong> access to
             </p>

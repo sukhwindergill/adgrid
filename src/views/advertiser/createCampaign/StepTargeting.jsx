@@ -64,7 +64,7 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
           </div>
         )}
 
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 4px' }}>Where do you want to advertise?</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>Where do you want to advertise?</h2>
         <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 20px' }}>Choose an area and, optionally, the kind of screens you're after — we'll find matching screens for you.</p>
 
         {noInventory && (

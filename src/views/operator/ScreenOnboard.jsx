@@ -58,7 +58,7 @@ function StepWelcome({ onNext }) {
     <div style={{ maxWidth: 560, margin: '0 auto' }}>
       <Card style={{ padding: 40, textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 20 }}>📺</div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: C.text, fontFamily: F.sans, marginBottom: 12, margin: '0 0 12px' }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: C.text, fontFamily: F.display, marginBottom: 12, margin: '0 0 12px' }}>
           Let's get your screen on the network
         </h1>
         <p style={{ fontSize: 15, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, margin: '0 0 32px' }}>
@@ -256,7 +256,7 @@ function StepRegister({ onBack, onScreenCreated }) {
   return (
     <div style={{ maxWidth: 600, margin: '0 auto' }}>
       <Card style={{ padding: 36 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 4px' }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>
           Tell us about your screen
         </h2>
         <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 28px' }}>
@@ -507,7 +507,7 @@ function StepSetup({ screen, onNext, onBack, onSkip }) {
           />
         </div>
 
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 4px' }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>
           Set up your display
         </h2>
         <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>
@@ -580,7 +580,7 @@ function StepConnect({ screen, onDone, onSkip, onBack }) {
         <div style={{ fontSize: 48, marginBottom: 20 }}>
           {status === 'connected' ? '✅' : status === 'needs_payout' ? '💳' : status === 'none' ? '⚠️' : '📡'}
         </div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 12px' }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
           {status === 'connected' ? 'Screen is live!' : status === 'needs_payout' ? 'Heartbeat confirmed' : 'Test your connection'}
         </h2>
         <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, margin: '0 0 28px' }}>
@@ -663,7 +663,7 @@ function StepPayouts({ onDone, onSkip, onBack }) {
       <div style={{ maxWidth: 520, margin: '0 auto' }}>
         <Card style={{ padding: 40, textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 20 }}>✅</div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 12px' }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
             Payouts are set up
           </h2>
           <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, margin: '0 0 28px' }}>
@@ -679,7 +679,7 @@ function StepPayouts({ onDone, onSkip, onBack }) {
     <div style={{ maxWidth: 520, margin: '0 auto' }}>
       <Card style={{ padding: 40, textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 20 }}>💳</div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 12px' }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
           Set up payouts
         </h2>
         <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, margin: '0 0 28px' }}>

@@ -112,7 +112,7 @@ export function MarketplaceView({ onSelectListing }) {
 
   return (
     <div style={{ padding: 24 }}>
-      <h2 style={{ fontFamily: F.sans, fontSize: 20, fontWeight: 600, color: C.text, marginBottom: 16 }}>
+      <h2 style={{ fontFamily: F.display, fontSize: 20, fontWeight: 600, color: C.text, marginBottom: 16 }}>
         Marketplace
       </h2>
       <Tabs

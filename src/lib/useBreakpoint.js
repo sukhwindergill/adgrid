@@ -7,5 +7,8 @@ export function useBreakpoint() {
     window.addEventListener('resize', h);
     return () => window.removeEventListener('resize', h);
   }, []);
-  return { isMobile: width < 768, isTablet: width < 1024, width };
+  // isMobile threshold matches the design system's single breakpoint (901px) so
+  // components don't hit a dead zone where they're too narrow for the desktop
+  // grid but not yet switched to the stacked mobile layout.
+  return { isMobile: width < 901, isTablet: width < 1024, width };
 }

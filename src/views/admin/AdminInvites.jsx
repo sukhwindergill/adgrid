@@ -96,7 +96,7 @@ export function AdminInvites() {
       <Btn variant="ghost" onClick={() => navigate('/app')} style={{ marginBottom: 16, paddingLeft: 0 }}>
         ← Back
       </Btn>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 20 }}>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, fontFamily: F.display, marginBottom: 20 }}>
         Invite an Operator
       </h1>
       <Card style={{ marginBottom: 24 }}>
@@ -116,7 +116,7 @@ export function AdminInvites() {
         </div>
       </Card>
 
-      <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
+      <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.display, marginBottom: 12 }}>
         Invites
       </h2>
       {loading ? (

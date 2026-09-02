@@ -57,7 +57,7 @@ export function MarketplaceListingDetail({ listingId, onBack }) {
       <button onClick={onBack} style={{ fontFamily: F.sans, fontSize: 13, color: C.textSub, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 16 }}>
         ← Back to marketplace
       </button>
-      <h2 style={{ fontFamily: F.sans, fontSize: 20, fontWeight: 600, color: C.text }}>
+      <h2 style={{ fontFamily: F.display, fontSize: 20, fontWeight: 600, color: C.text }}>
         {listing.is_bundle ? 'Bundle placement' : 'Exclusive placement'} — ${(listing.price_cents / 100).toFixed(0)}
       </h2>
       <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textSub, marginTop: 4, marginBottom: 8 }}>

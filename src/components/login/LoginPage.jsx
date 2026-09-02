@@ -163,16 +163,15 @@ export function LoginPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontWeight: 800, fontSize: 16, color: '#fff',
           }}>A</div>
-          <span style={{ fontSize: 20, fontWeight: 700, color: '#fff', fontFamily: F.sans }}>ADGRID</span>
+          <span style={{ fontSize: 20, fontWeight: 700, color: '#fff', fontFamily: F.display }}>ADGRID</span>
         </div>
 
         {/* Card */}
         <div style={{
-          background: 'rgba(17,17,24,0.9)', border: '1px solid #1E1E2E',
+          background: '#111118', border: '1px solid #1E1E2E',
           borderRadius: 16, padding: 28,
-          backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
         }}>
-          <h1 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4, fontFamily: F.sans }}>
+          <h1 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4, fontFamily: F.display }}>
             {activeMode === 'forgot' ? 'Reset your password' : activeMode === 'reset' ? 'Set new password' : activeMode === 'signin' ? 'Sign in to ADGRID' : 'Create your account'}
           </h1>
           <p style={{ fontSize: 13, color: '#8A8A9A', marginBottom: 20, fontFamily: F.sans }}>

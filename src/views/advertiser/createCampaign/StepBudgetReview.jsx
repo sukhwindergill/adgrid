@@ -50,7 +50,7 @@ export function StepBudgetReview({
   return (
     <div style={{ maxWidth: 640, margin: '0 auto' }}>
       <Card style={{ padding: 32 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 24px' }}>Budget & Schedule</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 24px' }}>Budget & Schedule</h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div>
@@ -190,7 +190,7 @@ export function StepBudgetReview({
         </div>
 
         <div style={{ marginTop: 28, paddingTop: 20, borderTop: `1px solid ${C.border}` }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 16px' }}>Review</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 16px' }}>Review</h2>
           {rows.map(([label, value]) => (
             <div key={label} style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.04em', minWidth: 80, paddingTop: 1 }}>{label}</div>
