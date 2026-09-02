@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requestTooLarge } from "../_shared/requestSize.ts";
+import { rateLimited, rateLimitResponse, clientIp } from "../_shared/rateLimit.ts";
 
 // Backs three related security controls with one append-only ledger
 // (security_events): failed-login lockout, password-reset rate limiting,
@@ -57,6 +58,15 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: CORS });
   if (requestTooLarge(req, 8192)) return new Response(JSON.stringify({ error: "Payload too large" }), { status: 413, headers: CORS });
+
+  // The per-email lockout/throttle logic below caps abuse of one target
+  // account, but nothing capped the endpoint itself -- an attacker could
+  // sweep thousands of different emails from one IP (each record_login_failure
+  // also does an admin.listUsers() call) with no per-email signal ever
+  // tripping. Outer per-IP guard closes that.
+  if (await rateLimited(supabase, `auth-security:${clientIp(req)}`, { limit: 30, windowSeconds: 60 })) {
+    return rateLimitResponse(CORS);
+  }
 
   let body: Record<string, unknown>;
   try {
