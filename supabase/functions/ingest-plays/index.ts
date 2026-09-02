@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { validatePlayBatch } from "../_shared/playValidation.ts";
 import { requestTooLarge } from "../_shared/requestSize.ts";
+import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -27,6 +28,14 @@ Deno.serve(async (req: Request) => {
 
   if (!body.screen_token) {
     return new Response(JSON.stringify({ error: "screen_token required" }), { status: 400, headers: CORS });
+  }
+
+  // DisplayPlayer flushes its play buffer once per FLUSH_INTERVAL_MS (60s)
+  // as a single batched POST -- ~1/min steady state. 15/min leaves headroom
+  // for a page reload or a retried flush without opening the door to a
+  // scripted flood.
+  if (await rateLimited(supabase, `ingest-plays:${body.screen_token}`, { limit: 15, windowSeconds: 60 })) {
+    return rateLimitResponse(CORS);
   }
 
   const { data: screen, error: screenError } = await supabase
