@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { isTokenUsable } from "../_shared/shareToken.ts";
+import { rateLimited, rateLimitResponse, clientIp } from "../_shared/rateLimit.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -14,6 +15,12 @@ const CORS = {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
+
+  // Public token-guess surface -- throttle per IP so a share token can't be
+  // brute-forced by hammering this endpoint.
+  if (await rateLimited(supabase, `campaign-report:${clientIp(req)}`, { limit: 30, windowSeconds: 60 })) {
+    return rateLimitResponse(CORS);
+  }
 
   const url = new URL(req.url);
   const token = url.searchParams.get("t");

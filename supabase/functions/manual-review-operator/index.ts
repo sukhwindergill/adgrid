@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -29,6 +30,10 @@ Deno.serve(async (req: Request) => {
 
   if (!reviewer?.is_platform_owner) {
     return new Response("Forbidden", { status: 403, headers: CORS });
+  }
+
+  if (await rateLimited(supabase, `manual-review-operator:${user.id}`, { limit: 60, windowSeconds: 3600 })) {
+    return rateLimitResponse(CORS);
   }
 
   const { operatorId, decision, notes } = await req.json();

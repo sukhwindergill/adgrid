@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { rateLimited } from "../_shared/rateLimit.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -65,6 +66,12 @@ Deno.serve(async (req: Request) => {
   const { data: { user }, error: authErr } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
   if (authErr || !user) {
     return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS });
+  }
+
+  // Calls the external Census geocoding/ACS APIs -- cap per-user calls
+  // against quota abuse on those upstream services.
+  if (await rateLimited(supabase, `screen-demographics:${user.id}`, { limit: 30, windowSeconds: 60 })) {
+    return new Response(JSON.stringify({ error: "Too many requests" }), { status: 429, headers: CORS });
   }
 
   let screenId: string | undefined;

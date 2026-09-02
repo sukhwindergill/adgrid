@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { rateLimited, rateLimitResponse, clientIp } from "../_shared/rateLimit.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -14,6 +15,11 @@ const CORS = {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: CORS });
+
+  // Public/unauthenticated -- throttle per IP against invite-token scraping.
+  if (await rateLimited(supabase, `record-screen-invite-view:${clientIp(req)}`, { limit: 30, windowSeconds: 60 })) {
+    return rateLimitResponse(CORS);
+  }
 
   // Public/unauthenticated endpoint hit from the invite landing page before
   // the visitor has signed up. Guard the JSON parse — an unguarded req.json()

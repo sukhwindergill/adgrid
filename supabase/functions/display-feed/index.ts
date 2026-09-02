@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { expandCreativeAssignments } from "../_shared/creativeSelection.ts";
 import { clampDurationToScreen } from "../_shared/adDuration.ts";
 import { resolveDayWindow, isTimeInWindow } from "../_shared/dayparting.ts";
+import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -22,6 +23,13 @@ Deno.serve(async (req: Request) => {
 
   if (!screenToken) {
     return new Response(JSON.stringify({ error: "token required" }), { status: 400, headers: CORS });
+  }
+
+  // DisplayPlayer polls every POLL_INTERVAL_MS (30s) -- ~2/min steady per
+  // screen. 30/min per token covers a page reload/reconnect storm (fresh
+  // poll timers on every tab) without leaving this open to a scraping loop.
+  if (await rateLimited(supabase, `display-feed:${screenToken}`, { limit: 30, windowSeconds: 60 })) {
+    return rateLimitResponse(CORS);
   }
 
   const { data: screen, error: screenError } = await supabase

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 // Called right after a password change (see AuthContext.updatePassword).
 // supabase.auth.updateUser() only rotates the *current* browser's tokens --
@@ -27,6 +28,10 @@ Deno.serve(async (req: Request) => {
   const token = authHeader.replace("Bearer ", "");
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: CORS });
+
+  if (await rateLimited(supabase, `revoke-other-sessions:${user.id}`, { limit: 10, windowSeconds: 3600 })) {
+    return rateLimitResponse(CORS);
+  }
 
   // Global scope revokes every refresh token for this user, including the
   // caller's own -- the client always follows this with its own local

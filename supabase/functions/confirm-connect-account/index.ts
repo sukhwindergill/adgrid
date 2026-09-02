@@ -1,5 +1,6 @@
 import Stripe from "https://esm.sh/stripe@14?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
   apiVersion: "2023-10-16",
@@ -37,6 +38,10 @@ Deno.serve(async (req: Request) => {
   const token = authHeader.replace("Bearer ", "");
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: CORS });
+
+  if (await rateLimited(supabase, `confirm-connect-account:${user.id}`, { limit: 20, windowSeconds: 3600 })) {
+    return rateLimitResponse(CORS);
+  }
 
   const { data: profile } = await supabase
     .from("profiles")

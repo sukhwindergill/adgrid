@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { isBotUserAgent, dedupKey, DEDUP_WINDOW_MS } from "../_shared/scanQuality.ts";
+import { rateLimited, clientIp } from "../_shared/rateLimit.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -13,6 +14,12 @@ Deno.serve(async (req: Request) => {
 
   if (!campaignId) {
     return new Response("Missing campaign id", { status: 400 });
+  }
+
+  // Public QR-scan endpoint -- generous per-IP cap. Real scans come from
+  // distinct phones one at a time; this only stops a scripted flood.
+  if (await rateLimited(supabase, `scan-redirect:${clientIp(req)}`, { limit: 60, windowSeconds: 60 })) {
+    return new Response("Too many requests", { status: 429 });
   }
 
   // Look up campaign

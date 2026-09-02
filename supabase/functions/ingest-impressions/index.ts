@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requestTooLarge } from "../_shared/requestSize.ts";
+import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -36,6 +37,14 @@ Deno.serve(async (req: Request) => {
       JSON.stringify({ error: "screen_token required" }),
       { status: 400, headers: CORS },
     );
+  }
+
+  // event_pusher.py pushes one result file per POST every PUSH_INTERVAL_SECONDS
+  // (default 30s, so ~2/min steady state) but can burst through up to 100
+  // backlogged files in a single cycle after downtime -- sized well above
+  // that worst case so a real screen's catch-up never trips this.
+  if (await rateLimited(supabase, `ingest-impressions:${screen_token}`, { limit: 150, windowSeconds: 60 })) {
+    return rateLimitResponse(CORS);
   }
 
   // Validate screen token
