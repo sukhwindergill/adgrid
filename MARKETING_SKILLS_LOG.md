@@ -24,3 +24,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **directory-submissions**: Added docs/marketing/directory-submissions.md — target directories and a submission tracking table.
 - **emails**: Added docs/marketing/emails.md — lifecycle email templates for both marketplace sides, tied to analytics events.
 - **events**: Added docs/marketing/events.md — event types, low-cost 'office hours' format, and what to skip at current stage.
+- **free-tools**: Added docs/marketing/free-tools.md — earnings calculator, cost estimator, fill-rate benchmark tool ideas.
