@@ -16,3 +16,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **community-marketing**: Added docs/marketing/community-marketing.md — community channels and participation guardrails.
 - **competitor-profiling**: Added docs/marketing/competitor-profiling.md — direct/indirect competitor landscape and a profiling template.
 - **competitors**: Added docs/marketing/competitors.md — internal comparison talking points (AdGrid vs traditional OOH, vs social ads, vs doing nothing); flagged not to publish named-competitor pages without legal review.
+- **content-strategy**: Added docs/marketing/content-strategy.md — content pillars, cadence, distribution; noted no blog/guides route exists yet in src/views.
