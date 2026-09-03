@@ -40,3 +40,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **popups**: Added docs/marketing/popups.md — exit-intent recommendations tied to lead magnets; noted no popup component exists yet.
 - **pricing**: Added docs/marketing/pricing.md — recommended publishing take-rate/fee transparency and city-level pricing benchmarks.
 - **product-marketing**: Added .agents/product-marketing.md — canonical product/positioning context file referenced by other marketing-skills runs (ab-testing skill explicitly looks for this file).
+- **programmatic-seo**: Added docs/marketing/programmatic-seo.md — scoped /screens/[city] template using existing Supabase screens table and react-leaflet map; flagged as a follow-up engineering ticket, no routes exist yet.
