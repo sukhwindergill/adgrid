@@ -3,6 +3,7 @@ import { expandCreativeAssignments } from "../_shared/creativeSelection.ts";
 import { clampDurationToScreen } from "../_shared/adDuration.ts";
 import { resolveDayWindow, isTimeInWindow } from "../_shared/dayparting.ts";
 import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
+import { capHouseAds } from "../_shared/houseAdCap.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -34,7 +35,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: screen, error: screenError } = await supabase
     .from("screens")
-    .select("id, name, operator_id, status, operating_hours_start, operating_hours_end, timezone, max_ad_duration")
+    .select("id, name, operator_id, status, operating_hours_start, operating_hours_end, timezone, max_ad_duration, house_ad_max_pct")
     .eq("screen_token", screenToken)
     .single();
 
@@ -85,7 +86,7 @@ Deno.serve(async (req: Request) => {
     // Step 2: fetch bookings for those campaigns filtered by date and live status
     const { data: bookings } = await supabase
       .from("bookings")
-      .select("id, advertiser_name, headline, cta_text, accent_color, destination_url, category, media_url, media_type, qr_x, qr_y, qr_size_pct, qr_fg_color, qr_bg_color, slots, duration, schedule_days, time_start, time_end, dayparting")
+      .select("id, advertiser_name, headline, cta_text, accent_color, destination_url, category, media_url, media_type, qr_x, qr_y, qr_size_pct, qr_fg_color, qr_bg_color, slots, duration, schedule_days, time_start, time_end, dayparting, is_house_ad")
       .in("id", campaignIds)
       .in("status", ["scheduled", "active"])
       .eq("payment_status", "paid")
@@ -197,15 +198,27 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // House ads never bump or trim a paid campaign's airtime -- they only
+  // ever fill what paid campaigns aren't using, up to the operator's
+  // configured house_ad_max_pct share of the loop. See houseAdCap.ts.
+  const paidEntries  = activeCampaigns.filter((c) => !c.is_house_ad);
+  const houseEntries = activeCampaigns.filter((c) => c.is_house_ad);
+  const cappedHouseEntries = capHouseAds(
+    paidEntries as { duration: number }[],
+    houseEntries as { duration: number }[],
+    (screen.house_ad_max_pct as number | null) ?? 20,
+  );
+  const feedCampaigns = [...paidEntries, ...cappedHouseEntries];
+
   // Log heartbeat + keep last_seen fresh (fire and forget).
   // last_seen update ensures idle screens (no active campaigns) still show as
   // online in the operator dashboard — impression ingest only fires when playing.
   const now_iso = new Date().toISOString();
-  const activeBookingIds = new Set(activeCampaigns.map((c) => c.id as string));
+  const activeBookingIds = new Set(feedCampaigns.map((c) => c.id as string));
   supabase.from("display_heartbeats").insert({
     screen_id: screen.id,
     campaign_id: activeBookingIds.size === 1 ? [...activeBookingIds][0] : null,
-    status: activeCampaigns.length > 0 ? "playing" : "idle",
+    status: feedCampaigns.length > 0 ? "playing" : "idle",
   }).then(() => {});
   supabase.from("screens").update({ last_seen: now_iso }).eq("id", screen.id).then(() => {});
 
@@ -214,7 +227,7 @@ Deno.serve(async (req: Request) => {
       screen_id: screen.id,
       screen_name: screen.name,
       current_time: currentTime,
-      campaigns: activeCampaigns,
+      campaigns: feedCampaigns,
     }),
     { headers: CORS },
   );
