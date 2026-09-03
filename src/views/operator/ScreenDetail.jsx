@@ -19,6 +19,7 @@ import { healthSignal, cvAgentSignal } from '../../lib/screenHealth.js';
 import { checkAndGoLive } from '../../lib/screenGoLive.js';
 import { ScreenLocationPicker } from '../../components/ScreenLocationPicker.jsx';
 import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
+import { CreateCampaign } from '../advertiser/CreateCampaign.jsx';
 
 async function startStripeConnect(setConnecting) {
   setConnecting(true);
@@ -76,6 +77,7 @@ function DetailsTab({ screen, onSaved }) {
     screen_position: screen.screen_position || '',
     lat:             screen.lat != null ? screen.lat : null,
     lon:             screen.lon != null ? screen.lon : null,
+    house_ad_max_pct: screen.house_ad_max_pct ?? 20,
   });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -97,6 +99,7 @@ function DetailsTab({ screen, onSaved }) {
       screen_position: fields.screen_position || null,
       lat:             fields.lat,
       lon:             fields.lon,
+      house_ad_max_pct: fields.house_ad_max_pct,
     }).eq('id', screen.id);
     setSaving(false);
     if (error) { setMsg({ ok: false, text: error.message }); return; }
@@ -164,6 +167,9 @@ function DetailsTab({ screen, onSaved }) {
               onChange={({ lat, lng }) => setFields(s => ({ ...s, lat, lon: lng }))}
             />
           </div>
+          <Inp label="Max house-ad share of loop (%)" type="number" min="0" max="100"
+            value={fields.house_ad_max_pct}
+            onChange={e => set('house_ad_max_pct', Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0)))} />
         </div>
         {msg && (
           <div style={{ fontSize: 12, color: msg.ok ? C.green : C.red, fontFamily: F.sans, marginBottom: 12 }}>
@@ -184,6 +190,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   const [loadingData, setLoadingData] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showHouseAdWizard, setShowHouseAdWizard] = useState(false);
   const [tab, setTab] = useState('overview');
   const [cvEvents, setCvEvents] = useState([]);
   const [cvLoading, setCvLoading] = useState(false);
@@ -198,7 +205,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
 
   // Fetch screen record. screen_token is no longer column-readable (it is a
   // bearer secret); fetch it via the owner-scoped get_screen_token RPC.
-  const SCREEN_COLS = 'id, name, owner_id, owner_name, owner_type, city_id, city, location, status, lat, lon, monthly_revenue, impressions, own_slots, blocked_categories, max_ad_duration, min_dwell_time, allow_competitors, created_at, updated_at, operator_id, cpm_floor, display_size, monthly_traffic_estimate, content_categories_blocked, operating_hours_start, operating_hours_end, lng, last_seen, cv_last_seen, health_status, venue_category, venue_subtype, environment, screen_position, state, country, screen_photos, auto_approve, timezone, resolution_w, resolution_h, accepted_formats, max_file_mb, screen_photo_frames';
+  const SCREEN_COLS = 'id, name, owner_id, owner_name, owner_type, city_id, city, location, status, lat, lon, monthly_revenue, impressions, own_slots, blocked_categories, max_ad_duration, min_dwell_time, allow_competitors, created_at, updated_at, operator_id, cpm_floor, display_size, monthly_traffic_estimate, content_categories_blocked, operating_hours_start, operating_hours_end, lng, last_seen, cv_last_seen, health_status, venue_category, venue_subtype, environment, screen_position, state, country, screen_photos, auto_approve, timezone, resolution_w, resolution_h, accepted_formats, max_file_mb, screen_photo_frames, house_ad_max_pct';
   useEffect(() => {
     if (!screenId) return;
     setLoading(true);
@@ -398,6 +405,18 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         />
       )}
 
+      {showHouseAdWizard && (
+        <div style={{ position: 'fixed', inset: 0, background: C.bg, zIndex: 300, overflowY: 'auto' }}>
+          <CreateCampaign
+            houseAdMode
+            presetScreenIds={[screen.id]}
+            dbScreens={[screen]}
+            onSave={() => setShowHouseAdWizard(false)}
+            onCancel={() => setShowHouseAdWizard(false)}
+          />
+        </div>
+      )}
+
       <PageHeader
         title={screen.name}
         subtitle={`${screen.neighbourhood || screen.location || ''} · ${screen.city} · ${screen.owner || ''}`}
@@ -423,6 +442,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
               <Badge status={screen.status} />
             )}
             <Btn variant="secondary" size="sm" onClick={() => setShowEdit(true)}>✏ Edit</Btn>
+            <Btn variant="secondary" size="sm" onClick={() => setShowHouseAdWizard(true)}>Create House Ad</Btn>
             {(screen.status === 'live' || screen.status === 'inactive') && (
               <Btn
                 variant={screen.status === 'live' ? 'danger' : 'primary'}

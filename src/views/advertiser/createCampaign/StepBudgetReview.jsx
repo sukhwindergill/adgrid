@@ -11,7 +11,7 @@ import { syncDaypartingDays } from '../../../lib/dayparting.js';
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function StepBudgetReview({
-  form, setForm, matchedScreens, profile, onSubmit, submitting, err, canChooseBilling, billedTo, setBilledTo,
+  form, setForm, matchedScreens, profile, onSubmit, submitting, err, canChooseBilling, billedTo, setBilledTo, houseAdMode = false,
 }) {
   const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
 
@@ -36,7 +36,7 @@ export function StepBudgetReview({
     ['Area', `${form.area_type === 'radius' ? `${form.radius_km}km radius` : form.city || form.state || form.country}`],
     ['Screens', `${form.selected_screen_ids.length} selected · ~${(totalImpr / 1000).toFixed(0)}K impr/mo`],
     ['Creatives', isMulti ? form.creatives.map((c, i) => creativeLabel(i)).join(', ') : creativeLabel(0)],
-    ['Budget', `${form.budget ? formatCurrency(form.budget, profile?.preferred_currency) : '—'} (${form.budget_mode === 'daily' ? 'daily' : 'total'})`],
+    ...(houseAdMode ? [] : [['Budget', `${form.budget ? formatCurrency(form.budget, profile?.preferred_currency) : '—'} (${form.budget_mode === 'daily' ? 'daily' : 'total'})`]]),
     ['Dates', form.start_date && form.end_date ? `${form.start_date} → ${form.end_date} (${days} days)` : '—'],
     ['Time', form.dayparting
       ? form.schedule_days.map(d => `${d} ${form.dayparting[d]?.time_start}–${form.dayparting[d]?.time_end}`).join(', ')
@@ -53,23 +53,27 @@ export function StepBudgetReview({
         <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 24px' }}>Budget & Schedule</h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Budget type</div>
-            <PillGroup
-              options={[{ value: 'total', label: 'Total budget' }, { value: 'daily', label: 'Daily limit' }]}
-              value={form.budget_mode}
-              onChange={v => setField('budget_mode', v)}
+          {!houseAdMode && (
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Budget type</div>
+              <PillGroup
+                options={[{ value: 'total', label: 'Total budget' }, { value: 'daily', label: 'Daily limit' }]}
+                value={form.budget_mode}
+                onChange={v => setField('budget_mode', v)}
+              />
+            </div>
+          )}
+
+          {!houseAdMode && (
+            <Inp
+              label={form.budget_mode === 'daily' ? `Daily limit (${(profile?.preferred_currency || 'cad').toUpperCase()})` : `Total budget (${(profile?.preferred_currency || 'cad').toUpperCase()})`}
+              type="number" step="1" placeholder="e.g. 200"
+              value={form.budget} onChange={e => setField('budget', e.target.value)}
+              hint={totalImpr > 0 && days > 0 ? `Suggested for ${matchedScreens.length} screens over ${days} days: ${formatCurrency(budgetMin, profile?.preferred_currency)}–${formatCurrency(budgetMax, profile?.preferred_currency)}` : undefined}
             />
-          </div>
+          )}
 
-          <Inp
-            label={form.budget_mode === 'daily' ? `Daily limit (${(profile?.preferred_currency || 'cad').toUpperCase()})` : `Total budget (${(profile?.preferred_currency || 'cad').toUpperCase()})`}
-            type="number" step="1" placeholder="e.g. 200"
-            value={form.budget} onChange={e => setField('budget', e.target.value)}
-            hint={totalImpr > 0 && days > 0 ? `Suggested for ${matchedScreens.length} screens over ${days} days: ${formatCurrency(budgetMin, profile?.preferred_currency)}–${formatCurrency(budgetMax, profile?.preferred_currency)}` : undefined}
-          />
-
-          {isMulti && (
+          {!houseAdMode && isMulti && (
             <div>
               <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Budget applies to</div>
               <PillGroup
@@ -219,7 +223,7 @@ export function StepBudgetReview({
           {err && <ErrorBanner message={err} onDismiss={() => {}} />}
 
           <Btn onClick={onSubmit} disabled={submitting} style={{ width: '100%', fontSize: 15, padding: '14px 24px', marginTop: 16 }}>
-            {submitting ? 'Submitting…' : 'Submit Campaign →'}
+            {submitting ? 'Submitting…' : houseAdMode ? 'Create House Ad' : 'Submit Campaign →'}
           </Btn>
         </div>
       </Card>
