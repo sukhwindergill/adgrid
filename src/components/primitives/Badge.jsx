@@ -22,7 +22,7 @@ export const Badge = ({ status, children }) => {
       fontFamily: F.sans, background: s.bg, color: s.c, border: `1px solid ${s.b}`,
     }}>
       <Dot status={status} />
-      {children || (status === 'pending_review' ? 'Pending Review' : status === 'partially_approved' ? 'Partially Approved' : status.charAt(0).toUpperCase() + status.slice(1))}
+      {children || (status === 'pending_review' ? 'Pending Review' : status === 'partially_approved' ? 'Partially Approved' : status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown')}
     </span>
   );
 };
