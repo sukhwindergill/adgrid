@@ -11,12 +11,12 @@ export const C = {
   textSub: '#525252',
   textMuted: '#737373',
 
-  cyan: '#00C2FF',
   purple: '#7B2FFF',
   purpleDark: '#6B1FEF',
   purpleSoft: '#f0ebff',
   purpleBorder: '#d4b8ff',
   purpleLight: '#f0ebff',
+  purpleAccentLight: '#B79CFF',
 
   green: '#10b981', greenSoft: '#ecfdf5', greenBorder: '#a7f3d0',
   amber: '#f59e0b', amberSoft: '#fffbeb', amberBorder: '#fde68a',
@@ -24,8 +24,8 @@ export const C = {
   blue: '#3b82f6', blueSoft: '#eff6ff', blueBorder: '#bfdbfe',
 };
 
-// Gradient stops for expo-linear-gradient (matches web grad: cyan → purple)
-export const gradColors = ['#00C2FF', '#7B2FFF'];
+// Gradient stops for expo-linear-gradient (matches web grad: purple-light → purple)
+export const gradColors = ['#B79CFF', '#7B2FFF'];
 export const gradStart = { x: 0, y: 0 };
 export const gradEnd = { x: 1, y: 1 };
 
