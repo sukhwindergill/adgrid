@@ -35,7 +35,7 @@ function DarkInp({ label, type, placeholder, value, onChange, onKeyDown, togglea
             outline: 'none', boxSizing: 'border-box',
             transition: 'border-color 0.15s',
           }}
-          onFocus={e => e.target.style.borderColor = '#00C2FF'}
+          onFocus={e => e.target.style.borderColor = '#7B2FFF'}
           onBlur={e => e.target.style.borderColor = '#1E1E2E'}
         />
         {toggleable && (
@@ -48,7 +48,7 @@ function DarkInp({ label, type, placeholder, value, onChange, onKeyDown, togglea
               background: 'none', border: 'none', cursor: 'pointer', fontSize: 15,
               padding: 4, lineHeight: 1, borderRadius: 4,
             }}
-            onFocus={e => e.target.style.outline = '2px solid #00C2FF'}
+            onFocus={e => e.target.style.outline = '2px solid #7B2FFF'}
             onBlur={e => e.target.style.outline = 'none'}
           >
             <span aria-hidden="true">{visible ? '🙈' : '👁'}</span>
@@ -143,7 +143,7 @@ export function LoginPage() {
       {/* Gradient orbs */}
       <div style={{
         position: 'absolute', width: 500, height: 500, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(0,194,255,0.12) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(123,47,255,0.14) 0%, transparent 70%)',
         top: '-10%', left: '-10%', animation: 'loginOrb1 12s ease-in-out infinite',
         pointerEvents: 'none',
       }} />
@@ -159,7 +159,7 @@ export function LoginPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32, justifyContent: 'center' }}>
           <div style={{
             width: 36, height: 36, borderRadius: 9,
-            background: 'linear-gradient(135deg, #00C2FF, #7B2FFF)',
+            background: 'linear-gradient(135deg, #B79CFF, #7B2FFF)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontWeight: 800, fontSize: 16, color: '#fff',
           }}>A</div>
@@ -257,9 +257,9 @@ export function LoginPage() {
                     style={{
                       flex: 1, padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
                       fontSize: 13, fontWeight: 500, fontFamily: F.sans, textAlign: 'center',
-                      border: `1px solid ${intent === o.id ? '#00C2FF' : '#1E1E2E'}`,
-                      background: intent === o.id ? 'rgba(0,194,255,0.10)' : 'rgba(255,255,255,0.04)',
-                      color: intent === o.id ? '#00C2FF' : '#8A8A9A',
+                      border: `1px solid ${intent === o.id ? '#7B2FFF' : '#1E1E2E'}`,
+                      background: intent === o.id ? 'rgba(123,47,255,0.12)' : 'rgba(255,255,255,0.04)',
+                      color: intent === o.id ? '#7B2FFF' : '#8A8A9A',
                       transition: 'all 0.15s',
                     }}
                   >
@@ -287,7 +287,7 @@ export function LoginPage() {
             disabled={loading}
             style={{
               width: '100%', padding: '12px 20px', borderRadius: 8,
-              background: loading ? '#2a2a3a' : 'linear-gradient(135deg, #00C2FF, #7B2FFF)',
+              background: loading ? '#2a2a3a' : 'linear-gradient(135deg, #B79CFF, #7B2FFF)',
               color: '#fff', border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
               fontSize: 14, fontWeight: 600, fontFamily: F.sans,
               transition: 'opacity 0.15s', opacity: loading ? 0.6 : 1,
@@ -309,7 +309,7 @@ export function LoginPage() {
                 fontSize: 13, fontWeight: 500, fontFamily: F.sans,
                 transition: 'border-color 0.15s, color 0.15s',
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#00C2FF'; e.currentTarget.style.color = '#fff'; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#7B2FFF'; e.currentTarget.style.color = '#fff'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = '#1E1E2E'; e.currentTarget.style.color = '#8A8A9A'; }}
             >
               {demoLoading ? 'Signing in…' : '▶ Try Demo'}
@@ -325,13 +325,13 @@ export function LoginPage() {
                 type="checkbox"
                 checked={tosChecked}
                 onChange={e => setTosChecked(e.target.checked)}
-                style={{ marginTop: 2, accentColor: '#00C2FF', flexShrink: 0 }}
+                style={{ marginTop: 2, accentColor: '#7B2FFF', flexShrink: 0 }}
               />
               <span style={{ fontSize: 12, color: '#8A8A9A', fontFamily: F.sans, lineHeight: 1.5 }}>
                 I agree to the{' '}
-                <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#00C2FF' }}>Terms of Service</a>
+                <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#7B2FFF' }}>Terms of Service</a>
                 {' '}and{' '}
-                <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#00C2FF' }}>Privacy Policy</a>
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#7B2FFF' }}>Privacy Policy</a>
               </span>
             </label>
           )}
@@ -341,7 +341,7 @@ export function LoginPage() {
               {activeMode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
               <span
                 onClick={() => { setMode(activeMode === 'signin' ? 'signup' : 'signin'); setErr(''); setTosChecked(false); }}
-                style={{ color: '#00C2FF', cursor: 'pointer', fontWeight: 500 }}
+                style={{ color: '#7B2FFF', cursor: 'pointer', fontWeight: 500 }}
               >
                 {activeMode === 'signin' ? 'Sign up' : 'Sign in'}
               </span>
@@ -361,7 +361,7 @@ export function LoginPage() {
 
           {activeMode === 'forgot' && (
             <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12, color: '#8A8A9A', fontFamily: F.sans }}>
-              <span onClick={() => { setMode('signin'); setErr(''); }} style={{ color: '#00C2FF', cursor: 'pointer', fontWeight: 500 }}>
+              <span onClick={() => { setMode('signin'); setErr(''); }} style={{ color: '#7B2FFF', cursor: 'pointer', fontWeight: 500 }}>
                 Back to sign in
               </span>
             </div>
