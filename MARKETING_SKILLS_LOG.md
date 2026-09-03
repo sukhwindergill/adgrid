@@ -38,3 +38,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **onboarding**: Added docs/marketing/onboarding.md — principles for ScreenOnboard.jsx and advertiser campaign creation flow; flagged completion-rate-by-step as the metric to own.
 - **paywalls**: Added docs/marketing/paywalls.md — noted low applicability (take-rate marketplace, not subscription SaaS); flagged future tiered-analytics gating as the closest fit.
 - **popups**: Added docs/marketing/popups.md — exit-intent recommendations tied to lead magnets; noted no popup component exists yet.
+- **pricing**: Added docs/marketing/pricing.md — recommended publishing take-rate/fee transparency and city-level pricing benchmarks.
