@@ -97,6 +97,13 @@ Deno.serve(async (req: Request) => {
     scans: 0,
   });
   if (bookingErr) {
+    // The bookings insert failed after the campaigns insert succeeded --
+    // clean up the now-orphaned campaigns row so a failed call never
+    // leaves dangling state behind.
+    const { error: cleanupErr } = await supabase.from("campaigns").delete().eq("id", campaignRow.id);
+    if (cleanupErr) {
+      console.error("Failed to clean up orphaned campaigns row after bookings insert failure:", cleanupErr.message);
+    }
     return new Response(JSON.stringify({ error: bookingErr.message }), { status: 500, headers: CORS });
   }
 
@@ -107,6 +114,19 @@ Deno.serve(async (req: Request) => {
   }));
   const { error: screenErr } = await supabase.from("campaign_screens").insert(screenRows);
   if (screenErr) {
+    // The campaign_screens insert failed after the bookings insert
+    // succeeded -- delete the paid-but-unassigned bookings row (and the
+    // campaigns row it points to) so a failed call never leaves a
+    // paid house-ad booking with zero screens assigned, and a retry
+    // doesn't create a duplicate paid booking.
+    const { error: bookingCleanupErr } = await supabase.from("bookings").delete().eq("id", campaignId);
+    if (bookingCleanupErr) {
+      console.error("Failed to clean up orphaned bookings row after campaign_screens insert failure:", bookingCleanupErr.message);
+    }
+    const { error: campaignCleanupErr } = await supabase.from("campaigns").delete().eq("id", campaignRow.id);
+    if (campaignCleanupErr) {
+      console.error("Failed to clean up orphaned campaigns row after campaign_screens insert failure:", campaignCleanupErr.message);
+    }
     return new Response(JSON.stringify({ error: screenErr.message }), { status: 500, headers: CORS });
   }
 
