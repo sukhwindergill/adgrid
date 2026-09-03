@@ -6,7 +6,7 @@
   --bg: #0A0A0F; --surface: #111118; --surf-el: #16161F; --border: #1E1E2E;
   --white: #FFFFFF; --sec: #8A8A9A; --muted: #55556A;
   --lbg: #fafafa; --lcard: #ffffff; --lborder: #e5e5e5; --ltext: #0a0a0a; --lsub: #525252; --lmuted: #737373;
-  --purple: #7B2FFF; --purple-dark: #6B1FEF; --cyan: #00C2FF;
+  --purple: #7B2FFF; --purple-dark: #6B1FEF; --purple-light: #B79CFF;
   --inter: 'Inter', -apple-system, sans-serif;
   --r: 14px; --r-btn: 8px;
   --maxw: 1160px;
@@ -87,7 +87,7 @@
 .sec.lcard-bg { background: var(--lcard); }
 .sec.dark { background: var(--bg); }
 .eyebrow { font: 600 12px/1 var(--inter); letter-spacing: 0.08em; text-transform: uppercase; color: var(--purple); margin-bottom: 14px; }
-.dark .eyebrow { color: var(--cyan); }
+.dark .eyebrow { color: var(--purple-light); }
 .sec-h { font-weight: 700; font-size: clamp(30px, 4vw, 40px); letter-spacing: -0.02em; line-height: 1.12; color: var(--ltext); }
 .dark .sec-h { color: #fff; }
 .sec-sub { font-size: 17px; line-height: 1.6; color: var(--lsub); max-width: 560px; margin-top: 14px; }
@@ -104,9 +104,9 @@
 }
 .hero .inner { max-width: var(--maxw); margin: 0 auto; position: relative; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; }
 .hero-h { font-weight: 800; font-size: clamp(38px, 4.6vw, 58px); line-height: 1.06; letter-spacing: -0.03em; color: #fff; }
-.hero-h .accent { background: linear-gradient(120deg, var(--cyan), var(--purple)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.hero-h .accent { background: linear-gradient(120deg, var(--purple-light), var(--purple)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .hero-sub { font-size: 17px; line-height: 1.65; color: var(--sec); max-width: 480px; margin: 20px 0 32px; }
-.hero-img-wrap { border-radius: 16px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 24px 64px rgba(0,0,0,.5); will-change: transform; }
+.hero-img-wrap { border-radius: 16px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 24px 64px rgba(5,3,14,.55); will-change: transform; }
 .hero-img { width: 100%; height: auto; display: block; animation: heroZoom 20s ease-in-out infinite alternate; }
 @keyframes heroZoom { from { transform: scale(1); } to { transform: scale(1.06); } }
 .hero-stats { display: flex; gap: 32px; margin-top: 36px; flex-wrap: wrap; }
@@ -299,7 +299,7 @@ select.fi { appearance: none; cursor: pointer; }
 }
 
 .floating-contact-btn:focus-visible {
-  outline: 2px solid #00C2FF;
+  outline: 2px solid #7B2FFF;
   outline-offset: 2px;
 }
 
