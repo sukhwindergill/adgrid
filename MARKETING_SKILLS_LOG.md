@@ -34,3 +34,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **marketing-loops**: Added docs/marketing/marketing-loops.md — operator referral loop, in-venue discovery loop, content/SEO loop.
 - **marketing-plan**: Added docs/marketing/marketing-plan.md — master index linking all docs produced in this pass, strategic priorities, 90-day focus.
 - **marketing-psychology**: Added docs/marketing/marketing-psychology.md — applied psychology principles (loss aversion, social proof, anchoring, reciprocity) mapped to existing copy/product behavior.
+- **offers**: Added docs/marketing/offers.md — operator/advertiser incentive offers, rules against fake scarcity.
