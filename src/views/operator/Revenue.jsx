@@ -37,6 +37,7 @@ export function Revenue({ operatorScreenIds = [] }) {
   const [filteredCampaigns, setFilteredCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [screenCpmFloors, setScreenCpmFloors] = useState([]);
+  const [houseAdImpressions, setHouseAdImpressions] = useState(0);
 
   useEffect(() => {
     if (operatorScreenIds.length === 0) { setScreenCpmFloors([]); return; }
@@ -59,6 +60,31 @@ export function Revenue({ operatorScreenIds = [] }) {
     });
   }, [period, operatorIdsKey]);
 
+  // Real delivery data for the opportunity-cost KPI. bookings.impressions is
+  // never incremented anywhere in this codebase (always inserted as 0), so it
+  // cannot be summed for a real number -- campaign_delivery_daily is the
+  // actual delivery source of truth. An operator is authorized to read this
+  // view for their own house-ad bookings because create-house-ad sets
+  // advertiser_id: <the calling operator> on those bookings, and the view's
+  // RLS predicate allows a caller to see rows for campaigns where they are
+  // that booking's advertiser_id.
+  //
+  // Summed across all available rows for these campaign ids, not further
+  // filtered by day against `period` -- the bookings query above filters on
+  // start_date, not delivery date, and the two don't map cleanly onto each
+  // other (a booking can deliver well after its start_date). Re-deriving a
+  // parallel day-range filter here would be a second, possibly-inconsistent
+  // notion of "period" for no real accuracy gain.
+  const houseAdCampaignIdsKey = filteredCampaigns.filter(c => c.is_house_ad).map(c => c.id).sort().join(',');
+  useEffect(() => {
+    const houseAdIds = houseAdCampaignIdsKey ? houseAdCampaignIdsKey.split(',') : [];
+    if (houseAdIds.length === 0) { setHouseAdImpressions(0); return; }
+    supabase.from('campaign_delivery_daily').select('campaign_id, impressions').in('campaign_id', houseAdIds)
+      .then(({ data }) => {
+        setHouseAdImpressions((data || []).reduce((a, r) => a + (r.impressions || 0), 0));
+      });
+  }, [houseAdCampaignIdsKey]);
+
   if (loading) {
     return (
       <div>
@@ -79,8 +105,6 @@ export function Revenue({ operatorScreenIds = [] }) {
   const avgCpmFloor = screenCpmFloors.length > 0
     ? screenCpmFloors.reduce((a, s) => a + (s.cpm_floor ?? 3.0), 0) / screenCpmFloors.length
     : 3.0;
-  const houseAdCampaigns = filteredCampaigns.filter(c => c.is_house_ad);
-  const houseAdImpressions = houseAdCampaigns.reduce((a, c) => a + (c.impressions || 0), 0);
   const houseAdOpportunityCost = Math.round((houseAdImpressions / 1000) * avgCpmFloor);
   const cities   = [...new Set(filteredCampaigns.map(c => c.city))];
   const maxRev   = Math.max(...cities.map(city => filteredCampaigns.filter(c => c.city === city).reduce((a, c) => a + c.budget, 0)), 1);

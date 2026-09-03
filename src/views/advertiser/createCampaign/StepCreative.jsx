@@ -15,7 +15,7 @@ import { useAdvertiserRecentScreens } from '../../../hooks/useAdvertiserRecentSc
 
 const BLANK_CREATIVE = makeBlankCreative;
 
-export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavailable = false }) {
+export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavailable = false, houseAdMode = false }) {
   const [showFilters, setShowFilters] = useState(false);
   const [screenTab, setScreenTab] = useState('all');
   const { user } = useAuth();
@@ -218,12 +218,14 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
           />
         ))}
 
-        <button type="button" onClick={addCreative} style={{
-          background: 'none', border: `1px dashed ${C.border}`, borderRadius: 10, padding: '12px 16px',
-          fontSize: 13, color: C.purple, cursor: 'pointer', fontFamily: F.sans, width: '100%',
-        }}>
-          + Add another creative
-        </button>
+        {!houseAdMode && (
+          <button type="button" onClick={addCreative} style={{
+            background: 'none', border: `1px dashed ${C.border}`, borderRadius: 10, padding: '12px 16px',
+            fontSize: 13, color: C.purple, cursor: 'pointer', fontFamily: F.sans, width: '100%',
+          }}>
+            + Add another creative
+          </button>
+        )}
       </Card>
     </div>
   );

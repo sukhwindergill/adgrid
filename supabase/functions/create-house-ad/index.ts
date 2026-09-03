@@ -28,8 +28,14 @@ Deno.serve(async (req: Request) => {
   }
 
   const body = await req.json().catch(() => null);
-  if (!body?.screen_ids?.length || !body?.creative?.media_url) {
+  if (!Array.isArray(body?.screen_ids) || !body.screen_ids.length || !body?.creative?.media_url) {
     return new Response(JSON.stringify({ error: "screen_ids and creative.media_url are required" }), { status: 400, headers: CORS });
+  }
+  // An operator plausibly owns at most a few dozen screens -- 100 is
+  // generous headroom while still guarding against a pathological/abusive
+  // request driving an unbounded ownership check and insert.
+  if (body.screen_ids.length > 100) {
+    return new Response(JSON.stringify({ error: "Too many screen_ids (max 100)." }), { status: 400, headers: CORS });
   }
   const { screen_ids, name, creative, schedule } = body;
 
