@@ -11,14 +11,14 @@ export const C = {
   textMuted: '#737373',
 
   // Brand — unified with marketing site
-  cyan:        '#00C2FF',
   purple:      '#7B2FFF',
   purpleDark:  '#6B1FEF',
   purpleSoft:  '#f0ebff',
   purpleBorder:'#d4b8ff',
   purpleLight: '#f0ebff',
-  grad:        'linear-gradient(135deg, #00C2FF 0%, #7B2FFF 100%)',
-  gradSoft:    'linear-gradient(135deg, rgba(0,194,255,0.10) 0%, rgba(123,47,255,0.10) 100%)',
+  purpleAccentLight: '#B79CFF',
+  grad:        'linear-gradient(135deg, #B79CFF 0%, #7B2FFF 100%)',
+  gradSoft:    'linear-gradient(135deg, rgba(123,47,255,0.14) 0%, rgba(123,47,255,0.10) 100%)',
 
   green: '#10b981', greenSoft: '#ecfdf5', greenBorder: '#a7f3d0', greenLight: '#ecfdf5',
   amber: '#f59e0b', amberSoft: '#fffbeb', amberBorder: '#fde68a',
