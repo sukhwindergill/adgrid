@@ -103,10 +103,13 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
   useEffect(() => { reload(); }, [operatorId]);
 
   // Screens already covered by a live listing shouldn't also show an
-  // "available to list" card — bundle member screens beyond the first
-  // aren't tracked here, so this only catches the primary/single-screen case.
+  // "available to list" card — bundle listings carry their full member set
+  // in screen_ids (fetchOperatorListings), single-screen listings fall back
+  // to their one screen_id.
   const listedScreenIds = new Set(
-    listings.filter(l => l.status === 'draft' || l.status === 'active' || l.status === 'booked').map(l => l.screen_id)
+    listings
+      .filter(l => l.status === 'draft' || l.status === 'active' || l.status === 'booked')
+      .flatMap(l => l.is_bundle ? (l.screen_ids ?? [l.screen_id]) : [l.screen_id])
   );
   const availableScreens = (myScreens ?? []).filter(s => !listedScreenIds.has(s.id));
   const screenNameById = new Map((myScreens ?? []).map(s => [s.id, s.name]));
@@ -231,7 +234,11 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
               }}>
                 <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMid }}>
                   {l.is_bundle && <span style={{ color: C.purple, fontWeight: 600 }}>Bundle · </span>}
-                  <span style={{ fontWeight: 600, color: C.text }}>{screenNameById.get(l.screen_id) ?? 'Screen'}</span>
+                  <span style={{ fontWeight: 600, color: C.text }}>
+                    {l.is_bundle
+                      ? (l.screen_ids ?? [l.screen_id]).map(id => screenNameById.get(id) ?? 'Screen').join(', ')
+                      : screenNameById.get(l.screen_id) ?? 'Screen'}
+                  </span>
                   {' · '}${(l.price_cents / 100).toFixed(0)} · {l.start_date} – {l.end_date}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

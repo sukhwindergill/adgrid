@@ -28,11 +28,31 @@ export async function fetchListing(listingId) {
   return data;
 }
 
+// Bundle listings only store their first member screen in screen_id --
+// the rest live in marketplace_listing_screens. Attach the full member set
+// as `screen_ids` on each bundle listing so callers (MarketplaceListingsView)
+// can exclude every bundled screen from "available to list" and show every
+// screen name on the listing row, not just the primary one.
 export async function fetchOperatorListings(operatorId) {
   const { data, error } = await supabase
     .from('marketplace_listings').select('*').eq('operator_id', operatorId).order('created_at', { ascending: false });
   if (error) throw error;
-  return data;
+  const listings = data ?? [];
+
+  const bundleIds = listings.filter(l => l.is_bundle).map(l => l.id);
+  if (bundleIds.length === 0) return listings;
+
+  const { data: memberRows, error: membersErr } = await supabase
+    .from('marketplace_listing_screens').select('listing_id, screen_id').in('listing_id', bundleIds);
+  if (membersErr) throw membersErr;
+
+  const screenIdsByListing = new Map();
+  for (const row of memberRows ?? []) {
+    if (!screenIdsByListing.has(row.listing_id)) screenIdsByListing.set(row.listing_id, []);
+    screenIdsByListing.get(row.listing_id).push(row.screen_id);
+  }
+
+  return listings.map(l => l.is_bundle ? { ...l, screen_ids: screenIdsByListing.get(l.id) ?? [l.screen_id] } : l);
 }
 
 export async function createListing({ screenId, priceCents, startDate, endDate, autoRenew }) {

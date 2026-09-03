@@ -13,14 +13,14 @@ import { KPI } from '../../components/primitives/KPI.jsx';
 import { BrandIcon } from '../../components/shared/BrandIcon.jsx';
 
 const INTEGRATIONS_LIST = [
-  { id: 'meta',      name: 'Meta Conversions API',  logo: '📘', color: '#1877f2', category: 'Advertising', status: 'disconnected', detail: 'Not connected', events: ['Scan → ViewContent', 'Consent → Lead', 'Impression → Custom'] },
-  { id: 'google',    name: 'Google Ads',            logo: '🔵', color: '#4285f4', category: 'Advertising', status: 'disconnected', detail: 'Not connected', events: ['Consent → Customer Match', 'Scan → Offline Conversion'] },
-  { id: 'shopify',   name: 'Shopify',               logo: '🛍️', color: '#96bf48', category: 'E-commerce',  status: 'disconnected', detail: 'Not connected', events: ['Consent → Create Customer', 'Scan → Custom Event'] },
-  { id: 'salesforce',name: 'Salesforce',            logo: '☁️', color: '#00a1e0', category: 'CRM',         status: 'disconnected', detail: 'Not connected', events: ['Consent → Create Lead', 'Scan → Campaign Activity'] },
-  { id: 'hubspot',   name: 'HubSpot',               logo: '🟠', color: '#ff7a59', category: 'CRM',         status: 'disconnected', detail: 'Not connected', events: ['Consent → Create Contact', 'Scan → Custom Event'] },
-  { id: 'klaviyo',   name: 'Klaviyo',               logo: '📧', color: '#00b2a9', category: 'Email',       status: 'disconnected', detail: 'Not connected', events: ['Consent → Add to List', 'Scan → Track Event'] },
-  { id: 'tiktok',    name: 'TikTok Events API',     logo: '🎵', color: '#ff0050', category: 'Advertising', status: 'disconnected', detail: 'Not connected', events: ['Scan → ViewContent', 'Consent → SubmitForm'] },
-  { id: 'webhook',   name: 'Custom Webhook',        logo: '🔗', color: '#7c3aed', category: 'Custom',      status: 'inactive',     detail: 'Not configured', events: ['All scan events', 'All impression events'] },
+  { id: 'meta',      name: 'Meta Conversions API',  color: '#1877f2', category: 'Advertising', status: 'disconnected', detail: 'Not connected', events: ['Scan → ViewContent', 'Consent → Lead', 'Impression → Custom'] },
+  { id: 'google',    name: 'Google Ads',            color: '#4285f4', category: 'Advertising', status: 'disconnected', detail: 'Not connected', events: ['Consent → Customer Match', 'Scan → Offline Conversion'] },
+  { id: 'shopify',   name: 'Shopify',               color: '#96bf48', category: 'E-commerce',  status: 'disconnected', detail: 'Not connected', events: ['Consent → Create Customer', 'Scan → Custom Event'] },
+  { id: 'salesforce',name: 'Salesforce',            color: '#00a1e0', category: 'CRM',         status: 'disconnected', detail: 'Not connected', events: ['Consent → Create Lead', 'Scan → Campaign Activity'] },
+  { id: 'hubspot',   name: 'HubSpot',               color: '#ff7a59', category: 'CRM',         status: 'disconnected', detail: 'Not connected', events: ['Consent → Create Contact', 'Scan → Custom Event'] },
+  { id: 'klaviyo',   name: 'Klaviyo',               color: '#00b2a9', category: 'Email',       status: 'disconnected', detail: 'Not connected', events: ['Consent → Add to List', 'Scan → Track Event'] },
+  { id: 'tiktok',    name: 'TikTok Events API',     color: '#ff0050', category: 'Advertising', status: 'disconnected', detail: 'Not connected', events: ['Scan → ViewContent', 'Consent → SubmitForm'] },
+  { id: 'webhook',   name: 'Custom Webhook',        color: '#7c3aed', category: 'Custom',      status: 'inactive',     detail: 'Not configured', events: ['All scan events', 'All impression events'] },
 ];
 
 
