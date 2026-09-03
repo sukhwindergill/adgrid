@@ -155,29 +155,33 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
         />
       ) : (
         <>
-          <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 10 }}>
-            Available to list
-          </div>
-          {availableScreens.length === 0 ? (
-            <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMuted, marginBottom: 24 }}>
-              Every screen you own already has a live listing.
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginBottom: 24 }}>
-              {availableScreens.map(s => (
-                <Card key={s.id} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div>
-                    <div style={{ fontFamily: F.sans, fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 2 }}>{s.name}</div>
-                    <div style={{ fontFamily: F.sans, fontSize: 12, color: C.textMuted }}>
-                      {[s.neighbourhood, s.city].filter(Boolean).join(', ') || 'No location set'}
-                    </div>
-                  </div>
-                  <Btn variant="secondary" size="sm" onClick={() => setCreatingFor(s.id)}>
-                    List as exclusive
-                  </Btn>
-                </Card>
-              ))}
-            </div>
+          {!bundling && (
+            <>
+              <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 10 }}>
+                Available to list
+              </div>
+              {availableScreens.length === 0 ? (
+                <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMuted, marginBottom: 24 }}>
+                  Every screen you own already has a live listing.
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginBottom: 24 }}>
+                  {availableScreens.map(s => (
+                    <Card key={s.id} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div>
+                        <div style={{ fontFamily: F.sans, fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 2 }}>{s.name}</div>
+                        <div style={{ fontFamily: F.sans, fontSize: 12, color: C.textMuted }}>
+                          {[s.neighbourhood, s.city].filter(Boolean).join(', ') || 'No location set'}
+                        </div>
+                      </div>
+                      <Btn variant="secondary" size="sm" onClick={() => setCreatingFor(s.id)}>
+                        List as exclusive
+                      </Btn>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </>
           )}
 
           {(myScreens ?? []).length >= 2 && (
