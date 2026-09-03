@@ -18,3 +18,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **competitors**: Added docs/marketing/competitors.md — internal comparison talking points (AdGrid vs traditional OOH, vs social ads, vs doing nothing); flagged not to publish named-competitor pages without legal review.
 - **content-strategy**: Added docs/marketing/content-strategy.md — content pillars, cadence, distribution; noted no blog/guides route exists yet in src/views.
 - **copy-editing**: Added docs/marketing/copy-editing.md; verified terminology consistency for the 'no minimums' objection-handler across Hero.jsx/HowItWorks.jsx/SiteSearch.jsx/faqData.js.
+- **copywriting**: Edited src/views/marketing/sections/Hero.jsx hero subhead to add 'no minimums' (was present in FAQ/HowItWorks but missing above the fold); added docs/marketing/copywriting.md with copy principles.
