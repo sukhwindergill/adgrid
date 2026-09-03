@@ -27,3 +27,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **free-tools**: Added docs/marketing/free-tools.md — earnings calculator, cost estimator, fill-rate benchmark tool ideas.
 - **image**: Added docs/marketing/image.md — alt text audit of marketing images (already descriptive), filename convention, OG image sizing gap, image sitemap gap.
 - **influencer-marketing**: Added docs/marketing/influencer-marketing.md — niche micro-influencer fit assessment, deprioritized broad influencer spend.
+- **launch**: Added docs/marketing/launch-plan.md — pre-launch liquidity seeding, launch day checklist, post-launch monitoring, liquidity guardrail.
