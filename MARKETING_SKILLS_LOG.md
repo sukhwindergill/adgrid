@@ -47,3 +47,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **revops**: Added docs/marketing/revops.md — GMV/take-rate revenue model, unified metrics (fill rate, CAC by side), weekly review process.
 - **sales-enablement**: Added docs/marketing/sales-enablement.md — operator/advertiser one-pagers and an objection library seeded from FAQ content.
 - **schema**: Added Organization + Service JSON-LD to index.html and FAQPage JSON-LD (generated from faqData.js) to Faq.jsx; added docs/marketing/schema.md documenting choices and what was deliberately not added (no fabricated ratings).
+- **seo-audit**: Added docs/marketing/seo-audit.md (findings: sitemap needs future city/content URLs, no canonical tag, single-H1 confirmed OK, no blog gap) and added a canonical link tag to index.html.
