@@ -9,3 +9,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **ai-seo**: Added public/llms.txt — AI-answer-optimized summary of AdGrid for LLM assistants/crawlers.
 - **analytics**: Added docs/marketing/analytics.md — funnel events, dashboards, guardrail metrics for both marketplace sides.
 - **aso**: Skipped — no app store presence (AdGrid is a web app, not a native mobile app), so App Store Optimization doesn't apply. (mobile/ dir exists but is not an app-store-distributed app per its README.)
+- **attribution**: Added docs/marketing/attribution.md — attribution model choice, UTM taxonomy, per-side tracking guidance.
