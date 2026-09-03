@@ -207,7 +207,7 @@ export function ScreensView({ dbScreens, loading = false, onSelectScreen, onStar
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, alignItems: 'center', flexWrap: 'wrap' }}>
         <Inp placeholder="Search screens by name, neighbourhood, venue…" value={search}
-          onChange={e => setSearch(e.target.value)} style={{ minWidth: 240, flex: '0 1 320px' }} />
+          onChange={e => setSearch(e.target.value)} style={{ minWidth: 240, width: 320, maxWidth: '100%' }} />
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {cities.map(c => (
             <button key={c} onClick={() => setFilter(c)} style={{

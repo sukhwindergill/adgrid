@@ -89,7 +89,7 @@ export function GrantAccessModal({ onClose, onGranted }) {
         background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20,
         padding: '32px 28px', width: 420, zIndex: 300,
       }}>
-        <h3 style={{ fontSize: 17, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 20px' }}>
+        <h3 style={{ fontSize: 17, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 20px' }}>
           Grant Account Access
         </h3>
 

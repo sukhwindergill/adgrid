@@ -46,10 +46,10 @@ export function ConfirmProvider({ children }) {
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 9997, backdropFilter: 'blur(4px)',
+          zIndex: 9997,
         }}>
           <Card style={{ width: '100%', maxWidth: 380, padding: 28, margin: 20 }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 8 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.display, marginBottom: 8 }}>
               {state.title}
             </div>
             <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 24, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>

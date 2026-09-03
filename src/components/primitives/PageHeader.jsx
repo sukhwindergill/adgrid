@@ -10,7 +10,7 @@ export const PageHeader = ({ title, subtitle, actions, back, onBack }) => (
           color: C.textSub, cursor: 'pointer', fontSize: 13, fontFamily: F.sans, marginBottom: 8, padding: 0,
         }}>← {back}</button>
       )}
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: 0, fontFamily: F.sans }}>{title}</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: 0, fontFamily: F.display }}>{title}</h1>
       {subtitle && <p style={{ fontSize: 13, color: C.textSub, margin: '4px 0 0', fontFamily: F.sans }}>{subtitle}</p>}
     </div>
     {actions && <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>{actions}</div>}

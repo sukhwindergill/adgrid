@@ -148,7 +148,7 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: 0 }}>Screens</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: 0 }}>Screens</h2>
             <div style={{ fontSize: 12, color: C.purple, fontFamily: F.sans, marginTop: 4 }}>
               {form.selected_screen_ids.length} of {matchedScreens.length} selected · ~{(totalImpr / 1000).toFixed(0)}K impressions/mo
             </div>
@@ -197,7 +197,7 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
           </div>
         )}
 
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 16px' }}>Creative{isMulti ? 's' : ''}</h2>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 16px' }}>Creative{isMulti ? 's' : ''}</h2>
 
         {unassigned.length > 0 && (
           <div style={{ marginBottom: 16, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: 12, color: C.amber, fontFamily: F.sans }}>

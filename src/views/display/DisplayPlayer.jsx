@@ -408,9 +408,8 @@ export function DisplayPlayer({ screenToken }) {
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
         padding: '6px 20px',
-        background: 'rgba(0,0,0,0.55)',
+        background: 'rgba(0,0,0,0.8)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-        backdropFilter: 'blur(4px)',
       }}>
         <span style={{ fontSize: 'clamp(9px, 0.9vw, 12px)', color: 'rgba(255,255,255,0.35)', fontFamily: "'Inter', sans-serif" }}>
           AdGrid advertising display. QR code scans are recorded anonymously.

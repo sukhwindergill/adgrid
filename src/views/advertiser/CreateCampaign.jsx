@@ -74,7 +74,7 @@ function StepPay({ campaign, onPay, onSkip, paying, err, requiresAction, onGoToB
   return (
     <div style={{ maxWidth: 580, margin: '0 auto' }}>
       <Card style={{ padding: 32 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 8px' }}>Pay for your campaign</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>Pay for your campaign</h2>
         <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>
           Charge {formatCurrency(campaign.budget, campaign.currency)} to your card on file. Screens won't go live until payment is captured.
         </p>

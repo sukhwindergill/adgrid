@@ -82,7 +82,7 @@ export function InviteAcceptPage() {
   return (
     <div style={page}>
       <div style={card}>
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4, fontFamily: F.sans }}>
+        <h1 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4, fontFamily: F.display }}>
           Set your password
         </h1>
         <p style={{ fontSize: 13, color: '#8A8A9A', marginBottom: 20, fontFamily: F.sans }}>

@@ -41,7 +41,7 @@ export function AccessSettingsView() {
   return (
     <div style={{ maxWidth: 580 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, margin: 0 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.display, margin: 0 }}>
           Who has access to your account
         </h3>
         <button

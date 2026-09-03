@@ -274,7 +274,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
       {activeCampaigns.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           {activeCampaigns.length > 1 && (
-            <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 10 }}>Budget Pacing</h2>
+            <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.display, marginBottom: 10 }}>Budget Pacing</h2>
           )}
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${activeCampaigns.length}, 1fr)`, gap: 16 }}>
             {activeCampaigns.map(c => (
@@ -289,7 +289,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
       {myCampaigns.length > 0 ? (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans }}>Your Campaigns</h2>
+            <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.display }}>Your Campaigns</h2>
             <Btn variant="ghost" size="sm" onClick={() => setAdvNav('adv-campaigns')}>View all →</Btn>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

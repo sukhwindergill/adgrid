@@ -75,7 +75,7 @@ export function NotificationPrefsView() {
   return (
     <div style={{ maxWidth: 600 }}>
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans }}>Notification Preferences</h2>
+        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display }}>Notification Preferences</h2>
         <p style={{ margin: '6px 0 0', fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Choose how you want to be notified for each event.</p>
       </div>
 

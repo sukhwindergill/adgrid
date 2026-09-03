@@ -71,7 +71,7 @@ export function CampaignReport() {
       <div style={{ fontSize: 11, letterSpacing: 3, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', marginBottom: 8 }}>
         ADGRID CAMPAIGN REPORT
       </div>
-      <h1 style={{ fontSize: 28, fontWeight: 700, color: C.text, fontFamily: F.sans, margin: '0 0 4px' }}>{campaign.name}</h1>
+      <h1 style={{ fontSize: 28, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>{campaign.name}</h1>
       <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 28 }}>
         {campaign.category ? `${campaign.category} · ` : ''}{campaign.start_date} → {campaign.end_date}
       </div>

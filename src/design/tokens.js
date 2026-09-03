@@ -27,13 +27,16 @@ export const C = {
 };
 
 export const F = {
-  sans: "'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif",
+  // Body/UI text — a real system sans, not a display font stretched over paragraphs.
+  sans: "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Helvetica, Arial, sans-serif",
+  // Headings, KPI numbers, display text only.
+  display: "'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif",
   mono: "'JetBrains Mono', 'SF Mono', 'Fira Code', monospace",
 };
 
+// Opaque surface (design system bans blur/backdrop-filter — no glassmorphism).
 export const glass = {
-  background: 'rgba(255,255,255,0.85)',
-  backdropFilter: 'blur(20px)',
-  WebkitBackdropFilter: 'blur(20px)',
-  border: '1px solid rgba(255,255,255,0.6)',
+  background: '#ffffff',
+  border: '1px solid #e5e5e5',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
 };
