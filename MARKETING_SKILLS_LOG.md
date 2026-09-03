@@ -32,3 +32,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **marketing-council**: Added docs/marketing/marketing-council.md — cross-doc coherence review of this pass's outputs and flagged gaps (no blog route, pricing model undefined).
 - **marketing-ideas**: Added docs/marketing/marketing-ideas.md — prioritized brainstorm list with explicit deprioritizations.
 - **marketing-loops**: Added docs/marketing/marketing-loops.md — operator referral loop, in-venue discovery loop, content/SEO loop.
+- **marketing-plan**: Added docs/marketing/marketing-plan.md — master index linking all docs produced in this pass, strategic priorities, 90-day focus.
