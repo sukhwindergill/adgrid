@@ -21,3 +21,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **copywriting**: Edited src/views/marketing/sections/Hero.jsx hero subhead to add 'no minimums' (was present in FAQ/HowItWorks but missing above the fold); added docs/marketing/copywriting.md with copy principles.
 - **cro**: Added docs/marketing/cro-audit.md — homepage/funnel findings (objection visibility, competing CTAs, social proof gap) and next tests to queue.
 - **customer-research**: Added docs/marketing/customer-research.md — research questions per marketplace side, methods, and an insights log to populate.
+- **directory-submissions**: Added docs/marketing/directory-submissions.md — target directories and a submission tracking table.
