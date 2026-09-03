@@ -25,7 +25,7 @@ export function Hero({ onScrollTo, onOperatorSignup }) {
           </h1>
           <p className="hero-sub">
             The self-serve marketplace where Canadian screen operators sell ad time and
-            local advertisers buy it. Real-time pricing, full control on both sides.
+            local advertisers buy it. Real-time pricing, no minimums, full control on both sides.
           </p>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
             <button className="btn-p" onClick={onOperatorSignup}>List your screens</button>

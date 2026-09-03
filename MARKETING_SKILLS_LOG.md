@@ -14,3 +14,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **co-marketing**: Added docs/marketing/co-marketing.md — partner candidates (POS/booking software, BIAs, agencies) and co-marketing formats.
 - **cold-email**: Added docs/marketing/cold-email-templates.md — operator prospecting cold email templates and sequencing rules.
 - **community-marketing**: Added docs/marketing/community-marketing.md — community channels and participation guardrails.
+- **competitor-profiling**: Added docs/marketing/competitor-profiling.md — direct/indirect competitor landscape and a profiling template.
