@@ -5,7 +5,7 @@ import { F } from '../../design/tokens.js';
 import { getCreativeRenderPlan } from '../../lib/getCreativeRenderPlan.js';
 import { clampQrCenter, clampQrSizePct } from '../../lib/creativeQrPosition.js';
 
-const FONT_STACKS = { sans: F.sans, serif: 'Georgia, serif', mono: F.mono };
+const FONT_STACKS = { sans: F.display, serif: 'Georgia, serif', mono: F.mono };
 const fontFor = (creativeFont) => FONT_STACKS[creativeFont] || FONT_STACKS.serif;
 
 function BottomBarBody({ headline, cta, bg, category, headlineFont }) {
