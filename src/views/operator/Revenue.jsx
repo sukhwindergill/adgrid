@@ -36,6 +36,13 @@ export function Revenue({ operatorScreenIds = [] }) {
   const operatorIdsKey = [...operatorCampaignIds].sort().join(',');
   const [filteredCampaigns, setFilteredCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [screenCpmFloors, setScreenCpmFloors] = useState([]);
+
+  useEffect(() => {
+    if (operatorScreenIds.length === 0) { setScreenCpmFloors([]); return; }
+    supabase.from('screens').select('id, cpm_floor').in('id', operatorScreenIds)
+      .then(({ data }) => setScreenCpmFloors(data || []));
+  }, [operatorScreenIds.join(',')]);
 
   useEffect(() => {
     if (operatorCampaignIds.size === 0) { setFilteredCampaigns([]); setLoading(false); return; }
@@ -60,8 +67,21 @@ export function Revenue({ operatorScreenIds = [] }) {
       </div>
     );
   }
-  const total    = filteredCampaigns.reduce((a, c) => a + c.budget, 0);
+  const total    = filteredCampaigns.filter(c => !c.is_house_ad).reduce((a, c) => a + c.budget, 0);
   const { platform, owner: owners, pool: network } = computeRevenueSplit(total, ownerRevenueShare);
+
+  // Opportunity cost: what house-ad play time would have earned at this
+  // operator's screens' normal CPM floor, had it been sold instead of
+  // given away. Uses the average cpm_floor across the operator's screens
+  // as a single estimate -- a house-ad booking can span multiple screens
+  // and bookings.impressions is not tracked per-screen, so this is
+  // presented as an estimate, matching the design spec.
+  const avgCpmFloor = screenCpmFloors.length > 0
+    ? screenCpmFloors.reduce((a, s) => a + (s.cpm_floor ?? 3.0), 0) / screenCpmFloors.length
+    : 3.0;
+  const houseAdCampaigns = filteredCampaigns.filter(c => c.is_house_ad);
+  const houseAdImpressions = houseAdCampaigns.reduce((a, c) => a + (c.impressions || 0), 0);
+  const houseAdOpportunityCost = Math.round((houseAdImpressions / 1000) * avgCpmFloor);
   const cities   = [...new Set(filteredCampaigns.map(c => c.city))];
   const maxRev   = Math.max(...cities.map(city => filteredCampaigns.filter(c => c.city === city).reduce((a, c) => a + c.budget, 0)), 1);
 
@@ -85,11 +105,12 @@ export function Revenue({ operatorScreenIds = [] }) {
             <Btn variant="secondary" size="sm">↓ Export Report</Btn>
           </div>
         } />
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(5,1fr)', gap: 14, marginBottom: 24 }}>
         <KPI label="Total Ad Spend"   value={`$${total.toLocaleString()}`}    sub="from advertisers" trend={spendTrend} trendLabel="vs prior 30 days" icon="💰" />
         <KPI label="Platform Revenue" value={`$${platform.toLocaleString()}`} sub="12% fee" color={C.blue} icon="$" />
         <KPI label="Owner Payouts"    value={`$${owners.toLocaleString()}`}   sub={`${ownerPct}% of net`} color={C.green} icon="🏦" />
         <KPI label="Network Pool"     value={`$${network.toLocaleString()}`}  sub="reinvestment" icon="♻" />
+        <KPI label="Given Up to House Ads" value={`$${houseAdOpportunityCost.toLocaleString()}`} sub="estimated, at CPM floor" color={C.textSub} icon="📺" />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <Card>
