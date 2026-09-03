@@ -15,7 +15,7 @@ Worth a 2-minute look? [signup link]
 
 [Sender name]
 
-## Template 2 — No screen yet (advertiser-side prospecting into operator conversion isn't relevant here; this is pure operator prospecting)
+## Template 2 — No screen yet
 **Subject**: turn your window/counter screen into a second income line
 
 Hi [First Name],
