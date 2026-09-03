@@ -11,3 +11,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **aso**: Skipped — no app store presence (AdGrid is a web app, not a native mobile app), so App Store Optimization doesn't apply. (mobile/ dir exists but is not an app-store-distributed app per its README.)
 - **attribution**: Added docs/marketing/attribution.md — attribution model choice, UTM taxonomy, per-side tracking guidance.
 - **churn-prevention**: Added docs/marketing/churn-prevention.md — operator churn leading indicators and interventions (fill rate, payout cadence, dashboard inactivity).
+- **co-marketing**: Added docs/marketing/co-marketing.md — partner candidates (POS/booking software, BIAs, agencies) and co-marketing formats.
