@@ -22,3 +22,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **cro**: Added docs/marketing/cro-audit.md — homepage/funnel findings (objection visibility, competing CTAs, social proof gap) and next tests to queue.
 - **customer-research**: Added docs/marketing/customer-research.md — research questions per marketplace side, methods, and an insights log to populate.
 - **directory-submissions**: Added docs/marketing/directory-submissions.md — target directories and a submission tracking table.
+- **emails**: Added docs/marketing/emails.md — lifecycle email templates for both marketplace sides, tied to analytics events.
