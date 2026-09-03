@@ -30,3 +30,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **launch**: Added docs/marketing/launch-plan.md — pre-launch liquidity seeding, launch day checklist, post-launch monitoring, liquidity guardrail.
 - **lead-magnets**: Added docs/marketing/lead-magnets.md — gated/ungated lead magnet ideas per marketplace side.
 - **marketing-council**: Added docs/marketing/marketing-council.md — cross-doc coherence review of this pass's outputs and flagged gaps (no blog route, pricing model undefined).
+- **marketing-ideas**: Added docs/marketing/marketing-ideas.md — prioritized brainstorm list with explicit deprioritizations.
