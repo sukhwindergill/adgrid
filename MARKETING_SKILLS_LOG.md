@@ -51,3 +51,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **signup**: Added docs/marketing/signup.md — friction-reduction recommendations for operator/advertiser signup, metric to own (field-level abandonment).
 - **site-architecture**: Added docs/marketing/site-architecture.md — current route inventory, recommended new routes (/screens/:city, /blog, /pricing), IA principle, robots.txt alignment note.
 - **sms**: Skipped — no SMS/text-messaging feature exists anywhere in the codebase (verified via grep across src/); noted as N/A rather than fabricating one.
+- **social**: Added docs/marketing/social.md — channel priorities, content types reusing existing FAQ/map assets, UTM rule.
