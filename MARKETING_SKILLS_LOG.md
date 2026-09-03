@@ -50,3 +50,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **seo-audit**: Added docs/marketing/seo-audit.md (findings: sitemap needs future city/content URLs, no canonical tag, single-H1 confirmed OK, no blog gap) and added a canonical link tag to index.html.
 - **signup**: Added docs/marketing/signup.md — friction-reduction recommendations for operator/advertiser signup, metric to own (field-level abandonment).
 - **site-architecture**: Added docs/marketing/site-architecture.md — current route inventory, recommended new routes (/screens/:city, /blog, /pricing), IA principle, robots.txt alignment note.
+- **sms**: Skipped — no SMS/text-messaging feature exists anywhere in the codebase (verified via grep across src/); noted as N/A rather than fabricating one.
