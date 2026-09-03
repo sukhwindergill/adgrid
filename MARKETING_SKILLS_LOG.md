@@ -45,3 +45,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **public-relations**: Added docs/marketing/public-relations.md — press angles, press kit checklist, outreach targets, press log.
 - **referrals**: Added docs/marketing/referrals.md — operator-first referral mechanics tied to first-payout trigger moment.
 - **revops**: Added docs/marketing/revops.md — GMV/take-rate revenue model, unified metrics (fill rate, CAC by side), weekly review process.
+- **sales-enablement**: Added docs/marketing/sales-enablement.md — operator/advertiser one-pagers and an objection library seeded from FAQ content.
