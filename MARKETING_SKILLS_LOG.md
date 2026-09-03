@@ -7,3 +7,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **ad-creative**: Added docs/marketing/ad-creative.md — creative direction/headlines for operator- and advertiser-side acquisition campaigns.
 - **ads**: Added docs/marketing/ads.md — paid search/social campaign structure, budget guardrail tied to marketplace liquidity, UTM convention.
 - **ai-seo**: Added public/llms.txt — AI-answer-optimized summary of AdGrid for LLM assistants/crawlers.
+- **analytics**: Added docs/marketing/analytics.md — funnel events, dashboards, guardrail metrics for both marketplace sides.
