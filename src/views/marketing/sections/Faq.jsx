@@ -26,8 +26,19 @@ export function Faq() {
     return () => window.removeEventListener('adgrid:faq-open', onFaqOpen);
   }, []);
 
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQS.map(([q, a]) => ({
+      '@type': 'Question',
+      name: q,
+      acceptedAnswer: { '@type': 'Answer', text: a },
+    })),
+  };
+
   return (
     <section className="sec light" id="faq" ref={ref}>
+      <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
       <div className={`inner rv ${on ? 'on' : ''}`} style={{ maxWidth: 760 }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div className="eyebrow">FAQ</div>
