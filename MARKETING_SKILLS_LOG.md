@@ -52,3 +52,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **site-architecture**: Added docs/marketing/site-architecture.md — current route inventory, recommended new routes (/screens/:city, /blog, /pricing), IA principle, robots.txt alignment note.
 - **sms**: Skipped — no SMS/text-messaging feature exists anywhere in the codebase (verified via grep across src/); noted as N/A rather than fabricating one.
 - **social**: Added docs/marketing/social.md — channel priorities, content types reusing existing FAQ/map assets, UTM rule.
+- **video**: Added docs/marketing/video.md — recommended explainer/testimonial videos and placement; noted no video assets/component exist yet, no code change made.
