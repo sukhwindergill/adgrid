@@ -49,3 +49,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **schema**: Added Organization + Service JSON-LD to index.html and FAQPage JSON-LD (generated from faqData.js) to Faq.jsx; added docs/marketing/schema.md documenting choices and what was deliberately not added (no fabricated ratings).
 - **seo-audit**: Added docs/marketing/seo-audit.md (findings: sitemap needs future city/content URLs, no canonical tag, single-H1 confirmed OK, no blog gap) and added a canonical link tag to index.html.
 - **signup**: Added docs/marketing/signup.md — friction-reduction recommendations for operator/advertiser signup, metric to own (field-level abandonment).
+- **site-architecture**: Added docs/marketing/site-architecture.md — current route inventory, recommended new routes (/screens/:city, /blog, /pricing), IA principle, robots.txt alignment note.
