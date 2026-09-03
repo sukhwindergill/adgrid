@@ -13,3 +13,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **churn-prevention**: Added docs/marketing/churn-prevention.md — operator churn leading indicators and interventions (fill rate, payout cadence, dashboard inactivity).
 - **co-marketing**: Added docs/marketing/co-marketing.md — partner candidates (POS/booking software, BIAs, agencies) and co-marketing formats.
 - **cold-email**: Added docs/marketing/cold-email-templates.md — operator prospecting cold email templates and sequencing rules.
+- **community-marketing**: Added docs/marketing/community-marketing.md — community channels and participation guardrails.
