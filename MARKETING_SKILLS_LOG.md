@@ -28,3 +28,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **image**: Added docs/marketing/image.md — alt text audit of marketing images (already descriptive), filename convention, OG image sizing gap, image sitemap gap.
 - **influencer-marketing**: Added docs/marketing/influencer-marketing.md — niche micro-influencer fit assessment, deprioritized broad influencer spend.
 - **launch**: Added docs/marketing/launch-plan.md — pre-launch liquidity seeding, launch day checklist, post-launch monitoring, liquidity guardrail.
+- **lead-magnets**: Added docs/marketing/lead-magnets.md — gated/ungated lead magnet ideas per marketplace side.
