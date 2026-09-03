@@ -111,7 +111,7 @@ function StepPay({ campaign, onPay, onSkip, paying, err, requiresAction, onGoToB
 
 // ─── Main Wizard ─────────────────────────────────────────────────────────────
 
-export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoading = false, campaigns = [], existingCampaign = null, presetScreenIds = null, duplicateFrom = null, resumeDraftId = null }) {
+export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoading = false, campaigns = [], existingCampaign = null, presetScreenIds = null, duplicateFrom = null, resumeDraftId = null, houseAdMode = false }) {
   const { user, profile, activeAccount } = useAuth();
   const navigate = useNavigate();
   const isDelegate = activeAccount && !activeAccount.isOwn;
@@ -337,14 +337,16 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
   }, [duplicateFrom]);
 
   const handleSubmit = async () => {
-    const budgetValue = parseFloat(form.budget);
-    if (!form.budget || budgetValue <= 0) {
-      setSubmitErr('Enter a budget greater than 0 before submitting.');
-      return;
-    }
-    if (budgetValue > 1000000) {
-      setSubmitErr('Budget cannot exceed $1,000,000.');
-      return;
+    if (!houseAdMode) {
+      const budgetValue = parseFloat(form.budget);
+      if (!form.budget || budgetValue <= 0) {
+        setSubmitErr('Enter a budget greater than 0 before submitting.');
+        return;
+      }
+      if (budgetValue > 1000000) {
+        setSubmitErr('Budget cannot exceed $1,000,000.');
+        return;
+      }
     }
     setSubmitting(true);
     setSubmitErr(null);
@@ -360,6 +362,60 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
       const primary = creatives[0] ?? {};
       const isMulti = creatives.length > 1;
       const preview = buildPreviewCampaign(primary);
+
+      if (houseAdMode) {
+        const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-house-ad`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${(await supabase.auth.getSession()).data.session.access_token}` },
+          body: JSON.stringify({
+            screen_ids: form.selected_screen_ids,
+            name: form.name || null,
+            creative: {
+              media_url: primary.media_url || null,
+              media_type: primary.media_type || null,
+              media_width: primary.media_width ?? null,
+              media_height: primary.media_height ?? null,
+              headline: preview.headline ?? null,
+              cta_text: preview.cta ?? null,
+              destination_url: preview.destination_url?.trim() ? normalizeDestinationUrl(preview.destination_url) : null,
+              accent_color: preview.accent_color || null,
+              category: preview.category || null,
+              qr_x: preview.qr_x ?? null,
+              qr_y: preview.qr_y ?? null,
+              qr_size_pct: preview.qr_size_pct ?? null,
+              qr_fg_color: preview.qr_fg_color ?? null,
+              qr_bg_color: preview.qr_bg_color ?? null,
+            },
+            schedule: {
+              start_date: form.start_date || null,
+              end_date: form.end_date || null,
+              schedule_days: form.schedule_days,
+              time_start: form.time_start,
+              time_end: form.time_end,
+              dayparting: form.dayparting,
+              duration: parseInt(form.duration, 10) || 15,
+              slots: parseInt(form.slots, 10) || 10,
+            },
+          }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || 'Failed to create house ad');
+        }
+        const { campaign_id } = await res.json();
+        setSubmitting(false);
+        if (isFreshDraftFlow && user && draftIdRef.current) deleteDraft(user.id, draftIdRef.current);
+        // House ads are paid=true at creation (Task 4) -- there is no pay
+        // step to route through, unlike a real advertiser campaign.
+        onSave({
+          id: campaign_id,
+          advertiser: profile?.name || 'House Ad',
+          screen: dbScreens.find(s => s.id === form.selected_screen_ids[0])?.name || '',
+          status: 'scheduled',
+          is_house_ad: true,
+        });
+        return;
+      }
 
       // When adding a targeting group to an existing campaign, reuse its id
       // as the parent instead of inserting a brand-new `campaigns` row.
@@ -688,7 +744,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
 
       {step === 0 && <StepTargeting form={form} setForm={setForm} reachSummary={reachSummary} matchedScreenCount={matchedScreens.length} allScreens={dbScreens} screensLoading={screensLoading} onPrevCampaigns={campaigns.length > 0 ? () => setShowDupModal(true) : null} existingCampaign={existingCampaign} pastCampaignIds={campaigns.map(c => c.id)} />}
       {step === 1 && <StepCreative form={form} setForm={setForm} matchedScreens={matchedScreens} presetScreenUnavailable={presetScreenUnavailable} />}
-      {step === 2 && <StepBudgetReview form={form} setForm={setForm} matchedScreens={selectedScreens} profile={profile} onSubmit={handleSubmit} submitting={submitting} err={submitErr} canChooseBilling={canChooseBilling} billedTo={billedTo} setBilledTo={setBilledTo} />}
+      {step === 2 && <StepBudgetReview form={form} setForm={setForm} matchedScreens={selectedScreens} profile={profile} onSubmit={handleSubmit} submitting={submitting} err={submitErr} canChooseBilling={canChooseBilling} billedTo={billedTo} setBilledTo={setBilledTo} houseAdMode={houseAdMode} />}
       {step === 3 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} requiresAction={requiresAction} onGoToBilling={() => navigate('/app/adv-billing')} />}
 
       {step < 3 && (
