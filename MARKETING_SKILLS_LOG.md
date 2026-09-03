@@ -43,3 +43,4 @@ Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Ca
 - **programmatic-seo**: Added docs/marketing/programmatic-seo.md — scoped /screens/[city] template using existing Supabase screens table and react-leaflet map; flagged as a follow-up engineering ticket, no routes exist yet.
 - **prospecting**: Added docs/marketing/prospecting.md — ideal operator profile, sourcing lists, qualification signal, batching cadence.
 - **public-relations**: Added docs/marketing/public-relations.md — press angles, press kit checklist, outreach targets, press log.
+- **referrals**: Added docs/marketing/referrals.md — operator-first referral mechanics tied to first-payout trigger moment.
