@@ -1,0 +1,6 @@
+# Marketing Skills Pass — Run Log
+
+Applying all 50 skills from the `marketing-skills` plugin to the AdGrid repo (Canadian self-serve OOH/digital-screen ad marketplace, two-sided: screen operators + advertisers). One bullet per skill.
+
+- **ab-testing**: Added `docs/marketing/ab-testing.md` — experiment backlog with ICE-scored hypotheses for the operator listing funnel and advertiser checkout funnel, plus a documentation template.
+
