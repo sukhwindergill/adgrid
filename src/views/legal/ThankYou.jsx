@@ -30,7 +30,7 @@ const btn = {
 
 export function ThankYou() {
   usePageMeta({
-    title: 'Thank You — AdGrid',
+    title: 'Thank You | AdGrid',
     description: "You're on the AdGrid waitlist. We'll be in touch as we onboard operators and advertisers in your city.",
   });
 

@@ -16,7 +16,7 @@ const p = { fontSize: 15, lineHeight: 1.7, margin: '0 0 12px' };
 
 export function TermsOfService() {
   usePageMeta({
-    title: 'Terms of Service — AdGrid',
+    title: 'Terms of Service | AdGrid',
     description: "The terms governing use of AdGrid's digital out-of-home advertising marketplace.",
   });
   return (

@@ -13,8 +13,8 @@ describe('usePageMeta', () => {
   });
 
   it('sets document.title', () => {
-    renderHook(() => usePageMeta({ title: 'Thank You — AdGrid', description: 'desc' }));
-    expect(document.title).toBe('Thank You — AdGrid');
+    renderHook(() => usePageMeta({ title: 'Thank You | AdGrid', description: 'desc' }));
+    expect(document.title).toBe('Thank You | AdGrid');
   });
 
   it('creates description, og:title, og:description, twitter:title, twitter:description meta tags when none exist', () => {

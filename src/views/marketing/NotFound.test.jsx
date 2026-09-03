@@ -12,6 +12,6 @@ describe('NotFound', () => {
 
   it('sets a distinct page title', () => {
     render(<MemoryRouter><NotFound /></MemoryRouter>);
-    expect(document.title).toBe('Page Not Found — AdGrid');
+    expect(document.title).toBe('Page Not Found | AdGrid');
   });
 });
