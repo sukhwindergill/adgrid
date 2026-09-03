@@ -10,6 +10,7 @@ import { Inp } from '../../components/primitives/Inp.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
+import { BrandIcon } from '../../components/shared/BrandIcon.jsx';
 
 const INTEGRATIONS_LIST = [
   { id: 'meta',      name: 'Meta Conversions API',  logo: '📘', color: '#1877f2', category: 'Advertising', status: 'disconnected', detail: 'Not connected', events: ['Scan → ViewContent', 'Consent → Lead', 'Impression → Custom'] },
@@ -50,7 +51,7 @@ export function IntegrationsView() {
               <Card key={intg.id} onClick={() => setSelected(intg)} style={{ cursor: 'pointer', border: selected?.id === intg.id ? `1px solid ${C.purple}` : undefined, padding: '16px 18px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 24 }}>{intg.logo}</span>
+                    <BrandIcon id={intg.id} size={16} />
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans }}>{intg.name}</div>
                       <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>{intg.category}</div>
@@ -66,7 +67,7 @@ export function IntegrationsView() {
           {selected ? (
             <Card style={{ position: 'sticky', top: 80 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                <span style={{ fontSize: 28 }}>{selected.logo}</span>
+                <BrandIcon id={selected.id} size={18} />
                 <div>
                   <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.sans }}>{selected.name}</div>
                   <Badge status={selected.status === 'connected' ? 'active' : selected.status === 'error' ? 'failed' : 'paused'}>{selected.status}</Badge>

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { C, F, SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
 import { useBreakpoint } from "../../lib/useBreakpoint.js";
+import { BrandIcon } from "../../components/shared/BrandIcon.jsx";
 
 // ─── Platform definitions ───────────────────────────────────────────────────
 
@@ -9,7 +10,6 @@ const PLATFORMS = [
   {
     id: "meta",
     name: "Meta Conversions API",
-    logo: "📘",
     description: "Send scan events as ViewContent conversions to your Meta Pixel via server-side CAPI.",
     fields: [
       { key: "pixel_id", label: "Pixel ID", placeholder: "123456789012345", type: "text" },
@@ -21,7 +21,6 @@ const PLATFORMS = [
   {
     id: "google",
     name: "Google Ads",
-    logo: "🔵",
     description: "Import scan conversions into Google Ads for attribution and ROAS measurement.",
     fields: [
       { key: "conversion_id", label: "Conversion ID", placeholder: "AW-000000000", type: "text" },
@@ -36,7 +35,6 @@ const PLATFORMS = [
   {
     id: "shopify",
     name: "Shopify",
-    logo: "🛍️",
     description: "POST scan events to your Shopify store via webhook for customer journey tracking.",
     fields: [
       { key: "webhook_url", label: "Webhook URL", placeholder: "https://yourstore.myshopify.com/webhooks/adgrid", type: "text" },
@@ -144,7 +142,7 @@ function ConnectModal({ platform, existing, onClose, onSaved }) {
         boxShadow: "0 20px 60px rgba(0,0,0,0.15)", maxHeight: "90vh", overflowY: "auto",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-          <span style={{ fontSize: 28 }}>{platform.logo}</span>
+          <BrandIcon id={platform.id} size={16} />
           <div>
             <div style={{ fontSize: 17, fontWeight: 700, color: C.text, fontFamily: F.sans }}>
               Connect {platform.name}
@@ -238,7 +236,7 @@ function PlatformCard({ platform, integration, eventCount, onConnect, onDisconne
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 32 }}>{platform.logo}</span>
+          <BrandIcon id={platform.id} size={18} />
           <div>
             <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.sans }}>
               {platform.name}
@@ -428,7 +426,10 @@ export default function AdvIntegrationsView() {
                     borderBottom: i < events.length - 1 ? `1px solid ${C.border}` : "none",
                   }}>
                     <td style={{ padding: "12px 16px", fontSize: 13, color: C.text, fontFamily: F.sans, fontWeight: 500 }}>
-                      {PLATFORMS.find(p => p.id === e.platform)?.logo ?? "•"} {PLATFORMS.find(p => p.id === e.platform)?.name ?? e.platform}
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <BrandIcon id={e.platform} size={12} />
+                        {PLATFORMS.find(p => p.id === e.platform)?.name ?? e.platform}
+                      </div>
                     </td>
                     <td style={{ padding: "12px 16px", fontSize: 13, color: C.textMid, fontFamily: F.sans }}>{e.event_type}</td>
                     <td style={{ padding: "12px 16px", fontSize: 11, color: C.textSub, fontFamily: F.mono }}>
