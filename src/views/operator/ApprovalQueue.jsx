@@ -13,7 +13,7 @@ import { ReadabilityPanel } from '../../components/shared/ReadabilityPanel.jsx';
 import { useConfirm } from '../../components/primitives/ConfirmModal.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
-import { IconBolt } from '../../components/icons.jsx';
+import { IconBolt, IconWarning } from '../../components/icons.jsx';
 import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
 
 const REJECT_REASONS = [
@@ -314,7 +314,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <div style={{ flex: 1, minWidth: 120 }}>
                         <div style={{ fontSize: 12, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{screen?.name || row.screen_id}</div>
-                        {health && <span style={{ fontSize: 10, color: health.color, fontFamily: F.sans }}>⚠ {health.label}</span>}
+                        {health && <span style={{ fontSize: 10, color: health.color, fontFamily: F.sans, display: 'inline-flex', alignItems: 'center', gap: 3 }}><IconWarning size={10} /> {health.label}</span>}
                       </div>
                       <Btn size="sm" onClick={() => approveScreen(row.screen_id)} disabled={acting}>✓ Approve</Btn>
                       <Btn variant="danger" size="sm" onClick={() => setRejectScreenId(row.screen_id)} disabled={acting}>✗ Reject</Btn>
@@ -329,7 +329,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
                               <div style={{ width: 6, height: 6, borderRadius: '50%', background: cr.accent_color || C.purple, flexShrink: 0 }} />
                               <span>{cr.label || cr.headline || 'Untitled creative'} · {cr.weight}%</span>
                               {check?.status === 'mismatch' && (
-                                <span style={{ color: C.amber }}>⚠ {check.reasons.map(r => REASON_LABEL[r] ?? r).join(', ')}</span>
+                                <span style={{ color: C.amber, display: 'inline-flex', alignItems: 'center', gap: 3 }}><IconWarning size={10} /> {check.reasons.map(r => REASON_LABEL[r] ?? r).join(', ')}</span>
                               )}
                             </div>
                           );
@@ -338,8 +338,8 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
                     )}
 
                     {screenCreatives.length === 0 && fitChecks[0]?.status === 'mismatch' && (
-                      <span style={{ fontSize: 10, color: C.amber, fontFamily: F.sans, paddingLeft: 4 }}>
-                        ⚠ Creative may not fit ({fitChecks[0].reasons.map(r => REASON_LABEL[r] ?? r).join(', ')})
+                      <span style={{ fontSize: 10, color: C.amber, fontFamily: F.sans, paddingLeft: 4, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                        <IconWarning size={10} /> Creative may not fit ({fitChecks[0].reasons.map(r => REASON_LABEL[r] ?? r).join(', ')})
                       </span>
                     )}
                   </div>
@@ -352,8 +352,8 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
               </Btn>
             )}
             {actionErr && (
-              <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, marginTop: 8 }}>
-                ⚠ {actionErr}
+              <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, marginTop: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+                <IconWarning size={12} /> {actionErr}
               </div>
             )}
           </div>
@@ -662,11 +662,14 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
       />
 
       {bulkErrors.length > 0 && (
-        <div style={{ padding: '10px 14px', marginBottom: 16, background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`, borderRadius: 8, fontSize: 12, color: C.red, fontFamily: F.sans, lineHeight: 1.6 }}>
-          <strong>⚠ {bulkErrors.length} approval{bulkErrors.length !== 1 ? 's' : ''} failed</strong> — still pending, nothing was charged for these. Click "Approve all pending" again to retry.
+        <div style={{ display: 'flex', gap: 8, padding: '10px 14px', marginBottom: 16, background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`, borderRadius: 8, fontSize: 12, color: C.red, fontFamily: F.sans, lineHeight: 1.6 }}>
+          <span style={{ flexShrink: 0 }}><IconWarning size={14} /></span>
+          <span>
+          <strong>{bulkErrors.length} approval{bulkErrors.length !== 1 ? 's' : ''} failed</strong> — still pending, nothing was charged for these. Click "Approve all pending" again to retry.
           <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
             {bulkErrors.map(f => <li key={f.id}>{f.name}: {f.message}</li>)}
           </ul>
+          </span>
         </div>
       )}
 
