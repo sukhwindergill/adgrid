@@ -6,7 +6,6 @@ import { Badge } from '../../components/primitives/Badge.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { CopyButton } from '../../components/primitives/CopyButton.jsx';
-import { Inp } from '../../components/primitives/Inp.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
@@ -29,10 +28,7 @@ export function IntegrationsView() {
   const { user } = useAuth();
   const pixelId = user ? `AG-${user.id.replace(/-/g, '').slice(0, 8).toUpperCase()}` : 'AG-XXXXXXXX';
   const [selected, setSelected] = useState(null);
-  const [saved, setSaved]       = useState('');
   const [tab, setTab]           = useState('integrations');
-
-  const save = (id) => { setSaved(id); setTimeout(() => setSaved(''), 2000); };
 
   return (
     <div>
@@ -74,7 +70,7 @@ export function IntegrationsView() {
                   <Badge status={selected.status === 'connected' ? 'active' : selected.status === 'error' ? 'failed' : 'paused'}>{selected.status}</Badge>
                 </div>
               </div>
-              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.7, marginBottom: 12 }}>Events sent by ADGRID:</div>
+              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.7, marginBottom: 12 }}>Events ADGRID would send:</div>
               {selected.events.map((e, i) => (
                 <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
                   <div style={{ width: 5, height: 5, borderRadius: '50%', background: C.purple, flexShrink: 0 }} />
@@ -82,21 +78,15 @@ export function IntegrationsView() {
                 </div>
               ))}
               <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 14, paddingTop: 14 }}>
-                {(['meta', 'shopify', 'webhook'].includes(selected.id)) && (
-                  <>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 10 }}>Configuration</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-                      <Inp label={selected.id === 'meta' ? 'Pixel ID' : selected.id === 'shopify' ? 'Shop Domain' : 'Webhook URL'} placeholder="••••" />
-                      <Inp label={selected.id === 'meta' ? 'Access Token' : selected.id === 'shopify' ? 'Admin API Key' : 'Signing Secret'} type="password" placeholder="••••••••••••" />
-                    </div>
-                  </>
-                )}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Btn style={{ flex: 1, justifyContent: 'center' }} onClick={() => save(selected.id)}>
-                    {saved === selected.id ? '✓ Saved' : selected.status === 'connected' ? 'Update Config' : 'Connect'}
-                  </Btn>
-                  {selected.status === 'connected' && <Btn variant="danger" size="sm">Disconnect</Btn>}
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '10px 12px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, marginBottom: 12 }}>
+                  <span style={{ flexShrink: 0, marginTop: 1 }}><IconWarning size={14} /></span>
+                  <span style={{ fontSize: 12, color: C.amber, fontFamily: F.sans, lineHeight: 1.5 }}>
+                    Operator-side integrations aren't available yet — this panel is a preview of what's coming. Advertisers can already connect Meta, Google Ads, and Shopify from their own Integrations page.
+                  </span>
                 </div>
+                <Btn style={{ width: '100%', justifyContent: 'center' }} disabled>
+                  Coming soon
+                </Btn>
               </div>
             </Card>
           ) : (
