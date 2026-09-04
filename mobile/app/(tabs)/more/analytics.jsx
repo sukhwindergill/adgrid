@@ -58,7 +58,7 @@ export default function AnalyticsScreen() {
             <Card>
               <Text style={[{ fontFamily: F.sansSemi, fontSize: 15, color: C.text, marginBottom: 8 }]}>About Impressions</Text>
               <Text style={[{ fontFamily: F.sans, fontSize: 13, color: C.textSub, lineHeight: 20 }]}>
-                Impressions are counted each time your screen completes a full ad display cycle. Data updates in real time as your screens serve ads.
+                Impressions are measured by your screen's camera, counting real people who looked at the display — not just ad plays. Only screens with the camera add-on report a number here.
               </Text>
             </Card>
           </>

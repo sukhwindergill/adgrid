@@ -47,6 +47,7 @@ export default function MoreScreen() {
         <View style={styles.menu}>
           {MENU_ITEMS.map((item, idx) => (
             <TouchableOpacity key={item.route} onPress={() => router.push(item.route)}
+              accessibilityRole="button" accessibilityLabel={item.label}
               style={[styles.menuItem, idx < MENU_ITEMS.length - 1 && { borderBottomWidth: 1, borderBottomColor: C.border }]}>
               <Text style={styles.menuIcon}>{item.icon}</Text>
               <Text style={[styles.menuLabel, { fontFamily: F.sansMed }]}>{item.label}</Text>
@@ -54,7 +55,7 @@ export default function MoreScreen() {
             </TouchableOpacity>
           ))}
         </View>
-        <TouchableOpacity onPress={handleSignOut} style={styles.signOut}>
+        <TouchableOpacity onPress={handleSignOut} accessibilityRole="button" accessibilityLabel="Sign out" style={styles.signOut}>
           <Text style={[styles.signOutText, { fontFamily: F.sansMed }]}>Sign out</Text>
         </TouchableOpacity>
       </ScrollView>
