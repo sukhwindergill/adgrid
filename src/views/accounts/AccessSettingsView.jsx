@@ -5,9 +5,9 @@ import { C, F } from '../../design/tokens.js'
 import { GrantAccessModal } from './GrantAccessModal.jsx'
 
 const ROLE_COLORS = {
-  admin:   { bg: 'rgba(124,58,237,0.1)', color: '#7c3aed' },
-  manager: { bg: 'rgba(37,99,235,0.1)',  color: '#2563eb' },
-  viewer:  { bg: 'rgba(107,114,128,0.1)', color: '#6b7280' },
+  admin:   { bg: C.purpleSoft, color: C.purple },
+  manager: { bg: C.blueSoft,   color: C.blue },
+  viewer:  { bg: C.surfaceAlt, color: C.textMuted },
 }
 
 export function AccessSettingsView() {
@@ -34,7 +34,7 @@ export function AccessSettingsView() {
     setGrants(prev => prev.filter(g => g.id !== grantId))
   }
 
-  const statusColor = { pending: '#f59e0b', active: C.green, revoked: C.red }
+  const statusColor = { pending: C.amber, active: C.green, revoked: C.red }
 
   if (loading) return <p style={{ fontFamily: F.sans, fontSize: 13, color: C.textSub }}>Loading…</p>
 
@@ -46,7 +46,9 @@ export function AccessSettingsView() {
         </h3>
         <button
           onClick={() => setShowModal(true)}
-          style={{ padding: '8px 16px', borderRadius: 8, background: C.blue, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
+          style={{ padding: '8px 16px', borderRadius: 8, background: C.purple, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 13, fontWeight: 500, cursor: 'pointer', transition: 'opacity 0.15s' }}
+          onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
+          onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
         >
           Grant Access
         </button>
@@ -74,7 +76,9 @@ export function AccessSettingsView() {
               <span style={{ fontSize: 11, color: statusColor[g.status] ?? C.textMuted, fontFamily: F.sans, fontWeight: 500 }}>{g.status}</span>
               <button
                 onClick={() => revoke(g.id)}
-                style={{ padding: '4px 10px', borderRadius: 6, background: 'transparent', border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 12, color: C.red, cursor: 'pointer' }}
+                style={{ padding: '4px 10px', borderRadius: 6, background: 'transparent', border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 12, color: C.red, cursor: 'pointer', transition: 'background 0.15s' }}
+                onMouseEnter={e => { e.currentTarget.style.background = C.redSoft; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
               >
                 Revoke
               </button>

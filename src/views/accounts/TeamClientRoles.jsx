@@ -79,10 +79,12 @@ export function TeamClientRoles() {
             onClick={() => selectMember(m)}
             style={{
               display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px',
-              borderRadius: 8, border: `1px solid ${selected?.id === m.id ? C.blue : C.border}`,
-              background: selected?.id === m.id ? 'rgba(37,99,235,0.06)' : 'transparent',
-              marginBottom: 6, cursor: 'pointer', fontFamily: F.sans,
+              borderRadius: 8, border: `1px solid ${selected?.id === m.id ? C.purple : C.border}`,
+              background: selected?.id === m.id ? C.purpleSoft : 'transparent',
+              marginBottom: 6, cursor: 'pointer', fontFamily: F.sans, transition: 'background 0.15s',
             }}
+            onMouseEnter={e => { if (selected?.id !== m.id) e.currentTarget.style.background = C.surfaceAlt; }}
+            onMouseLeave={e => { if (selected?.id !== m.id) e.currentTarget.style.background = 'transparent'; }}
           >
             <div style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{m.user_profile?.name || m.user_profile?.email}</div>
             <div style={{ fontSize: 11, color: C.textMuted }}>{m.role}</div>
@@ -117,7 +119,9 @@ export function TeamClientRoles() {
                     value={current?.role ?? 'none'}
                     onChange={e => setRole(g.account_id, e.target.value)}
                     disabled={saving}
-                    style={{ padding: '5px 8px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.sans, fontSize: 12, color: C.text, background: C.surface }}
+                    style={{ padding: '5px 8px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.sans, fontSize: 12, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
+                    onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
                   >
                     <option value="none">No access</option>
                     <option value="viewer">Viewer</option>

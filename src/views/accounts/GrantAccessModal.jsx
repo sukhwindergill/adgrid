@@ -98,7 +98,10 @@ export function GrantAccessModal({ onClose, onGranted }) {
             <p style={{ fontSize: 14, color: C.green, fontFamily: F.sans, margin: '0 0 20px' }}>
               ✓ Invite sent to {email}
             </p>
-            <button onClick={() => { onClose(); onGranted?.() }} style={{ padding: '9px 22px', borderRadius: 8, background: C.blue, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 13, cursor: 'pointer' }}>
+            <button onClick={() => { onClose(); onGranted?.() }} style={{ padding: '9px 22px', borderRadius: 8, background: C.purple, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 13, cursor: 'pointer', transition: 'opacity 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+            >
               Done
             </button>
           </>
@@ -113,7 +116,9 @@ export function GrantAccessModal({ onClose, onGranted }) {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="agency@example.com"
-                style={{ width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.15s' }}
+                onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+                onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
               />
             </div>
 
@@ -124,7 +129,9 @@ export function GrantAccessModal({ onClose, onGranted }) {
               <select
                 value={role}
                 onChange={e => setRole(e.target.value)}
-                style={{ width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface }}
+                style={{ width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
+                onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+                onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
               >
                 <option value="viewer">Viewer — read only</option>
                 <option value="manager">Manager — create &amp; edit campaigns</option>
@@ -135,10 +142,16 @@ export function GrantAccessModal({ onClose, onGranted }) {
             {error && <p style={{ fontSize: 13, color: C.red, fontFamily: F.sans, margin: '0 0 12px' }}>{error}</p>}
 
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={onClose} style={{ flex: 1, padding: '9px', borderRadius: 8, background: 'transparent', border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 13, cursor: 'pointer', color: C.textSub }}>
+              <button onClick={onClose} style={{ flex: 1, padding: '9px', borderRadius: 8, background: 'transparent', border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 13, cursor: 'pointer', color: C.textSub, transition: 'background 0.15s' }}
+                onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+              >
                 Cancel
               </button>
-              <button onClick={submit} disabled={saving} style={{ flex: 1, padding: '9px', borderRadius: 8, background: C.blue, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
+              <button onClick={submit} disabled={saving} style={{ flex: 1, padding: '9px', borderRadius: 8, background: C.purple, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, transition: 'opacity 0.15s' }}
+                onMouseEnter={e => { if (!saving) e.currentTarget.style.opacity = '0.9'; }}
+                onMouseLeave={e => { if (!saving) e.currentTarget.style.opacity = '1'; }}
+              >
                 {saving ? 'Sending…' : 'Send Invite'}
               </button>
             </div>
