@@ -7,6 +7,7 @@ import { ErrorBanner } from '../../../components/primitives/ErrorBanner.jsx';
 import { PillGroup } from './PillGroup.jsx';
 import { formatCurrency } from '../../../lib/formatCurrency.js';
 import { syncDaypartingDays } from '../../../lib/dayparting.js';
+import { IconWarning } from '../../../components/icons.jsx';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -104,14 +105,16 @@ export function StepBudgetReview({
           )}
 
           {tooLow && (
-            <div style={{ padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: 12, color: C.amber, fontFamily: F.sans }}>
-              ⚠ Budget may be too low to run consistently across all selected screens. Consider increasing your budget or reducing screen count.
+            <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: 12, color: C.amber, fontFamily: F.sans }}>
+              <span style={{ flexShrink: 0 }}><IconWarning size={14} /></span>
+              <span>Budget may be too low to run consistently across all selected screens. Consider increasing your budget or reducing screen count.</span>
             </div>
           )}
 
           {overCapScreens.length > 0 && (
-            <div style={{ padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: 12, color: C.amber, fontFamily: F.sans }}>
-              ⚠ {overCapScreens.length} of {matchedScreens.length} selected screens cap ad duration below {form.duration}s — your ad will play shorter there: {overCapScreens.slice(0, 3).map(s => s.name).join(', ')}{overCapScreens.length > 3 ? ` and ${overCapScreens.length - 3} more` : ''}.
+            <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: 12, color: C.amber, fontFamily: F.sans }}>
+              <span style={{ flexShrink: 0 }}><IconWarning size={14} /></span>
+              <span>{overCapScreens.length} of {matchedScreens.length} selected screens cap ad duration below {form.duration}s — your ad will play shorter there: {overCapScreens.slice(0, 3).map(s => s.name).join(', ')}{overCapScreens.length > 3 ? ` and ${overCapScreens.length - 3} more` : ''}.</span>
             </div>
           )}
 

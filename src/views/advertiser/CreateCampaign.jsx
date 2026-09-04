@@ -82,9 +82,9 @@ function StepPay({ campaign, onPay, onSkip, paying, err, requiresAction, onGoToB
         {requiresAction ? (
           <div style={{
             padding: '14px 16px', borderRadius: 10, marginBottom: 16,
-            background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.3)',
+            background: C.amberSoft, border: `1px solid ${C.amberBorder}`,
           }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#fbbf24', fontFamily: F.sans, marginBottom: 4 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.amber, fontFamily: F.sans, marginBottom: 4 }}>
               Card authentication required
             </div>
             <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>
@@ -687,17 +687,17 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
       {noBilling && (
         <div style={{
           maxWidth: 620, margin: '0 auto 16px',
-          background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.35)',
+          background: C.amberSoft, border: `1px solid ${C.amberBorder}`,
           borderRadius: 10, padding: '12px 16px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
         }}>
-          <span style={{ fontSize: 13, color: '#fbbf24', fontFamily: F.sans }}>
+          <span style={{ fontSize: 13, color: C.amber, fontFamily: F.sans }}>
             Add a payment method before submitting — your campaign won't go live without one.
           </span>
-          <a href="#" onClick={e => { e.preventDefault(); navigate('/app/adv-billing'); }} style={{
-            fontSize: 12, fontWeight: 600, color: '#fbbf24', fontFamily: F.sans,
-            textDecoration: 'underline', whiteSpace: 'nowrap',
-          }}>Set up billing →</a>
+          <button type="button" onClick={() => navigate('/app/adv-billing')} style={{
+            fontSize: 12, fontWeight: 600, color: C.amber, fontFamily: F.sans, background: 'none', border: 'none', cursor: 'pointer',
+            textDecoration: 'underline', whiteSpace: 'nowrap', padding: 0,
+          }}>Set up billing →</button>
         </div>
       )}
       {step < 3 && resumedDraft && (

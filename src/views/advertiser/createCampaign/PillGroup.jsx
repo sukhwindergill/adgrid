@@ -22,7 +22,10 @@ export function PillGroup({ options, value, onChange, multi = false }) {
             background: active ? C.purpleSoft : C.surface,
             color: active ? C.purple : C.textSub,
             fontSize: 12, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
-          }}>{l}</button>
+          }}
+            onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
+            onMouseLeave={e => { if (!active) e.currentTarget.style.background = C.surface; }}
+          >{l}</button>
         );
       })}
     </div>
