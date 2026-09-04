@@ -48,7 +48,18 @@ export default function ScreenDetailScreen() {
       </SafeAreaView>
     );
   }
-  if (!screen) return null;
+  if (!screen) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+        <View style={{ padding: 20 }}>
+          <Btn variant="ghost" onPress={() => router.back()} style={styles.back}>← Back</Btn>
+          <Text style={[{ fontFamily: F.sans, color: C.textSub, fontSize: 14, marginTop: 12 }]}>
+            Couldn't load this screen. It may have been removed, or you may not have access to it.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   async function copyToken() {
     if (!token) return;
