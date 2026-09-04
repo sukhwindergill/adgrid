@@ -13,7 +13,7 @@ const REJECT_REASONS = [
   'Other',
 ];
 
-export function ApprovalCard({ row, onApprove, onReject }) {
+export function ApprovalCard({ row, onApprove, onReject, ownerRevenueShare }) {
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState(REJECT_REASONS[0]);
   const [acting, setActing] = useState(false);
@@ -21,7 +21,7 @@ export function ApprovalCard({ row, onApprove, onReject }) {
   const creative = row.campaign?.media_url
     ? { url: row.campaign.media_url, headline: row.campaign.headline }
     : null;
-  const estimatedRevenue = ((row.campaign?.budget || 0) * SCREEN_OWNER_SHARE).toFixed(2);
+  const estimatedRevenue = ((row.campaign?.budget || 0) * (ownerRevenueShare ?? SCREEN_OWNER_SHARE)).toFixed(2);
 
   async function handleApprove() {
     setActing(true);

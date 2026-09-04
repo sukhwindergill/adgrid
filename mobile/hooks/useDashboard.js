@@ -7,7 +7,8 @@ function isLive(screen) {
   return (Date.now() - new Date(screen.last_seen).getTime()) / 60000 <= 5;
 }
 
-export function useDashboard(operatorId) {
+export function useDashboard(operatorId, ownerRevenueShare) {
+  const revShare = ownerRevenueShare ?? SCREEN_OWNER_SHARE;
   const [data, setData] = useState({ totalScreens: 0, liveScreens: 0, pendingApprovals: 0, revenueThisMonth: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -34,14 +35,14 @@ export function useDashboard(operatorId) {
         if (campaignIds.length > 0) {
           const { data: bookings } = await supabase
             .from('bookings').select('budget').in('id', campaignIds);
-          revenueThisMonth = (bookings || []).reduce((sum, b) => sum + (b.budget || 0) * SCREEN_OWNER_SHARE, 0);
+          revenueThisMonth = (bookings || []).reduce((sum, b) => sum + (b.budget || 0) * revShare, 0);
         }
       }
       setData({ totalScreens: screens?.length || 0, liveScreens, pendingApprovals, revenueThisMonth });
       setLoading(false);
     }
     load();
-  }, [operatorId]);
+  }, [operatorId, revShare]);
 
   return { ...data, loading };
 }

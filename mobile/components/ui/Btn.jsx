@@ -16,8 +16,11 @@ export function Btn({ children, variant = 'primary', size = 'md', onPress, disab
 
   const inner = (
     <TouchableOpacity
-      onPress={disabled || loading ? undefined : onPress}
-      activeOpacity={disabled ? 1 : 0.75}
+      onPress={onPress}
+      disabled={disabled || loading}
+      activeOpacity={disabled || loading ? 1 : 0.75}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
       style={[
         styles.base,
         {

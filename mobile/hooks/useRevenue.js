@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { SCREEN_OWNER_SHARE } from '@adgrid/core';
 
-export function useRevenue(operatorId, screenIds, periodDays) {
+export function useRevenue(operatorId, screenIds, periodDays, ownerRevenueShare) {
+  const revShare = ownerRevenueShare ?? SCREEN_OWNER_SHARE;
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,6 +28,6 @@ export function useRevenue(operatorId, screenIds, periodDays) {
     load();
   }, [operatorId, JSON.stringify(screenIds), periodDays]);
 
-  const totalRevenue = campaigns.reduce((sum, c) => sum + (c.campaign?.budget || 0) * SCREEN_OWNER_SHARE, 0);
+  const totalRevenue = campaigns.reduce((sum, c) => sum + (c.campaign?.budget || 0) * revShare, 0);
   return { campaigns, loading, totalRevenue };
 }

@@ -36,6 +36,7 @@ export default function ApprovalsScreen() {
                 row={item}
                 onApprove={() => approve(item.id, item.campaign_id, item.campaign?.start_when)}
                 onReject={(reason) => reject(item.id, reason)}
+                ownerRevenueShare={profile?.owner_revenue_share}
               />
             )}
             showsVerticalScrollIndicator={false}
