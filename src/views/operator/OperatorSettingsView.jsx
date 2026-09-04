@@ -22,7 +22,10 @@ function TabBtn({ label, active, onClick }) {
       background: active ? C.purple : 'transparent',
       color: active ? '#fff' : C.textSub,
       transition: 'all 0.15s',
-    }}>{label}</button>
+    }}
+      onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
+      onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
+    >{label}</button>
   );
 }
 
@@ -49,18 +52,41 @@ function SettingsInput({ value, onChange, type = 'text', readOnly, placeholder }
         width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`,
         borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text,
         background: readOnly ? C.bg : C.surface, boxSizing: 'border-box',
+        outline: 'none', transition: 'border-color 0.15s',
       }}
+      onFocus={e => { if (!readOnly) e.currentTarget.style.borderColor = C.purple; }}
+      onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
     />
   );
 }
 
 function SaveBtn({ onClick, saving, label = 'Save Changes' }) {
   return (
-    <button onClick={onClick} disabled={saving} style={{
-      padding: '9px 22px', borderRadius: 8, background: C.purple, color: '#fff',
-      border: 'none', cursor: saving ? 'not-allowed' : 'pointer',
-      fontFamily: F.sans, fontSize: 13, fontWeight: 500, opacity: saving ? 0.7 : 1,
-    }}>{saving ? 'Saving…' : label}</button>
+    <Btn onClick={onClick} loading={saving}>{label}</Btn>
+  );
+}
+
+// Accessible toggle switch — real button with role="switch" and keyboard
+// support, not just a styled div's onClick (which a keyboard user can't
+// reach or operate).
+function Toggle({ checked, onChange }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      style={{
+        width: 44, height: 24, borderRadius: 12, flexShrink: 0, border: 'none', padding: 0, cursor: 'pointer',
+        background: checked ? C.purple : C.border, position: 'relative', transition: 'background 0.2s',
+      }}
+    >
+      <span style={{
+        position: 'absolute', top: 3, left: checked ? 23 : 3,
+        width: 18, height: 18, borderRadius: '50%', background: '#fff',
+        transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+      }} />
+    </button>
   );
 }
 
@@ -107,7 +133,9 @@ export function ProfileTab({ profile, onSaved }) {
         <select
           value={timezone}
           onChange={e => setTimezone(e.target.value)}
-          style={{ width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface }}
+          style={{ width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
+          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
         >
           {TIMEZONES.map(tz => <option key={tz}>{tz}</option>)}
         </select>
@@ -278,8 +306,11 @@ export function ReviewTab({ profile, setNav }) {
           <button onClick={() => setNav('rules')} style={{
             padding: '6px 14px', borderRadius: 6, border: `1px solid ${C.purple}`,
             background: 'transparent', color: C.purple, fontSize: 12, fontWeight: 600,
-            cursor: 'pointer', whiteSpace: 'nowrap',
-          }}>Open Alerts & Rules →</button>
+            cursor: 'pointer', whiteSpace: 'nowrap', transition: 'background 0.15s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = C.purpleSoft; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+          >Open Alerts & Rules →</button>
         </div>
       )}
 
@@ -287,24 +318,12 @@ export function ReviewTab({ profile, setNav }) {
         <SettingsInput type="number" value={slaHours} onChange={e => setSlaHours(e.target.value)} />
       </Field>
 
-      <div
-        onClick={() => setPolicy(p => ({ ...p, enabled: !p.enabled }))}
-        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderTop: `1px solid ${C.border}`, cursor: 'pointer' }}
-      >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderTop: `1px solid ${C.border}` }}>
         <div>
           <div style={{ fontSize: 14, fontWeight: 500, color: C.text }}>Auto-approve matching campaigns</div>
           <div style={{ fontSize: 12, color: C.textSub, marginTop: 2 }}>Skip manual review for work you already trust</div>
         </div>
-        <div style={{
-          width: 44, height: 24, borderRadius: 12, flexShrink: 0,
-          background: policy.enabled ? C.purple : C.border, position: 'relative', transition: 'background 0.2s',
-        }}>
-          <div style={{
-            position: 'absolute', top: 3, left: policy.enabled ? 23 : 3,
-            width: 18, height: 18, borderRadius: '50%', background: '#fff',
-            transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-          }} />
-        </div>
+        <Toggle checked={policy.enabled} onChange={() => setPolicy(p => ({ ...p, enabled: !p.enabled }))} />
       </div>
 
       {policy.enabled && (
@@ -325,8 +344,11 @@ export function ReviewTab({ profile, setNav }) {
                     border: `1px solid ${active ? C.purple : C.border}`,
                     background: active ? C.purple : 'transparent',
                     color: active ? '#fff' : C.textSub,
-                    fontSize: 12, fontFamily: F.sans,
-                  }}>{cat}</button>
+                    fontSize: 12, fontFamily: F.sans, transition: 'background 0.15s',
+                  }}
+                    onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
+                    onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
+                  >{cat}</button>
                 );
               })}
             </div>
@@ -396,20 +418,7 @@ function NotificationsTab({ profile }) {
             <div style={{ fontSize: 14, fontWeight: 500, color: C.text }}>{item.label}</div>
             <div style={{ fontSize: 12, color: C.textSub, marginTop: 2 }}>{item.desc}</div>
           </div>
-          <div
-            onClick={() => setPrefs(p => ({ ...p, [item.key]: !p[item.key] }))}
-            style={{
-              width: 44, height: 24, borderRadius: 12, cursor: 'pointer',
-              background: prefs[item.key] ? C.purple : C.border,
-              position: 'relative', transition: 'background 0.2s', flexShrink: 0,
-            }}
-          >
-            <div style={{
-              position: 'absolute', top: 3, left: prefs[item.key] ? 23 : 3,
-              width: 18, height: 18, borderRadius: '50%', background: '#fff',
-              transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-            }} />
-          </div>
+          <Toggle checked={prefs[item.key]} onChange={() => setPrefs(p => ({ ...p, [item.key]: !p[item.key] }))} />
         </div>
       ))}
       <div style={{ marginTop: 20, display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -481,9 +490,7 @@ function TeamTab({ profile }) {
                 background: m.role === 'admin' ? C.purpleLight : C.bg,
                 color: m.role === 'admin' ? C.purple : C.textSub, textTransform: 'capitalize',
               }}>{m.role}</span>
-              <button onClick={() => removeMember(m.id)} style={{
-                border: 'none', background: 'none', cursor: 'pointer', color: C.red, fontSize: 13, padding: '4px 8px',
-              }}>Remove</button>
+              <Btn variant="ghost" size="sm" onClick={() => removeMember(m.id)} style={{ color: C.red }}>Remove</Btn>
             </div>
           ))}
         </div>
@@ -496,12 +503,16 @@ function TeamTab({ profile }) {
             placeholder="colleague@company.com"
             value={inviteEmail}
             onChange={e => setInviteEmail(e.target.value)}
-            style={{ flex: 1, padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text }}
+            style={{ flex: 1, padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, outline: 'none', transition: 'border-color 0.15s' }}
+            onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+            onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
           />
           <select
             value={inviteRole}
             onChange={e => setInviteRole(e.target.value)}
-            style={{ padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface }}
+            style={{ padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
+            onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+            onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
           >
             <option value="viewer">Viewer — read only</option>
             <option value="manager">Manager — create &amp; edit campaigns</option>
@@ -509,10 +520,7 @@ function TeamTab({ profile }) {
           </select>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={invite} style={{
-            padding: '9px 22px', borderRadius: 8, background: C.purple, color: '#fff',
-            border: 'none', cursor: 'pointer', fontFamily: F.sans, fontSize: 13, fontWeight: 500,
-          }}>Send Invite</button>
+          <Btn onClick={invite}>Send Invite</Btn>
           {msg && <span style={{ fontSize: 13, color: msg.startsWith('Error') ? C.red : C.green }}>{msg}</span>}
         </div>
       </div>
