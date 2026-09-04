@@ -15,6 +15,12 @@ export default function PhotosScreen() {
   const [uploading, setUploading] = useState(false);
 
   async function pickImage() {
+    // takePhoto below explicitly checks camera permission and shows an
+    // Alert on denial -- this didn't, so a previously-denied Photos
+    // permission was a silent dead end: tap Library, nothing visibly
+    // happens, no explanation. Same explicit check/Alert for parity.
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') { Alert.alert('Permission needed', 'Photo library access is required.'); return; }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [16, 9], quality: 0.8 });
     if (!result.canceled && result.assets[0]) {
       update({ photos: [...form.photos, result.assets[0].uri].slice(0, 3) });
@@ -36,7 +42,15 @@ export default function PhotosScreen() {
     const uploaded = [];
     let failedCount = 0;
     for (const uri of form.photos) {
-      const ext = uri.split('.').pop() || 'jpg';
+      // uri.split('.').pop() breaks for Android content:// URIs with no dot
+      // anywhere in them (e.g. content://media/external/images/media/12345)
+      // -- .pop() then returns the whole tail as "ext", producing a garbage
+      // storage path and an invalid `image/<that>` Content-Type header,
+      // which some clients will refuse to render as an image at all. Only
+      // trust a short alpha extension actually at the end of the string;
+      // fall back to jpg (ImagePicker's default output format) otherwise.
+      const extMatch = /\.([a-zA-Z0-9]{2,4})$/.exec(uri.split('?')[0]);
+      const ext = extMatch ? extMatch[1].toLowerCase() : 'jpg';
       const path = `screens/${form.screenId}/${Date.now()}.${ext}`;
       const response = await fetch(uri);
       const blob = await response.blob();
