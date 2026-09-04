@@ -13,6 +13,7 @@ import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS, STATE_
 import { ScreenLocationPicker } from '../../components/ScreenLocationPicker.jsx';
 import { checkAndGoLive } from '../../lib/screenGoLive.js';
 import { ScreenPhotoManager } from '../../components/screens/ScreenPhotoManager.jsx';
+import { IconBolt, IconDollar } from '../../components/icons.jsx';
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
@@ -68,14 +69,16 @@ function StepWelcome({ onNext }) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 36 }}>
           {[
             { icon: '📺', text: 'Works on any display — TV, monitor, or commercial screen' },
-            { icon: '⚡', text: '5 minutes to set up' },
-            { icon: '💰', text: 'Start earning from day one' },
-          ].map(({ icon, text }) => (
+            { icon: IconBolt, text: '5 minutes to set up' },
+            { icon: IconDollar, text: 'Start earning from day one' },
+          ].map(({ icon: Icon, text }) => (
             <div key={text} style={{
               padding: '16px 12px', background: C.surfaceAlt, borderRadius: 10,
               fontSize: 12, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5,
             }}>
-              <div style={{ fontSize: 24, marginBottom: 8 }}>{icon}</div>
+              <div style={{ fontSize: 24, marginBottom: 8, display: 'flex', justifyContent: 'center', color: C.purple }}>
+                {typeof Icon === 'string' ? Icon : <Icon size={24} />}
+              </div>
               {text}
             </div>
           ))}

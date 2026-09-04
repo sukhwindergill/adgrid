@@ -11,6 +11,7 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { BrandIcon } from '../../components/shared/BrandIcon.jsx';
+import { IconWarning } from '../../components/icons.jsx';
 
 const INTEGRATIONS_LIST = [
   { id: 'meta',      name: 'Meta Conversions API',  color: '#1877f2', category: 'Advertising', status: 'disconnected', detail: 'Not connected', events: ['Scan → ViewContent', 'Consent → Lead', 'Impression → Custom'] },
@@ -38,7 +39,7 @@ export function IntegrationsView() {
       <PageHeader title="Integrations" subtitle="Connect ADGRID scan and impression data to your existing tools" />
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
         <KPI label="Connected"  value={INTEGRATIONS_LIST.filter(i => i.status === 'connected').length + ''} sub="integrations" color={C.green} icon="✓" />
-        <KPI label="Errors"     value={INTEGRATIONS_LIST.filter(i => i.status === 'error').length + ''}     sub="need attention" color={C.red} icon="⚠" />
+        <KPI label="Errors"     value={INTEGRATIONS_LIST.filter(i => i.status === 'error').length + ''}     sub="need attention" color={C.red} icon={<IconWarning size={16} />} />
         <KPI label="Available"  value={INTEGRATIONS_LIST.length + ''}                                       sub="platforms" />
       </div>
 

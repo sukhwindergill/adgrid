@@ -1,3 +1,5 @@
+import { IconChat } from '../icons.jsx';
+
 export function FloatingContactButton({ onClick }) {
   return (
     <button
@@ -5,7 +7,7 @@ export function FloatingContactButton({ onClick }) {
       className="floating-contact-btn"
       onClick={onClick}
     >
-      <span aria-hidden="true">💬</span> Contact us
+      <IconChat size={16} /> Contact us
     </button>
   );
 }

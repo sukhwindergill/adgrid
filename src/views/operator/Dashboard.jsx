@@ -17,6 +17,7 @@ import { MoneySummaryCard } from '../../components/shared/MoneySummaryCard.jsx';
 import { DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
 import { useOperatorCampaignIds } from '../../hooks/useOperatorCampaignIds.js';
 import { normalizeBooking } from '../../lib/normalizeBooking.js';
+import { IconDollar, IconClipboard, IconQr, IconWarning, IconScreen } from '../../components/icons.jsx';
 
 // B14 fix: nothing previously told an operator their payouts weren't set
 // up — money was captured from advertisers but the transfer to the
@@ -29,7 +30,7 @@ function PayoutsWarningBanner({ onFix }) {
       background: '#fef3c7', border: '1px solid #fbbf24', borderRadius: 10,
       marginBottom: 20, fontFamily: F.sans,
     }}>
-      <span style={{ fontSize: 18 }}>⚠️</span>
+      <span style={{ color: '#92400e', flexShrink: 0 }}><IconWarning size={18} /></span>
       <div style={{ flex: 1, fontSize: 13, color: '#92400e' }}>
         <strong>Payouts aren't set up.</strong> Advertisers are being charged for campaigns on your
         screens, but you won't receive any money until you connect a payout account.
@@ -217,10 +218,10 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
 
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: kpiCols, gap: 14, marginBottom: 24 }}>
-        <KPI label="Network Revenue"  value={`$${totalRev.toLocaleString()}`}               sub="this month" icon="💰" />
+        <KPI label="Network Revenue"  value={`$${totalRev.toLocaleString()}`}               sub="this month" icon={<IconDollar size={16} />} />
         <KPI label="Active Campaigns" value={active.length}                                  sub="running now" icon="▶" />
-        <KPI label="Active Budget"    value={`$${totalSpend.toLocaleString()}`}              sub="running + scheduled" icon="📋" />
-        <KPI label="Active Scans"     value={totalScans}                                     sub="running + scheduled" color={C.green} icon="📲" />
+        <KPI label="Active Budget"    value={`$${totalSpend.toLocaleString()}`}              sub="running + scheduled" icon={<IconClipboard size={16} />} />
+        <KPI label="Active Scans"     value={totalScans}                                     sub="running + scheduled" color={C.green} icon={<IconQr size={16} />} />
       </div>
 
       {/* Budget strip */}
@@ -272,7 +273,7 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
                   border: `1px solid ${C.purpleBorder}`,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-                    <div style={{ fontSize: 40 }}>📺</div>
+                    <div style={{ color: C.purple }}><IconScreen size={40} /></div>
                     <div style={{ flex: 1, minWidth: 200 }}>
                       <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>
                         No screens yet
@@ -288,7 +289,7 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
                 </Card>
               ) : (
                 <Card style={{ textAlign: 'center', padding: 32 }}>
-                  <div style={{ fontSize: 28, marginBottom: 8 }}>📺</div>
+                  <div style={{ color: C.textMuted, marginBottom: 8 }}><IconScreen size={28} /></div>
                   <div style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans }}>No active campaigns</div>
                 </Card>
               )

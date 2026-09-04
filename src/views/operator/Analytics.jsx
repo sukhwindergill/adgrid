@@ -4,6 +4,7 @@ import { SkeletonRow, Skeleton } from '../../components/ui/Skeleton.jsx';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
+import { IconEye, IconClock, IconDollar, IconQr, IconChart } from '../../components/icons.jsx';
 import { periodDelta } from '../../lib/periodDelta.js';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
@@ -338,10 +339,10 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
 
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
-        <KPI label="Total Impressions" value={hasReal ? totalPeople.toLocaleString() : `${(totalImpr / 1000).toFixed(1)}K`} sub={hasReal ? 'verified by CV' : 'estimated'} trend={hasReal ? impressionTrend : null} trendLabel={`vs prior ${period === 'custom' ? 'range' : period + ' days'}`} icon="👁" />
-        <KPI label={hasReal ? 'Avg Dwell Time' : 'Avg CPM'} value={hasReal ? `${avgDwell}s` : `$${avgCPM} CPM`} sub={hasReal ? 'seconds on screen' : 'cost per 1,000'} color={C.blue} icon={hasReal ? '⏱' : '💲'} />
-        <KPI label="QR Scans"          value={totalScans} sub="recent campaigns" color={C.green} icon="📲" />
-        <KPI label={hasReal ? 'Avg Attention' : 'Scan Rate'} value={hasReal ? `${avgAttn}%` : `${scanRate}%`} sub={hasReal ? 'frontal attention score' : 'scans / impressions'} icon="📊" />
+        <KPI label="Total Impressions" value={hasReal ? totalPeople.toLocaleString() : `${(totalImpr / 1000).toFixed(1)}K`} sub={hasReal ? 'verified by CV' : 'estimated'} trend={hasReal ? impressionTrend : null} trendLabel={`vs prior ${period === 'custom' ? 'range' : period + ' days'}`} icon={<IconEye size={16} />} />
+        <KPI label={hasReal ? 'Avg Dwell Time' : 'Avg CPM'} value={hasReal ? `${avgDwell}s` : `$${avgCPM} CPM`} sub={hasReal ? 'seconds on screen' : 'cost per 1,000'} color={C.blue} icon={hasReal ? <IconClock size={16} /> : <IconDollar size={16} />} />
+        <KPI label="QR Scans"          value={totalScans} sub="recent campaigns" color={C.green} icon={<IconQr size={16} />} />
+        <KPI label={hasReal ? 'Avg Attention' : 'Scan Rate'} value={hasReal ? `${avgAttn}%` : `${scanRate}%`} sub={hasReal ? 'frontal attention score' : 'scans / impressions'} icon={<IconChart size={16} />} />
       </div>
 
       <BenchmarkRow

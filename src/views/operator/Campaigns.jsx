@@ -12,6 +12,7 @@ import { groupByCampaignId, rollupGroup } from '../../lib/campaignRollup.js';
 import { CampaignRow } from './CampaignRow.jsx';
 import { CampaignComparisonTable } from '../../components/shared/CampaignComparisonTable.jsx';
 import { pluralize } from '../../lib/pluralize.js';
+import { IconClipboard, IconWarning } from '../../components/icons.jsx';
 
 const PAGE_SIZE = 25;
 const STATUS_TABS = [['all', 'All'], ['active', 'Active'], ['scheduled', 'Scheduled'], ['pending_review', 'Pending Review'], ['paused', 'Paused'], ['completed', 'Completed']];
@@ -249,8 +250,8 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
     <div>
 
       {loadError && (
-        <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: '#991b1b', fontSize: 14 }}>
-          ⚠ {loadError}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: C.red, fontSize: 14, fontFamily: F.sans }}>
+          <IconWarning size={16} /> {loadError}
         </div>
       )}
 
@@ -275,7 +276,7 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(2,1fr)', gap: 12, marginBottom: 24, maxWidth: isMobile ? '100%' : 400 }}>
-        <KPI label="Total Campaigns" value={totalCount} icon="📋" />
+        <KPI label="Total Campaigns" value={totalCount} icon={<IconClipboard size={16} />} />
         <KPI label="Active Now"      value={activeCount} color={C.green} icon="▶" />
       </div>
 
@@ -288,7 +289,10 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
               background: filter === v ? C.purpleSoft : C.surface,
               color: filter === v ? C.purple : C.textSub,
               fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: F.sans, transition: 'all 0.15s',
-            }}>{l}</button>
+            }}
+              onMouseEnter={e => { if (filter !== v) e.currentTarget.style.background = C.surfaceAlt; }}
+              onMouseLeave={e => { if (filter !== v) e.currentTarget.style.background = C.surface; }}
+            >{l}</button>
           ))}
         </div>
         <div style={{ marginLeft: 'auto' }}>
@@ -300,7 +304,7 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
 
       {shown.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '56px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
+          <div style={{ display: 'flex', justifyContent: 'center', color: C.textMuted, marginBottom: 12 }}><IconClipboard size={40} /></div>
           {totalCount === 0 && filter === 'all' ? (
             <>
               <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>

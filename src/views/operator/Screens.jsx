@@ -12,6 +12,7 @@ import { Table } from '../../components/primitives/Table.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { VENUE_TAXONOMY } from '../../lib/venueTypes.js';
 import { healthSignal } from '../../lib/screenHealth.js';
+import { IconScreen } from '../../components/icons.jsx';
 
 function uptime(screen) {
   if (!screen.last_seen) return '—';
@@ -216,14 +217,17 @@ export function ScreensView({ dbScreens, loading = false, onSelectScreen, onStar
               background: filter === c ? C.purpleSoft : C.surface,
               color: filter === c ? C.purple : C.textSub,
               fontSize: 12, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
-            }}>{c}</button>
+            }}
+              onMouseEnter={e => { if (filter !== c) e.currentTarget.style.background = C.surfaceAlt; }}
+              onMouseLeave={e => { if (filter !== c) e.currentTarget.style.background = C.surface; }}
+            >{c}</button>
           ))}
         </div>
       </div>
 
       {shown.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>📺</div>
+          <div style={{ color: C.textMuted, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconScreen size={32} /></div>
           {isFiltered ? (
             <>
               <div style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No screens match</div>

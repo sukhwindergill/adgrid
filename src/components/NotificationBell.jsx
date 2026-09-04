@@ -2,28 +2,32 @@ import { useState, useEffect, useRef } from "react";
 import { C, F } from "../lib/constants.js";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import {
+  IconTarget, IconChart, IconDollar, IconTrendUp, IconParty, IconChat,
+  IconWarning, IconClipboard, IconGlobe, IconClock,
+} from "./icons.jsx";
 
 const TYPE_ICONS = {
-  campaign_approved: "✅",
+  campaign_approved: IconTarget,
   campaign_live: "▶",
   campaign_paused: "⏸",
-  low_budget: "⚠️",
-  campaign_ended: "🏁",
-  scan_milestone: "🎯",
-  weekly_report: "📊",
-  payment_failed: "❌",
-  dispute_won_resumed: "✅",
-  new_advertiser: "👤",
-  campaign_submitted: "📋",
-  payout_completed: "💰",
-  weekly_revenue: "📈",
-  team_member_joined: "🤝",
-  account_suspended: "🚫",
-  screen_invite_signed_up: "🔗",
-  screen_invite_booked: "🎉",
-  marketplace_thread_message: "💬",
-  marketplace_booking_confirmed: "🤝",
-  marketplace_booking_expiring: "⏳",
+  low_budget: IconWarning,
+  campaign_ended: IconClipboard,
+  scan_milestone: IconTarget,
+  weekly_report: IconChart,
+  payment_failed: IconWarning,
+  dispute_won_resumed: IconTarget,
+  new_advertiser: IconChat,
+  campaign_submitted: IconClipboard,
+  payout_completed: IconDollar,
+  weekly_revenue: IconTrendUp,
+  team_member_joined: IconChat,
+  account_suspended: IconWarning,
+  screen_invite_signed_up: IconGlobe,
+  screen_invite_booked: IconParty,
+  marketplace_thread_message: IconChat,
+  marketplace_booking_confirmed: IconChat,
+  marketplace_booking_expiring: IconClock,
 };
 
 function timeAgo(dateStr) {
@@ -158,7 +162,11 @@ export default function NotificationBell() {
                 transition: "background 0.15s",
               }}
             >
-              <span style={{ fontSize: 16, flexShrink: 0 }}>{TYPE_ICONS[n.type] ?? "🔔"}</span>
+              <span style={{ fontSize: 16, flexShrink: 0, display: "flex", alignItems: "center", color: C.textSub }}>
+                {typeof TYPE_ICONS[n.type] === "function"
+                  ? (() => { const Icon = TYPE_ICONS[n.type]; return <Icon size={16} />; })()
+                  : (TYPE_ICONS[n.type] ?? "🔔")}
+              </span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 2 }}>{n.title}</div>
                 <div style={{ fontSize: 11, color: C.textSub, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.body}</div>

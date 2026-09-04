@@ -15,6 +15,7 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { SkeletonRow, SkeletonTable } from '../../components/ui/Skeleton.jsx';
+import { IconDollar, IconBank, IconRecycle, IconScreen } from '../../components/icons.jsx';
 
 // Owns its own scoped `bookings` fetch instead of App.jsx's app-wide,
 // unbounded array (slice 4 of the "decouple from the app-wide unbounded
@@ -130,11 +131,11 @@ export function Revenue({ operatorScreenIds = [] }) {
           </div>
         } />
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(5,1fr)', gap: 14, marginBottom: 24 }}>
-        <KPI label="Total Ad Spend"   value={`$${total.toLocaleString()}`}    sub="from advertisers" trend={spendTrend} trendLabel="vs prior 30 days" icon="💰" />
+        <KPI label="Total Ad Spend"   value={`$${total.toLocaleString()}`}    sub="from advertisers" trend={spendTrend} trendLabel="vs prior 30 days" icon={<IconDollar size={16} />} />
         <KPI label="Platform Revenue" value={`$${platform.toLocaleString()}`} sub="12% fee" color={C.blue} icon="$" />
-        <KPI label="Owner Payouts"    value={`$${owners.toLocaleString()}`}   sub={`${ownerPct}% of net`} color={C.green} icon="🏦" />
-        <KPI label="Network Pool"     value={`$${network.toLocaleString()}`}  sub="reinvestment" icon="♻" />
-        <KPI label="Given Up to House Ads" value={`$${houseAdOpportunityCost.toLocaleString()}`} sub="estimated, at CPM floor" color={C.textSub} icon="📺" />
+        <KPI label="Owner Payouts"    value={`$${owners.toLocaleString()}`}   sub={`${ownerPct}% of net`} color={C.green} icon={<IconBank size={16} />} />
+        <KPI label="Network Pool"     value={`$${network.toLocaleString()}`}  sub="reinvestment" icon={<IconRecycle size={16} />} />
+        <KPI label="Given Up to House Ads" value={`$${houseAdOpportunityCost.toLocaleString()}`} sub="estimated, at CPM floor" color={C.textSub} icon={<IconScreen size={16} />} />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <Card>

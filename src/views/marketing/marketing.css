@@ -56,6 +56,24 @@
 .nav-spacer { flex: 1; }
 @media (max-width: 768px) { .nav-mid { display: none; } }
 .nav-search-wrap { flex-shrink: 0; }
+.site-search-input {
+  padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surf-el); color: var(--white); font: 400 13px var(--inter);
+  outline: none; width: 180px; transition: border-color .15s, box-shadow .15s;
+}
+.site-search-input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(123,47,255,0.25); }
+.site-search-listbox {
+  position: absolute; top: 100%; left: 0; right: 0; margin-top: 6px;
+  background: var(--surf-el); border: 1px solid var(--border); border-radius: 10px;
+  max-height: 320px; overflow-y: auto; z-index: 60; padding: 6px;
+}
+.site-search-empty { padding: 12px; font: 400 13px var(--inter); color: var(--sec); }
+.site-search-option {
+  display: block; width: 100%; text-align: left; padding: 10px 12px;
+  background: none; border: none; border-radius: 8px; cursor: pointer;
+  color: var(--white); font: 400 13px var(--inter); transition: background .1s;
+}
+.site-search-option.on { background: rgba(255,255,255,0.08); }
 @media (max-width: 1024px) {
   .nav-search-wrap { display: none; }
 }

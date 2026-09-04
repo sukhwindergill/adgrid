@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { F } from '../../../design/tokens.js';
 import { FAQS } from './faqData.js';
 
 const SECTION_ENTRIES = [
@@ -103,24 +102,12 @@ export function SiteSearch({ onScrollTo }) {
         aria-controls="site-search-listbox"
         aria-autocomplete="list"
         aria-activedescendant={activeIndex >= 0 ? `site-search-opt-${activeIndex}` : undefined}
-        style={{
-          padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)',
-          background: 'rgba(255,255,255,0.06)', color: '#fff', fontFamily: F.sans, fontSize: 13,
-          outline: 'none', width: 180,
-        }}
+        className="site-search-input"
       />
       {isOpen && (
-        <div
-          id="site-search-listbox"
-          role="listbox"
-          style={{
-            position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 6,
-            background: '#14141f', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10,
-            maxHeight: 320, overflowY: 'auto', zIndex: 60, padding: 6,
-          }}
-        >
+        <div id="site-search-listbox" role="listbox" className="site-search-listbox">
           {results.length === 0 ? (
-            <div style={{ padding: 12, fontSize: 13, color: '#8A8A9A', fontFamily: F.sans }}>No results</div>
+            <div className="site-search-empty">No results</div>
           ) : (
             results.map((r, i) => (
               <button
@@ -131,11 +118,7 @@ export function SiteSearch({ onScrollTo }) {
                 aria-selected={i === activeIndex}
                 onClick={() => selectResult(r)}
                 onMouseEnter={() => setActiveIndex(i)}
-                style={{
-                  display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px',
-                  background: i === activeIndex ? 'rgba(255,255,255,0.08)' : 'none', border: 'none', borderRadius: 8, cursor: 'pointer',
-                  color: '#fff', fontFamily: F.sans, fontSize: 13,
-                }}
+                className={`site-search-option${i === activeIndex ? ' on' : ''}`}
               >
                 {r.title}
               </button>
