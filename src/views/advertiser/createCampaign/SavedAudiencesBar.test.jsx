@@ -60,8 +60,8 @@ describe('SavedAudiencesBar', () => {
   it('saves the current targeting under a typed name', async () => {
     renderBar();
 
-    await waitFor(() => screen.getByText('🔖 Save current targeting as an audience'));
-    fireEvent.click(screen.getByText('🔖 Save current targeting as an audience'));
+    await waitFor(() => screen.getByText('Save current targeting as an audience'));
+    fireEvent.click(screen.getByText('Save current targeting as an audience'));
 
     fireEvent.change(screen.getByPlaceholderText('e.g. Downtown malls'), { target: { value: 'My audience' } });
     fireEvent.click(screen.getByText('Save'));
@@ -73,8 +73,8 @@ describe('SavedAudiencesBar', () => {
 
   it('does not save with a blank name', async () => {
     renderBar();
-    await waitFor(() => screen.getByText('🔖 Save current targeting as an audience'));
-    fireEvent.click(screen.getByText('🔖 Save current targeting as an audience'));
+    await waitFor(() => screen.getByText('Save current targeting as an audience'));
+    fireEvent.click(screen.getByText('Save current targeting as an audience'));
 
     expect(screen.getByText('Save')).toBeDisabled();
   });

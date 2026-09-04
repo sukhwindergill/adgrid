@@ -3,6 +3,7 @@ import { C, F } from '../../../design/tokens.js';
 import { useAuth } from '../../../context/AuthContext.jsx';
 import { useToast } from '../../../components/primitives/Toast.jsx';
 import { listTargetingTemplates, saveTargetingTemplate, deleteTargetingTemplate, applyTargetingTemplate } from '../../../lib/targetingTemplates.js';
+import { IconBookmark } from '../../../components/icons.jsx';
 
 // A media buyer running recurring campaigns previously rebuilt targeting
 // (area + screen type) from scratch every time — the only "reuse" was
@@ -79,9 +80,10 @@ export function SavedAudiencesBar({ form, onApply }) {
 
       {nameInput === null ? (
         <button onClick={() => setNameInput('')} style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
           background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer',
           fontFamily: F.sans, padding: 0, fontWeight: 500,
-        }}>🔖 Save current targeting as an audience</button>
+        }}><IconBookmark size={13} /> Save current targeting as an audience</button>
       ) : (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <input

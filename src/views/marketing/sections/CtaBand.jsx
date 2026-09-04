@@ -84,9 +84,9 @@ export function CtaBand() {
               <label htmlFor="wl-screens" className="form-label">Number of screens</label>
               <select id="wl-screens" className="fi" value={form.screens} onChange={set('screens')}>
                 <option value="">Select range…</option>
-                <option value="1-5">1–5</option>
-                <option value="6-20">6–20</option>
-                <option value="21-100">21–100</option>
+                <option value="1-5">1-5</option>
+                <option value="6-20">6-20</option>
+                <option value="21-100">21-100</option>
                 <option value="100+">100+</option>
                 <option value="not-yet">Not yet deployed</option>
               </select>
