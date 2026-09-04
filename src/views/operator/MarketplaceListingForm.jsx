@@ -71,17 +71,23 @@ export function MarketplaceListingForm({ screenId, bundleScreens, onCreated, onC
       <label style={{ fontFamily: F.sans, fontSize: 12, color: C.textSub }}>
         Price ($){isBundle ? ' — for the whole bundle' : ''}
         <input aria-label="price" type="number" value={priceCents} onChange={e => setPriceCents(e.target.value)}
-          style={{ display: 'block', width: '100%', marginTop: 4, padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8 }} />
+          style={{ display: 'block', width: '100%', marginTop: 4, padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8, outline: 'none', transition: 'border-color 0.15s', boxSizing: 'border-box' }}
+          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+          onBlur={e => { e.currentTarget.style.borderColor = C.border; }} />
       </label>
       <label style={{ fontFamily: F.sans, fontSize: 12, color: C.textSub }}>
         Start date
         <input aria-label="start date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-          style={{ display: 'block', width: '100%', marginTop: 4, padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8 }} />
+          style={{ display: 'block', width: '100%', marginTop: 4, padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8, outline: 'none', transition: 'border-color 0.15s', boxSizing: 'border-box' }}
+          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+          onBlur={e => { e.currentTarget.style.borderColor = C.border; }} />
       </label>
       <label style={{ fontFamily: F.sans, fontSize: 12, color: C.textSub }}>
         End date
         <input aria-label="end date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-          style={{ display: 'block', width: '100%', marginTop: 4, padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8 }} />
+          style={{ display: 'block', width: '100%', marginTop: 4, padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8, outline: 'none', transition: 'border-color 0.15s', boxSizing: 'border-box' }}
+          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+          onBlur={e => { e.currentTarget.style.borderColor = C.border; }} />
       </label>
       <label style={{ fontFamily: F.sans, fontSize: 12, color: C.textSub, display: 'flex', alignItems: 'center', gap: 6 }}>
         <input type="checkbox" checked={autoRenew} onChange={e => setAutoRenew(e.target.checked)} />
