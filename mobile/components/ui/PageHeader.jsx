@@ -6,7 +6,7 @@ export function PageHeader({ title, subtitle, actions }) {
   return (
     <View style={styles.header}>
       <View style={styles.text}>
-        <Text style={[styles.title, { fontFamily: F.sansBold }]}>{title}</Text>
+        <Text accessibilityRole="header" style={[styles.title, { fontFamily: F.sansBold }]}>{title}</Text>
         {subtitle && <Text style={[styles.subtitle, { fontFamily: F.sans }]}>{subtitle}</Text>}
       </View>
       {actions && <View style={styles.actions}>{actions}</View>}
