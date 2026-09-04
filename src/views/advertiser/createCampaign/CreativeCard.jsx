@@ -148,7 +148,10 @@ export function CreativeCard({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <Inp label="" placeholder="Creative label" value={creative.label} onChange={e => setField('label', e.target.value)} />
         {onRemove && (
-          <button type="button" onClick={onRemove} style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, padding: '4px 10px', fontSize: 12, color: C.red, cursor: 'pointer', fontFamily: F.sans, marginLeft: 12, flexShrink: 0 }}>
+          <button type="button" onClick={onRemove} style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, padding: '4px 10px', fontSize: 12, color: C.red, cursor: 'pointer', fontFamily: F.sans, marginLeft: 12, flexShrink: 0, transition: 'background 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = C.redSoft; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+          >
             Remove
           </button>
         )}
@@ -231,7 +234,11 @@ export function CreativeCard({
                   <button key={corner} type="button" onClick={() => snapQrTo(corner)} style={{
                     flex: 1, padding: '6px 4px', borderRadius: 6, border: `1px solid ${C.border}`,
                     background: C.surface, color: C.textSub, fontSize: 10, fontFamily: F.sans, cursor: 'pointer', textTransform: 'capitalize',
-                  }}>
+                    transition: 'background 0.15s',
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
+                  >
                     {corner.replace('_', ' ')}
                   </button>
                 ))}
@@ -251,7 +258,10 @@ export function CreativeCard({
             <div style={{ fontSize: 12, fontWeight: 600, color: C.textMid, fontFamily: F.sans }}>
               Show on ({creative.assigned_screen_ids.length} of {poolScreens.length} {pluralize(poolScreens.length, 'screen')})
             </div>
-            <button type="button" onClick={onSplitByType} style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans, padding: 0 }}>
+            <button type="button" onClick={onSplitByType} style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans, padding: 0, textDecoration: 'underline', transition: 'opacity 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = '0.75'; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+            >
               Split by screen type →
             </button>
           </div>
