@@ -3,9 +3,9 @@ import { C, F } from '../../design/tokens.js'
 
 function RoleBadge({ role }) {
   const colors = {
-    admin:   { bg: 'rgba(124,58,237,0.12)', color: '#7c3aed' },
-    manager: { bg: 'rgba(37,99,235,0.12)',  color: '#2563eb' },
-    viewer:  { bg: 'rgba(107,114,128,0.12)', color: '#6b7280' },
+    admin:   { bg: C.purpleSoft, color: C.purple },
+    manager: { bg: C.blueSoft,   color: C.blue },
+    viewer:  { bg: C.surfaceAlt, color: C.textMuted },
   }
   const s = colors[role] ?? colors.viewer
   return (
@@ -23,12 +23,12 @@ function AccountCard({ account, isCurrent, onClick }) {
       onClick={onClick}
       style={{
         background: C.surface,
-        border: `2px solid ${isCurrent ? C.blue : C.border}`,
+        border: `2px solid ${isCurrent ? C.purple : C.border}`,
         borderRadius: 16,
         padding: '24px 20px',
         cursor: 'pointer',
         transition: 'border-color 0.15s, box-shadow 0.15s',
-        boxShadow: isCurrent ? `0 0 0 3px rgba(37,99,235,0.12)` : 'none',
+        boxShadow: isCurrent ? `0 0 0 3px rgba(123,47,255,0.12)` : 'none',
         display: 'flex',
         flexDirection: 'column',
         gap: 12,
@@ -42,7 +42,7 @@ function AccountCard({ account, isCurrent, onClick }) {
         ) : (
           <div style={{
             width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-            background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+            background: C.grad,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: F.sans,
           }}>{initials}</div>
@@ -58,7 +58,7 @@ function AccountCard({ account, isCurrent, onClick }) {
           )}
         </div>
         {isCurrent && (
-          <span style={{ fontSize: 11, color: C.blue, fontFamily: F.sans, fontWeight: 600 }}>Active</span>
+          <span style={{ fontSize: 11, color: C.purple, fontFamily: F.sans, fontWeight: 600 }}>Active</span>
         )}
       </div>
       {account.isOwn && (

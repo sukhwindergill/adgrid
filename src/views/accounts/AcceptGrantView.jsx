@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { C, F } from '../../design/tokens.js'
+import { IconWarning, IconCheckCircle, IconMail } from '../../components/icons.jsx'
 
 export function AcceptGrantView() {
   const { user, acceptGrant, signInWithOAuth } = useAuth()
@@ -67,36 +68,43 @@ export function AcceptGrantView() {
       }}>
         {error ? (
           <>
-            <div style={{ fontSize: 32, marginBottom: 16 }}>⚠️</div>
+            <div style={{ color: C.red, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><IconWarning size={32} /></div>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>Invite Error</h2>
             <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>{error}</p>
-            <button onClick={() => navigate('/')} style={{ padding: '10px 24px', borderRadius: 10, background: C.blue, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 14, cursor: 'pointer' }}>
+            <button onClick={() => navigate('/')} style={{ padding: '10px 24px', borderRadius: 10, background: C.purple, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 14, cursor: 'pointer', transition: 'opacity 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+            >
               Go Home
             </button>
           </>
         ) : done ? (
           <>
-            <div style={{ fontSize: 32, marginBottom: 16 }}>✅</div>
+            <div style={{ color: C.green, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><IconCheckCircle size={32} /></div>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>Invite Accepted</h2>
             <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans }}>Redirecting to your accounts…</p>
           </>
         ) : !user ? (
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 32, marginBottom: 16 }}>📬</div>
+            <div style={{ color: C.purple, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><IconMail size={32} /></div>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>You've been invited</h2>
             <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans, margin: '0 0 20px' }}>Sign in to see your invitation and accept it.</p>
             <button
               onClick={() => { sessionStorage.setItem('pending_grant', grantId); signInWithOAuth('google') }}
-              style={{ width: '100%', padding: '10px', borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 14, cursor: 'pointer', color: C.text, marginBottom: 8 }}
+              style={{ width: '100%', padding: '10px', borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 14, cursor: 'pointer', color: C.text, marginBottom: 8, transition: 'background 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
+              onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
             >Continue with Google</button>
             <button
               onClick={() => { sessionStorage.setItem('pending_grant', grantId); navigate('/login') }}
-              style={{ width: '100%', padding: '10px', borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 14, cursor: 'pointer', color: C.text }}
+              style={{ width: '100%', padding: '10px', borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 14, cursor: 'pointer', color: C.text, transition: 'background 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
+              onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
             >Sign in with email</button>
           </div>
         ) : (
           <>
-            <div style={{ fontSize: 32, marginBottom: 16 }}>📬</div>
+            <div style={{ color: C.purple, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><IconMail size={32} /></div>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>You're invited</h2>
             <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans, margin: '0 0 6px' }}>
               <strong style={{ color: C.text }}>{grantorName}</strong> has given you <strong style={{ color: C.text }}>{grant?.role}</strong> access to
@@ -106,13 +114,17 @@ export function AcceptGrantView() {
             <div style={{ display: 'flex', gap: 10 }}>
               <button
                 onClick={decline}
-                style={{ flex: 1, padding: '10px', borderRadius: 10, background: 'transparent', border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 14, cursor: 'pointer', color: C.textSub }}
+                style={{ flex: 1, padding: '10px', borderRadius: 10, background: 'transparent', border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 14, cursor: 'pointer', color: C.textSub, transition: 'background 0.15s' }}
+                onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
               >
                 Decline
               </button>
               <button
                 onClick={accept}
-                style={{ flex: 1, padding: '10px', borderRadius: 10, background: C.blue, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                style={{ flex: 1, padding: '10px', borderRadius: 10, background: C.purple, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'opacity 0.15s' }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
               >
                 Accept Invite
               </button>
