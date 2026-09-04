@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { C, F, SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
-import { AccessSettingsView } from '../accounts/AccessSettingsView.jsx'
+import { AccessSettingsView } from '../accounts/AccessSettingsView.jsx';
 import { supabase } from "../../lib/supabase.js";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { PageHeader } from "../../components/primitives/PageHeader.jsx";
+import { Btn } from "../../components/primitives/Btn.jsx";
 
 const TIMEZONES = [
   "UTC", "America/New_York", "America/Chicago", "America/Denver",
@@ -15,10 +17,13 @@ function TabBtn({ label, active, onClick }) {
     <button onClick={onClick} style={{
       padding: "8px 18px", borderRadius: 8, border: "none", cursor: "pointer",
       fontFamily: F.sans, fontSize: 13, fontWeight: 500,
-      background: active ? C.blue : "transparent",
+      background: active ? C.purple : "transparent",
       color: active ? "#fff" : C.textSub,
       transition: "all 0.15s",
-    }}>{label}</button>
+    }}
+      onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
+      onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
+    >{label}</button>
   );
 }
 
@@ -45,18 +50,38 @@ function SettingsInput({ value, onChange, type = "text", readOnly, placeholder }
         width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`,
         borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text,
         background: readOnly ? C.bg : C.surface, boxSizing: "border-box",
+        outline: 'none', transition: 'border-color 0.15s',
       }}
+      onFocus={e => { if (!readOnly) e.currentTarget.style.borderColor = C.purple; }}
+      onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
     />
   );
 }
 
 function SaveBtn({ onClick, saving, label = "Save Changes" }) {
+  return <Btn onClick={onClick} loading={saving}>{label}</Btn>;
+}
+
+// Accessible toggle switch -- real button with role="switch" and keyboard
+// support, not a styled div's onClick (unreachable/unoperable by keyboard).
+function Toggle({ checked, onChange }) {
   return (
-    <button onClick={onClick} disabled={saving} style={{
-      padding: "9px 22px", borderRadius: 8, background: C.blue, color: "#fff",
-      border: "none", cursor: saving ? "not-allowed" : "pointer",
-      fontFamily: F.sans, fontSize: 13, fontWeight: 500, opacity: saving ? 0.7 : 1,
-    }}>{saving ? "Saving…" : label}</button>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      style={{
+        width: 44, height: 24, borderRadius: 12, flexShrink: 0, border: 'none', padding: 0, cursor: 'pointer',
+        background: checked ? C.purple : C.border, position: 'relative', transition: 'background 0.2s',
+      }}
+    >
+      <span style={{
+        position: 'absolute', top: 3, left: checked ? 23 : 3,
+        width: 18, height: 18, borderRadius: '50%', background: '#fff',
+        transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+      }} />
+    </button>
   );
 }
 
@@ -106,7 +131,9 @@ export function ProfileTab({ profile, onSaved }) {
         <select
           value={timezone}
           onChange={(e) => setTimezone(e.target.value)}
-          style={{ width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface }}
+          style={{ width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
+          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
         >
           {TIMEZONES.map((tz) => <option key={tz}>{tz}</option>)}
         </select>
@@ -118,7 +145,9 @@ export function ProfileTab({ profile, onSaved }) {
         <select
           value={currency}
           onChange={(e) => setCurrency(e.target.value)}
-          style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 13, fontFamily: F.sans, background: C.surface, color: C.text }}
+          style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 13, fontFamily: F.sans, background: C.surface, color: C.text, outline: 'none', transition: 'border-color 0.15s' }}
+          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
         >
           <option value="cad">CAD — Canadian Dollar</option>
           <option value="usd">USD — US Dollar</option>
@@ -176,7 +205,9 @@ function BrandKitTab({ profile, onSaved }) {
         <select
           value={brandFont}
           onChange={(e) => setBrandFont(e.target.value)}
-          style={{ width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface }}
+          style={{ width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
+          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
         >
           <option value="sans">Sans</option>
           <option value="serif">Serif</option>
@@ -310,20 +341,7 @@ function NotificationsTab({ profile }) {
             <div style={{ fontSize: 14, fontWeight: 500, color: C.text }}>{item.label}</div>
             <div style={{ fontSize: 12, color: C.textSub, marginTop: 2 }}>{item.desc}</div>
           </div>
-          <div
-            onClick={() => toggle(item.key)}
-            style={{
-              width: 44, height: 24, borderRadius: 12, cursor: "pointer",
-              background: prefs[item.key] ? C.blue : C.border,
-              position: "relative", transition: "background 0.2s", flexShrink: 0,
-            }}
-          >
-            <div style={{
-              position: "absolute", top: 3, left: prefs[item.key] ? 23 : 3,
-              width: 18, height: 18, borderRadius: "50%", background: "#fff",
-              transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-            }} />
-          </div>
+          <Toggle checked={prefs[item.key]} onChange={() => toggle(item.key)} />
         </div>
       ))}
       <div style={{ marginTop: 20, display: "flex", gap: 12, alignItems: "center" }}>
@@ -401,10 +419,7 @@ function TeamTab({ profile }) {
                 color: m.role === "admin" ? C.purple : C.textSub,
                 textTransform: "capitalize",
               }}>{m.role}</span>
-              <button onClick={() => removeMember(m.id)} style={{
-                border: "none", background: "none", cursor: "pointer",
-                color: C.red, fontSize: 13, padding: "4px 8px",
-              }}>Remove</button>
+              <Btn variant="ghost" size="sm" onClick={() => removeMember(m.id)} style={{ color: C.red }}>Remove</Btn>
             </div>
           ))}
         </div>
@@ -421,7 +436,10 @@ function TeamTab({ profile }) {
             style={{
               flex: 1, padding: "9px 12px", border: `1px solid ${C.border}`,
               borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text,
+              outline: 'none', transition: 'border-color 0.15s',
             }}
+            onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+            onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
           />
           <select
             value={inviteRole}
@@ -429,7 +447,10 @@ function TeamTab({ profile }) {
             style={{
               padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8,
               fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface,
+              outline: 'none', transition: 'border-color 0.15s',
             }}
+            onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+            onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
           >
             <option value="viewer">Viewer — read only</option>
             <option value="manager">Manager — create &amp; edit campaigns</option>
@@ -437,10 +458,7 @@ function TeamTab({ profile }) {
           </select>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={invite} style={{
-            padding: "9px 22px", borderRadius: 8, background: C.blue, color: "#fff",
-            border: "none", cursor: "pointer", fontFamily: F.sans, fontSize: 13, fontWeight: 500,
-          }}>Send Invite</button>
+          <Btn onClick={invite}>Send Invite</Btn>
           {msg && <span style={{ fontSize: 13, color: msg.startsWith("Error") ? C.red : C.green }}>{msg}</span>}
         </div>
       </div>
@@ -458,8 +476,8 @@ export default function SettingsView() {
   if (!profile) return <div style={{ padding: 40, fontFamily: F.sans, color: C.textSub }}>Loading…</div>;
 
   return (
-    <div style={{ padding: "32px 40px", fontFamily: F.sans, maxWidth: 900 }}>
-      <h2 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: "0 0 24px" }}>Settings</h2>
+    <div style={{ maxWidth: 900 }}>
+      <PageHeader title="Settings" subtitle="Manage your advertiser account" />
 
       <div style={{ overflowX: "auto", maxWidth: "100%", marginBottom: 32 }}>
         <div style={{
