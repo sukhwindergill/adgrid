@@ -48,11 +48,17 @@ export function TopScreensInsight({ pastCampaignIds, allScreens, currentVenueFil
       <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
         <button onClick={() => onApply(profile)} style={{
           background: C.purple, border: 'none', borderRadius: 6, padding: '5px 12px',
-          fontSize: 12, fontWeight: 600, color: '#fff', fontFamily: F.sans, cursor: 'pointer', whiteSpace: 'nowrap',
-        }}>Apply filter</button>
+          fontSize: 12, fontWeight: 600, color: '#fff', fontFamily: F.sans, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'opacity 0.15s',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
+          onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+        >Apply filter</button>
         <button onClick={() => setDismissed(true)} aria-label="Dismiss" style={{
-          background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted, fontSize: 14, padding: '0 4px',
-        }}>×</button>
+          background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted, fontSize: 14, padding: '0 4px', transition: 'color 0.15s',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
+          onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
+        >×</button>
       </div>
     </div>
   );

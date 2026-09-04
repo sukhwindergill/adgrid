@@ -124,6 +124,8 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
             fontSize: 12, fontWeight: 500, fontFamily: F.sans,
             cursor: 'pointer', transition: 'all 0.15s', marginBottom: 12,
           }}
+          onMouseEnter={e => { if (!showFilters) e.currentTarget.style.background = C.surfaceAlt; }}
+          onMouseLeave={e => { if (!showFilters) e.currentTarget.style.background = C.surface; }}
         >
           Refine screens {showFilters ? '▲' : '▼'}
         </button>
@@ -154,8 +156,14 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={selectAll} style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans }}>Select all</button>
-            <button onClick={deselectAll} style={{ background: 'none', border: 'none', fontSize: 12, color: C.textMuted, cursor: 'pointer', fontFamily: F.sans }}>Deselect all</button>
+            <button onClick={selectAll} style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans, transition: 'opacity 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = '0.75'; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+            >Select all</button>
+            <button onClick={deselectAll} style={{ background: 'none', border: 'none', fontSize: 12, color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
+              onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
+            >Deselect all</button>
           </div>
         </div>
 
@@ -221,8 +229,11 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
         {!houseAdMode && (
           <button type="button" onClick={addCreative} style={{
             background: 'none', border: `1px dashed ${C.border}`, borderRadius: 10, padding: '12px 16px',
-            fontSize: 13, color: C.purple, cursor: 'pointer', fontFamily: F.sans, width: '100%',
-          }}>
+            fontSize: 13, color: C.purple, cursor: 'pointer', fontFamily: F.sans, width: '100%', transition: 'background 0.15s, border-color 0.15s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = C.purpleSoft; e.currentTarget.style.borderColor = C.purple; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.borderColor = C.border; }}
+          >
             + Add another creative
           </button>
         )}

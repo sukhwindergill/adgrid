@@ -68,14 +68,17 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
         <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 20px' }}>Choose an area and, optionally, the kind of screens you're after — we'll find matching screens for you.</p>
 
         {noInventory && (
-          <div style={{ marginBottom: 20, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder ?? '#fde68a'}`, borderRadius: 8, fontSize: 13, color: '#92400e', fontFamily: F.sans }}>
+          <div style={{ marginBottom: 20, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder ?? '#fde68a'}`, borderRadius: 8, fontSize: 13, color: C.amber, fontFamily: F.sans }}>
             No screens are live on the network yet — check back soon.
           </div>
         )}
 
         {onPrevCampaigns && (
           <div style={{ marginBottom: 20 }}>
-            <button onClick={onPrevCampaigns} style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans, padding: 0 }}>
+            <button onClick={onPrevCampaigns} style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans, padding: 0, transition: 'opacity 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = '0.75'; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+            >
               ↩ Start from a previous campaign →
             </button>
           </div>

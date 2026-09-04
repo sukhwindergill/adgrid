@@ -34,7 +34,7 @@ export function ScreenMap({ center, radius, screens, selected, onToggle, draggab
       if (!leafletRef.current) return;
       const { L: Lf, map: m } = leafletRef.current;
       if (circleRef.current) circleRef.current.remove();
-      circleRef.current = Lf.circle(center, { radius: radius * 1000, color: '#7c3aed', fillColor: '#7c3aed', fillOpacity: 0.06, weight: 2, dashArray: '6 4' }).addTo(m);
+      circleRef.current = Lf.circle(center, { radius: radius * 1000, color: C.purple, fillColor: C.purple, fillOpacity: 0.06, weight: 2, dashArray: '6 4' }).addTo(m);
       m.setView(center, 12);
 
       if (centerMarkerRef.current) centerMarkerRef.current.remove();
@@ -55,7 +55,7 @@ export function ScreenMap({ center, radius, screens, selected, onToggle, draggab
         const isSel = selected.includes(s.id);
         const icon = Lf.divIcon({
           className: '',
-          html: `<div style="width:14px;height:14px;border-radius:50%;background:${isSel ? '#7c3aed' : inRadius ? '#16a34a' : '#9ca3af'};border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.3);cursor:${inRadius ? 'pointer' : 'default'}"></div>`,
+          html: `<div style="width:14px;height:14px;border-radius:50%;background:${isSel ? C.purple : inRadius ? C.green : C.textMuted};border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.3);cursor:${inRadius ? 'pointer' : 'default'}"></div>`,
           iconSize: [14, 14], iconAnchor: [7, 7],
         });
         const marker = Lf.marker([s.lat, s.lon], { icon });

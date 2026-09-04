@@ -56,7 +56,10 @@ export function MediaUpload({ form, setForm }) {
           </div>
           <div>
             <div style={{ fontSize: 12, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>{form.media_type === 'video' ? 'Video' : 'Image'} uploaded ✓</div>
-            <button type="button" onClick={clear} style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, padding: '4px 12px', fontSize: 12, color: C.textSub, cursor: 'pointer', fontFamily: F.sans }}>Remove</button>
+            <button type="button" onClick={clear} style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, padding: '4px 12px', fontSize: 12, color: C.textSub, cursor: 'pointer', fontFamily: F.sans, transition: 'background 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+            >Remove</button>
           </div>
         </div>
       ) : (
@@ -64,8 +67,11 @@ export function MediaUpload({ form, setForm }) {
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           border: `2px dashed ${C.border}`, borderRadius: 10, padding: '18px',
           cursor: uploading ? 'default' : 'pointer', background: C.surfaceAlt,
-          fontSize: 13, color: C.textSub, fontFamily: F.sans,
-        }}>
+          fontSize: 13, color: C.textSub, fontFamily: F.sans, transition: 'border-color 0.15s',
+        }}
+          onMouseEnter={e => { if (!uploading) e.currentTarget.style.borderColor = C.purple; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; }}
+        >
           <input type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime" style={{ display: 'none' }} disabled={uploading}
             onChange={e => handleFile(e.target.files?.[0])} />
           {uploading ? 'Uploading…' : '+ Upload image or video'}
