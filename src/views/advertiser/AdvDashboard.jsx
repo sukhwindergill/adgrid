@@ -20,7 +20,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { listDrafts, deleteDraft } from '../../lib/campaignDrafts.js';
 import { DraftsCard } from './createCampaign/DraftsCard.jsx';
 import { normalizeBooking } from '../../lib/normalizeBooking.js';
-import { IconDollar, IconEye, IconQr, IconTrendUp, IconTarget } from '../../components/icons.jsx';
+import { IconDollar, IconEye, IconQr, IconTrendUp, IconTarget, IconScreen } from '../../components/icons.jsx';
 
 const RECENT_CAMPAIGNS_LIMIT = 20;
 
@@ -385,7 +385,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
         </div>
       ) : (
         <Card style={{ textAlign: 'center', padding: 48 }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>📺</div>
+          <div style={{ color: C.textMuted, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconScreen size={32} /></div>
           <div style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No campaigns yet</div>
           <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>Launch your first campaign on the ADGRID network in under 10 minutes.</div>
           <Btn onClick={() => setAdvNav('adv-create')}>Create your first campaign →</Btn>

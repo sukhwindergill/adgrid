@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { C, F } from '../../../design/tokens.js';
 import { AdRenderPreviewModal } from '../../../components/shared/AdRenderPreviewModal.jsx';
+import { IconEye } from '../../../components/icons.jsx';
 
 export function ScreenPickerCard({ screen, selected, onToggle, creative, isFavorited, onToggleFavorite }) {
   const [showPreview, setShowPreview] = useState(false);
@@ -49,13 +50,14 @@ export function ScreenPickerCard({ screen, selected, onToggle, creative, isFavor
               title={hasCreativeMedia ? 'Preview your ad on this screen' : 'Upload your creative to preview'}
               style={{
                 position: 'absolute', bottom: 6, right: 6,
+                display: 'inline-flex', alignItems: 'center', gap: 4,
                 padding: '4px 9px', borderRadius: 14, border: 'none',
                 background: hasCreativeMedia ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.35)',
                 color: '#fff', fontSize: 11, fontFamily: F.sans,
                 cursor: hasCreativeMedia ? 'pointer' : 'not-allowed',
               }}
             >
-              👁 Preview
+              <IconEye size={12} /> Preview
             </button>
           )}
         </div>

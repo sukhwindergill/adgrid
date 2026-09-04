@@ -46,7 +46,7 @@ describe('StepCreative creative-per-screen wiring', () => {
       creatives: [makeBlankCreative({ id: 'c1', media_url: 'https://example.com/ad.png', media_type: 'image' })],
     };
     render(<StepCreative form={form} setForm={() => {}} matchedScreens={[SCREEN_A, SCREEN_B]} />);
-    expect(screen.getByText('👁 Preview')).toBeEnabled();
+    expect(screen.getByTitle('Preview your ad on this screen')).toBeEnabled();
   });
 
   it('falls back to the first creative for a screen no creative has explicitly claimed', () => {
@@ -60,6 +60,6 @@ describe('StepCreative creative-per-screen wiring', () => {
     render(<StepCreative form={form} setForm={() => {}} matchedScreens={[SCREEN_A, SCREEN_B]} />);
     // SCREEN_A is unassigned in this multi-creative campaign -- falls back
     // to creatives[0] (c1), which has media, so Preview is enabled.
-    expect(screen.getByText('👁 Preview')).toBeEnabled();
+    expect(screen.getByTitle('Preview your ad on this screen')).toBeEnabled();
   });
 });

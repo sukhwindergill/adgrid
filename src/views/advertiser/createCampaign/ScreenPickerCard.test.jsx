@@ -18,24 +18,24 @@ const NO_CREATIVE = { media_url: '', media_type: '' };
 describe('ScreenPickerCard preview button', () => {
   it('shows no Preview button when the screen has no marked photos', () => {
     render(<ScreenPickerCard screen={BASE_SCREEN} selected={[]} onToggle={() => {}} creative={IMAGE_CREATIVE} />);
-    expect(screen.queryByText('👁 Preview')).not.toBeInTheDocument();
+    expect(screen.queryByText('Preview')).not.toBeInTheDocument();
   });
 
   it('shows a disabled Preview button when marked but no creative is uploaded yet', () => {
     render(<ScreenPickerCard screen={MARKED} selected={[]} onToggle={() => {}} creative={NO_CREATIVE} />);
-    expect(screen.getByText('👁 Preview')).toBeDisabled();
+    expect(screen.getByText('Preview')).toBeDisabled();
   });
 
   it('opens the preview modal when clicked with a marked photo and an uploaded creative', () => {
     render(<ScreenPickerCard screen={MARKED} selected={[]} onToggle={() => {}} creative={IMAGE_CREATIVE} />);
-    fireEvent.click(screen.getByText('👁 Preview'));
+    fireEvent.click(screen.getByText('Preview'));
     expect(screen.getByText(/Approximate preview/)).toBeInTheDocument();
   });
 
   it('clicking Preview does not toggle the card selection', () => {
     const onToggle = vi.fn();
     render(<ScreenPickerCard screen={MARKED} selected={[]} onToggle={onToggle} creative={IMAGE_CREATIVE} />);
-    fireEvent.click(screen.getByText('👁 Preview'));
+    fireEvent.click(screen.getByText('Preview'));
     expect(onToggle).not.toHaveBeenCalled();
   });
 });

@@ -5,6 +5,7 @@ import { useToast } from "../../components/primitives/Toast.jsx";
 import { useConfirm } from "../../components/primitives/ConfirmModal.jsx";
 import { useBreakpoint } from "../../lib/useBreakpoint.js";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { IconCard } from "../../components/icons.jsx";
 
 const STATUS_COLORS = {
   paid: { bg: "#f0fdf4", color: "#16a34a" },
@@ -264,7 +265,7 @@ export default function BillingView() {
                 padding: "12px 16px", background: C.bg, borderRadius: 8,
                 border: `1px solid ${pm.isDefault ? C.blue : C.border}`,
               }}>
-                <span style={{ fontSize: 20 }}>💳</span>
+                <span style={{ color: C.textSub, display: 'flex' }}><IconCard size={20} /></span>
                 <span style={{ fontSize: 14, fontWeight: 500, color: C.text, textTransform: "capitalize" }}>
                   {pm.brand} ···· {pm.last4}
                 </span>
