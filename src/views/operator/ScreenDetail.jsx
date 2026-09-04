@@ -18,6 +18,7 @@ import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS } from 
 import { healthSignal, cvAgentSignal } from '../../lib/screenHealth.js';
 import { checkAndGoLive } from '../../lib/screenGoLive.js';
 import { ScreenLocationPicker } from '../../components/ScreenLocationPicker.jsx';
+import { IconEdit, IconCamera } from '../../components/icons.jsx';
 import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
 import { CreateCampaign } from '../advertiser/CreateCampaign.jsx';
 
@@ -59,7 +60,10 @@ function PillGroup({ options, value, onChange }) {
             background: active ? C.purpleSoft : C.surface,
             color: active ? C.purple : C.textSub,
             fontSize: 12, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
-          }}>{l}</button>
+          }}
+            onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
+            onMouseLeave={e => { if (!active) e.currentTarget.style.background = C.surface; }}
+          >{l}</button>
         );
       })}
     </div>
@@ -441,7 +445,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
             })() : (
               <Badge status={screen.status} />
             )}
-            <Btn variant="secondary" size="sm" onClick={() => setShowEdit(true)}>✏ Edit</Btn>
+            <Btn variant="secondary" size="sm" onClick={() => setShowEdit(true)} icon={<IconEdit size={13} />}>Edit</Btn>
             <Btn variant="secondary" size="sm" onClick={() => setShowHouseAdWizard(true)}>Create House Ad</Btn>
             {(screen.status === 'live' || screen.status === 'inactive') && (
               <Btn
@@ -513,6 +517,8 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
               borderBottom: `2px solid ${tab === t.key ? C.purple : 'transparent'}`,
               marginBottom: -1, transition: 'all 0.15s',
             }}
+            onMouseEnter={e => { if (tab !== t.key) e.currentTarget.style.color = C.text; }}
+            onMouseLeave={e => { if (tab !== t.key) e.currentTarget.style.color = C.textSub; }}
           >{t.label}</button>
         ))}
       </div>
@@ -723,7 +729,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
             <div style={{ padding: '48px 0', textAlign: 'center', color: C.textMuted, fontFamily: F.sans, fontSize: 13 }}>Loading CV data…</div>
           ) : cvEvents.length === 0 ? (
             <div style={{ padding: '48px 24px', textAlign: 'center', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
-              <div style={{ fontSize: 28, marginBottom: 12 }}>📷</div>
+              <div style={{ color: C.textMuted, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconCamera size={28} /></div>
               <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No CV data yet</div>
               <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Requires screen-agent with USB camera. See Setup Guide tab.</div>
             </div>
@@ -840,8 +846,11 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
           border: `1px solid ${hwType === h.key ? C.purple : C.border}`,
           background: hwType === h.key ? C.purpleSoft : C.surface,
           color: hwType === h.key ? C.purple : C.textSub,
-          fontSize: 12, fontWeight: 500, fontFamily: F.sans,
-        }}>{h.label}</button>
+          fontSize: 12, fontWeight: 500, fontFamily: F.sans, transition: 'background 0.15s',
+        }}
+          onMouseEnter={e => { if (hwType !== h.key) e.currentTarget.style.background = C.surfaceAlt; }}
+          onMouseLeave={e => { if (hwType !== h.key) e.currentTarget.style.background = C.surface; }}
+        >{h.label}</button>
       ))}
     </div>
 
