@@ -10,7 +10,7 @@ import { Btn } from '../../components/ui/Btn';
 import { Inp } from '../../components/ui/Inp';
 import { ErrorBanner } from '../../components/ui/ErrorBanner';
 import { C, F } from '../../lib/tokens';
-import { VENUE_TAXONOMY, STATE_LABEL } from '@adgrid/core';
+import { VENUE_TAXONOMY, STATE_LABEL, STATE_TIMEZONE } from '@adgrid/core';
 
 export default function VenueScreen() {
   const router = useRouter();
@@ -46,7 +46,16 @@ export default function VenueScreen() {
         <ErrorBanner message={error} />
         <Inp label="Screen name" value={form.name} onChangeText={v => update({ name: v })} placeholder="e.g. Main Lobby Screen" autoCapitalize="words" />
         <Inp label="City" value={form.city} onChangeText={v => update({ city: v })} placeholder="Toronto" autoCapitalize="words" />
-        <Inp label={STATE_LABEL[form.country] || 'Province'} value={form.state} onChangeText={v => update({ state: v })} placeholder="Ontario" autoCapitalize="words" />
+        <Inp label={STATE_LABEL[form.country] || 'Province'} value={form.state} onChangeText={v => {
+          // Best-effort auto-fill: only overrides timezone on an exact
+          // province-name match (case-insensitive) against STATE_TIMEZONE,
+          // matching what the hint text on the next step actually promises
+          // -- this used to just claim auto-detection while timezone always
+          // stayed the static 'America/Toronto' default.
+          const zones = STATE_TIMEZONE[form.country] || {};
+          const matchKey = Object.keys(zones).find(k => k.toLowerCase() === v.trim().toLowerCase());
+          update(matchKey ? { state: v, timezone: zones[matchKey] } : { state: v });
+        }} placeholder="Ontario" autoCapitalize="words" />
         <Text style={[styles.fieldLabel, { fontFamily: F.sansMed }]}>Venue category</Text>
         <View style={styles.pills}>
           {categories.map(cat => (
