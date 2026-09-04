@@ -3,6 +3,8 @@ import { C, F, SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
 import { useBreakpoint } from "../../lib/useBreakpoint.js";
 import { BrandIcon } from "../../components/shared/BrandIcon.jsx";
+import { PageHeader } from "../../components/primitives/PageHeader.jsx";
+import { Btn } from "../../components/primitives/Btn.jsx";
 
 // ─── Platform definitions ───────────────────────────────────────────────────
 
@@ -167,8 +169,10 @@ function ConnectModal({ platform, existing, onClose, onSaved }) {
                 width: "100%", boxSizing: "border-box", padding: "9px 12px",
                 border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 13,
                 fontFamily: F.sans, color: C.text, outline: "none",
-                background: C.surface,
+                background: C.surface, transition: "border-color 0.15s",
               }}
+              onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+              onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
             />
           </div>
         ))}
@@ -191,33 +195,14 @@ function ConnectModal({ platform, existing, onClose, onSaved }) {
         )}
 
         <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-          <button onClick={handleSave} disabled={saving} style={{
-            flex: 1, padding: "10px 0", borderRadius: 8, border: "none",
-            background: C.blue, color: "#fff", fontSize: 14, fontWeight: 600,
-            fontFamily: F.sans, cursor: saving ? "not-allowed" : "pointer",
-            opacity: saving ? 0.7 : 1,
-          }}>
-            {saving ? "Saving…" : "Save & Connect"}
-          </button>
-          <button onClick={handleTest} disabled={testing} style={{
-            padding: "10px 16px", borderRadius: 8, border: `1px solid ${C.border}`,
-            background: C.surface, color: C.textMid, fontSize: 14, fontWeight: 500,
-            fontFamily: F.sans, cursor: testing ? "not-allowed" : "pointer",
-          }}>
-            {testing ? "Testing…" : "Test"}
-          </button>
-          <button onClick={onClose} style={{
-            padding: "10px 16px", borderRadius: 8, border: `1px solid ${C.border}`,
-            background: C.surface, color: C.textMid, fontSize: 14, fontWeight: 500,
-            fontFamily: F.sans, cursor: "pointer",
-          }}>
-            Cancel
-          </button>
+          <Btn onClick={handleSave} loading={saving} style={{ flex: 1 }}>Save & Connect</Btn>
+          <Btn variant="secondary" onClick={handleTest} loading={testing}>Test</Btn>
+          <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
         </div>
 
         <a href={platform.docsUrl} target="_blank" rel="noreferrer" style={{
           display: "block", textAlign: "center", marginTop: 14, fontSize: 12,
-          color: C.blue, fontFamily: F.sans, textDecoration: "none",
+          color: C.purple, fontFamily: F.sans, textDecoration: "none",
         }}>
           View {platform.name} docs →
         </a>
@@ -263,23 +248,11 @@ function PlatformCard({ platform, integration, eventCount, onConnect, onDisconne
       )}
 
       <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
-        <button onClick={onConnect} style={{
-          flex: 1, padding: "9px 0", borderRadius: 8,
-          border: connected ? `1px solid ${C.border}` : "none",
-          background: connected ? C.surface : C.blue,
-          color: connected ? C.textMid : "#fff",
-          fontSize: 13, fontWeight: 600, fontFamily: F.sans, cursor: "pointer",
-        }}>
+        <Btn variant={connected ? "secondary" : "primary"} onClick={onConnect} style={{ flex: 1 }}>
           {connected ? "Edit" : "Connect"}
-        </button>
+        </Btn>
         {connected && (
-          <button onClick={onDisconnect} style={{
-            padding: "9px 14px", borderRadius: 8, border: `1px solid ${C.redBorder}`,
-            background: C.redSoft, color: C.red, fontSize: 13,
-            fontWeight: 600, fontFamily: F.sans, cursor: "pointer",
-          }}>
-            Disconnect
-          </button>
+          <Btn variant="danger" onClick={onDisconnect}>Disconnect</Btn>
         )}
       </div>
     </div>
@@ -356,6 +329,7 @@ export default function AdvIntegrationsView() {
     background: active ? C.surface : "transparent",
     color: active ? C.text : C.textSub,
     boxShadow: active ? `0 1px 4px rgba(0,0,0,0.08)` : "none",
+    transition: "background 0.15s",
   });
 
   if (loading) return (
@@ -363,24 +337,25 @@ export default function AdvIntegrationsView() {
   );
 
   return (
-    <div style={{ padding: "32px 40px", fontFamily: F.sans, maxWidth: 960 }}>
-      <div style={{ marginBottom: 28 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: "0 0 6px" }}>Integrations</h2>
-        <p style={{ fontSize: 14, color: C.textSub, margin: 0 }}>
-          Connect ad platforms to receive scan events as server-side conversions.
-        </p>
-      </div>
+    <div style={{ maxWidth: 960 }}>
+      <PageHeader title="Integrations" subtitle="Connect ad platforms to receive scan events as server-side conversions" />
 
       {/* Tabs */}
       <div style={{
         display: "inline-flex", gap: 4, background: C.surfaceAlt,
         padding: 4, borderRadius: 10, marginBottom: 28,
       }}>
-        <button style={TAB_STYLE(tab === "platforms")} onClick={() => setTab("platforms")}>
+        <button style={TAB_STYLE(tab === "platforms")} onClick={() => setTab("platforms")}
+          onMouseEnter={e => { if (tab !== "platforms") e.currentTarget.style.background = C.surface; }}
+          onMouseLeave={e => { if (tab !== "platforms") e.currentTarget.style.background = "transparent"; }}
+        >
           Platforms
         </button>
-        <button style={TAB_STYLE(tab === "events")} onClick={() => setTab("events")}>
-          Event Log {events.length > 0 && <span style={{ marginLeft: 6, padding: "1px 7px", background: C.blueSoft, color: C.blue, borderRadius: 10, fontSize: 11 }}>{events.length}</span>}
+        <button style={TAB_STYLE(tab === "events")} onClick={() => setTab("events")}
+          onMouseEnter={e => { if (tab !== "events") e.currentTarget.style.background = C.surface; }}
+          onMouseLeave={e => { if (tab !== "events") e.currentTarget.style.background = "transparent"; }}
+        >
+          Event Log {events.length > 0 && <span style={{ marginLeft: 6, padding: "1px 7px", background: C.purpleSoft, color: C.purple, borderRadius: 10, fontSize: 11 }}>{events.length}</span>}
         </button>
       </div>
 
