@@ -13,7 +13,7 @@ import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS, STATE_
 import { ScreenLocationPicker } from '../../components/ScreenLocationPicker.jsx';
 import { checkAndGoLive } from '../../lib/screenGoLive.js';
 import { ScreenPhotoManager } from '../../components/screens/ScreenPhotoManager.jsx';
-import { IconBolt, IconDollar } from '../../components/icons.jsx';
+import { IconBolt, IconDollar, IconScreen, IconCheckCircle, IconCard, IconWarning, IconSignal } from '../../components/icons.jsx';
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
@@ -27,7 +27,9 @@ function WizardProgress({ step, total, onCancel }) {
         </div>
         <button
           onClick={onCancel}
-          style={{ background: 'none', border: 'none', fontSize: 12, color: C.textMuted, cursor: 'pointer', fontFamily: F.sans }}
+          style={{ background: 'none', border: 'none', fontSize: 12, color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s' }}
+          onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
+          onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
         >
           Cancel
         </button>
@@ -58,7 +60,7 @@ function StepWelcome({ onNext }) {
   return (
     <div style={{ maxWidth: 560, margin: '0 auto' }}>
       <Card style={{ padding: 40, textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 20 }}>📺</div>
+        <div style={{ color: C.purple, marginBottom: 20, display: 'flex', justifyContent: 'center' }}><IconScreen size={48} /></div>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: C.text, fontFamily: F.display, marginBottom: 12, margin: '0 0 12px' }}>
           Let's get your screen on the network
         </h1>
@@ -68,7 +70,7 @@ function StepWelcome({ onNext }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 36 }}>
           {[
-            { icon: '📺', text: 'Works on any display — TV, monitor, or commercial screen' },
+            { icon: IconScreen, text: 'Works on any display — TV, monitor, or commercial screen' },
             { icon: IconBolt, text: '5 minutes to set up' },
             { icon: IconDollar, text: 'Start earning from day one' },
           ].map(({ icon: Icon, text }) => (
@@ -114,6 +116,8 @@ function PillGroup({ options, value, onChange }) {
               fontSize: 12, fontWeight: 500, fontFamily: F.sans,
               transition: 'all 0.15s',
             }}
+            onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
+            onMouseLeave={e => { if (!active) e.currentTarget.style.background = C.surface; }}
           >{l}</button>
         );
       })}
@@ -136,8 +140,11 @@ function FormatChips({ value, onChange }) {
             border: `1px solid ${active ? C.purple : C.border}`,
             background: active ? C.purpleSoft : C.surface,
             color: active ? C.purple : C.textSub,
-            fontSize: 12, fontFamily: F.sans,
-          }}>{fmt}</button>
+            fontSize: 12, fontFamily: F.sans, transition: 'background 0.15s',
+          }}
+            onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
+            onMouseLeave={e => { if (!active) e.currentTarget.style.background = C.surface; }}
+          >{fmt}</button>
         );
       })}
     </div>
@@ -527,7 +534,10 @@ function StepSetup({ screen, onNext, onBack, onSkip }) {
               color: hardware === hw ? C.purple : C.textSub,
               fontSize: 12, fontWeight: 500, fontFamily: F.sans,
               transition: 'all 0.15s',
-            }}>{hw}</button>
+            }}
+              onMouseEnter={e => { if (hardware !== hw) e.currentTarget.style.background = C.surfaceAlt; }}
+              onMouseLeave={e => { if (hardware !== hw) e.currentTarget.style.background = C.surface; }}
+            >{hw}</button>
           ))}
         </div>
 
@@ -551,8 +561,11 @@ function StepSetup({ screen, onNext, onBack, onSkip }) {
         <div style={{ textAlign: 'center', marginTop: 12 }}>
           <button onClick={onSkip} style={{
             background: 'none', border: 'none', fontSize: 12, color: C.textMuted,
-            cursor: 'pointer', fontFamily: F.sans,
-          }}>Do this later →</button>
+            cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
+            onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
+          >Do this later →</button>
         </div>
       </Card>
     </div>
@@ -580,8 +593,11 @@ function StepConnect({ screen, onDone, onSkip, onBack }) {
   return (
     <div style={{ maxWidth: 520, margin: '0 auto' }}>
       <Card style={{ padding: 40, textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 20 }}>
-          {status === 'connected' ? '✅' : status === 'needs_payout' ? '💳' : status === 'none' ? '⚠️' : '📡'}
+        <div style={{
+          color: status === 'connected' ? C.green : status === 'needs_payout' ? C.purple : status === 'none' ? C.amber : C.textMuted,
+          marginBottom: 20, display: 'flex', justifyContent: 'center',
+        }}>
+          {status === 'connected' ? <IconCheckCircle size={48} /> : status === 'needs_payout' ? <IconCard size={48} /> : status === 'none' ? <IconWarning size={48} /> : <IconSignal size={48} />}
         </div>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
           {status === 'connected' ? 'Screen is live!' : status === 'needs_payout' ? 'Heartbeat confirmed' : 'Test your connection'}
@@ -614,16 +630,22 @@ function StepConnect({ screen, onDone, onSkip, onBack }) {
 
         <button onClick={onSkip} style={{
           background: 'none', border: 'none', fontSize: 12,
-          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans,
-        }}>
+          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
+          onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
+        >
           Skip for now →
         </button>
       </Card>
       <div style={{ textAlign: 'center', marginTop: 12 }}>
         <button onClick={onBack} style={{
           background: 'none', border: 'none', fontSize: 12,
-          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans,
-        }}>← Back to setup guide</button>
+          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
+          onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
+        >← Back to setup guide</button>
       </div>
     </div>
   );
@@ -665,7 +687,7 @@ function StepPayouts({ onDone, onSkip, onBack }) {
     return (
       <div style={{ maxWidth: 520, margin: '0 auto' }}>
         <Card style={{ padding: 40, textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 20 }}>✅</div>
+          <div style={{ color: C.green, marginBottom: 20, display: 'flex', justifyContent: 'center' }}><IconCheckCircle size={48} /></div>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
             Payouts are set up
           </h2>
@@ -681,7 +703,7 @@ function StepPayouts({ onDone, onSkip, onBack }) {
   return (
     <div style={{ maxWidth: 520, margin: '0 auto' }}>
       <Card style={{ padding: 40, textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 20 }}>💳</div>
+        <div style={{ color: C.purple, marginBottom: 20, display: 'flex', justifyContent: 'center' }}><IconCard size={48} /></div>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
           Set up payouts
         </h2>
@@ -695,16 +717,22 @@ function StepPayouts({ onDone, onSkip, onBack }) {
         </Btn>
         <button onClick={onSkip} style={{
           background: 'none', border: 'none', fontSize: 12,
-          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans,
-        }}>
+          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
+          onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
+        >
           Skip for now →
         </button>
       </Card>
       <div style={{ textAlign: 'center', marginTop: 12 }}>
         <button onClick={onBack} style={{
           background: 'none', border: 'none', fontSize: 12,
-          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans,
-        }}>← Back</button>
+          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
+          onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
+        >← Back</button>
       </div>
     </div>
   );
