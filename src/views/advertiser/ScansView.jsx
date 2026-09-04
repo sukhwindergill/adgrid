@@ -2,21 +2,11 @@ import { useState, useEffect } from "react";
 import { C, F } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { useBreakpoint } from "../../lib/useBreakpoint.js";
 import { downloadCsv } from "../../lib/csv.js";
-
-function Card({ label, value, sub }) {
-  return (
-    <div style={{
-      background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-      padding: "20px 24px", flex: 1, minWidth: 160, fontFamily: F.sans,
-    }}>
-      <div style={{ fontSize: 13, color: C.textSub, marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 28, fontWeight: 700, color: C.text }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>{sub}</div>}
-    </div>
-  );
-}
+import { PageHeader } from "../../components/primitives/PageHeader.jsx";
+import { Card } from "../../components/primitives/Card.jsx";
+import { KPI } from "../../components/primitives/KPI.jsx";
+import { Btn } from "../../components/primitives/Btn.jsx";
 
 const SCAN_EXPORT_COLUMNS = [
   { key: "timestamp", label: "Timestamp" },
@@ -49,7 +39,6 @@ function exportCSV(rows) {
 }
 
 export default function ScansView({ impersonatingId }) {
-  const { isMobile } = useBreakpoint();
   const { user } = useAuth();
   const effectiveId = impersonatingId ?? user?.id;
   const [scans, setScans] = useState([]);
@@ -130,23 +119,18 @@ export default function ScansView({ impersonatingId }) {
   );
 
   return (
-    <div style={{ padding: isMobile ? "20px 16px" : "32px 40px", fontFamily: F.sans, maxWidth: 1100 }}>
-      <h2 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: "0 0 24px" }}>
-        Scans & Data
-      </h2>
+    <div style={{ maxWidth: 1100 }}>
+      <PageHeader title="Scans & Data" subtitle="QR scan events, consent, and remarketing export" />
 
       <div style={{ display: "flex", gap: 16, marginBottom: 32, flexWrap: "wrap" }}>
-        <Card label="Total Scans" value={scans.length.toLocaleString()} />
-        <Card label="This Month" value={thisMonth.length.toLocaleString()} />
-        <Card label="Unique Screens" value={uniqueScreens} />
-        <Card label="Top Campaign" value={topCampaign} />
+        <KPI label="Total Scans" value={scans.length.toLocaleString()} />
+        <KPI label="This Month" value={thisMonth.length.toLocaleString()} />
+        <KPI label="Unique Screens" value={uniqueScreens} />
+        <KPI label="Top Campaign" value={topCampaign} />
       </div>
 
-      <div style={{
-        background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-        padding: "20px 24px", marginBottom: 24,
-      }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 16 }}>
+      <Card style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 16, fontFamily: F.sans }}>
           Scans — last 30 days
         </div>
         <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 80 }}>
@@ -155,13 +139,13 @@ export default function ScansView({ impersonatingId }) {
               <div style={{
                 width: "100%", borderRadius: 3,
                 height: `${Math.max(3, (d.count / maxCount) * 70)}px`,
-                background: d.count > 0 ? C.blue : C.border,
+                background: d.count > 0 ? C.purple : C.border,
                 transition: "height 0.2s",
               }} title={`${d.label}: ${d.count}`} />
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
       <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
         <select
@@ -170,7 +154,10 @@ export default function ScansView({ impersonatingId }) {
           style={{
             border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 12px",
             fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface,
+            outline: 'none', transition: 'border-color 0.15s',
           }}
+          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
         >
           <option value="all">All campaigns</option>
           {campaigns.map((c) => (
@@ -178,20 +165,19 @@ export default function ScansView({ impersonatingId }) {
           ))}
         </select>
         <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-          style={{ border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 10px", fontFamily: F.sans, fontSize: 13, color: C.text }} />
+          style={{ border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 10px", fontFamily: F.sans, fontSize: 13, color: C.text, outline: 'none', transition: 'border-color 0.15s' }}
+          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
+        />
         <span style={{ color: C.textSub, fontSize: 13 }}>to</span>
         <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-          style={{ border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 10px", fontFamily: F.sans, fontSize: 13, color: C.text }} />
-        <button
-          onClick={() => exportCSV(filtered)}
-          style={{
-            marginLeft: "auto", padding: "7px 16px", borderRadius: 8,
-            background: C.blue, color: "#fff", border: "none", cursor: "pointer",
-            fontFamily: F.sans, fontSize: 13, fontWeight: 500,
-          }}
-        >
-          Export CSV
-        </button>
+          style={{ border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 10px", fontFamily: F.sans, fontSize: 13, color: C.text, outline: 'none', transition: 'border-color 0.15s' }}
+          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
+        />
+        <div style={{ marginLeft: "auto" }}>
+          <Btn onClick={() => exportCSV(filtered)}>Export CSV</Btn>
+        </div>
       </div>
 
       <div style={{
