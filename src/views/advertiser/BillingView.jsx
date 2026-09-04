@@ -3,15 +3,16 @@ import { C, F, SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
 import { useToast } from "../../components/primitives/Toast.jsx";
 import { useConfirm } from "../../components/primitives/ConfirmModal.jsx";
-import { useBreakpoint } from "../../lib/useBreakpoint.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { IconCard } from "../../components/icons.jsx";
+import { PageHeader } from "../../components/primitives/PageHeader.jsx";
+import { Btn } from "../../components/primitives/Btn.jsx";
 
 const STATUS_COLORS = {
-  paid: { bg: "#f0fdf4", color: "#16a34a" },
-  open: { bg: "#fffbeb", color: "#d97706" },
-  failed: { bg: "#fef2f2", color: "#dc2626" },
-  void: { bg: "#f9fafb", color: "#6b7280" },
+  paid: { bg: C.greenSoft, color: C.green },
+  open: { bg: C.amberSoft, color: C.amber },
+  failed: { bg: C.redSoft, color: C.red },
+  void: { bg: C.surfaceAlt, color: C.textMuted },
 };
 
 const REASON_LABEL = {
@@ -106,7 +107,6 @@ function useDeliveryCredits() {
 }
 
 export default function BillingView() {
-  const { isMobile } = useBreakpoint();
   const { profile } = useAuth();
   const { rows: creditRows, loading: creditsLoading, error: creditsError } = useDeliveryCredits();
   const accountCredit = Number(profile?.credits ?? 0);
@@ -214,35 +214,27 @@ export default function BillingView() {
   if (error) return (
     <div style={{ padding: 40, fontFamily: F.sans }}>
       <div style={{ color: C.red, marginBottom: 12 }}>{error}</div>
-      <button
-        onClick={() => load()}
-        style={{
-          padding: '7px 16px', borderRadius: 8, border: 'none',
-          background: C.purple, color: '#fff', fontSize: 13, cursor: 'pointer',
-        }}
-      >
-        Retry
-      </button>
+      <Btn onClick={() => load()}>Retry</Btn>
     </div>
   );
 
   return (
-    <div style={{ padding: isMobile ? "20px 16px" : "32px 40px", fontFamily: F.sans, maxWidth: 900 }}>
-      <h2 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: "0 0 28px" }}>Billing</h2>
+    <div style={{ maxWidth: 900 }}>
+      <PageHeader title="Billing" subtitle="Payment methods, invoices, and delivery credits" />
 
       {accountCredit > 0 && (
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12,
-          background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12,
+          background: C.greenSoft, border: `1px solid ${C.greenBorder}`, borderRadius: 12,
           padding: "16px 24px", marginBottom: 24,
         }}>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#16a34a", marginBottom: 2 }}>Account Credit</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.green, marginBottom: 2 }}>Account Credit</div>
             <div style={{ fontSize: 12, color: C.textSub }}>
               Applied automatically to your next charge. Comes from delivery shortfalls credited below.
             </div>
           </div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: "#16a34a", fontFamily: F.mono }}>
+          <div style={{ fontSize: 26, fontWeight: 700, color: C.green, fontFamily: F.mono }}>
             ${accountCredit.toFixed(2)}
           </div>
         </div>
@@ -263,7 +255,7 @@ export default function BillingView() {
               <div key={pm.id} style={{
                 display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
                 padding: "12px 16px", background: C.bg, borderRadius: 8,
-                border: `1px solid ${pm.isDefault ? C.blue : C.border}`,
+                border: `1px solid ${pm.isDefault ? C.purple : C.border}`,
               }}>
                 <span style={{ color: C.textSub, display: 'flex' }}><IconCard size={20} /></span>
                 <span style={{ fontSize: 14, fontWeight: 500, color: C.text, textTransform: "capitalize" }}>
@@ -274,21 +266,19 @@ export default function BillingView() {
                 </span>
                 {pm.isDefault && (
                   <span style={{
-                    fontSize: 11, fontWeight: 600, color: C.blue, background: "rgba(37,99,235,0.1)",
+                    fontSize: 11, fontWeight: 600, color: C.purple, background: C.purpleSoft,
                     padding: "2px 8px", borderRadius: 10,
                   }}>Default</span>
                 )}
                 <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
                   {!pm.isDefault && (
-                    <button onClick={() => setDefault(pm)} disabled={pmBusyId === pm.id} style={{
-                      padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.border}`,
-                      background: C.surface, color: C.text, fontSize: 12, cursor: "pointer",
-                    }}>{pmBusyId === pm.id ? "…" : "Set as default"}</button>
+                    <Btn variant="secondary" size="sm" onClick={() => setDefault(pm)} disabled={pmBusyId === pm.id}>
+                      {pmBusyId === pm.id ? "…" : "Set as default"}
+                    </Btn>
                   )}
-                  <button onClick={() => removeMethod(pm)} disabled={pmBusyId === pm.id} style={{
-                    padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.border}`,
-                    background: C.surface, color: C.red, fontSize: 12, cursor: "pointer",
-                  }}>{pmBusyId === pm.id ? "…" : "Remove"}</button>
+                  <Btn variant="secondary" size="sm" onClick={() => removeMethod(pm)} disabled={pmBusyId === pm.id} style={{ color: C.red }}>
+                    {pmBusyId === pm.id ? "…" : "Remove"}
+                  </Btn>
                 </div>
               </div>
             ))}
@@ -296,31 +286,11 @@ export default function BillingView() {
         )}
         <div style={{ marginTop: 16 }}>
           {data.portalUrl ? (
-            <a
-              href={data.portalUrl}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                display: "inline-block", padding: "8px 18px", borderRadius: 8,
-                background: C.blue, color: "#fff", fontSize: 13, fontWeight: 500,
-                textDecoration: "none",
-              }}
-            >
-              + Add Payment Method →
+            <a href={data.portalUrl} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>
+              <Btn>+ Add Payment Method →</Btn>
             </a>
           ) : (
-            <button
-              onClick={startSetup}
-              disabled={setupLoading}
-              style={{
-                padding: "8px 18px", borderRadius: 8, border: "none",
-                background: setupLoading ? C.textMuted : C.purple,
-                color: "#fff", fontSize: 13, fontWeight: 500,
-                cursor: setupLoading ? "not-allowed" : "pointer",
-              }}
-            >
-              {setupLoading ? "Redirecting…" : "＋ Add Payment Method"}
-            </button>
+            <Btn onClick={startSetup} loading={setupLoading}>+ Add Payment Method</Btn>
           )}
         </div>
       </div>
@@ -359,7 +329,7 @@ export default function BillingView() {
                   <td style={{ padding: "12px 20px" }}><Badge status={inv.status} /></td>
                   <td style={{ padding: "12px 20px" }}>
                     {inv.pdf ? (
-                      <a href={inv.pdf} target="_blank" rel="noreferrer" style={{ color: C.blue, fontSize: 12 }}>
+                      <a href={inv.pdf} target="_blank" rel="noreferrer" style={{ color: C.purple, fontSize: 12 }}>
                         Download
                       </a>
                     ) : "—"}
@@ -374,8 +344,8 @@ export default function BillingView() {
 
       {!creditsLoading && creditsError && (
         <div style={{
-          background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12,
-          padding: "14px 24px", marginTop: 24, fontSize: 13, color: "#b91c1c",
+          background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 12,
+          padding: "14px 24px", marginTop: 24, fontSize: 13, color: C.red,
         }}>
           Couldn't load your delivery credits — try refreshing. If this keeps happening, contact support.
         </div>
@@ -405,7 +375,7 @@ export default function BillingView() {
                     <td style={{ padding: "12px 20px", color: C.text }}>{r.campaignName}</td>
                     <td style={{ padding: "12px 20px", color: C.text }}>{r.screenName}</td>
                     <td style={{ padding: "12px 20px", color: C.textSub }}>{REASON_LABEL[r.reason] ?? r.reason}</td>
-                    <td style={{ padding: "12px 20px", color: "#16a34a", fontWeight: 600, fontFamily: F.mono }}>
+                    <td style={{ padding: "12px 20px", color: C.green, fontWeight: 600, fontFamily: F.mono }}>
                       +${Number(r.credit_amount).toFixed(2)} {String(r.currency ?? "CAD").toUpperCase()}
                     </td>
                   </tr>
