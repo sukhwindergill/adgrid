@@ -88,8 +88,11 @@ export function SignalsView({ operatorScreenIds = [], screens = [] }) {
                     border: `1px solid ${day === d ? C.purple : C.border}`,
                     background: day === d ? C.purpleSoft : C.surface,
                     color: day === d ? C.purple : C.textSub,
-                    fontSize: 11, fontWeight: 500, cursor: 'pointer', fontFamily: F.sans,
-                  }}>{d}</button>
+                    fontSize: 11, fontWeight: 500, cursor: 'pointer', fontFamily: F.sans, transition: 'background 0.15s',
+                  }}
+                    onMouseEnter={e => { if (day !== d) e.currentTarget.style.background = C.surfaceAlt; }}
+                    onMouseLeave={e => { if (day !== d) e.currentTarget.style.background = C.surface; }}
+                  >{d}</button>
                 ))}
               </div>
             </div>
@@ -109,7 +112,7 @@ export function SignalsView({ operatorScreenIds = [], screens = [] }) {
 
         <div>
           {winner && (
-            <div style={{ background: 'linear-gradient(135deg, #f5f3ff, #ecfdf5)', border: `1px solid ${C.purpleBorder}`, borderRadius: 12, padding: 20, marginBottom: 16 }}>
+            <div style={{ background: `linear-gradient(135deg, ${C.purpleSoft}, ${C.greenSoft})`, border: `1px solid ${C.purpleBorder}`, borderRadius: 12, padding: 20, marginBottom: 16 }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: C.purple, letterSpacing: '0.5px', marginBottom: 4, fontFamily: F.sans }}>NOW PLAYING — HIGHEST SIGNAL MATCH</div>
               <div style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{winner.advertiser}</div>
               <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>{winner.category} · {winner.screenName}</div>
