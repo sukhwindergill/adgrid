@@ -29,3 +29,5 @@ export const IconWarning    = p => <I {...p}><path d="M12 3l10 18H2L12 3z"/><pat
 export const IconCard       = p => <I {...p}><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></I>;
 export const IconTagPrice   = p => <I {...p}><path d="M20 13l-7 7-9-9V4h7l9 9z"/><circle cx="7.5" cy="7.5" r="1.5"/></I>;
 export const IconBookmark   = p => <I {...p}><path d="M6 3h12v18l-6-4-6 4V3z"/></I>;
+export const IconEdit       = p => <I {...p}><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></I>;
+export const IconCamera     = p => <I {...p}><path d="M4 8h3l2-3h6l2 3h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1z"/><circle cx="12" cy="13" r="4"/></I>;
