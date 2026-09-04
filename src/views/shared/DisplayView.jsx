@@ -4,7 +4,7 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { useOperatorScreenCampaignRows } from '../../hooks/useOperatorScreenCampaignRows.js';
-import { IconChart } from '../../components/icons.jsx';
+import { IconChart, IconClock, IconScreen } from '../../components/icons.jsx';
 
 const HOUR_LABELS = ['12a','1','2','3','4','5','6','7','8','9','10','11','12p','1','2','3','4','5','6','7','8','9','10','11'];
 
@@ -37,8 +37,8 @@ function NowPlayingCard({ campaign }) {
             repeating it here would read as "Nike / Nike · Fashion", so drop it from the subtitle. */}
         <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 10 }}>{campaign.headline ? `${campaign.advertiser} · ${campaign.category}` : campaign.category}</div>
         <div style={{ display: 'flex', gap: 16, fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>
-          <span>🕐 {timeLabel(campaign.timeStart)} – {timeLabel(campaign.timeEnd)}</span>
-          <span>⏱ {campaign.duration}s slots</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconClock size={14} /> {timeLabel(campaign.timeStart)} – {timeLabel(campaign.timeEnd)}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconClock size={14} /> {campaign.duration}s slots</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconChart size={14} /> {campaign.slots}% share</span>
         </div>
       </div>
@@ -132,7 +132,7 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
 
       {screens.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '64px 24px', background: C.surface, borderRadius: 12, border: `1px solid ${C.border}` }}>
-          <div style={{ fontSize: 36, marginBottom: 12 }}>▣</div>
+          <div style={{ color: C.textMuted, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconScreen size={36} /></div>
           <div style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No screens with campaigns</div>
           <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Create campaigns to see them here</div>
         </div>
@@ -157,6 +157,8 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
                     background: isSelected ? C.purpleSoft : C.surface,
                     transition: 'all 0.15s',
                   }}
+                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = C.surfaceAlt; }}
+                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = C.surface; }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: isSelected ? C.purple : C.text, fontFamily: F.sans }}>{s.name}</div>
