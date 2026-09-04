@@ -6,6 +6,7 @@ import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { IconScreen } from '../../components/icons.jsx';
 
 export function ScreenInvitePage() {
   const { token } = useParams();
@@ -126,7 +127,7 @@ export function ScreenInvitePage() {
         )}
         {state === 'valid' && screen && (
           <>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>📺</div>
+            <div style={{ color: C.purple, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconScreen size={36} /></div>
             <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>
               You've been invited to advertise on
             </div>
