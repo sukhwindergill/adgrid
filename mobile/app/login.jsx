@@ -42,6 +42,13 @@ export default function LoginScreen() {
     const { error: err } = await resetPasswordForEmail(email.trim());
     setLoading(false);
     if (err) { setError(err.message); return; }
+    // A fresh code invalidates any earlier verification -- without this,
+    // reaching this screen a second time via backToSignIn -> goToForgot
+    // (rather than startOver, which already clears it) left `verified`
+    // true from a prior attempt, so handleResetPassword would skip
+    // verifyRecoveryCode entirely and apply the update against a code
+    // that was never checked.
+    setCode(''); setNewPassword(''); setVerified(false);
     setSuccess('Check your email for a reset code.');
     setMode('code');
   }
