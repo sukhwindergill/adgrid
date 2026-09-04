@@ -91,7 +91,7 @@ export function Audience() {
 
       {scans.length === 0 && (
         <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, marginBottom: 16 }}>
-          <div style={{ fontSize: 32, marginBottom: 10 }}>📲</div>
+          <div style={{ color: C.textMuted, marginBottom: 10, display: 'flex', justifyContent: 'center' }}><IconQr size={32} /></div>
           <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No scans yet</div>
           <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>QR code scans will appear here once a campaign is live</div>
         </div>
