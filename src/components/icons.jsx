@@ -33,3 +33,4 @@ export const IconEdit       = p => <I {...p}><path d="M12 20h9"/><path d="M16.5 
 export const IconCamera     = p => <I {...p}><path d="M4 8h3l2-3h6l2 3h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1z"/><circle cx="12" cy="13" r="4"/></I>;
 export const IconCheckCircle = p => <I {...p}><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></I>;
 export const IconEyeOff      = p => <I {...p}><path d="M17.5 17.5A10 10 0 012 12s1.4-2.9 4.5-5m5-1.4A10 10 0 0122 12s-.7 1.5-2.2 3"/><path d="M9.9 9.9a3 3 0 004.2 4.2"/><path d="M2 2l20 20"/></I>;
+export const IconSignal      = p => <I {...p}><path d="M4 20v-3"/><path d="M9 20v-7"/><path d="M14 20v-11"/><path d="M19 20V4"/></I>;
