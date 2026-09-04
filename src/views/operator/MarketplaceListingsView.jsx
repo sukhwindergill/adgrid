@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { C, F } from '../../design/tokens.js';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
+import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
 import { fetchOperatorListings, fetchOperatorBookings, cancelListing } from '../../lib/marketplace.js';
 import { MarketplaceListingForm } from './MarketplaceListingForm.jsx';
@@ -62,10 +63,7 @@ function OperatorBookings({ operatorId }) {
       {bookings.map(b => {
         const payout = PAYOUT_STATUS[b.payout_status ?? 'null'] ?? { label: b.payout_status, color: 'amber' };
         return (
-          <div key={b.id} style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8,
-            background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 12,
-          }}>
+          <Card key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, padding: 12 }}>
             <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMid }}>
               {b.listing?.is_bundle && <span style={{ color: C.purple, fontWeight: 600 }}>Bundle · </span>}
               ${(b.price_cents / 100).toFixed(0)} · {b.listing ? `${b.listing.start_date} – ${b.listing.end_date}` : 'listing removed'}
@@ -80,7 +78,7 @@ function OperatorBookings({ operatorId }) {
                 {BOOKING_STATUS_LABEL[b.status] ?? b.status}
               </span>
             </div>
-          </div>
+          </Card>
         );
       })}
     </div>
@@ -128,10 +126,8 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
   };
 
   return (
-    <div style={{ padding: 24 }}>
-      <h2 style={{ fontFamily: F.display, fontSize: 20, fontWeight: 600, color: C.text, marginBottom: 16 }}>
-        Marketplace listings
-      </h2>
+    <div>
+      <PageHeader title="Marketplace listings" subtitle="Sell exclusive placements outside the open auction" />
 
       <Tabs
         tabs={[{ id: 'listings', label: 'Listings' }, { id: 'bookings', label: 'Bookings' }]}
@@ -232,10 +228,7 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
             {listings.map(l => {
               const st = LISTING_STATUS[l.status] ?? { label: l.status, color: 'textMuted', bg: 'surfaceAlt' };
               return (
-              <div key={l.id} style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8,
-                background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 12,
-              }}>
+              <Card key={l.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, padding: 12 }}>
                 <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMid }}>
                   {l.is_bundle && <span style={{ color: C.purple, fontWeight: 600 }}>Bundle · </span>}
                   <span style={{ fontWeight: 600, color: C.text }}>
@@ -258,7 +251,7 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
                     </Btn>
                   )}
                 </div>
-              </div>
+              </Card>
               );
             })}
           </div>
