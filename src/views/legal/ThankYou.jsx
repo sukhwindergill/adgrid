@@ -26,6 +26,7 @@ const promise = {
 const btn = {
   display: 'inline-block', marginTop: 28, padding: '13px 26px', borderRadius: 8,
   background: '#7B2FFF', color: '#fff', textDecoration: 'none', fontWeight: 600, fontSize: 15,
+  transition: 'opacity 0.15s',
 };
 
 export function ThankYou() {
@@ -46,7 +47,10 @@ export function ThankYou() {
           onboard operators and advertisers in your city.
         </p>
         <p style={promise}>We'll respond within 2 business days.</p>
-        <Link to="/" style={btn}>Back to home</Link>
+        <Link to="/" style={btn}
+          onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
+          onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+        >Back to home</Link>
       </div>
     </div>
   );

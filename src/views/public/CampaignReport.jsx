@@ -55,7 +55,10 @@ export function CampaignReport() {
   return (
     <div className="report-page">
       <div className="report-actions">
-        <button onClick={() => window.print()} style={btnStyle}>Print / Save PDF</button>
+        <button onClick={() => window.print()} style={btnStyle}
+          onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
+          onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
+        >Print / Save PDF</button>
         <button
           onClick={() => downloadCsv(`${campaign.name}-delivery.csv`, [
             { key: 'day', label: 'Day' },
@@ -65,6 +68,8 @@ export function CampaignReport() {
             { key: 'basis', label: 'Basis' },
           ], daily)}
           style={btnStyle}
+          onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
+          onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
         >Export CSV</button>
       </div>
 
@@ -130,6 +135,7 @@ const cell = { padding: '8px 6px' };
 const btnStyle = {
   padding: '7px 14px', borderRadius: 8, border: `1px solid ${C.border}`,
   background: C.surface, color: C.textSub, fontFamily: F.sans, fontSize: 12, cursor: 'pointer',
+  transition: 'background 0.15s',
 };
 
 function Stat({ label, value, sub }) {
