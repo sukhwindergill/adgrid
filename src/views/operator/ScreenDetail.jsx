@@ -968,13 +968,18 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
             setConnStatus('checking');
             if (screen.status === 'live') {
               const since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-              const { data } = await supabase
+              const { data, error: err } = await supabase
                 .from('display_heartbeats')
                 .select('id')
                 .eq('screen_id', screen.id)
                 .gte('created_at', since)
                 .limit(1);
-              setConnStatus(data && data.length > 0 ? 'ok' : 'no_heartbeat');
+              // Same bug fixed in mobile's onboard/connect.jsx (#175): a
+              // failed check (network, RLS, transient outage) must not be
+              // reported as "no heartbeat" -- that copy implies the check
+              // ran and found nothing, which is false when it didn't run
+              // at all.
+              setConnStatus(err ? 'check_failed' : data && data.length > 0 ? 'ok' : 'no_heartbeat');
               return;
             }
             const { eligible, reason, updated } = await checkAndGoLive(supabase, screen.id, profile?.connect_status);
@@ -1001,6 +1006,9 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
           <span style={{ fontSize: 13, color: C.amber, fontFamily: F.sans }}>
             Heartbeat received — set up payouts below before this screen can go live.
           </span>
+        )}
+        {connStatus === 'check_failed' && (
+          <span style={{ fontSize: 13, color: C.red, fontFamily: F.sans }}>Couldn't check your connection — check your network and try again.</span>
         )}
       </div>
     </Card>
