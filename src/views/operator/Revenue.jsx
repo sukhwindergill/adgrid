@@ -17,6 +17,24 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { SkeletonRow, SkeletonTable } from '../../components/ui/Skeleton.jsx';
 import { IconDollar, IconBank, IconRecycle, IconScreen } from '../../components/icons.jsx';
 
+function revenueToCsv(rows, ownerRevenueShare) {
+  const header = ['Campaign', 'Screen', 'City', 'Gross', 'Platform', 'Owner', 'Network', 'Status'];
+  const lines = rows.map(c => {
+    const split = computeRevenueSplit(c.budget, ownerRevenueShare);
+    return [c.advertiser, c.screen, c.city, c.budget, split.platform, split.owner, split.pool, c.status];
+  });
+  return [header, ...lines].map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+}
+
+function downloadCsv(csv, filename) {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 // Owns its own scoped `bookings` fetch instead of App.jsx's app-wide,
 // unbounded array (slice 4 of the "decouple from the app-wide unbounded
 // bookings fetch" series -- ApprovalQueue, Campaigns.jsx, and both
@@ -125,14 +143,18 @@ export function Revenue({ operatorScreenIds = [] }) {
                 border: `1px solid ${period === d ? C.purple : C.border}`,
                 background: period === d ? C.purpleSoft : C.surface,
                 color: period === d ? C.purple : C.textSub, fontFamily: F.sans, fontWeight: 500,
-              }}>{label}</button>
+                transition: 'background 0.15s',
+              }}
+                onMouseEnter={e => { if (period !== d) e.currentTarget.style.background = C.surfaceAlt; }}
+                onMouseLeave={e => { if (period !== d) e.currentTarget.style.background = C.surface; }}
+              >{label}</button>
             ))}
-            <Btn variant="secondary" size="sm">↓ Export Report</Btn>
+            <Btn variant="secondary" size="sm" onClick={() => downloadCsv(revenueToCsv(filteredCampaigns, ownerRevenueShare), 'adgrid-revenue.csv')}>↓ Export Report</Btn>
           </div>
         } />
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(5,1fr)', gap: 14, marginBottom: 24 }}>
         <KPI label="Total Ad Spend"   value={`$${total.toLocaleString()}`}    sub="from advertisers" trend={spendTrend} trendLabel="vs prior 30 days" icon={<IconDollar size={16} />} />
-        <KPI label="Platform Revenue" value={`$${platform.toLocaleString()}`} sub="12% fee" color={C.blue} icon="$" />
+        <KPI label="Platform Revenue" value={`$${platform.toLocaleString()}`} sub="12% fee" color={C.blue} icon={<IconDollar size={16} />} />
         <KPI label="Owner Payouts"    value={`$${owners.toLocaleString()}`}   sub={`${ownerPct}% of net`} color={C.green} icon={<IconBank size={16} />} />
         <KPI label="Network Pool"     value={`$${network.toLocaleString()}`}  sub="reinvestment" icon={<IconRecycle size={16} />} />
         <KPI label="Given Up to House Ads" value={`$${houseAdOpportunityCost.toLocaleString()}`} sub="estimated, at CPM floor" color={C.textSub} icon={<IconScreen size={16} />} />
