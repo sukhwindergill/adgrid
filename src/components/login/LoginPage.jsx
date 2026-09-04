@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { F } from '../../design/tokens.js';
+import { IconEye, IconEyeOff } from '../../components/icons.jsx';
 
 const loginCSS = `
   @keyframes loginOrb1 {
@@ -51,7 +52,7 @@ function DarkInp({ label, type, placeholder, value, onChange, onKeyDown, togglea
             onFocus={e => e.target.style.outline = '2px solid #7B2FFF'}
             onBlur={e => e.target.style.outline = 'none'}
           >
-            <span aria-hidden="true">{visible ? '🙈' : '👁'}</span>
+            <span aria-hidden="true" style={{ display: 'flex', color: '#8A8A9A' }}>{visible ? <IconEyeOff size={15} /> : <IconEye size={15} />}</span>
           </button>
         )}
       </div>
