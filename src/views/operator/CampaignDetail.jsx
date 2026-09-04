@@ -15,6 +15,7 @@ import { ApproveBtn } from '../../lib/campaignActions.jsx';
 import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
 import { DeliveryCheckPanel } from '../../components/shared/DeliveryCheckPanel.jsx';
 import { PacingCard } from '../../components/shared/PacingCard.jsx';
+import { IconEdit, IconClock } from '../../components/icons.jsx';
 
 export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onDuplicate, canReview = false, setCampaigns, onApprovalChange, isAdvertiserView = false }) {
   const toast = useToast();
@@ -94,8 +95,10 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
               placeholder="Reason for rejection…"
               style={{
                 padding: '5px 10px', borderRadius: 6, border: `1px solid ${C.border}`,
-                fontFamily: F.sans, fontSize: 12, width: 220, outline: 'none',
+                fontFamily: F.sans, fontSize: 12, width: 220, outline: 'none', transition: 'border-color 0.15s',
               }}
+              onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+              onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
               onKeyDown={e => {
                 if (e.key === 'Enter') confirmReject();
                 if (e.key === 'Escape') { setRejecting(false); setRejectReason(''); setRejectErr(null); }
@@ -127,13 +130,13 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
           {onDuplicate && <Btn variant="secondary" size="sm" onClick={() => onDuplicate(c)}>⧉ Duplicate</Btn>}
           {statusAction(c.status)}
           <Btn variant="secondary" size="sm" onClick={() => setSharing(true)}>Share report</Btn>
-          <Btn variant="secondary" size="sm" onClick={() => { setEditForm({ budget: c.budget, start: c.start, end: c.end }); setEditing(true); }}>✏ Edit</Btn>
+          <Btn variant="secondary" size="sm" icon={<IconEdit size={13} />} onClick={() => { setEditForm({ budget: c.budget, start: c.start, end: c.end }); setEditing(true); }}>Edit</Btn>
         </>}
       />
 
       {c.status === 'pending_review' && (
         <div style={{ background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, fontFamily: F.sans }}>
-          <span style={{ fontSize: 16 }}>⏳</span>
+          <span style={{ color: C.amber, display: 'flex' }}><IconClock size={16} /></span>
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: C.amber }}>Awaiting Review</div>
             <div style={{ fontSize: 12, color: C.textSub, marginTop: 1 }}>{canReview ? 'Review the creative and schedule below, then approve or reject.' : 'Your screen owner(s) are reviewing this campaign.'}</div>
@@ -225,7 +228,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
                   </div>
                 </div>
               ))}
-              <Btn variant="secondary" size="sm" style={{ alignSelf: 'flex-start' }} onClick={() => { setTab('creative'); setCreativeForm({ accent_color: c.color ?? '#7c3aed' }); setEditingCreative(true); }}>✏ Edit Creative</Btn>
+              <Btn variant="secondary" size="sm" icon={<IconEdit size={13} />} style={{ alignSelf: 'flex-start' }} onClick={() => { setTab('creative'); setCreativeForm({ accent_color: c.color ?? '#7c3aed' }); setEditingCreative(true); }}>Edit Creative</Btn>
             </div>
           </div>
           {editingCreative && (
@@ -292,8 +295,8 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
         }}>
           <div style={{
-            background: '#fff', borderRadius: 14, padding: 28, width: 400,
-            fontFamily: F.sans, boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+            background: C.surface, borderRadius: 14, padding: 28, width: 400,
+            fontFamily: F.sans, boxShadow: '0 24px 64px rgba(0,0,0,.5)',
           }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 20 }}>Edit Campaign</div>
             {[
@@ -310,8 +313,10 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
                   style={{
                     width: '100%', padding: '8px 12px', borderRadius: 8,
                     border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 13,
-                    outline: 'none', boxSizing: 'border-box',
+                    outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s',
                   }}
+                  onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+                  onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
                 />
               </div>
             ))}
