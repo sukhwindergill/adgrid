@@ -22,7 +22,7 @@ export default function RevenueScreen() {
   const { profile } = useAuth();
   const { screens } = useScreens(profile?.id);
   const screenIds = screens.map(s => s.id);
-  const { campaigns, loading, totalRevenue } = useRevenue(profile?.id, screenIds, period);
+  const { campaigns, loading, totalRevenue } = useRevenue(profile?.id, screenIds, period, profile?.owner_revenue_share);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
@@ -47,7 +47,7 @@ export default function RevenueScreen() {
                 {item.campaign?.name}
               </Text>
               <Text style={[{ fontFamily: F.sansSemi, color: C.green, fontSize: 14 }]}>
-                +{formatCurrency((item.campaign?.budget || 0) * SCREEN_OWNER_SHARE, 'cad')}
+                +{formatCurrency((item.campaign?.budget || 0) * (profile?.owner_revenue_share ?? SCREEN_OWNER_SHARE), 'cad')}
               </Text>
             </View>
             <Text style={[{ fontFamily: F.sans, color: C.textSub, fontSize: 12 }]}>{item.campaign?.advertiser_name}</Text>

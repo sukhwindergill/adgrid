@@ -5,7 +5,7 @@ import { S } from '../../lib/tokens';
 export function Card({ children, style, onPress }) {
   if (onPress) {
     return (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={[S.card, S.shadow, style]}>
+      <TouchableOpacity onPress={onPress} activeOpacity={0.85} accessibilityRole="button" style={[S.card, S.shadow, style]}>
         {children}
       </TouchableOpacity>
     );

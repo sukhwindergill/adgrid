@@ -16,7 +16,7 @@ import { formatCurrency } from '@adgrid/core';
 export default function DashboardScreen() {
   const router = useRouter();
   const { profile } = useAuth();
-  const { totalScreens, liveScreens, pendingApprovals, revenueThisMonth, loading } = useDashboard(profile?.id);
+  const { totalScreens, liveScreens, pendingApprovals, revenueThisMonth, loading } = useDashboard(profile?.id, profile?.owner_revenue_share);
   const { screens, loading: screensLoading, refetch } = useScreens(profile?.id);
   const firstName = profile?.name?.split(' ')[0] || 'Operator';
 

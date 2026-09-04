@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { useState } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../../context/AuthContext';
 import { useBilling } from '../../../hooks/useBilling';
 import { Card } from '../../../components/ui/Card';
 import { Btn } from '../../../components/ui/Btn';
@@ -11,7 +12,7 @@ import { PageHeader } from '../../../components/ui/PageHeader';
 import { Badge } from '../../../components/ui/Badge';
 import { ErrorBanner } from '../../../components/ui/ErrorBanner';
 import { C, F } from '../../../lib/tokens';
-import { formatCurrency } from '@adgrid/core';
+import { formatCurrency, SCREEN_OWNER_SHARE } from '@adgrid/core';
 
 const FUNCTIONS_URL = process.env.EXPO_PUBLIC_SUPABASE_URL
   ? `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1`
@@ -21,8 +22,10 @@ const PAYOUT_BADGE_VARIANT = { paid: 'green', pending: 'amber', in_transit: 'amb
 
 export default function BillingScreen() {
   const router = useRouter();
+  const { profile } = useAuth();
   const { data, loading, error, refresh } = useBilling();
   const [connecting, setConnecting] = useState(false);
+  const payoutPct = Math.round((profile?.owner_revenue_share ?? SCREEN_OWNER_SHARE) * 100);
 
   const connected = data?.connectStatus === 'active';
   const payouts = data?.payouts ?? [];
@@ -75,7 +78,7 @@ export default function BillingScreen() {
             <Card style={styles.card}>
               <Text style={[styles.cardTitle, { fontFamily: F.sansSemi }]}>Payout rate</Text>
               <Text style={[styles.cardSub, { fontFamily: F.sans }]}>
-                You receive 70% of the campaign budget for each approved ad. Payouts processed monthly.
+                You receive {payoutPct}% of the campaign budget for each approved ad. Payouts processed monthly.
               </Text>
             </Card>
 
