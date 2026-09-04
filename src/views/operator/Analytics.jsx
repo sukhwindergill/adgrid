@@ -250,8 +250,11 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
                   padding: '5px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer',
                   border: `1px solid ${period === d ? C.purple : C.border}`,
                   background: period === d ? C.purpleSoft : C.surface,
-                  color: period === d ? C.purple : C.textSub, fontFamily: F.sans, fontWeight: 500,
-                }}>{d}d</button>
+                  color: period === d ? C.purple : C.textSub, fontFamily: F.sans, fontWeight: 500, transition: 'background 0.15s',
+                }}
+                  onMouseEnter={e => { if (period !== d) e.currentTarget.style.background = C.surfaceAlt; }}
+                  onMouseLeave={e => { if (period !== d) e.currentTarget.style.background = C.surface; }}
+                >{d}d</button>
               ))}
             </div>
             <select
@@ -264,7 +267,10 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
                 color: period === 'custom' ? C.purple : C.textSub, fontFamily: F.sans, fontWeight: 500,
                 appearance: 'none', paddingRight: 24, backgroundImage: `url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="12" height="8"%3E%3Cpath fill="%23666" d="M0 0l6 8 6-8z"/%3E%3C/svg%3E')`,
                 backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center',
+                transition: 'border-color 0.15s',
               }}
+              onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+              onBlur={e => { e.currentTarget.style.borderColor = period === 'custom' ? C.purple : C.border; }}
             >
               <option value="custom">Custom…</option>
             </select>
@@ -283,14 +289,18 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
             type="date"
             value={customFrom}
             onChange={e => setCustomFrom(e.target.value)}
-            style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: F.sans, background: C.surface, color: C.text, outline: 'none' }}
+            style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: F.sans, background: C.surface, color: C.text, outline: 'none', transition: 'border-color 0.15s' }}
+            onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+            onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
           />
           <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans }}>to</span>
           <input
             type="date"
             value={customTo}
             onChange={e => setCustomTo(e.target.value)}
-            style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: F.sans, background: C.surface, color: C.text, outline: 'none' }}
+            style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: F.sans, background: C.surface, color: C.text, outline: 'none', transition: 'border-color 0.15s' }}
+            onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+            onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
           />
         </div>
       )}
@@ -312,13 +322,19 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
       }}>
         <span style={{ fontSize: 12, fontWeight: 600, color: C.textSub, fontFamily: F.sans }}>Filter by:</span>
         <select value={filters.gender} onChange={e => setFilters(f => ({ ...f, gender: e.target.value }))}
-          style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface }}>
+          style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
+          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
+        >
           <option value="">All Genders</option>
           <option value="Female">Female</option>
           <option value="Male">Male</option>
         </select>
         <select value={filters.age} onChange={e => setFilters(f => ({ ...f, age: e.target.value }))}
-          style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface }}>
+          style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
+          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
+        >
           <option value="">All Ages</option>
           <option value="18-24">18–24</option>
           <option value="25-34">25–34</option>
@@ -327,7 +343,10 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
           <option value="55+">55+</option>
         </select>
         <button onClick={() => setFilters({ gender: '', age: '' })}
-          style={{ padding: '6px 14px', background: 'none', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.textSub, cursor: 'pointer' }}>
+          style={{ padding: '6px 14px', background: 'none', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.textSub, cursor: 'pointer', transition: 'background 0.15s' }}
+          onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+        >
           Reset
         </button>
         {hasReal && (
