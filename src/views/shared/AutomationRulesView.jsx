@@ -106,8 +106,11 @@ export function AutomationRulesView({ user, ownerSide = 'advertiser', setNav }) 
           <button onClick={() => setNav('op-settings')} style={{
             padding: '6px 14px', borderRadius: 6, border: `1px solid ${C.purple}`,
             background: 'transparent', color: C.purple, fontSize: 12, fontWeight: 600,
-            cursor: 'pointer', whiteSpace: 'nowrap',
-          }}>Open Settings → Review →</button>
+            cursor: 'pointer', whiteSpace: 'nowrap', transition: 'background 0.15s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = C.purpleSoft; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+          >Open Settings → Review →</button>
         </div>
       )}
 
