@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { C, F } from '../../design/tokens.js';
+import { Card } from '../../components/primitives/Card.jsx';
+import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
+import { SkeletonCard, SkeletonRow } from '../../components/ui/Skeleton.jsx';
 import { fetchActiveListings, fetchAdvertiserBookings } from '../../lib/marketplace.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { IconTagPrice } from '../../components/icons.jsx';
 
 const BOOKING_STATUS_LABEL = {
   confirmed: 'Confirmed',
@@ -10,6 +14,15 @@ const BOOKING_STATUS_LABEL = {
   completed: 'Completed',
   cancelled: 'Cancelled',
 };
+
+function EmptyState({ text }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
+      <div style={{ color: C.textMuted, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconTagPrice size={32} /></div>
+      <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>{text}</div>
+    </div>
+  );
+}
 
 function BrowseListings({ onSelectListing }) {
   const [listings, setListings] = useState([]);
@@ -19,19 +32,22 @@ function BrowseListings({ onSelectListing }) {
     fetchActiveListings().then(data => { setListings(data ?? []); setLoading(false); });
   }, []);
 
-  if (loading) return <div style={{ fontFamily: F.sans, color: C.textMuted, padding: '24px 0' }}>Loading listings…</div>;
+  if (loading) {
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+        {[1, 2, 3].map(i => <SkeletonCard key={i} lines={2} />)}
+      </div>
+    );
+  }
+
+  if (listings.length === 0) {
+    return <EmptyState text="No exclusive listings available right now." />;
+  }
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
       {listings.map(l => (
-        <div
-          key={l.id}
-          onClick={() => onSelectListing(l.id)}
-          style={{
-            cursor: 'pointer', background: C.surface, border: `1px solid ${C.border}`,
-            borderRadius: 12, padding: 16,
-          }}
-        >
+        <Card key={l.id} onClick={() => onSelectListing(l.id)} style={{ padding: 16 }}>
           <div style={{ fontFamily: F.sans, fontWeight: 600, fontSize: 15, color: C.text, display: 'flex', alignItems: 'center', gap: 8 }}>
             ${(l.price_cents / 100).toFixed(0)}
             {l.is_bundle && (
@@ -43,11 +59,8 @@ function BrowseListings({ onSelectListing }) {
           <div style={{ fontFamily: F.sans, fontSize: 12, color: C.textSub, marginTop: 4 }}>
             {l.start_date} – {l.end_date}
           </div>
-        </div>
+        </Card>
       ))}
-      {listings.length === 0 && (
-        <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMuted }}>No exclusive listings available right now.</div>
-      )}
     </div>
   );
 }
@@ -62,27 +75,26 @@ function MyBookings({ onSelectListing }) {
     fetchAdvertiserBookings(user.id).then(data => { setBookings(data ?? []); setLoading(false); });
   }, [user]);
 
-  if (loading) return <div style={{ fontFamily: F.sans, color: C.textMuted, padding: '24px 0' }}>Loading your bookings…</div>;
-
-  if (bookings.length === 0) {
+  if (loading) {
     return (
-      <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMuted, padding: '24px 0' }}>
-        You haven't booked any exclusive placements yet.
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <SkeletonRow cols={3} />
+        <SkeletonRow cols={3} />
       </div>
     );
+  }
+
+  if (bookings.length === 0) {
+    return <EmptyState text="You haven't booked any exclusive placements yet." />;
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {bookings.map(b => (
-        <div
+        <Card
           key={b.id}
-          onClick={() => b.listing && onSelectListing(b.listing.id)}
-          style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8,
-            background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 12,
-            cursor: b.listing ? 'pointer' : 'default',
-          }}
+          onClick={b.listing ? () => onSelectListing(b.listing.id) : undefined}
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, padding: 12 }}
         >
           <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMid }}>
             {b.screen_name ?? 'Screen unavailable'}
@@ -101,7 +113,7 @@ function MyBookings({ onSelectListing }) {
               {BOOKING_STATUS_LABEL[b.status] ?? b.status}
             </span>
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   );
@@ -111,18 +123,18 @@ export function MarketplaceView({ onSelectListing }) {
   const [tab, setTab] = useState('browse');
 
   return (
-    <div style={{ padding: 24 }}>
-      <h2 style={{ fontFamily: F.display, fontSize: 20, fontWeight: 600, color: C.text, marginBottom: 16 }}>
-        Marketplace
-      </h2>
+    <div>
+      <PageHeader title="Marketplace" subtitle="Exclusive placements booked outright, outside the open auction" />
       <Tabs
         tabs={[{ id: 'browse', label: 'Browse' }, { id: 'bookings', label: 'My Bookings' }]}
         active={tab}
         onChange={setTab}
       />
-      {tab === 'browse'
-        ? <BrowseListings onSelectListing={onSelectListing} />
-        : <MyBookings onSelectListing={onSelectListing} />}
+      <div style={{ marginTop: 20 }}>
+        {tab === 'browse'
+          ? <BrowseListings onSelectListing={onSelectListing} />
+          : <MyBookings onSelectListing={onSelectListing} />}
+      </div>
     </div>
   );
 }
