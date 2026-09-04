@@ -20,6 +20,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { listDrafts, deleteDraft } from '../../lib/campaignDrafts.js';
 import { DraftsCard } from './createCampaign/DraftsCard.jsx';
 import { normalizeBooking } from '../../lib/normalizeBooking.js';
+import { IconDollar, IconEye, IconQr, IconTrendUp, IconTarget } from '../../components/icons.jsx';
 
 const RECENT_CAMPAIGNS_LIMIT = 20;
 
@@ -224,18 +225,18 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
       <DraftsCard drafts={drafts} onResume={resumeDraft} onDelete={removeDraft} />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
-        <KPI label="Spent to Date" value={`$${totalSpent.toLocaleString()}`}         sub={`${totalSpend > 0 ? Math.round((totalSpent / totalSpend) * 100) : 0}% of $${totalSpend.toLocaleString()} budget`} color={C.blue} icon="💰" />
+        <KPI label="Spent to Date" value={`$${totalSpent.toLocaleString()}`}         sub={`${totalSpend > 0 ? Math.round((totalSpent / totalSpend) * 100) : 0}% of $${totalSpend.toLocaleString()} budget`} color={C.blue} icon={<IconDollar size={16} />} />
         <KPI label="Plays"         value={totalPlays.toLocaleString()}                sub="verified proof of play" icon="▶" />
-        <KPI label="Impressions"   value={`${(totalImpr / 1000).toFixed(1)}K`}        sub={imprBasisLabel} color={C.purple} trend={imprTrend} trendLabel="vs prior 30 days" icon="👁" />
+        <KPI label="Impressions"   value={`${(totalImpr / 1000).toFixed(1)}K`}        sub={imprBasisLabel} color={C.purple} trend={imprTrend} trendLabel="vs prior 30 days" icon={<IconEye size={16} />} />
         <KPI label="QR Scans"      value={billableScans.toLocaleString()}
              sub={filteredScans > 0 ? `${filteredScans} filtered as bot/duplicate` : 'leads captured'}
-             color={C.green} icon="📲" />
+             color={C.green} icon={<IconQr size={16} />} />
       </div>
 
       {(cpm !== null || costPerScan !== null) && (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
-          <KPI label="CPM" value={cpm === null ? '—' : `$${cpm.toFixed(2)}`} sub="cost per 1,000 impressions" icon="📈" />
-          <KPI label="Cost per Scan" value={costPerScan === null ? '—' : `$${costPerScan.toFixed(2)}`} sub="spend ÷ billable scans" color={C.green} icon="🎯" />
+          <KPI label="CPM" value={cpm === null ? '—' : `$${cpm.toFixed(2)}`} sub="cost per 1,000 impressions" icon={<IconTrendUp size={16} />} />
+          <KPI label="Cost per Scan" value={costPerScan === null ? '—' : `$${costPerScan.toFixed(2)}`} sub="spend ÷ billable scans" color={C.green} icon={<IconTarget size={16} />} />
         </div>
       )}
 

@@ -8,7 +8,12 @@ export const KPI = ({ label, value, sub, color = C.text, trend = null, trendLabe
   <Card style={{ padding: 20 }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
       <span style={{ fontSize: 12, fontWeight: 500, color: C.textSub, fontFamily: F.sans }}>{label}</span>
-      {icon && <span style={{ fontSize: 18 }}>{icon}</span>}
+      {icon && (
+        <span style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: 28, height: 28, borderRadius: 8, background: C.purpleSoft, color: C.purple, flexShrink: 0,
+        }}>{icon}</span>
+      )}
     </div>
     <div style={{ fontSize: 26, fontWeight: 700, color, lineHeight: 1, marginBottom: 4, fontFamily: F.mono }}>{value}</div>
     {sub && <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>{sub}</div>}

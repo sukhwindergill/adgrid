@@ -11,6 +11,7 @@ import { Tabs } from '../../components/primitives/Tabs.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { SkeletonTable, SkeletonRow } from '../../components/ui/Skeleton.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { IconQr, IconMail, IconGlobe } from '../../components/icons.jsx';
 
 function useScans() {
   const [scans, setScans] = useState([]);
@@ -76,10 +77,10 @@ export function Audience() {
         actions={<Btn onClick={doExport} variant={exportDone ? 'success' : 'primary'} icon="↓" disabled={consented.filter(s => s.email).length === 0}>{exportDone ? 'Exported!' : 'Export Remarketing CSV'}</Btn>} />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : isTablet ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
-        <KPI label="Total Scans"      value={scans.length}                                sub="QR code scans" icon="📲" />
+        <KPI label="Total Scans"      value={scans.length}                                sub="QR code scans" icon={<IconQr size={16} />} />
         <KPI label="Consent Rate"     value={consentRate + '%'}                           sub="opted in" color={C.green} icon="✓" />
-        <KPI label="Remarketing List" value={consented.filter(s => s.email).length + ' emails'} sub="ready to export" color={C.purple} icon="📧" />
-        <KPI label="Unique Cities"    value={new Set(scans.map(s => s.city).filter(c => c !== '—')).size} sub="locations" icon="🌍" />
+        <KPI label="Remarketing List" value={consented.filter(s => s.email).length + ' emails'} sub="ready to export" color={C.purple} icon={<IconMail size={16} />} />
+        <KPI label="Unique Cities"    value={new Set(scans.map(s => s.city).filter(c => c !== '—')).size} sub="locations" icon={<IconGlobe size={16} />} />
       </div>
 
       <Card style={{ marginBottom: 16, padding: '12px 20px' }}>

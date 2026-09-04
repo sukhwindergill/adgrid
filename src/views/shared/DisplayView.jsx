@@ -4,6 +4,7 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { useOperatorScreenCampaignRows } from '../../hooks/useOperatorScreenCampaignRows.js';
+import { IconChart } from '../../components/icons.jsx';
 
 const HOUR_LABELS = ['12a','1','2','3','4','5','6','7','8','9','10','11','12p','1','2','3','4','5','6','7','8','9','10','11'];
 
@@ -38,7 +39,7 @@ function NowPlayingCard({ campaign }) {
         <div style={{ display: 'flex', gap: 16, fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>
           <span>🕐 {timeLabel(campaign.timeStart)} – {timeLabel(campaign.timeEnd)}</span>
           <span>⏱ {campaign.duration}s slots</span>
-          <span>📊 {campaign.slots}% share</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconChart size={14} /> {campaign.slots}% share</span>
         </div>
       </div>
     </div>

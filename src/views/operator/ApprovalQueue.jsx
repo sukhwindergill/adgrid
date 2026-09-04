@@ -13,6 +13,7 @@ import { ReadabilityPanel } from '../../components/shared/ReadabilityPanel.jsx';
 import { useConfirm } from '../../components/primitives/ConfirmModal.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { IconBolt } from '../../components/icons.jsx';
 import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
 
 const REJECT_REASONS = [
@@ -672,7 +673,7 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
       {/* Auto-approve toggle */}
       <Card style={{ padding: '16px 20px', marginBottom: 20, display: 'flex', gap: 16, alignItems: 'flex-start' }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>⚡ Auto-approve campaigns for my screens</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}><IconBolt size={14} /> Auto-approve campaigns for my screens</div>
           <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5 }}>
             Campaigns go live instantly without manual review.
             {autoApprove && (

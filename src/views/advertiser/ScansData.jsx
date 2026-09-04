@@ -7,6 +7,7 @@ import { Table } from '../../components/primitives/Table.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { SCAN_DATA } from '../../lib/data.js';
+import { IconQr, IconMail, IconLock } from '../../components/icons.jsx';
 
 export function ScansData() {
   const [exportDone, setExportDone] = useState(false);
@@ -32,15 +33,15 @@ export function ScansData() {
 
       <Card style={{ marginBottom: 20, padding: '14px 18px', background: C.purpleSoft, border: `1px solid ${C.purpleBorder}` }}>
         <div style={{ fontSize: 13, color: C.text, fontFamily: F.sans }}>
-          <strong>🔒 Privacy first:</strong> All QR scans below are <strong>consented first-party data</strong>. Users opt-in on your landing page — you own this audience and can export it for remarketing at any time.
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><IconLock size={14} /> <strong>Privacy first:</strong></span> All QR scans below are <strong>consented first-party data</strong>. Users opt-in on your landing page — you own this audience and can export it for remarketing at any time.
         </div>
       </Card>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
-        <KPI label="Total Scans"     value={SCAN_DATA.length}                     sub="QR code scans" icon="📲" />
+        <KPI label="Total Scans"     value={SCAN_DATA.length}                     sub="QR code scans" icon={<IconQr size={16} />} />
         <KPI label="Consented"       value={consented.length}                     sub="opted in" color={C.green} icon="✓" />
         <KPI label="Consent Rate"    value={`${Math.round((consented.length / SCAN_DATA.length) * 100)}%`} sub="of total scans" color={C.green} />
-        <KPI label="Emails Captured" value={consented.filter(s => s.email).length} sub="ready to export" color={C.purple} icon="📧" />
+        <KPI label="Emails Captured" value={consented.filter(s => s.email).length} sub="ready to export" color={C.purple} icon={<IconMail size={16} />} />
       </div>
 
       <Table

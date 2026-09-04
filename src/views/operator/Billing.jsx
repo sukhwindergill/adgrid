@@ -16,6 +16,7 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
 import { SkeletonRow, SkeletonTable } from '../../components/ui/Skeleton.jsx';
 import { useOperatorBilling } from '../../hooks/useOperatorBilling.js';
+import { IconDollar, IconClock } from '../../components/icons.jsx';
 
 // The Charges tab used to reimplement a charge list from `bookings` (gross
 // budget only, platform fee computed client-side). get-stripe-charges reads
@@ -134,10 +135,10 @@ export function Billing() {
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
-        <KPI label="Total Ad Spend"   value={`$${totalCharged.toLocaleString()}`}  sub="charged campaigns" trend={chargedTrend} trendLabel="vs prior 30 days" icon="💰" />
+        <KPI label="Total Ad Spend"   value={`$${totalCharged.toLocaleString()}`}  sub="charged campaigns" trend={chargedTrend} trendLabel="vs prior 30 days" icon={<IconDollar size={16} />} />
         <KPI label="Platform Net"     value={`$${platformNet.toLocaleString()}`}   sub="12% platform fee"  color={C.blue} icon="$" />
         <KPI label="Available Balance" value={balance ? `$${availableOut.toLocaleString()}` : '—'} sub={connectStatus === 'active' ? 'ready to pay out' : 'connect Stripe'} color={C.green} icon="✓" />
-        <KPI label="Pending Balance"  value={balance ? `$${pendingIn.toLocaleString()}` : '—'} sub="in transit" color={C.amber} icon="⏳" />
+        <KPI label="Pending Balance"  value={balance ? `$${pendingIn.toLocaleString()}` : '—'} sub="in transit" color={C.amber} icon={<IconClock size={16} />} />
       </div>
 
       <Tabs tabs={[{ id: 'overview', label: 'Overview' }, { id: 'charges', label: 'Charges' }, { id: 'payouts', label: 'Payouts' }]} active={tab} onChange={setTab} />

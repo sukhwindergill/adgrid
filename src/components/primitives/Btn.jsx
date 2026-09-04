@@ -23,11 +23,15 @@ export const Btn = ({ children, variant = 'primary', size = 'md', onClick, disab
         display: 'inline-flex', alignItems: 'center', gap: 6,
         fontFamily: F.sans, fontWeight: 500, borderRadius: 8,
         cursor: (disabled || loading) ? 'not-allowed' : 'pointer',
-        transition: 'all 0.15s', whiteSpace: 'nowrap',
+        transition: 'transform 0.1s ease, background 0.15s, box-shadow 0.15s', whiteSpace: 'nowrap',
         opacity: (disabled || loading) ? 0.5 : 1,
         position: 'relative',
         ...sz, ...vr, ...style,
       }}
+      onMouseDown={e => { if (!disabled && !loading) e.currentTarget.style.transform = 'scale(0.98)'; }}
+      onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+      onFocus={e => { if (!disabled && !loading) e.currentTarget.style.boxShadow = `${vr.boxShadow ? vr.boxShadow + ', ' : ''}0 0 0 3px rgba(123,47,255,0.35)`; }}
+      onBlur={e => { e.currentTarget.style.boxShadow = vr.boxShadow || 'none'; }}
       onMouseEnter={e => {
         if (!disabled && !loading) {
           if (variant === 'primary') {
@@ -42,6 +46,7 @@ export const Btn = ({ children, variant = 'primary', size = 'md', onClick, disab
         }
       }}
       onMouseLeave={e => {
+        e.currentTarget.style.transform = 'scale(1)';
         if (variant === 'primary') {
           e.currentTarget.style.background = C.grad;
           e.currentTarget.style.boxShadow = '0 1px 8px rgba(123,47,255,0.25)';
