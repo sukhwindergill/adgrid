@@ -11,7 +11,7 @@ import { C } from '../../../lib/tokens';
 export default function ScreensScreen() {
   const router = useRouter();
   const { profile } = useAuth();
-  const { screens, loading, refetch } = useScreens(profile?.id);
+  const { screens, loading, error, refetch } = useScreens(profile?.id);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
@@ -22,6 +22,8 @@ export default function ScreensScreen() {
         />
         {loading ? (
           <ActivityIndicator color={C.purple} style={{ marginTop: 40 }} />
+        ) : error ? (
+          <EmptyState icon="⚠️" title="Couldn't load your screens" subtitle="Check your connection and try again." />
         ) : screens.length === 0 ? (
           <EmptyState icon="📺" title="No screens yet" subtitle="Tap + to register your first screen" />
         ) : (
