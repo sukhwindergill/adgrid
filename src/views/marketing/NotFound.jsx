@@ -4,7 +4,7 @@ import { usePageMeta } from '../../lib/usePageMeta.js';
 
 export function NotFound() {
   usePageMeta({
-    title: 'Page Not Found — AdGrid',
+    title: 'Page Not Found | AdGrid',
     description: "The page you're looking for doesn't exist or has moved.",
   });
 

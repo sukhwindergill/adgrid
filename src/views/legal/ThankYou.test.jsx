@@ -13,6 +13,6 @@ describe('ThankYou', () => {
 
   it('sets a distinct page title', () => {
     render(<MemoryRouter><ThankYou /></MemoryRouter>);
-    expect(document.title).toBe('Thank You — AdGrid');
+    expect(document.title).toBe('Thank You | AdGrid');
   });
 });

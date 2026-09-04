@@ -4,7 +4,7 @@ import { IconTrend, IconShield, IconChart, IconBolt } from './icons.jsx';
 const CARDS = [
   [IconTrend, 'Dynamic pricing', 'Set a floor price and let demand move it up. Event nights and rush hours price themselves.'],
   [IconShield, 'Full approval control', 'Approve or reject every ad. Block categories and competitors. Set blackout windows.'],
-  [IconChart, 'Real-time analytics', 'Fill rate, revenue trends, and playback proof — per screen, per day.'],
+  [IconChart, 'Real-time analytics', 'Fill rate, revenue trends, and playback proof, per screen, per day.'],
   [IconBolt, 'No lock-in', 'Connect in minutes. No long-term contracts, no upfront costs.'],
 ];
 
@@ -29,7 +29,7 @@ export function OperatorsSection({ onOperatorSignup }) {
               })}
             </div>
             <div style={{ marginTop: 32 }}>
-              <button className="btn-p" onClick={onOperatorSignup}>List your screens — sign up free</button>
+              <button className="btn-p" onClick={onOperatorSignup}>List your screens</button>
             </div>
           </div>
         </div>

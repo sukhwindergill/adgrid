@@ -17,7 +17,7 @@ export function AdvertisersSection() {
           <div className="scroll-col">
             <div className="eyebrow">For advertisers</div>
             <h2 className="sec-h">Local reach you can actually measure</h2>
-            <p className="sec-sub">Put your brand on real screens in the neighbourhoods your customers live in — and see exactly what it did.</p>
+            <p className="sec-sub">Put your brand on real screens in the neighbourhoods your customers live in, and see exactly what it did.</p>
             <div className="card-grid">
               {CARDS.map(card => {
                 const [Icon, h, p] = card;

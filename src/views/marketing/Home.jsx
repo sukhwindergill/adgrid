@@ -17,7 +17,7 @@ import { FloatingContactButton } from '../../components/chrome/FloatingContactBu
 
 export function MarketingHome({ onLogin: onLoginProp }) {
   usePageMeta({
-    title: "AdGrid — Canada's OOH Marketplace",
+    title: "AdGrid | Canada's OOH Marketplace",
     description: "AdGrid is the self-serve marketplace connecting Canadian digital screen operators with local advertisers. Real-time pricing, full control on both sides.",
   });
   const navigate = useNavigate();

@@ -16,7 +16,7 @@ const p = { fontSize: 15, lineHeight: 1.7, margin: '0 0 12px' };
 
 export function PrivacyPolicy() {
   usePageMeta({
-    title: 'Privacy Policy — AdGrid',
+    title: 'Privacy Policy | AdGrid',
     description: 'How AdGrid collects, uses, and protects the data of advertisers, screen operators, and website visitors.',
   });
   return (
@@ -37,7 +37,7 @@ export function PrivacyPolicy() {
         <p style={p}>
           <strong>Account holders (advertisers and screen operators):</strong> name, email
           address, business name, and billing information. Payment details are processed
-          and stored by Stripe — AdGrid never stores raw card numbers.
+          and stored by Stripe. AdGrid never stores raw card numbers.
         </p>
         <p style={p}>
           <strong>Screen telemetry:</strong> whether a screen is online or offline, which
@@ -48,8 +48,8 @@ export function PrivacyPolicy() {
           add-on camera at their venue to estimate anonymous aggregate audience size and
           composition. All face detection and age/gender estimation runs on-device at the
           screen; raw camera frames are never stored or transmitted anywhere. Only
-          aggregate, anonymized statistics for each ~30-second window — approximate
-          person count, dwell time, attention score, and age/gender bracket counts — are
+          aggregate, anonymized statistics for each ~30-second window (approximate
+          person count, dwell time, attention score, and age/gender bracket counts) are
           sent to AdGrid. We never receive images, video, biometric templates, or any data
           that identifies an individual, and screens do not track the same person across
           visits. Operators who enable this feature are contractually required to post a
@@ -85,7 +85,7 @@ export function PrivacyPolicy() {
 
         <h2 style={h2}>Data retention</h2>
         <p style={p}>
-          Account data — including marketplace messages — is retained for the life of your
+          Account data (including marketplace messages) is retained for the life of your
           account and for 90 days following account deletion, after which it is permanently
           deleted. Screen telemetry,
           heartbeat records, and aggregate audience-measurement statistics are retained for
@@ -106,7 +106,7 @@ export function PrivacyPolicy() {
         <h2 style={h2}>Cookies and similar technologies</h2>
         <p style={p}>
           AdGrid does not set any cookies. Your signed-in session is kept in your browser's
-          local storage, used only to keep you logged in — it is never shared with third
+          local storage, used only to keep you logged in. It is never shared with third
           parties. We do not use third-party analytics, advertising cookies, or trackers of
           any kind.
         </p>
