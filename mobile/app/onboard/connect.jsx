@@ -16,7 +16,7 @@ export default function ConnectScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [checking, setChecking] = useState(false);
-  const [connStatus, setConnStatus] = useState('idle'); // 'idle' | 'ok' | 'none'
+  const [connStatus, setConnStatus] = useState('idle'); // 'idle' | 'ok' | 'none' | 'error'
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -39,13 +39,17 @@ export default function ConnectScreen() {
   async function checkConnection() {
     setChecking(true);
     const since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    const { data } = await supabase
+    const { data, error: err } = await supabase
       .from('display_heartbeats')
       .select('id')
       .eq('screen_id', form.screenId)
       .gte('created_at', since)
       .limit(1);
-    setConnStatus(data && data.length > 0 ? 'ok' : 'none');
+    // A failed check (network, RLS, transient outage) must not be reported
+    // as "no heartbeat yet" -- that copy says "that's expected", which is
+    // false when the check itself didn't actually run.
+    if (err) setConnStatus('error');
+    else setConnStatus(data && data.length > 0 ? 'ok' : 'none');
     setChecking(false);
   }
 
@@ -86,6 +90,9 @@ export default function ConnectScreen() {
             )}
             {connStatus === 'none' && (
               <Text style={[styles.hint, { fontFamily: F.sans }]}>No heartbeat yet — that's expected until the display device is configured.</Text>
+            )}
+            {connStatus === 'error' && (
+              <Text style={[styles.errorText, { fontFamily: F.sans, marginTop: 8 }]}>Couldn't check your connection — check your network and try again.</Text>
             )}
           </>
         )}
