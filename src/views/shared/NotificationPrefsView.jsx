@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
+import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useToast } from '../../components/primitives/Toast.jsx';
 
 const EVENTS = [
@@ -23,6 +24,9 @@ function defaultPrefs() {
 function Toggle({ checked, onChange }) {
   return (
     <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
       onClick={() => onChange(!checked)}
       style={{
         width: 36, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer',
@@ -74,10 +78,7 @@ export function NotificationPrefsView() {
 
   return (
     <div style={{ maxWidth: 600 }}>
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display }}>Notification Preferences</h2>
-        <p style={{ margin: '6px 0 0', fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Choose how you want to be notified for each event.</p>
-      </div>
+      <PageHeader title="Notification Preferences" subtitle="Choose how you want to be notified for each event" />
 
       <Card style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', padding: '12px 20px', borderBottom: `1px solid ${C.border}`, background: C.surfaceAlt }}>
