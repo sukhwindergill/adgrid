@@ -90,8 +90,10 @@ export function LocationSearch({ options, value, onSelect, placeholder = 'Search
         style={{
           padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8,
           fontSize: 13, fontFamily: F.sans, color: C.text, background: C.surface,
-          outline: 'none', width: '100%', boxSizing: 'border-box',
+          outline: 'none', width: '100%', boxSizing: 'border-box', transition: 'border-color 0.15s',
         }}
+        onFocusCapture={e => { e.currentTarget.style.borderColor = C.purple; }}
+        onBlurCapture={e => { e.currentTarget.style.borderColor = C.border; }}
       />
       {open && q && (
         <div style={{

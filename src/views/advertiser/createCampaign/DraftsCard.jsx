@@ -36,7 +36,9 @@ export function DraftsCard({ drafts, onResume, onDelete }) {
             <button
               onClick={() => onDelete(d.id)}
               aria-label={`Delete draft ${d.name}`}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted, fontSize: 12, fontFamily: F.sans, padding: '6px 4px' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted, fontSize: 12, fontFamily: F.sans, padding: '6px 4px', transition: 'color 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.color = C.red; }}
+              onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
             >
               Delete
             </button>
