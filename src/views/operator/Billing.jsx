@@ -16,7 +16,7 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
 import { SkeletonRow, SkeletonTable } from '../../components/ui/Skeleton.jsx';
 import { useOperatorBilling } from '../../hooks/useOperatorBilling.js';
-import { IconDollar, IconClock } from '../../components/icons.jsx';
+import { IconDollar, IconClock, IconWarning, IconCard, IconBank } from '../../components/icons.jsx';
 
 // The Charges tab used to reimplement a charge list from `bookings` (gross
 // budget only, platform fee computed client-side). get-stripe-charges reads
@@ -126,17 +126,20 @@ export function Billing() {
         actions={<a href="https://dashboard.stripe.com" target="_blank" rel="noreferrer"><Btn variant="secondary" size="sm">Stripe Dashboard ↗</Btn></a>} />
 
       {failedTransfers.length > 0 && (
-        <div style={{ padding: '12px 16px', marginBottom: 20, background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`, borderRadius: 8, fontSize: 13, color: C.red, fontFamily: F.sans, lineHeight: 1.6 }}>
-          <strong>⚠ {failedTransfers.length} payout transfer{failedTransfers.length !== 1 ? 's' : ''} failed</strong> —
+        <div style={{ display: 'flex', gap: 8, padding: '12px 16px', marginBottom: 20, background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`, borderRadius: 8, fontSize: 13, color: C.red, fontFamily: F.sans, lineHeight: 1.6 }}>
+          <span style={{ flexShrink: 0 }}><IconWarning size={16} /></span>
+          <span>
+          <strong>{failedTransfers.length} payout transfer{failedTransfers.length !== 1 ? 's' : ''} failed</strong> —
           {' '}totalling ${failedTransfers.reduce((a, t) => a + Number(t.amount), 0).toLocaleString()}.
           This usually means Stripe needs more information from your connected account.
           Check your Connect status in Settings, then contact support if it's already active.
+          </span>
         </div>
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
         <KPI label="Total Ad Spend"   value={`$${totalCharged.toLocaleString()}`}  sub="charged campaigns" trend={chargedTrend} trendLabel="vs prior 30 days" icon={<IconDollar size={16} />} />
-        <KPI label="Platform Net"     value={`$${platformNet.toLocaleString()}`}   sub="12% platform fee"  color={C.blue} icon="$" />
+        <KPI label="Platform Net"     value={`$${platformNet.toLocaleString()}`}   sub="12% platform fee"  color={C.blue} icon={<IconDollar size={16} />} />
         <KPI label="Available Balance" value={balance ? `$${availableOut.toLocaleString()}` : '—'} sub={connectStatus === 'active' ? 'ready to pay out' : 'connect Stripe'} color={C.green} icon="✓" />
         <KPI label="Pending Balance"  value={balance ? `$${pendingIn.toLocaleString()}` : '—'} sub="in transit" color={C.amber} icon={<IconClock size={16} />} />
       </div>
@@ -194,7 +197,7 @@ export function Billing() {
           <SkeletonTable rows={5} cols={5} />
         ) : stripeCharges.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>💳</div>
+            <div style={{ color: C.textMuted, marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconCard size={28} /></div>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>No charges yet</div>
             <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Charges appear here when campaigns are approved and paid</div>
           </div>
@@ -215,13 +218,13 @@ export function Billing() {
       {tab === 'payouts' && (
         connectStatus !== 'active' ? (
           <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>🏦</div>
+            <div style={{ color: C.textMuted, marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconBank size={28} /></div>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Bank account not connected</div>
             <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Connect your Stripe account to enable payouts</div>
           </div>
         ) : payouts.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>⏳</div>
+            <div style={{ color: C.textMuted, marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconClock size={28} /></div>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>No payouts yet</div>
             <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Your first payout will appear here once initiated</div>
           </div>
