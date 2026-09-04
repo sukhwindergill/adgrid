@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { C, F } from '../../design/tokens.js';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { ScreenAnalyticsPanel } from '../../components/marketplace/ScreenAnalyticsPanel.jsx';
 import { MarketplaceThread } from '../../components/marketplace/MarketplaceThread.jsx';
 import { fetchListing, bookListing, fetchListingScreens } from '../../lib/marketplace.js';
@@ -53,16 +54,12 @@ export function MarketplaceListingDetail({ listingId, onBack }) {
   if (!listing) return <div style={{ fontFamily: F.sans, color: C.textMuted, padding: 24 }}>Loading…</div>;
 
   return (
-    <div style={{ padding: 24, maxWidth: 720 }}>
-      <button onClick={onBack} style={{ fontFamily: F.sans, fontSize: 13, color: C.textSub, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 16 }}>
-        ← Back to marketplace
-      </button>
-      <h2 style={{ fontFamily: F.display, fontSize: 20, fontWeight: 600, color: C.text }}>
-        {listing.is_bundle ? 'Bundle placement' : 'Exclusive placement'} — ${(listing.price_cents / 100).toFixed(0)}
-      </h2>
-      <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textSub, marginTop: 4, marginBottom: 8 }}>
-        {listing.start_date} – {listing.end_date}
-      </div>
+    <div style={{ maxWidth: 720 }}>
+      <PageHeader
+        title={`${listing.is_bundle ? 'Bundle placement' : 'Exclusive placement'} — $${(listing.price_cents / 100).toFixed(0)}`}
+        subtitle={`${listing.start_date} – ${listing.end_date}`}
+        back="Marketplace" onBack={onBack}
+      />
 
       {listing.is_bundle && (
         <div style={{ fontFamily: F.sans, fontSize: 13, color: C.text, background: C.purpleSoft, borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>
