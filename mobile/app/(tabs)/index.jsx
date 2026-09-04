@@ -10,6 +10,7 @@ import { Card } from '../../components/ui/Card';
 import { Btn } from '../../components/ui/Btn';
 import { HealthBadge } from '../../components/screens/HealthBadge';
 import { SkeletonCard } from '../../components/ui/Skeleton';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { C, F } from '../../lib/tokens';
 import { formatCurrency } from '@adgrid/core';
 
@@ -51,7 +52,9 @@ export default function DashboardScreen() {
         )}
 
         <Text style={[styles.sectionTitle, { fontFamily: F.sansSemi }]}>Your screens</Text>
-        {screensLoading ? <SkeletonCard rows={2} /> : screens.slice(0, 5).map(screen => (
+        {screensLoading ? <SkeletonCard rows={2} /> : screens.length === 0 ? (
+          <EmptyState icon="📺" title="No screens yet" subtitle="Register your first screen to start earning" />
+        ) : screens.slice(0, 5).map(screen => (
           <Card key={screen.id} style={styles.screenRow} onPress={() => router.push(`/(tabs)/screens/${screen.id}`)}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={[styles.screenName, { fontFamily: F.sansMed }]} numberOfLines={1}>{screen.name}</Text>
