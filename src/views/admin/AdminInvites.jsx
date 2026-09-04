@@ -12,20 +12,22 @@ import { Badge } from '../../components/primitives/Badge.jsx'
 function useInvites() {
   const [invites, setInvites] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
 
   const refresh = useCallback(async () => {
     setLoading(true)
-    const { data } = await supabase
+    const { data, error: err } = await supabase
       .from('operator_invites')
       .select('id, email, status, created_at, expires_at')
       .order('created_at', { ascending: false })
+    setError(Boolean(err))
     setInvites(data ?? [])
     setLoading(false)
   }, [])
 
   useEffect(() => { refresh() }, [refresh])
 
-  return { invites, loading, refresh }
+  return { invites, loading, error, refresh }
 }
 
 function expiryLabel(inv) {
@@ -39,7 +41,7 @@ function expiryLabel(inv) {
 export function AdminInvites() {
   const navigate = useNavigate()
   const toast = useToast()
-  const { invites, loading, refresh } = useInvites()
+  const { invites, loading, error, refresh } = useInvites()
   const [email, setEmail] = useState('')
   const [sending, setSending] = useState(false)
   const [busyId, setBusyId] = useState(null)
@@ -121,6 +123,8 @@ export function AdminInvites() {
       </h2>
       {loading ? (
         <div style={{ color: C.textSub, fontFamily: F.sans, fontSize: 13 }}>Loading…</div>
+      ) : error ? (
+        <div style={{ color: C.red, fontFamily: F.sans, fontSize: 13 }}>Couldn't load invites — check your connection and try again.</div>
       ) : invites.length === 0 ? (
         <div style={{ color: C.textSub, fontFamily: F.sans, fontSize: 13 }}>No invites sent yet.</div>
       ) : (

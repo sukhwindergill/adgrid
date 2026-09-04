@@ -35,6 +35,7 @@ export function AutomationRulesView({ user, ownerSide = 'advertiser', setNav }) 
   const { isMobile } = useBreakpoint();
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [draft, setDraft] = useState(EMPTY_DRAFT);
 
   // `loading` starts true and is only cleared once, so a refresh after
@@ -45,10 +46,14 @@ export function AutomationRulesView({ user, ownerSide = 'advertiser', setNav }) 
   // OperatorSettingsView). Matching the established pattern rather than
   // introducing a one-off structure here.
   const load = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('automation_rules')
       .select('id, name, metric, comparator, threshold, action, enabled, last_fired_at, last_fired_value')
       .order('created_at', { ascending: false });
+    // A failed fetch previously left rules empty just like a genuine
+    // zero-rules account, showing "Suggested rules" as if nothing had ever
+    // been configured -- misleading when the list simply never loaded.
+    setLoadError(Boolean(error));
     setRules(data ?? []);
     setLoading(false);
   };
@@ -114,7 +119,13 @@ export function AutomationRulesView({ user, ownerSide = 'advertiser', setNav }) 
         </div>
       )}
 
-      {!loading && rules.length === 0 && (
+      {!loading && loadError && (
+        <Card style={{ padding: 20, marginBottom: 20 }}>
+          <div style={{ fontSize: 13, color: C.red, fontFamily: F.sans }}>Couldn't load your rules — check your connection and try again.</div>
+        </Card>
+      )}
+
+      {!loading && !loadError && rules.length === 0 && (
         <Card style={{ padding: 20, marginBottom: 20 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Suggested rules</div>
           <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, marginBottom: 14 }}>

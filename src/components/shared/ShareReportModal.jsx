@@ -21,13 +21,15 @@ const DEFAULT_DAYS = 90;
 export function ShareReportModal({ campaignId, userId, onClose }) {
   const toast = useToast();
   const [links, setLinks] = useState([]);
+  const [loadError, setLoadError] = useState(false);
 
   const load = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('campaign_share_tokens')
       .select('token, expires_at, revoked_at, view_count, created_at')
       .eq('campaign_id', campaignId)
       .order('created_at', { ascending: false });
+    setLoadError(Boolean(error));
     setLinks(data ?? []);
   };
 
@@ -69,6 +71,12 @@ export function ShareReportModal({ campaignId, userId, onClose }) {
         </div>
 
         <Btn onClick={create} style={{ marginBottom: 18 }}>Create share link</Btn>
+
+        {loadError && (
+          <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginBottom: 12 }}>
+            Couldn't load existing share links — check your connection and try again.
+          </div>
+        )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {links.map(l => {
