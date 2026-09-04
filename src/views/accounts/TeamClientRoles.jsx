@@ -10,6 +10,7 @@ export function TeamClientRoles() {
   const [selected, setSelected]       = useState(null)
   const [clientRoles, setClientRoles] = useState([])
   const [loading, setLoading]         = useState(true)
+  const [loadError, setLoadError]     = useState(false)
   const [saving, setSaving]           = useState(false)
 
   useEffect(() => {
@@ -24,6 +25,7 @@ export function TeamClientRoles() {
         .eq('grantee_id', user.id)
         .eq('status', 'active'),
     ]).then(([mbRes, clRes]) => {
+      setLoadError(Boolean(mbRes.error || clRes.error))
       setMembers(mbRes.data ?? [])
       setClients(clRes.data ?? [])
       setLoading(false)
@@ -62,6 +64,7 @@ export function TeamClientRoles() {
   }
 
   if (loading) return <p style={{ fontFamily: F.sans, fontSize: 13, color: C.textSub }}>Loading…</p>
+  if (loadError) return <p style={{ fontFamily: F.sans, fontSize: 13, color: C.red }}>Couldn't load your team and client accounts — check your connection and try again.</p>
   if (clients.length === 0) return (
     <p style={{ fontFamily: F.sans, fontSize: 13, color: C.textSub }}>
       No client accounts yet. Ask a client to grant you access first.

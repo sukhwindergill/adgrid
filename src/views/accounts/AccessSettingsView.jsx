@@ -14,15 +14,17 @@ export function AccessSettingsView() {
   const { user } = useAuth()
   const [grants, setGrants]       = useState([])
   const [loading, setLoading]     = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [showModal, setShowModal] = useState(false)
 
   async function load() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('account_grants')
       .select('*, grantee:grantee_id(name, email, company_name)')
       .eq('account_id', user.id)
       .neq('status', 'revoked')
       .order('created_at', { ascending: false })
+    setLoadError(Boolean(error))
     setGrants(data ?? [])
     setLoading(false)
   }
@@ -54,7 +56,9 @@ export function AccessSettingsView() {
         </button>
       </div>
 
-      {grants.length === 0 ? (
+      {loadError ? (
+        <p style={{ fontSize: 13, color: C.red, fontFamily: F.sans }}>Couldn't load access grants — check your connection and try again.</p>
+      ) : grants.length === 0 ? (
         <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>No one has access to your account yet.</p>
       ) : (
         grants.map(g => {
