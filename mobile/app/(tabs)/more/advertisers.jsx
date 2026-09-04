@@ -18,11 +18,13 @@ export default function AdvertisersScreen() {
   const { screens } = useScreens(profile?.id);
   const [advertisers, setAdvertisers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     if (!profile?.id) return;
     async function load() {
       setLoading(true);
+      setError(false);
       const screenIds = screens.map(s => s.id);
       if (screenIds.length === 0) { setLoading(false); return; }
       // campaign_screens.campaign_id references bookings(id), not the
@@ -35,11 +37,12 @@ export default function AdvertisersScreen() {
       // bookings has two FKs into profiles (advertiser_id,
       // billed_to_profile_id), that join must name which one to use or
       // PostgREST can't disambiguate it either.
-      const { data } = await supabase
+      const { data, error: err } = await supabase
         .from('campaign_screens')
         .select('status, campaign:bookings(id, name:campaign_name, budget, advertiser_id, advertiser_name, advertiser:profiles!bookings_advertiser_id_fkey(email))')
         .in('screen_id', screenIds)
         .in('status', ['approved', 'pending']);
+      if (err) { setError(true); setLoading(false); return; }
       const byAdvertiser = {};
       (data || []).forEach(cs => {
         const campaign = cs.campaign;
@@ -82,11 +85,11 @@ export default function AdvertisersScreen() {
             </Text>
           </Card>
         )}
-        ListEmptyComponent={() =>
-          loading ? <ActivityIndicator color={C.purple} style={{ margin: 40 }} /> : (
-            <EmptyState icon="🏢" title="No advertisers yet" subtitle="Advertisers will appear here once they book a campaign on one of your screens" />
-          )
-        }
+        ListEmptyComponent={() => {
+          if (loading) return <ActivityIndicator color={C.purple} style={{ margin: 40 }} />;
+          if (error) return <EmptyState icon="⚠️" title="Couldn't load advertisers" subtitle="Check your connection and try again." />;
+          return <EmptyState icon="🏢" title="No advertisers yet" subtitle="Advertisers will appear here once they book a campaign on one of your screens" />;
+        }}
       />
     </SafeAreaView>
   );
