@@ -110,6 +110,7 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
   const operatorIdsKey = [...operatorCampaignIds].sort().join(',');
   const [currentCampaigns, setCurrentCampaigns] = useState([]);
   const [activeLoading, setActiveLoading] = useState(true);
+  const [activeLoadError, setActiveLoadError] = useState(false);
 
   useEffect(() => {
     if (operatorCampaignIds.size === 0) { setCurrentCampaigns([]); setActiveLoading(false); return; }
@@ -118,7 +119,12 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
       .in('id', [...operatorCampaignIds])
       .in('status', ['active', 'scheduled'])
       .order('created_at', { ascending: false })
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        // A failed fetch previously left currentCampaigns empty just like a
+        // genuine zero-active-campaigns account, rendering "No active
+        // campaigns" and zeroed KPIs as if nothing were running -- misleading
+        // when the query never actually ran.
+        setActiveLoadError(Boolean(error));
         setCurrentCampaigns((data || []).map(normalizeBooking));
         setActiveLoading(false);
       });
@@ -266,7 +272,11 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
               );
             })}
             {active.length === 0 && (
-              dbScreens.length === 0 ? (
+              activeLoadError ? (
+                <Card style={{ textAlign: 'center', padding: 32 }}>
+                  <div style={{ fontSize: 14, color: C.red, fontFamily: F.sans }}>Couldn't load your active campaigns — check your connection and try again.</div>
+                </Card>
+              ) : dbScreens.length === 0 ? (
                 <Card style={{
                   padding: '32px 28px',
                   background: 'linear-gradient(135deg, #f5f3ff, #eff6ff)',
