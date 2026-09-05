@@ -434,6 +434,7 @@ function TeamTab({ profile }) {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('viewer');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [msg, setMsg] = useState(null);
 
   useEffect(() => {
@@ -441,7 +442,14 @@ function TeamTab({ profile }) {
       .from('team_members')
       .select('*, user_profile:user_profile_id(name, email)')
       .eq('org_profile_id', profile.id)
-      .then(({ data, error }) => { if (error) console.error('team_members load error:', error); setMembers(data ?? []); setLoading(false); });
+      .then(({ data, error }) => {
+        // A failed fetch previously only logged to the console -- the UI
+        // itself silently showed zero team members, indistinguishable from
+        // a real empty team.
+        setLoadError(Boolean(error));
+        setMembers(data ?? []);
+        setLoading(false);
+      });
   }, [profile.id]);
 
   async function invite() {
@@ -470,6 +478,7 @@ function TeamTab({ profile }) {
   }
 
   if (loading) return <div style={{ color: C.textSub, fontSize: 13 }}>Loading team…</div>;
+  if (loadError) return <div style={{ color: C.red, fontSize: 13 }}>Couldn't load your team — check your connection and try again.</div>;
 
   return (
     <div style={{ maxWidth: 560 }}>
