@@ -400,6 +400,7 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
   }, [myScreens.map(s => s.id).join(',')]);
 
   const [relevantCampaignIds, setRelevantCampaignIds] = useState([]);
+  const [loadError, setLoadError] = useState(false);
 
   // Which campaigns actually have a pending screen among mine -- queried
   // directly against campaign_screens, not gated by the booking's own
@@ -413,7 +414,14 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
       .select('campaign_id')
       .in('screen_id', myScreens.map(s => s.id))
       .eq('status', 'pending')
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        // A failed fetch previously left relevantCampaignIds empty just
+        // like a genuine zero-pending queue, showing "No campaigns pending
+        // review" as if everything had already been handled -- the same
+        // false-negative useScreens.js's own comment describes this queue
+        // having been bitten by once already (a stale column name, that
+        // time; a live query error, this time).
+        setLoadError(Boolean(error));
         setRelevantCampaignIds([...new Set((data || []).map(r => r.campaign_id))]);
       });
   }, [myScreens.map(s => s.id).join(',')]);
@@ -653,13 +661,20 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
     <div>
       <PageHeader
         title="Approval Queue"
-        subtitle={totalPending === 0 ? 'No campaigns pending review' : `${totalPending} campaign${totalPending !== 1 ? 's' : ''} pending review`}
+        subtitle={loadError ? "Couldn't load the queue" : totalPending === 0 ? 'No campaigns pending review' : `${totalPending} campaign${totalPending !== 1 ? 's' : ''} pending review`}
         actions={totalPending > 1 ? (
           <Btn variant="secondary" size="sm" onClick={bulkApproveAll} disabled={bulkApproving}>
             {bulkApproving ? '…Approving' : `✓ Approve all pending (${totalPending})`}
           </Btn>
         ) : undefined}
       />
+
+      {loadError && (
+        <div style={{ display: 'flex', gap: 8, padding: '10px 14px', marginBottom: 16, background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`, borderRadius: 8, fontSize: 12, color: C.red, fontFamily: F.sans }}>
+          <span style={{ flexShrink: 0 }}><IconWarning size={14} /></span>
+          <span>Couldn't load your approval queue — check your connection and try again.</span>
+        </div>
+      )}
 
       {bulkErrors.length > 0 && (
         <div style={{ display: 'flex', gap: 8, padding: '10px 14px', marginBottom: 16, background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`, borderRadius: 8, fontSize: 12, color: C.red, fontFamily: F.sans, lineHeight: 1.6 }}>
