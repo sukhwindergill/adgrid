@@ -55,6 +55,8 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
   // (see supabase/migrations/20260901165732_advertiser_lifetime_totals.sql)
   // rather than requiring the full unbounded history client-side.
   const [myCampaigns, setMyCampaigns] = useState([]);
+  const [campaignsLoaded, setCampaignsLoaded] = useState(false);
+  const [campaignsError, setCampaignsError] = useState(false);
   const [lifetimeTotals, setLifetimeTotals] = useState({ total_spend: 0, total_scans: 0, total_budget: 0 });
   const [campaignScreens, setCampaignScreens] = useState({}); // map: campaignId -> [{screen_id, status}]
   const [delivery, setDelivery] = useState([]);
@@ -68,7 +70,15 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
       .eq('advertiser_id', advertiserId)
       .order('created_at', { ascending: false })
       .limit(RECENT_CAMPAIGNS_LIMIT)
-      .then(({ data }) => setMyCampaigns((data || []).map(normalizeBooking)));
+      .then(({ data, error }) => {
+        // A failed fetch previously left myCampaigns empty just like a
+        // genuine zero-campaigns account, rendering "No campaigns yet" as
+        // if the advertiser had never launched anything -- misleading when
+        // the query never actually ran.
+        setCampaignsError(Boolean(error));
+        setCampaignsLoaded(true);
+        setMyCampaigns((data || []).map(normalizeBooking));
+      });
     supabase.rpc('advertiser_lifetime_totals', { p_advertiser_id: advertiserId })
       .then(({ data }) => { if (data?.[0]) setLifetimeTotals(data[0]); });
   }, [advertiserId]);
@@ -287,7 +297,11 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
 
       <ApprovalTracker rows={approvalRows} />
 
-      {myCampaigns.length > 0 ? (
+      {campaignsLoaded && campaignsError ? (
+        <Card style={{ textAlign: 'center', padding: 48 }}>
+          <div style={{ fontSize: 14, color: C.red, fontFamily: F.sans }}>Couldn't load your campaigns — check your connection and try again.</div>
+        </Card>
+      ) : myCampaigns.length > 0 ? (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.display }}>Your Campaigns</h2>
