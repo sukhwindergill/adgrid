@@ -47,6 +47,7 @@ export default function ScansView({ impersonatingId }) {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     if (!effectiveId) return;
@@ -62,6 +63,10 @@ export default function ScansView({ impersonatingId }) {
         .select("id, advertiser_name")
         .eq("advertiser_id", effectiveId),
     ]).then(([scansRes, campRes]) => {
+      // A failed fetch previously left scans empty just like a genuine
+      // zero-scans account, rendering "No scans yet" as if the QR codes
+      // simply hadn't been scanned -- misleading when the query never ran.
+      setLoadError(Boolean(scansRes.error || campRes.error));
       setScans(scansRes.data ?? []);
       setCampaigns(campRes.data ?? []);
       setLoading(false);
@@ -116,6 +121,10 @@ export default function ScansView({ impersonatingId }) {
 
   if (loading) return (
     <div style={{ padding: 40, fontFamily: F.sans, color: C.textSub }}>Loading scans…</div>
+  );
+
+  if (loadError) return (
+    <div style={{ padding: 40, fontFamily: F.sans, color: C.red }}>Couldn't load scans — check your connection and try again.</div>
   );
 
   return (

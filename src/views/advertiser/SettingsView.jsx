@@ -357,6 +357,7 @@ function TeamTab({ profile }) {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("viewer");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [msg, setMsg] = useState(null);
 
   useEffect(() => {
@@ -364,7 +365,11 @@ function TeamTab({ profile }) {
       .from("team_members")
       .select("*, user_profile:user_profile_id(name, email)")
       .eq("org_profile_id", profile.id)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        // A failed fetch previously left members empty just like a real
+        // zero-teammates account, silently hiding the "Team Members" section
+        // with no indication the list never actually loaded.
+        setLoadError(Boolean(error));
         setMembers(data ?? []);
         setLoading(false);
       });
@@ -393,11 +398,13 @@ function TeamTab({ profile }) {
   }
 
   async function removeMember(id) {
-    await supabase.from("team_members").delete().eq("id", id);
+    const { error } = await supabase.from("team_members").delete().eq("id", id);
+    if (error) { setMsg("Error removing member."); return; }
     setMembers((m) => m.filter((x) => x.id !== id));
   }
 
   if (loading) return <div style={{ color: C.textSub, fontSize: 13 }}>Loading team…</div>;
+  if (loadError) return <div style={{ color: C.red, fontSize: 13 }}>Couldn't load your team — check your connection and try again.</div>;
 
   return (
     <div style={{ maxWidth: 560 }}>
