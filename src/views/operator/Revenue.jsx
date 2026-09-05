@@ -55,6 +55,7 @@ export function Revenue({ operatorScreenIds = [] }) {
   const operatorIdsKey = [...operatorCampaignIds].sort().join(',');
   const [filteredCampaigns, setFilteredCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [screenCpmFloors, setScreenCpmFloors] = useState([]);
   const [houseAdImpressions, setHouseAdImpressions] = useState(0);
 
@@ -73,7 +74,12 @@ export function Revenue({ operatorScreenIds = [] }) {
       cutoff.setDate(cutoff.getDate() - period);
       query = query.gte('start_date', cutoff.toISOString());
     }
-    query.then(({ data }) => {
+    query.then(({ data, error }) => {
+      // A failed fetch previously left filteredCampaigns empty just like a
+      // genuine zero-revenue period, rendering the table's generic "No
+      // data" and zeroed KPIs identically either way -- misleading when
+      // the query never actually ran.
+      setLoadError(Boolean(error));
       setFilteredCampaigns((data || []).map(normalizeBooking));
       setLoading(false);
     });
@@ -198,7 +204,9 @@ export function Revenue({ operatorScreenIds = [] }) {
           { key: 'budget',   label: 'Network',      render: v => <span style={{ fontFamily: F.mono }}>${computeRevenueSplit(v, ownerRevenueShare).pool.toLocaleString()}</span> },
           { key: 'status',   label: 'Status',       render: v => <Badge status={v} /> },
         ]}
-        rows={filteredCampaigns} />
+        rows={filteredCampaigns}
+        emptyTitle={loadError ? "Couldn't load revenue data" : undefined}
+        emptyDescription={loadError ? 'Check your connection and try again.' : undefined} />
     </div>
   );
 }
