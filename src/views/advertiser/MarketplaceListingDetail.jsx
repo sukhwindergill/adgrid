@@ -16,10 +16,15 @@ export function MarketplaceListingDetail({ listingId, onBack }) {
   const [booking, setBooking] = useState(false);
   const [autoRenew, setAutoRenew] = useState(false);
   const [feePct, setFeePct] = useState(null);
+  const [loadError, setLoadError] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
-    fetchListing(listingId).then(setListing);
+    // fetchListing throws on a Supabase error rather than resolving with
+    // null -- without a .catch here, that rejection was unhandled and
+    // `listing` never left null, leaving the page stuck on "Loading…"
+    // forever with no way back out.
+    fetchListing(listingId).then(setListing).catch(() => setLoadError(true));
   }, [listingId]);
 
   useEffect(() => {
@@ -51,6 +56,12 @@ export function MarketplaceListingDetail({ listingId, onBack }) {
     }
   };
 
+  if (loadError) return (
+    <div style={{ padding: 24 }}>
+      <Btn variant="ghost" onClick={onBack}>← Back to Marketplace</Btn>
+      <div style={{ fontFamily: F.sans, color: C.red, marginTop: 12 }}>Couldn't load this listing — check your connection and try again.</div>
+    </div>
+  );
   if (!listing) return <div style={{ fontFamily: F.sans, color: C.textMuted, padding: 24 }}>Loading…</div>;
 
   return (

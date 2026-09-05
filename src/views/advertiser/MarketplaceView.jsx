@@ -27,9 +27,16 @@ function EmptyState({ text }) {
 function BrowseListings({ onSelectListing }) {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetchActiveListings().then(data => { setListings(data ?? []); setLoading(false); });
+    // fetchActiveListings throws on a Supabase error rather than resolving
+    // with data:null -- without a .catch here, that rejection was
+    // unhandled and `loading` never cleared, leaving the skeleton spinning
+    // forever with no indication anything had gone wrong.
+    fetchActiveListings()
+      .then(data => { setListings(data ?? []); setLoading(false); })
+      .catch(() => { setError(true); setLoading(false); });
   }, []);
 
   if (loading) {
@@ -38,6 +45,10 @@ function BrowseListings({ onSelectListing }) {
         {[1, 2, 3].map(i => <SkeletonCard key={i} lines={2} />)}
       </div>
     );
+  }
+
+  if (error) {
+    return <EmptyState text="Couldn't load listings — check your connection and try again." />;
   }
 
   if (listings.length === 0) {
@@ -69,10 +80,13 @@ function MyBookings({ onSelectListing }) {
   const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     if (!user) return;
-    fetchAdvertiserBookings(user.id).then(data => { setBookings(data ?? []); setLoading(false); });
+    fetchAdvertiserBookings(user.id)
+      .then(data => { setBookings(data ?? []); setLoading(false); })
+      .catch(() => { setError(true); setLoading(false); });
   }, [user]);
 
   if (loading) {
@@ -82,6 +96,10 @@ function MyBookings({ onSelectListing }) {
         <SkeletonRow cols={3} />
       </div>
     );
+  }
+
+  if (error) {
+    return <EmptyState text="Couldn't load your bookings — check your connection and try again." />;
   }
 
   if (bookings.length === 0) {
