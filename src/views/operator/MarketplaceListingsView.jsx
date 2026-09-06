@@ -43,12 +43,27 @@ const PAYOUT_STATUS = {
 function OperatorBookings({ operatorId }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    fetchOperatorBookings(operatorId).then(data => { setBookings(data ?? []); setLoading(false); });
+    // fetchOperatorBookings throws on a Supabase error rather than
+    // resolving with data:null -- without a .catch here, that rejection
+    // was unhandled and `loading` never cleared, leaving the spinner stuck
+    // forever with no indication anything had gone wrong.
+    fetchOperatorBookings(operatorId)
+      .then(data => { setBookings(data ?? []); setLoading(false); })
+      .catch(() => { setLoadError(true); setLoading(false); });
   }, [operatorId]);
 
   if (loading) return <div style={{ fontFamily: F.sans, color: C.textMuted, padding: '24px 0' }}>Loading bookings…</div>;
+
+  if (loadError) {
+    return (
+      <div style={{ fontFamily: F.sans, fontSize: 13, color: C.red, padding: '24px 0' }}>
+        Couldn't load your bookings — check your connection and try again.
+      </div>
+    );
+  }
 
   if (bookings.length === 0) {
     return (
@@ -88,6 +103,7 @@ function OperatorBookings({ operatorId }) {
 export function MarketplaceListingsView({ operatorId, myScreens }) {
   const [tab, setTab] = useState('listings');
   const [listings, setListings] = useState([]);
+  const [listingsError, setListingsError] = useState(false);
   const [creatingFor, setCreatingFor] = useState(null);
   const [cancellingId, setCancellingId] = useState(null);
   const [bundling, setBundling] = useState(false); // picking screens for a bundle
@@ -97,7 +113,13 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
   const resetBundle = () => { setBundling(false); setBundleSelection([]); setBundleReady(false); };
   const toast = useToast();
 
-  const reload = () => fetchOperatorListings(operatorId).then(data => setListings(data ?? []));
+  // Same unhandled-rejection risk as OperatorBookings above: fetchOperatorListings
+  // throws on a Supabase error, so without a .catch here `listings` would
+  // never update, looking identical to "No listings yet" with no way to
+  // tell the fetch had actually failed.
+  const reload = () => fetchOperatorListings(operatorId)
+    .then(data => { setListings(data ?? []); setListingsError(false); })
+    .catch(() => setListingsError(true));
   useEffect(() => { reload(); }, [operatorId]);
 
   // Screens already covered by a live listing shouldn't also show an
@@ -219,7 +241,11 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
           <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 10 }}>
             Your listings
           </div>
-          {listings.length === 0 ? (
+          {listingsError ? (
+            <div style={{ fontFamily: F.sans, fontSize: 13, color: C.red }}>
+              Couldn't load your listings — check your connection and try again.
+            </div>
+          ) : listings.length === 0 ? (
             <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMuted }}>
               No listings yet — list a screen above to sell it as an exclusive placement.
             </div>
