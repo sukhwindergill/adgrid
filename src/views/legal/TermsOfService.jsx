@@ -129,11 +129,12 @@ export function TermsOfService() {
         <h2 style={h2}>11. Contact</h2>
         <p style={p}>
           Questions about these Terms:{' '}
-          <a href="mailto:legal@adgrid.io" style={{ color: '#7c3aed' }}>legal@adgrid.io</a>
+          <a href="mailto:legal@adgrid.io" style={{ color: '#a78bfa' }}>legal@adgrid.io</a>
         </p>
 
         <p style={{ ...p, marginTop: 32, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 24 }}>
-          Also see our <Link to="/privacy" style={{ color: '#7c3aed' }}>Privacy Policy</Link>.
+          Also see our <Link to="/privacy" style={{ color: '#a78bfa' }}>Privacy Policy</Link> and{' '}
+          <Link to="/refunds" style={{ color: '#a78bfa' }}>Refund Policy</Link>.
         </p>
       </div>
     </div>
