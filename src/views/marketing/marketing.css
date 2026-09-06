@@ -104,8 +104,8 @@
 .sec.light { background: var(--lbg); }
 .sec.lcard-bg { background: var(--lcard); }
 .sec.dark { background: var(--bg); }
-.eyebrow { font: 600 12px/1 var(--inter); letter-spacing: 0.08em; text-transform: uppercase; color: var(--purple); margin-bottom: 14px; }
-.dark .eyebrow { color: var(--purple-light); }
+.eyebrow { font: 600 12px/1 var(--inter); letter-spacing: 0.08em; text-transform: uppercase; color: var(--purple-light); margin-bottom: 14px; }
+.light .eyebrow, .lcard-bg .eyebrow { color: var(--purple-dark); }
 .sec-h { font-weight: 700; font-size: clamp(30px, 4vw, 40px); letter-spacing: -0.02em; line-height: 1.12; color: var(--ltext); }
 .dark .sec-h { color: #fff; }
 .sec-sub { font-size: 17px; line-height: 1.6; color: var(--lsub); max-width: 560px; margin-top: 14px; }
@@ -286,10 +286,10 @@ select.fi { appearance: none; cursor: pointer; }
 .mfooter .logo { font: 700 20px/1 var(--inter); color: #fff; letter-spacing: -0.02em; }
 .mfooter .tagline { font-size: 14px; color: var(--sec); margin-top: 10px; max-width: 280px; line-height: 1.6; }
 .mfooter .cols { display: flex; gap: 64px; flex-wrap: wrap; }
-.mfooter .col h5 { font: 600 12px/1 var(--inter); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+.mfooter .col h5 { font: 600 12px/1 var(--inter); letter-spacing: .07em; text-transform: uppercase; color: var(--sec); margin-bottom: 14px; }
 .mfooter .col a, .mfooter .col button { display: block; background: none; border: none; cursor: pointer; text-align: left; font: 400 14px/1 var(--inter); color: var(--sec); text-decoration: none; padding: 0; margin-bottom: 11px; transition: color .15s; }
 .mfooter .col a:hover, .mfooter .col button:hover { color: #fff; }
-.mfooter .base { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-top: 1px solid var(--border); margin-top: 44px; padding-top: 24px; font-size: 13px; color: var(--muted); }
+.mfooter .base { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-top: 1px solid var(--border); margin-top: 44px; padding-top: 24px; font-size: 13px; color: var(--sec); }
 
 /* ── Sticky mobile CTA ── */
 .sticky-mobile-cta {

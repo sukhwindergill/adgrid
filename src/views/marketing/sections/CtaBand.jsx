@@ -94,7 +94,7 @@ export function CtaBand() {
 
             <div className="form-field" style={{ marginBottom: 28 }}>
               <label htmlFor="wl-source" className="form-label">
-                How did you hear about AdGrid? <span style={{ color: 'var(--muted)' }}>(optional)</span>
+                How did you hear about AdGrid? <span style={{ color: 'var(--sec)' }}>(optional)</span>
               </label>
               <input id="wl-source" className="fi" type="text" value={form.source} onChange={set('source')} />
             </div>
@@ -109,7 +109,7 @@ export function CtaBand() {
               </p>
             )}
 
-            <p style={{ font: '400 13px/1.5 var(--inter)', color: 'var(--muted)', textAlign: 'center', marginTop: 16 }}>
+            <p style={{ font: '400 13px/1.5 var(--inter)', color: 'var(--sec)', textAlign: 'center', marginTop: 16 }}>
               We'll respond within 2 business days. By submitting, you agree to our{' '}
               <Link to="/privacy" style={{ color: 'var(--sec)' }}>Privacy Policy</Link>. We'll never share your information.
             </p>

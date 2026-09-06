@@ -75,6 +75,13 @@ export function PrivacyPolicy() {
           other than delivering it and, where relevant, resolving a support request.
         </p>
 
+        <p style={p}>
+          <strong>Waitlist and contact forms:</strong> if you join our operator waitlist or
+          contact us, we collect the name, email, company, city, and other details you
+          submit, so we can respond to your inquiry and follow up about onboarding. We do
+          not share this information with third parties and use it only for that purpose.
+        </p>
+
         <h2 style={h2}>How we use your data</h2>
         <p style={p}>
           We use account data to provide the AdGrid service, process payments, send
@@ -99,7 +106,7 @@ export function PrivacyPolicy() {
           If you are located in Canada, the EU, or the UK you have the right to access,
           correct, or delete your personal data, and to withdraw consent where processing
           is consent-based. To exercise any of these rights, email us at
-          {' '}<a href="mailto:privacy@adgrid.io" style={{ color: '#7c3aed' }}>privacy@adgrid.io</a>.
+          {' '}<a href="mailto:privacy@adgrid.io" style={{ color: '#a78bfa' }}>privacy@adgrid.io</a>.
           We will respond within 30 days.
         </p>
 
@@ -127,11 +134,12 @@ export function PrivacyPolicy() {
         <h2 style={h2}>Contact</h2>
         <p style={p}>
           For privacy questions or data requests:{' '}
-          <a href="mailto:privacy@adgrid.io" style={{ color: '#7c3aed' }}>privacy@adgrid.io</a>
+          <a href="mailto:privacy@adgrid.io" style={{ color: '#a78bfa' }}>privacy@adgrid.io</a>
         </p>
 
         <p style={{ ...p, marginTop: 32, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 24 }}>
-          Also see our <Link to="/terms" style={{ color: '#7c3aed' }}>Terms of Service</Link>.
+          Also see our <Link to="/terms" style={{ color: '#a78bfa' }}>Terms of Service</Link> and{' '}
+          <Link to="/cookies" style={{ color: '#a78bfa' }}>Cookie Policy</Link>.
         </p>
       </div>
     </div>

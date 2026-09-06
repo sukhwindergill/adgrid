@@ -26,6 +26,8 @@ export function Footer({ onLogin, onScrollTo }) {
               <h5>Legal</h5>
               <Link to="/privacy">Privacy Policy</Link>
               <Link to="/terms">Terms of Service</Link>
+              <Link to="/cookies">Cookie Policy</Link>
+              <Link to="/refunds">Refund Policy</Link>
             </div>
           </div>
         </div>
