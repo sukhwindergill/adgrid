@@ -239,6 +239,7 @@ export default function AdvertisersView({ onImpersonate }) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [checked, setChecked] = useState(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
   const toast = useToast();
@@ -262,6 +263,10 @@ export default function AdvertisersView({ onImpersonate }) {
       supabase.from("scans").select("advertiser_id"),
       supabase.from("screens").select("id").eq("operator_id", user.id),
     ]).then(([advRes, campRes, scansRes, screensRes]) => {
+      // A failed fetch on any of these previously left advertisers empty
+      // just like a genuine zero-advertisers network, showing "No
+      // advertisers found." identically to a real empty result set.
+      setLoadError(Boolean(advRes.error || campRes.error || scansRes.error || screensRes.error));
       setAdvertisers(advRes.data ?? []);
       setAllBookings(campRes.data ?? []);
       setScans(scansRes.data ?? []);
@@ -392,7 +397,9 @@ export default function AdvertisersView({ onImpersonate }) {
               );
             })}
             {filtered.length === 0 && (
-              <tr><td colSpan={8} style={{ padding: "32px 16px", textAlign: "center", color: C.textMuted }}>No advertisers found.</td></tr>
+              <tr><td colSpan={8} style={{ padding: "32px 16px", textAlign: "center", color: loadError ? C.red : C.textMuted }}>
+                {loadError ? "Couldn't load advertisers — check your connection and try again." : "No advertisers found."}
+              </td></tr>
             )}
           </tbody>
         </table>
