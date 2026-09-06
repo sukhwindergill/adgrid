@@ -21,8 +21,15 @@ export function usePendingApprovalCount(screenIds, refreshKey) {
       .select('campaign_id')
       .in('screen_id', ids)
       .eq('status', 'pending')
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (cancelled) return;
+        // A real fetch failure previously reset the badge to 0, silently
+        // claiming "nothing pending" the same way a genuinely-empty queue
+        // does -- exactly the disagreement with ApprovalQueue.jsx (which
+        // now shows its own error banner rather than an empty queue on the
+        // same failure) this hook's own comment says it exists to avoid.
+        // Leave the last-known count in place instead of zeroing it.
+        if (error) return;
         setCount(new Set((data || []).map(r => r.campaign_id)).size);
       });
     return () => { cancelled = true; };
