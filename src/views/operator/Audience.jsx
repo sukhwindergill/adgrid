@@ -16,6 +16,7 @@ import { IconQr, IconMail, IconGlobe } from '../../components/icons.jsx';
 function useScans() {
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     supabase
@@ -23,7 +24,11 @@ function useScans() {
       .select('id, scanned_at, device_type, city, email, consent, campaign_id')
       .order('scanned_at', { ascending: false })
       .limit(500)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        // A failed fetch previously left scans empty just like a genuine
+        // zero-scans account, showing "No scans yet" as if no campaign had
+        // ever run -- misleading when the query never actually ran.
+        setLoadError(Boolean(error));
         if (data) setScans(data.map(s => ({
           id:         s.id,
           ts:         s.scanned_at,
@@ -40,13 +45,13 @@ function useScans() {
       });
   }, []);
 
-  return { scans, loading };
+  return { scans, loading, loadError };
 }
 
 export function Audience() {
   const [tab, setTab] = useState('scans');
   const [exportDone, setExportDone] = useState(false);
-  const { scans, loading } = useScans();
+  const { scans, loading, loadError } = useScans();
   const { isMobile, isTablet } = useBreakpoint();
 
   const consented   = scans.filter(s => s.consent);
@@ -91,9 +96,18 @@ export function Audience() {
 
       {scans.length === 0 && (
         <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, marginBottom: 16 }}>
-          <div style={{ color: C.textMuted, marginBottom: 10, display: 'flex', justifyContent: 'center' }}><IconQr size={32} /></div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No scans yet</div>
-          <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>QR code scans will appear here once a campaign is live</div>
+          <div style={{ color: loadError ? C.red : C.textMuted, marginBottom: 10, display: 'flex', justifyContent: 'center' }}><IconQr size={32} /></div>
+          {loadError ? (
+            <>
+              <div style={{ fontSize: 15, fontWeight: 600, color: C.red, fontFamily: F.sans, marginBottom: 6 }}>Couldn't load scans</div>
+              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Check your connection and try again.</div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No scans yet</div>
+              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>QR code scans will appear here once a campaign is live</div>
+            </>
+          )}
         </div>
       )}
 
