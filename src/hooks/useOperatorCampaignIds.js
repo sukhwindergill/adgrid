@@ -29,8 +29,17 @@ export function useOperatorCampaignIds(screenIds) {
     supabase.from('campaign_screens')
       .select('campaign_id')
       .in('screen_id', scoped)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (cancelled) return;
+        // A real fetch failure previously reset this to an empty Set,
+        // which every consumer (Dashboard, Revenue, AdvertisersView,
+        // Analytics, Campaigns) then treats as "this operator has zero
+        // campaigns" -- their own bookings queries succeed trivially
+        // against an empty id set, so the failure surfaced as a false
+        // "No active campaigns" / "No revenue" with no error banner,
+        // even in views that already handle their OWN query's error
+        // correctly. Leave the last-known set in place instead.
+        if (error) return;
         setIds(new Set((data || []).map(r => r.campaign_id)));
       });
     return () => { cancelled = true; };
