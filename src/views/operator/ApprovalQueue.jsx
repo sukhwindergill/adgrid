@@ -95,7 +95,15 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
         danger: false,
       });
       if (confirmed) {
-        await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
+        const { error: dbErr } = await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
+        if (dbErr) {
+          // Unlike the charge-failure path below, there's no payment here
+          // to worry about double-charging -- but a failure still silently
+          // left the booking at its real status while the UI optimistically
+          // showed "scheduled" regardless of whether the write happened.
+          setActionErr(`Failed to update booking status: ${dbErr.message}. Try again.`);
+          return;
+        }
         setCampaigns(prev => prev.map(x =>
           x.id === campaign.id ? { ...x, status: 'scheduled' } : x
         ));
@@ -634,10 +642,22 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
         danger: false,
       });
       if (scheduleAnyway) {
-        await Promise.all(needsConsent.map(campaign =>
+        // Each write's error must be checked individually -- unconditionally
+        // marking every campaign "scheduled" in the UI afterward previously
+        // meant a single failed write among the batch silently diverged from
+        // the real booking status, with no indication anything had failed.
+        const results = await Promise.all(needsConsent.map(campaign =>
           supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id)
+            .then(({ error }) => ({ campaign, error }))
         ));
-        const scheduledIds = new Set(needsConsent.map(c => c.id));
+        const scheduledIds = new Set();
+        for (const { campaign, error } of results) {
+          if (error) {
+            failures.push({ id: campaign.id, name: campaign.advertiser_name || campaign.advertiser, message: error.message });
+          } else {
+            scheduledIds.add(campaign.id);
+          }
+        }
         setCampaigns(prev => prev.map(x => scheduledIds.has(x.id) ? { ...x, status: 'scheduled' } : x));
       }
     }

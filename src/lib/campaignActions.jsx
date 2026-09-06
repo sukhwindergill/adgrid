@@ -55,7 +55,18 @@ export function ApproveBtn({ campaign, setCampaigns, onSuccess }) {
       return;
     }
 
-    await supabase.from('bookings').update({ status: 'scheduled', payment_status: 'paid' }).eq('id', campaign.id);
+    const { error: dbErr } = await supabase.from('bookings').update({ status: 'scheduled', payment_status: 'paid' }).eq('id', campaign.id);
+    if (dbErr) {
+      // charge-campaign already succeeded at this point -- the advertiser
+      // was actually charged. A failure here previously proceeded anyway,
+      // optimistically marking the row scheduled/paid in the UI regardless
+      // of whether the DB write happened, leaving the real booking stuck at
+      // pending_review with no indication the operator needs to retry or
+      // escalate a charge that already went through.
+      setErr(`Charged, but failed to update booking status: ${dbErr.message}. Retry or update manually — do not charge again.`);
+      setLoading(false);
+      return;
+    }
     setCampaigns(prev => prev.map(x => x.id === campaign.id ? { ...x, status: 'scheduled', payment_status: 'paid' } : x));
     setLoading(false);
     onSuccess?.();
