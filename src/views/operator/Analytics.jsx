@@ -60,6 +60,7 @@ function useImpressionStats(period = 7, customFrom = '', customTo = '') {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hasReal, setHasReal] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   // People counted over the equal-length window immediately before the
   // selected one. Kept out of `rows` on purpose: `rows` feeds the hourly,
   // daily and demographic aggregates, which would double-count if the fetch
@@ -85,11 +86,18 @@ function useImpressionStats(period = 7, customFrom = '', customTo = '') {
       .gte('window_start', from.toISOString())
       .lte('window_start', to.toISOString())
       .order('window_start', { ascending: true })
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (data && data.length > 0) {
           setRows(data);
           setHasReal(true);
         }
+        // hasReal:false is a legitimate state for a screen with no camera
+        // add-on (zero rows) -- but a real query failure fell into that
+        // exact same bucket, silently substituting "estimated" scan-based
+        // metrics for what should read as real CV data, with nothing
+        // disclosing that the fetch actually failed rather than there
+        // simply being no camera data yet.
+        setLoadError(Boolean(error));
         setLoading(false);
       });
 
@@ -151,7 +159,7 @@ function useImpressionStats(period = 7, customFrom = '', customTo = '') {
 
   const impressionTrend = periodDelta(stats?.totalPeople ?? NaN, priorPeople ?? NaN);
 
-  return { stats, loading, hasReal, impressionTrend };
+  return { stats, loading, hasReal, loadError, impressionTrend };
 }
 
 // Owns its own scoped `bookings` fetch instead of App.jsx's app-wide,
@@ -168,7 +176,7 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const { isMobile } = useBreakpoint();
-  const { stats, loading, hasReal, impressionTrend } = useImpressionStats(period, customFrom, customTo);
+  const { stats, loading, hasReal, loadError, impressionTrend } = useImpressionStats(period, customFrom, customTo);
   const [benchmark, setBenchmark] = useState(null);
 
   const operatorCampaignIds = useOperatorCampaignIds(advertiserId ? [] : operatorScreenIds);
@@ -305,7 +313,16 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
         </div>
       )}
 
-      {!hasReal && !loading && (
+      {!hasReal && !loading && loadError && (
+        <div style={{
+          padding: '12px 16px', background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`,
+          borderRadius: 8, marginBottom: 20, fontSize: 13, color: C.red, fontFamily: F.sans,
+        }}>
+          Couldn't load verified impression data — check your connection and try again. Showing estimated data below in the meantime.
+        </div>
+      )}
+
+      {!hasReal && !loading && !loadError && (
         <div style={{
           padding: '12px 16px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`,
           borderRadius: 8, marginBottom: 20, fontSize: 13, color: C.amber, fontFamily: F.sans,
