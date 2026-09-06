@@ -49,15 +49,24 @@ function useStripeCharges() {
 // a failed payout was invisible until someone happened to run raw SQL.
 function useFailedTransfers() {
   const [failed, setFailed] = useState([]);
+  const [loadError, setLoadError] = useState(false);
   useEffect(() => {
     supabase
       .from('operator_transfers')
       .select('id, booking_id, amount, currency, created_at')
       .eq('status', 'failed')
       .order('created_at', { ascending: false })
-      .then(({ data }) => setFailed(data ?? []));
+      .then(({ data, error }) => {
+        // This fetch exists specifically to surface failed payouts that
+        // were previously invisible (see B16 above) -- silently swallowing
+        // its own fetch error would recreate exactly that blind spot: a
+        // real failed transfer looking identical to "nothing failed"
+        // whenever the query itself couldn't run.
+        setLoadError(Boolean(error));
+        setFailed(data ?? []);
+      });
   }, []);
-  return failed;
+  return { failedTransfers: failed, failedTransfersError: loadError };
 }
 
 export function Billing() {
@@ -67,7 +76,7 @@ export function Billing() {
   const [payingOut, setPaying] = useState(false);
   const { data, loading, error, refresh } = useOperatorBilling();
   const { isMobile } = useBreakpoint();
-  const failedTransfers = useFailedTransfers();
+  const { failedTransfers, failedTransfersError } = useFailedTransfers();
   const { stripeCharges, stripeChargesLoading } = useStripeCharges();
 
   const charges       = data?.charges ?? [];
@@ -124,6 +133,13 @@ export function Billing() {
     <div>
       <PageHeader title="Billing & Payouts" subtitle="Stripe charges, owner revenue share, and payout management"
         actions={<a href="https://dashboard.stripe.com" target="_blank" rel="noreferrer"><Btn variant="secondary" size="sm">Stripe Dashboard ↗</Btn></a>} />
+
+      {failedTransfersError && (
+        <div style={{ display: 'flex', gap: 8, padding: '12px 16px', marginBottom: 20, background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`, borderRadius: 8, fontSize: 13, color: C.red, fontFamily: F.sans }}>
+          <span style={{ flexShrink: 0 }}><IconWarning size={16} /></span>
+          <span>Couldn't check for failed payouts — check your connection and try again.</span>
+        </div>
+      )}
 
       {failedTransfers.length > 0 && (
         <div style={{ display: 'flex', gap: 8, padding: '12px 16px', marginBottom: 20, background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`, borderRadius: 8, fontSize: 13, color: C.red, fontFamily: F.sans, lineHeight: 1.6 }}>
