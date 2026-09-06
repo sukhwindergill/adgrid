@@ -48,6 +48,7 @@ export function NotificationPrefsView() {
   const [prefs, setPrefs] = useState(null);
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -55,7 +56,12 @@ export function NotificationPrefsView() {
       if (!user) return;
       setUserId(user.id);
       supabase.from('profiles').select('notification_prefs').eq('id', user.id).single()
-        .then(({ data }) => {
+        .then(({ data, error }) => {
+          // A failed fetch previously fell back to defaultPrefs() silently,
+          // presenting made-up toggle states as if they were the user's
+          // real saved preferences -- any edit from there would then save
+          // defaults-plus-one-change over their actual settings.
+          if (error) { setLoadError(true); setLoading(false); return; }
           const stored = data?.notification_prefs ?? {};
           setPrefs({ ...defaultPrefs(), ...stored });
           setLoading(false);
@@ -75,6 +81,7 @@ export function NotificationPrefsView() {
   };
 
   if (loading) return <div style={{ padding: 40, color: C.textSub, fontFamily: F.sans, fontSize: 13 }}>Loading…</div>;
+  if (loadError) return <div style={{ padding: 40, color: C.red, fontFamily: F.sans, fontSize: 13 }}>Couldn't load your notification preferences — check your connection and try again.</div>;
 
   return (
     <div style={{ maxWidth: 600 }}>
