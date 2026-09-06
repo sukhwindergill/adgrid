@@ -43,6 +43,7 @@ function timeAgo(dateStr) {
 export default function NotificationBell() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
+  const [loadError, setLoadError] = useState(false);
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -56,7 +57,13 @@ export default function NotificationBell() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(10)
-      .then(({ data }) => setNotifications(data ?? []));
+      .then(({ data, error }) => {
+        // A failed fetch previously left notifications empty just like a
+        // genuine zero-notifications account, showing "No notifications
+        // yet" identically either way.
+        setLoadError(Boolean(error));
+        setNotifications(data ?? []);
+      });
 
     // Realtime subscription
     const channel = supabase
@@ -147,7 +154,11 @@ export default function NotificationBell() {
             )}
           </div>
 
-          {notifications.length === 0 ? (
+          {loadError ? (
+            <div style={{ padding: "24px 16px", textAlign: "center", fontSize: 13, color: C.red }}>
+              Couldn't load notifications
+            </div>
+          ) : notifications.length === 0 ? (
             <div style={{ padding: "24px 16px", textAlign: "center", fontSize: 13, color: C.textMuted }}>
               No notifications yet
             </div>
