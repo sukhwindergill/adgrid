@@ -191,6 +191,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   const [heartbeats, setHeartbeats] = useState([]);
   const [screenCampaigns, setScreenCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [screenLoadError, setScreenLoadError] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -220,6 +221,11 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       .single()
       .then(({ data, error }) => {
         if (!error && data) setScreen(data);
+        // Distinguish a real fetch failure from a genuine 404 -- "Screen
+        // not found" implies the screen was deleted/never existed, which is
+        // misleading (and unhelpful to act on) when the query itself just
+        // failed to run.
+        setScreenLoadError(Boolean(error));
         setLoading(false);
       });
     // Delivery this screen owed but did not produce. RLS scopes this to the
@@ -393,7 +399,9 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   if (!screen) {
     return (
       <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-        <div style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans }}>Screen not found.</div>
+        <div style={{ fontSize: 14, color: screenLoadError ? C.red : C.textSub, fontFamily: F.sans }}>
+          {screenLoadError ? "Couldn't load this screen — check your connection and try again." : 'Screen not found.'}
+        </div>
         <Btn variant="secondary" style={{ marginTop: 16 }} onClick={onBack}>← Back</Btn>
       </div>
     );
