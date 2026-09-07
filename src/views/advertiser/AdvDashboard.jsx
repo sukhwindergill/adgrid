@@ -16,11 +16,12 @@ import { ApprovalTracker } from '../../components/shared/ApprovalTracker.jsx';
 import { PacingDot } from '../../components/shared/PacingDot.jsx';
 import { PacingCard } from '../../components/shared/PacingCard.jsx';
 import { estimateReach, averageFrequency } from '../../lib/reach.js';
+import { campaignDeliveryFlag } from '../../lib/deliveryFlag.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { listDrafts, deleteDraft } from '../../lib/campaignDrafts.js';
 import { DraftsCard } from './createCampaign/DraftsCard.jsx';
 import { normalizeBooking } from '../../lib/normalizeBooking.js';
-import { IconDollar, IconEye, IconQr, IconTrendUp, IconTarget, IconScreen } from '../../components/icons.jsx';
+import { IconDollar, IconEye, IconQr, IconTrendUp, IconTarget, IconScreen, IconWarning } from '../../components/icons.jsx';
 
 const RECENT_CAMPAIGNS_LIMIT = 20;
 
@@ -61,6 +62,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
   const [campaignScreens, setCampaignScreens] = useState({}); // map: campaignId -> [{screen_id, status}]
   const [delivery, setDelivery] = useState([]);
   const [health, setHealth] = useState(null);
+  const [healthByCampaign, setHealthByCampaign] = useState({}); // campaign_id -> health row
   const [screenNames, setScreenNames] = useState({}); // screen_id -> name
   const [screenCoords, setScreenCoords] = useState({}); // screen_id -> {lat, lon}
 
@@ -151,7 +153,12 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
         .select('campaign_id, expected_plays, delivered_plays, delivery_pct, total_credited, offline_days')
         .in('campaign_id', myCampaignIds);
 
-      if (error || !data || data.length === 0) { setHealth(null); return; }
+      if (error || !data || data.length === 0) { setHealth(null); setHealthByCampaign({}); return; }
+
+      // Per-campaign rows, kept alongside the account-wide sum below -- the
+      // sum alone can't tell an advertiser WHICH campaign in their list was
+      // actually affected by a screen going down (see deliveryFlag.js).
+      setHealthByCampaign(Object.fromEntries(data.map(r => [r.campaign_id, r])));
 
       const expected = data.reduce((a, r) => a + (Number(r.expected_plays) || 0), 0);
       const delivered = data.reduce((a, r) => a + (Number(r.delivered_plays) || 0), 0);
@@ -315,6 +322,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
               const hasApproved = screens.some(s => s.status === 'approved' || s.status === 'auto_approved');
               const isPartiallyApproved = hasPending && hasApproved;
               const displayStatus = isPartiallyApproved ? 'partially_approved' : c.status;
+              const deliveryFlag = campaignDeliveryFlag(healthByCampaign[c.id]);
 
               return (
               <Card key={c.id} style={{ padding: '16px 20px', transition: 'transform 0.2s, box-shadow 0.2s' }}
@@ -330,6 +338,11 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
                           {screenCount > 0 ? `${screenCount} ${pluralize(screenCount, 'screen')}` : c.screen}
                         </div>
                         <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.city} · {c.category} · {c.start} → {c.end}</div>
+                        {deliveryFlag && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, fontSize: 11, color: C.amber, fontFamily: F.sans }}>
+                            <IconWarning size={11} /> {deliveryFlag.label}
+                          </div>
+                        )}
                       </div>
                       <Badge status={displayStatus} />
                     </div>
@@ -368,6 +381,11 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
                         {screenCount > 0 ? `${screenCount} ${pluralize(screenCount, 'screen')}` : c.screen}
                       </div>
                       <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.city} · {c.category} · {c.start} → {c.end}</div>
+                      {deliveryFlag && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, fontSize: 11, color: C.amber, fontFamily: F.sans }}>
+                          <IconWarning size={11} /> {deliveryFlag.label}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
