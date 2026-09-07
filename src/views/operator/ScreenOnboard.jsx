@@ -13,6 +13,7 @@ import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS, STATE_
 import { ScreenLocationPicker } from '../../components/ScreenLocationPicker.jsx';
 import { checkAndGoLive } from '../../lib/screenGoLive.js';
 import { ScreenPhotoManager } from '../../components/screens/ScreenPhotoManager.jsx';
+import { DemandSignal } from '../../components/shared/DemandSignal.jsx';
 import { IconBolt, IconDollar, IconScreen, IconCheckCircle, IconCard, IconWarning, IconSignal } from '../../components/icons.jsx';
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
@@ -312,6 +313,8 @@ function StepRegister({ onBack, onScreenCreated }) {
               {subtypes.map(s => <option key={s} value={s}>{s}</option>)}
             </SelInput>
           )}
+
+          <DemandSignal city={form.city.trim()} venueCategory={form.venue_category} />
 
           <div>
             <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Environment</div>

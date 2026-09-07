@@ -8,10 +8,11 @@ function hoursLeft(dueAt, now) {
   return Math.floor((due - now.getTime()) / 3_600_000);
 }
 
-// Shows only what still needs attention: screens awaiting review, and screens
-// that were dropped for missing their window. Approved screens are not news.
+// Shows only what still needs attention: screens awaiting review, screens
+// that were dropped for missing their window, and screens the owner turned
+// down outright. Approved screens are not news.
 export function ApprovalTracker({ rows = [], now = new Date() }) {
-  const interesting = rows.filter(r => r.status === 'pending' || r.status === 'expired');
+  const interesting = rows.filter(r => r.status === 'pending' || r.status === 'expired' || r.status === 'rejected');
   if (interesting.length === 0) return null;
 
   return (
@@ -29,7 +30,10 @@ export function ApprovalTracker({ rows = [], now = new Date() }) {
           let label;
           let color = C.textSub;
 
-          if (r.status === 'expired') {
+          if (r.status === 'rejected') {
+            label = `Declined — ${r.reject_reason || 'no reason given, contact the venue'}`;
+            color = C.red;
+          } else if (r.status === 'expired') {
             label = 'Dropped — not reviewed in time';
             color = C.red;
           } else if (left === null) {
@@ -45,7 +49,7 @@ export function ApprovalTracker({ rows = [], now = new Date() }) {
           return (
             <div key={`${r.screen_id}-${r.status}`} style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
               <span style={{ fontSize: 13, color: C.text, fontFamily: F.sans }}>{r.screen_name ?? r.screen_id}</span>
-              <span style={{ fontSize: 12, color, fontFamily: F.sans, fontWeight: 500 }}>{label}</span>
+              <span style={{ fontSize: 12, color, fontFamily: F.sans, fontWeight: 500, textAlign: 'right' }}>{label}</span>
             </div>
           );
         })}

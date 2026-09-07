@@ -91,7 +91,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
 
       const { data, error } = await supabase
         .from('campaign_screens')
-        .select('campaign_id, screen_id, status, review_due_at')
+        .select('campaign_id, screen_id, status, review_due_at, reject_reason')
         .in('campaign_id', myCampaignIds);
 
       if (!error && data) {

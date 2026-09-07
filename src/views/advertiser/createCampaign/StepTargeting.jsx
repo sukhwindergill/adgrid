@@ -1,11 +1,13 @@
 // src/views/advertiser/createCampaign/StepTargeting.jsx
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { C, F } from '../../../design/tokens.js';
 import { Card } from '../../../components/primitives/Card.jsx';
 import { Inp } from '../../../components/primitives/Inp.jsx';
 import { SelInput } from '../../../components/primitives/SelInput.jsx';
 import { VENUE_TAXONOMY, COUNTRIES } from '../../../lib/venueTypes.js';
 import { buildLocationIndex, buildFlatLocationOptions } from '../../../lib/locationIndex.js';
+import { supabase } from '../../../lib/supabase.js';
+import { logDemandSignal } from '../../../lib/demandSignal.js';
 import { PillGroup } from './PillGroup.jsx';
 import { LocationSearch } from './LocationSearch.jsx';
 import { ScreenMap } from './ScreenMap.jsx';
@@ -16,6 +18,24 @@ const countryLabel = code => COUNTRIES.find(c => c.code === code)?.label ?? code
 
 export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount, allScreens, screensLoading = false, onPrevCampaigns, existingCampaign = null, pastCampaignIds = [] }) {
   const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
+
+  // Log this search as a demand signal for the operator side's cold-start
+  // widget (ScreenOnboard.jsx) once city + venue category both settle —
+  // debounced so typing doesn't fire an insert per keystroke, and
+  // deduplicated per combo so re-visiting this step without changing
+  // anything doesn't inflate the count.
+  const loggedCombosRef = useRef(new Set());
+  const city = form.city || form.state;
+  useEffect(() => {
+    if (!city || !form.venue_filter) return;
+    const combo = `${city}::${form.venue_filter}`;
+    if (loggedCombosRef.current.has(combo)) return;
+    const timer = setTimeout(() => {
+      loggedCombosRef.current.add(combo);
+      logDemandSignal(supabase, { city, venueCategory: form.venue_filter });
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [city, form.venue_filter]);
 
   // allScreens.length === 0 is ambiguous by itself -- true both while the
   // initial fetch is still in flight AND once it resolves to "zero live
