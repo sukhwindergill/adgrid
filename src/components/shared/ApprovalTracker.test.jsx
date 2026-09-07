@@ -40,4 +40,15 @@ describe('ApprovalTracker', () => {
     render(<ApprovalTracker rows={[{ screen_id: 'scr-xyz', status: 'pending', review_due_at: null }]} now={now} />);
     expect(screen.getByText('scr-xyz')).toBeInTheDocument();
   });
+
+  it('shows the owner\'s actual rejection reason for a declined screen', () => {
+    render(<ApprovalTracker rows={[{ screen_id: 's3', screen_name: 'Yoga Studio', status: 'rejected', reject_reason: 'Competitor brand' }]} now={now} />);
+    expect(screen.getByText(/Yoga Studio/)).toBeInTheDocument();
+    expect(screen.getByText(/Declined — Competitor brand/)).toBeInTheDocument();
+  });
+
+  it('gives a neutral fallback when a declined screen has no reason on file', () => {
+    render(<ApprovalTracker rows={[{ screen_id: 's4', screen_name: 'Condo Lobby', status: 'rejected', reject_reason: null }]} now={now} />);
+    expect(screen.getByText(/Declined — no reason given, contact the venue/)).toBeInTheDocument();
+  });
 });

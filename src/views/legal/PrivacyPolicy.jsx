@@ -24,20 +24,35 @@ export function PrivacyPolicy() {
       <div style={inner}>
         <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Privacy Policy' }]} />
         <h1 style={h1}>Privacy Policy</h1>
-        <p style={{ ...p, color: 'rgba(255,255,255,0.5)' }}>Last updated: August 31, 2026</p>
+        <p style={{ ...p, color: 'rgba(255,255,255,0.5)' }}>Last updated: September 7, 2026</p>
 
         <h2 style={h2}>Who we are</h2>
         <p style={p}>
           AdGrid Inc. ("AdGrid", "we", "us") operates a digital out-of-home advertising
-          platform that connects advertisers with screen owners. Our registered address is
-          available at legal@adgrid.io.
+          platform that connects advertisers with screen owners, currently serving Toronto
+          and Vancouver. Our registered address is available at legal@adgrid.io. AdGrid is
+          based in Canada, and we handle personal information under the federal{' '}
+          <em>Personal Information Protection and Electronic Documents Act</em> (PIPEDA).
+        </p>
+        <p style={p}>
+          <strong>Privacy Officer:</strong> AdGrid's designated Privacy Officer is
+          accountable for our compliance with PIPEDA and is the first point of contact for
+          any question, concern, or complaint about how we handle your personal
+          information: <a href="mailto:privacy@adgrid.io" style={{ color: '#a78bfa' }}>privacy@adgrid.io</a>.
         </p>
 
-        <h2 style={h2}>Data we collect</h2>
+        <h2 style={h2}>Data we collect, and why</h2>
+        <p style={p}>
+          Under PIPEDA we only collect personal information for identified purposes, with
+          your knowledge and consent (implied by creating an account, or express where we
+          say so below). Each category below names why we collect it — we do not use it for
+          any other purpose without asking first.
+        </p>
         <p style={p}>
           <strong>Account holders (advertisers and screen operators):</strong> name, email
-          address, business name, and billing information. Payment details are processed
-          and stored by Stripe. AdGrid never stores raw card numbers.
+          address, business name, and billing information, collected when you create an
+          account, to identify you, operate your account, and process payment. Payment
+          details are processed and stored by Stripe. AdGrid never stores raw card numbers.
         </p>
         <p style={p}>
           <strong>Screen telemetry:</strong> whether a screen is online or offline, which
@@ -105,9 +120,16 @@ export function PrivacyPolicy() {
         <p style={p}>
           If you are located in Canada, the EU, or the UK you have the right to access,
           correct, or delete your personal data, and to withdraw consent where processing
-          is consent-based. To exercise any of these rights, email us at
+          is consent-based. To exercise any of these rights, email our Privacy Officer at
           {' '}<a href="mailto:privacy@adgrid.io" style={{ color: '#a78bfa' }}>privacy@adgrid.io</a>.
-          We will respond within 30 days.
+          We will respond within 30 days, as required by PIPEDA.
+        </p>
+        <p style={p}>
+          If you're not satisfied with how we've handled your request or your personal
+          information, you can file a complaint with the{' '}
+          <a href="https://www.priv.gc.ca" target="_blank" rel="noreferrer" style={{ color: '#a78bfa' }}>
+            Office of the Privacy Commissioner of Canada
+          </a>, the federal regulator responsible for enforcing PIPEDA.
         </p>
 
         <h2 style={h2}>Cookies and similar technologies</h2>
