@@ -17,6 +17,7 @@ import { PacingDot } from '../../components/shared/PacingDot.jsx';
 import { PacingCard } from '../../components/shared/PacingCard.jsx';
 import { estimateReach, averageFrequency } from '../../lib/reach.js';
 import { campaignDeliveryFlag } from '../../lib/deliveryFlag.js';
+import { FileDisputeModal } from '../../components/shared/FileDisputeModal.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { listDrafts, deleteDraft } from '../../lib/campaignDrafts.js';
 import { DraftsCard } from './createCampaign/DraftsCard.jsx';
@@ -65,6 +66,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
   const [healthByCampaign, setHealthByCampaign] = useState({}); // campaign_id -> health row
   const [screenNames, setScreenNames] = useState({}); // screen_id -> name
   const [screenCoords, setScreenCoords] = useState({}); // screen_id -> {lat, lon}
+  const [disputeCampaignId, setDisputeCampaignId] = useState(null);
 
   useEffect(() => {
     if (!advertiserId) return;
@@ -343,6 +345,9 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
                             <IconWarning size={11} /> {deliveryFlag.label}
                           </div>
                         )}
+                        <button onClick={() => setDisputeCampaignId(c.id)} style={{ background: 'none', border: 'none', padding: 0, marginTop: 4, fontSize: 11, color: C.textMuted, fontFamily: F.sans, cursor: 'pointer', textDecoration: 'underline' }}>
+                          Report a problem
+                        </button>
                       </div>
                       <Badge status={displayStatus} />
                     </div>
@@ -386,6 +391,9 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
                           <IconWarning size={11} /> {deliveryFlag.label}
                         </div>
                       )}
+                      <button onClick={() => setDisputeCampaignId(c.id)} style={{ background: 'none', border: 'none', padding: 0, marginTop: 4, fontSize: 11, color: C.textMuted, fontFamily: F.sans, cursor: 'pointer', textDecoration: 'underline' }}>
+                        Report a problem
+                      </button>
                     </div>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
@@ -422,6 +430,14 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
           <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>Launch your first campaign on the ADGRID network in under 10 minutes.</div>
           <Btn onClick={() => setAdvNav('adv-create')}>Create your first campaign →</Btn>
         </Card>
+      )}
+
+      {disputeCampaignId && (
+        <FileDisputeModal
+          bookingId={disputeCampaignId}
+          advertiserId={advertiserId}
+          onClose={() => setDisputeCampaignId(null)}
+        />
       )}
     </div>
   );
