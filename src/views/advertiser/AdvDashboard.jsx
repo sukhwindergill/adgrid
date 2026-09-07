@@ -17,6 +17,7 @@ import { PacingDot } from '../../components/shared/PacingDot.jsx';
 import { PacingCard } from '../../components/shared/PacingCard.jsx';
 import { estimateReach, averageFrequency } from '../../lib/reach.js';
 import { campaignDeliveryFlag } from '../../lib/deliveryFlag.js';
+import { perScreenBreakdown } from '../../lib/screenComparison.js';
 import { FileDisputeModal } from '../../components/shared/FileDisputeModal.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { listDrafts, deleteDraft } from '../../lib/campaignDrafts.js';
@@ -67,6 +68,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
   const [screenNames, setScreenNames] = useState({}); // screen_id -> name
   const [screenCoords, setScreenCoords] = useState({}); // screen_id -> {lat, lon}
   const [disputeCampaignId, setDisputeCampaignId] = useState(null);
+  const [compareCampaignId, setCompareCampaignId] = useState(null);
 
   useEffect(() => {
     if (!advertiserId) return;
@@ -416,6 +418,29 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                       <Badge status={displayStatus} />
                     </div>
+                  </div>
+                )}
+
+                {screenCount >= 2 && (
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
+                    <button
+                      onClick={() => setCompareCampaignId(id => id === c.id ? null : c.id)}
+                      style={{ background: 'none', border: 'none', padding: 0, fontSize: 12, color: C.purple, fontFamily: F.sans, cursor: 'pointer', fontWeight: 500 }}
+                    >
+                      {compareCampaignId === c.id ? 'Hide screen breakdown ▴' : 'Compare screens ▾'}
+                    </button>
+                    {compareCampaignId === c.id && (
+                      <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {perScreenBreakdown(delivery, c.id, screenNames).map(s => (
+                          <div key={s.screen_id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontFamily: F.sans }}>
+                            <span style={{ color: C.text }}>{s.screen_name}</span>
+                            <span style={{ color: C.textSub, fontFamily: F.mono }}>
+                              {s.impressions.toLocaleString()} impr · {s.scans.toLocaleString()} scans
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </Card>
