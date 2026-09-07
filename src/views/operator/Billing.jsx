@@ -7,6 +7,7 @@ import { periodDelta, splitByPeriod } from '../../lib/periodDelta.js';
 import { useToast } from '../../components/primitives/Toast.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
+import { nextPayout, lastCompletedPayout, daysSince } from '../../lib/payoutSummary.js';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
@@ -97,6 +98,13 @@ export function Billing() {
   // by the operator-billing edge function — the date field is `date`.
   const chargedPeriods = splitByPeriod(charges, 'date', 'amount', 30);
   const chargedTrend   = periodDelta(chargedPeriods.current, chargedPeriods.prior);
+
+  // Payouts here are on-demand, not a fixed cadence — see payoutSummary.js.
+  // This surfaces what's actually true: a payout already in flight (a real
+  // Stripe arrival date), or how long it's been since the last one landed.
+  const upcomingPayout = nextPayout(payouts);
+  const lastPayout     = lastCompletedPayout(payouts);
+  const daysSinceLast  = lastPayout ? daysSince(lastPayout.arrival_date) : null;
 
   const doPayoutAll = async () => {
     if (availableOut <= 0) return;
@@ -191,6 +199,18 @@ export function Billing() {
               </div>
             ) : (
               <>
+                {upcomingPayout ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', marginBottom: 14, background: C.amberSoft, borderRadius: 8, fontSize: 12.5, color: C.text, fontFamily: F.sans }}>
+                    <span style={{ flexShrink: 0, color: C.amber }}><IconClock size={14} /></span>
+                    <span>Next payout — <strong>${Number(upcomingPayout.amount).toLocaleString()}</strong> arriving <strong>{upcomingPayout.arrival_date}</strong></span>
+                  </div>
+                ) : (
+                  <div style={{ padding: '10px 12px', marginBottom: 14, background: C.surfaceAlt, borderRadius: 8, fontSize: 12.5, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5 }}>
+                    {lastPayout
+                      ? <>No payout scheduled — payouts are on-demand. Last one landed <strong>{daysSinceLast}d ago</strong> (${Number(lastPayout.amount).toLocaleString()} on {lastPayout.arrival_date}).</>
+                      : <>No payout scheduled — payouts are on-demand. Click below whenever you want available funds sent to your bank.</>}
+                  </div>
+                )}
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 16 }}>
                   {[['Available', `$${availableOut.toLocaleString()}`, C.green], ['Pending', `$${pendingIn.toLocaleString()}`, C.amber]].map(([l, v, c]) => (
                     <div key={l} style={{ padding: 14, background: C.surfaceAlt, borderRadius: 8 }}>
