@@ -2,7 +2,7 @@
 // Cold-start demand signal for a prospective operator: how much advertiser
 // search interest actually exists for a city + venue category, read from
 // demand_signals via the demand_signal_count() RPC (never raw rows — see
-// supabase/migrations/20260907120000_demand_signals.sql). Answers the
+// supabase/migrations/20260907041506_demand_signals.sql). Answers the
 // question onboarding never used to: "will anyone actually book this?"
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase.js';

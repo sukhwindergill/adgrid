@@ -1,6 +1,6 @@
 // src/lib/demandSignal.js
 // Cold-start demand signal: pure helpers, no React or Supabase import here so
-// they're trivially testable. See supabase/migrations/20260907120000_demand_signals.sql.
+// they're trivially testable. See supabase/migrations/20260907041506_demand_signals.sql.
 
 // Below this many recent searches, a raw count would misleadingly look like
 // proof of demand in a market that's simply early. Stay honest about that
