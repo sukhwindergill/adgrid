@@ -4,6 +4,7 @@ import { clampDurationToScreen } from "../_shared/adDuration.ts";
 import { resolveDayWindow, isTimeInWindow } from "../_shared/dayparting.ts";
 import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { capHouseAds } from "../_shared/houseAdCap.ts";
+import { capAdvertiserLoopShare } from "../_shared/advertiserLoopCap.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -86,7 +87,7 @@ Deno.serve(async (req: Request) => {
     // Step 2: fetch bookings for those campaigns filtered by date and live status
     const { data: bookings } = await supabase
       .from("bookings")
-      .select("id, advertiser_name, headline, cta_text, accent_color, destination_url, category, media_url, media_type, qr_x, qr_y, qr_size_pct, qr_fg_color, qr_bg_color, slots, duration, schedule_days, time_start, time_end, dayparting, is_house_ad")
+      .select("id, advertiser_id, advertiser_name, headline, cta_text, accent_color, destination_url, category, media_url, media_type, qr_x, qr_y, qr_size_pct, qr_fg_color, qr_bg_color, slots, duration, schedule_days, time_start, time_end, dayparting, is_house_ad")
       .in("id", campaignIds)
       .in("status", ["scheduled", "active"])
       .eq("payment_status", "paid")
@@ -198,10 +199,19 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // No single advertiser can crowd out the rest of the paid loop on one
+  // screen -- max-ad-duration-enforcement already caps one spot's length,
+  // this caps one advertiser's combined share of the loop. See
+  // advertiserLoopCap.ts. House ads are handled separately below and are
+  // never touched by this cap.
+  const rawPaidEntries = activeCampaigns.filter((c) => !c.is_house_ad);
+  const paidEntries = capAdvertiserLoopShare(
+    rawPaidEntries as { duration: number; advertiser_id: string | null }[],
+  ) as typeof rawPaidEntries;
+
   // House ads never bump or trim a paid campaign's airtime -- they only
   // ever fill what paid campaigns aren't using, up to the operator's
   // configured house_ad_max_pct share of the loop. See houseAdCap.ts.
-  const paidEntries  = activeCampaigns.filter((c) => !c.is_house_ad);
   const houseEntries = activeCampaigns.filter((c) => c.is_house_ad);
   const cappedHouseEntries = capHouseAds(
     paidEntries as { duration: number }[],
