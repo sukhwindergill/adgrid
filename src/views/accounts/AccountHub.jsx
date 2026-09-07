@@ -1,4 +1,7 @@
+import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
+import { supabase } from '../../lib/supabase.js'
+import { summarizeAccountBookings } from '../../lib/accountRollup.js'
 import { C, F } from '../../design/tokens.js'
 
 function RoleBadge({ role }) {
@@ -16,7 +19,7 @@ function RoleBadge({ role }) {
   )
 }
 
-function AccountCard({ account, isCurrent, onClick }) {
+function AccountCard({ account, isCurrent, onClick, rollup }) {
   const initials = (account.name || account.company_name || '?').slice(0, 2).toUpperCase()
   return (
     <div
@@ -64,6 +67,18 @@ function AccountCard({ account, isCurrent, onClick }) {
       {account.isOwn && (
         <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>Your account</div>
       )}
+      {rollup && (
+        <div style={{ display: 'flex', gap: 16, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{rollup.activeCampaigns}</div>
+            <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>active campaign{rollup.activeCampaigns === 1 ? '' : 's'}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono }}>${rollup.spend.toLocaleString()}</div>
+            <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>spend to date</div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -91,6 +106,31 @@ export function AccountHub({ onSelectAccount }) {
 
   const allAccounts = [ownAccount, ...grantAccounts]
 
+  // Rollup only earns its place once there's more than one account to
+  // compare -- a solo user's own single card needs no spend summary
+  // sitting next to nothing to compare it against.
+  const [rollup, setRollup] = useState({})
+  useEffect(() => {
+    // Nothing to roll up with only one account -- initial state is already
+    // {}, so there's no stale rollup left over from a prior account switch.
+    if (grantAccounts.length === 0) return
+    let cancelled = false
+    const accountIds = allAccounts.map(a => a.id).filter(Boolean)
+    // bookings_grant_select RLS already scopes this to accounts the caller
+    // has a grant on (plus their own row) -- one query covers every card,
+    // no per-account round trip.
+    supabase
+      .from('bookings')
+      .select('advertiser_id, status, spent')
+      .in('advertiser_id', accountIds)
+      .then(({ data, error }) => {
+        if (cancelled || error || !data) return
+        setRollup(summarizeAccountBookings(data, accountIds))
+      })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grantAccounts.length, user?.id])
+
   function select(account) {
     onSelectAccount(account)
   }
@@ -117,6 +157,7 @@ export function AccountHub({ onSelectAccount }) {
                 : activeAccount?.id === account.id
             }
             onClick={() => select(account)}
+            rollup={rollup[account.id]}
           />
         ))}
       </div>
