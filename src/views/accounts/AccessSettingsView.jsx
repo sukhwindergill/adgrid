@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { C, F } from '../../design/tokens.js'
 import { GrantAccessModal } from './GrantAccessModal.jsx'
+import { describeActivity } from '../../lib/accountActivityLog.js'
 
 const ROLE_COLORS = {
   admin:   { bg: C.purpleSoft, color: C.purple },
@@ -16,6 +17,8 @@ export function AccessSettingsView() {
   const [loading, setLoading]     = useState(true)
   const [loadError, setLoadError] = useState(false)
   const [showModal, setShowModal] = useState(false)
+  const [activity, setActivity] = useState([])
+  const [activityError, setActivityError] = useState(false)
 
   async function load() {
     const { data, error } = await supabase
@@ -29,11 +32,26 @@ export function AccessSettingsView() {
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [user.id])
+  async function loadActivity() {
+    // Written only by the account_grants_log_activity trigger -- never a
+    // direct client insert -- so this is exactly what happened, not what
+    // a delegate chose to report about themselves.
+    const { data, error } = await supabase
+      .from('account_activity_log')
+      .select('*, grantee:grantee_id(name, email, company_name)')
+      .eq('account_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20)
+    setActivityError(Boolean(error))
+    setActivity(data ?? [])
+  }
+
+  useEffect(() => { load(); loadActivity() }, [user.id])
 
   async function revoke(grantId) {
     await supabase.from('account_grants').update({ status: 'revoked' }).eq('id', grantId)
     setGrants(prev => prev.filter(g => g.id !== grantId))
+    loadActivity()
   }
 
   const statusColor = { pending: C.amber, active: C.green, revoked: C.red }
@@ -94,8 +112,27 @@ export function AccessSettingsView() {
       {showModal && (
         <GrantAccessModal
           onClose={() => setShowModal(false)}
-          onGranted={() => { setShowModal(false); load() }}
+          onGranted={() => { setShowModal(false); load(); loadActivity() }}
         />
+      )}
+
+      <h3 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.display, margin: '32px 0 12px' }}>
+        Activity
+      </h3>
+      {activityError ? (
+        <p style={{ fontSize: 13, color: C.red, fontFamily: F.sans }}>Couldn't load activity — check your connection and try again.</p>
+      ) : activity.length === 0 ? (
+        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>No access changes on your account yet.</p>
+      ) : (
+        activity.map(entry => (
+          <div key={entry.id} style={{
+            display: 'flex', justifyContent: 'space-between', gap: 12, padding: '9px 2px',
+            borderBottom: `1px solid ${C.border}`, fontFamily: F.sans,
+          }}>
+            <span style={{ fontSize: 13, color: C.text }}>{describeActivity(entry)}</span>
+            <span style={{ fontSize: 12, color: C.textMuted, flexShrink: 0 }}>{new Date(entry.created_at).toLocaleDateString()}</span>
+          </div>
+        ))
       )}
     </div>
   )
