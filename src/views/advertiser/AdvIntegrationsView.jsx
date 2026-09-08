@@ -8,6 +8,7 @@ import { Btn } from "../../components/primitives/Btn.jsx";
 import { Inp } from "../../components/primitives/Inp.jsx";
 import { CopyButton } from "../../components/primitives/CopyButton.jsx";
 import { generatePostbackKey, hashPostbackKey } from "../../lib/postbackKey.js";
+import { generateApiKey, hashApiKey, apiKeyPrefix } from "../../lib/apiKey.js";
 
 // ─── Platform definitions ───────────────────────────────────────────────────
 
@@ -437,6 +438,110 @@ function ConversionTrackingTab() {
   );
 }
 
+// ─── API Keys tab ─────────────────────────────────────────────────────────────
+// Competitive Parity Program, Phase 6, G21 REST API half (docs/superpowers/
+// specs/2026-09-08-rest-campaign-api-design.md): "REST campaign API with
+// scoped keys." Generate/list/revoke keys scoped to this advertiser's own
+// account; the API itself lives at supabase/functions/api-campaigns.
+
+const API_BASE_URL = `${SUPABASE_FUNCTIONS_URL}/api-campaigns/v1`;
+
+function ApiKeysTab() {
+  const [keys, setKeys] = useState([]);
+  const [newKey, setNewKey] = useState(null);
+  const [name, setName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase.from("api_keys").select("id, name, key_prefix, last_used_at, revoked_at, created_at").eq("advertiser_id", user.id).order("created_at", { ascending: false });
+    setKeys(data ?? []);
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function generate() {
+    if (!name.trim()) return;
+    setSaving(true);
+    setError(null);
+    const key = generateApiKey();
+    const key_hash = await hashApiKey(key);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error: err } = await supabase.from("api_keys").insert({
+      advertiser_id: user.id,
+      name: name.trim(),
+      key_prefix: apiKeyPrefix(key),
+      key_hash,
+    });
+    setSaving(false);
+    if (err) { setError(err.message); return; }
+    setNewKey(key);
+    setName("");
+    load();
+  }
+
+  async function revoke(id) {
+    await supabase.from("api_keys").update({ revoked_at: new Date().toISOString() }).eq("id", id);
+    load();
+  }
+
+  if (loading) return <div style={{ padding: 20, fontFamily: F.sans, color: C.textSub }}>Loading…</div>;
+
+  return (
+    <div>
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>API Keys</div>
+        <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.5 }}>
+          Manage campaigns programmatically at <code>{API_BASE_URL}</code>. A key can list, create, edit (before payment), submit for payment, cancel, and read delivery for your own campaigns only.
+        </div>
+        {newKey ? (
+          <div style={{ padding: 12, background: C.surfaceAlt, borderRadius: 8, marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 6 }}>
+              Copy this now -- it won't be shown again. Send it as <code>Authorization: Bearer &lt;key&gt;</code>.
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <code style={{ fontSize: 12, fontFamily: F.mono, color: C.text, wordBreak: "break-all" }}>{newKey}</code>
+              <CopyButton value={newKey} label="Copy" copiedLabel="✓ Copied" variant="ghost" size="sm" />
+            </div>
+          </div>
+        ) : null}
+        {error && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginBottom: 8 }}>{error}</div>}
+        <div style={{ display: "flex", gap: 10, alignItems: "end" }}>
+          <Inp label="Key name" placeholder="e.g. Media buying tool" value={name} onChange={e => setName(e.target.value)} />
+          <Btn variant="secondary" size="sm" onClick={generate} disabled={saving || !name.trim()}>{saving ? "Generating…" : "+ Generate key"}</Btn>
+        </div>
+      </div>
+
+      {keys.length === 0 ? (
+        <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>No API keys yet.</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {keys.map(k => (
+            <div key={k.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: C.surfaceAlt, borderRadius: 8 }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.sans }}>
+                  {k.name} {k.revoked_at && <span style={{ color: C.red, fontWeight: 400 }}>(revoked)</span>}
+                </div>
+                <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.mono, marginTop: 2 }}>{k.key_prefix}…</div>
+                <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>
+                  Created {new Date(k.created_at).toLocaleDateString()}{k.last_used_at ? ` · last used ${new Date(k.last_used_at).toLocaleDateString()}` : ""}
+                </div>
+              </div>
+              {!k.revoked_at && (
+                <Btn variant="ghost" size="sm" onClick={() => revoke(k.id)} style={{ color: C.red }}>Revoke</Btn>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main view ───────────────────────────────────────────────────────────────
 
 export default function AdvIntegrationsView() {
@@ -541,6 +646,12 @@ export default function AdvIntegrationsView() {
         >
           Conversion Tracking
         </button>
+        <button style={TAB_STYLE(tab === "api-keys")} onClick={() => setTab("api-keys")}
+          onMouseEnter={e => { if (tab !== "api-keys") e.currentTarget.style.background = C.surface; }}
+          onMouseLeave={e => { if (tab !== "api-keys") e.currentTarget.style.background = "transparent"; }}
+        >
+          API Keys
+        </button>
       </div>
 
       {/* Platforms tab */}
@@ -610,6 +721,9 @@ export default function AdvIntegrationsView() {
 
       {/* Conversion Tracking tab */}
       {tab === "conversions" && <ConversionTrackingTab />}
+
+      {/* API Keys tab */}
+      {tab === "api-keys" && <ApiKeysTab />}
 
       {/* Connect modal */}
       {modalPlatform && (
