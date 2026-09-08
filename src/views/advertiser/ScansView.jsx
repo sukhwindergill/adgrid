@@ -3,6 +3,7 @@ import { C, F } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { downloadCsv } from "../../lib/csv.js";
+import { computeVariantPerformance } from "../../lib/variantPerformance.js";
 import { PageHeader } from "../../components/primitives/PageHeader.jsx";
 import { Card } from "../../components/primitives/Card.jsx";
 import { KPI } from "../../components/primitives/KPI.jsx";
@@ -48,6 +49,30 @@ export default function ScansView({ impersonatingId }) {
   const [dateTo, setDateTo] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [variantPerf, setVariantPerf] = useState(null); // null = not a variant-test campaign (or none selected)
+
+  // Per-variant reporting (Competitive Parity Program G15, reporting half --
+  // rotation and attribution already ship, see src/lib/variantPerformance.js).
+  // Only fetched when a single campaign is selected, and only shown when
+  // that campaign actually has more than one creative -- a campaign with
+  // exactly one creative isn't running a variant test.
+  useEffect(() => {
+    if (filterCampaign === "all") return;
+    let cancelled = false;
+    Promise.all([
+      supabase.from("campaign_creatives").select("id, label").eq("campaign_id", filterCampaign),
+      supabase.from("ad_plays").select("creative_id").eq("campaign_id", filterCampaign),
+      supabase.from("bookings").select("spent").eq("id", filterCampaign).maybeSingle(),
+    ]).then(([creativesRes, playsRes, bookingRes]) => {
+      if (cancelled) return;
+      const creatives = creativesRes.data ?? [];
+      if (creatives.length < 2) { setVariantPerf(null); return; }
+      const campaignScans = scans.filter((s) => s.campaign_id === filterCampaign);
+      const spend = Number(bookingRes.data?.spent) || 0;
+      setVariantPerf(computeVariantPerformance(creatives, playsRes.data ?? [], campaignScans, spend));
+    });
+    return () => { cancelled = true; };
+  }, [filterCampaign, scans]);
 
   useEffect(() => {
     if (!effectiveId) return;
@@ -188,6 +213,39 @@ export default function ScansView({ impersonatingId }) {
           <Btn onClick={() => exportCSV(filtered)}>Export CSV</Btn>
         </div>
       </div>
+
+      {filterCampaign !== "all" && variantPerf && variantPerf.length > 0 && (
+        <div style={{
+          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
+          overflow: "hidden", marginBottom: 24,
+        }}>
+          <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.border}`, fontSize: 14, fontWeight: 600, color: C.text }}>
+            Variant Performance
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: C.bg }}>
+                  {["Variant", "Plays", "Scans", "Scan Rate", "Cost / Scan"].map((h) => (
+                    <th key={h} style={{ padding: "10px 16px", textAlign: "left", color: C.textSub, fontWeight: 500, borderBottom: `1px solid ${C.border}` }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {variantPerf.map((v) => (
+                  <tr key={v.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                    <td style={{ padding: "10px 16px", color: C.text, fontWeight: 500 }}>{v.label}</td>
+                    <td style={{ padding: "10px 16px", color: C.textSub, fontFamily: F.mono }}>{v.plays.toLocaleString()}</td>
+                    <td style={{ padding: "10px 16px", color: C.textSub, fontFamily: F.mono }}>{v.scans.toLocaleString()}</td>
+                    <td style={{ padding: "10px 16px", color: C.text, fontFamily: F.mono }}>{(v.scanRate * 100).toFixed(2)}%</td>
+                    <td style={{ padding: "10px 16px", color: C.text, fontFamily: F.mono }}>{v.costPerScan === null ? "—" : `$${v.costPerScan.toFixed(2)}`}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <div style={{
         background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
