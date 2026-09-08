@@ -21,6 +21,7 @@ function makeQuery(state, resolve) {
     select: (cols) => { state.selectCols = cols; return builder; },
     in: (col, vals) => { state.filters[col] = { op: 'in', vals }; return builder; },
     gte: (col, val) => { state.filters[col] = { op: 'gte', val }; return builder; },
+    eq: (col, val) => { state.filters[col] = { op: 'eq', val }; return builder; },
     then: (onFulfilled, onRejected) => Promise.resolve(resolve(state)).then(onFulfilled, onRejected),
   };
   return builder;

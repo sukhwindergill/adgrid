@@ -59,6 +59,7 @@ export function Revenue({ operatorScreenIds = [] }) {
   const [loadError, setLoadError] = useState(false);
   const [screenCpmFloors, setScreenCpmFloors] = useState([]);
   const [houseAdImpressions, setHouseAdImpressions] = useState(0);
+  const [programmaticFills, setProgrammaticFills] = useState([]);
 
   useEffect(() => {
     if (operatorScreenIds.length === 0) { setScreenCpmFloors([]); return; }
@@ -110,6 +111,23 @@ export function Revenue({ operatorScreenIds = [] }) {
         setHouseAdImpressions((data || []).reduce((a, r) => a + (r.impressions || 0), 0));
       });
   }, [houseAdCampaignIdsKey]);
+
+  // Programmatic backfill revenue (G20). Each played fill's `cpm` is
+  // treated as that fill's earned amount directly -- a coarse per-play
+  // estimate, not a true impressions-based CPM calculation, since
+  // programmatic content doesn't yet flow through the same
+  // campaign_delivery_daily proof-of-play pipeline the other numbers on
+  // this page use (see docs/superpowers/specs/2026-09-08-programmatic-
+  // backfill-design.md's §3, which flags this as a to-be-confirmed
+  // integration point).
+  useEffect(() => {
+    if (operatorScreenIds.length === 0) { setProgrammaticFills([]); return; }
+    supabase.from('programmatic_fills').select('cpm, screen_id, fetched_at')
+      .in('screen_id', operatorScreenIds)
+      .eq('played', true)
+      .then(({ data }) => setProgrammaticFills(data || []));
+  }, [operatorScreenIds.join(',')]);
+  const programmaticRevenue = programmaticFills.reduce((a, f) => a + (Number(f.cpm) || 0), 0);
 
   // Fill rate (churn-prevention.md names this directly as a leading
   // indicator of operator churn): the paid share of paid+house impressions,
@@ -204,6 +222,9 @@ export function Revenue({ operatorScreenIds = [] }) {
         <KPI label="Owner Payouts"    value={`$${owners.toLocaleString()}`}   sub={`${ownerPct}% of net`} color={C.green} icon={<IconBank size={16} />} />
         <KPI label="Network Pool"     value={`$${network.toLocaleString()}`}  sub="reinvestment" icon={<IconRecycle size={16} />} />
         <KPI label="Given Up to House Ads" value={`$${houseAdOpportunityCost.toLocaleString()}`} sub="estimated, at CPM floor" color={C.textSub} icon={<IconScreen size={16} />} />
+        {programmaticFills.length > 0 && (
+          <KPI label="Programmatic Revenue" value={`$${programmaticRevenue.toLocaleString()}`} sub={`${programmaticFills.length} fill${programmaticFills.length !== 1 ? 's' : ''} played`} color={C.green} icon={<IconDollar size={16} />} />
+        )}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <Card>

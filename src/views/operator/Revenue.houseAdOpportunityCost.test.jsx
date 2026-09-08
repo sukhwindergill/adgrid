@@ -33,7 +33,7 @@ vi.mock('../../lib/supabase.js', () => ({
       if (table === 'campaign_delivery_daily') {
         return { select: () => ({ in: () => Promise.resolve({ data: [{ campaign_id: 'b2', impressions: 4000 }] }) }) };
       }
-      return { select: () => ({ in: () => Promise.resolve({ data: [] }) }) };
+      return { select: () => ({ in: () => ({ eq: () => Promise.resolve({ data: [] }), then: (resolve) => resolve({ data: [] }) }) }) };
     },
   },
 }));

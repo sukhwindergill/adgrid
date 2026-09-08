@@ -84,6 +84,7 @@ function DetailsTab({ screen, onSaved }) {
     lat:             screen.lat != null ? screen.lat : null,
     lon:             screen.lon != null ? screen.lon : null,
     house_ad_max_pct: screen.house_ad_max_pct ?? 20,
+    programmatic_backfill_enabled: screen.programmatic_backfill_enabled ?? false,
   });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -106,6 +107,7 @@ function DetailsTab({ screen, onSaved }) {
       lat:             fields.lat,
       lon:             fields.lon,
       house_ad_max_pct: fields.house_ad_max_pct,
+      programmatic_backfill_enabled: fields.programmatic_backfill_enabled,
     }).eq('id', screen.id);
     setSaving(false);
     if (error) { setMsg({ ok: false, text: error.message }); return; }
@@ -176,6 +178,14 @@ function DetailsTab({ screen, onSaved }) {
           <Inp label="Max house-ad share of loop (%)" type="number" min="0" max="100"
             value={fields.house_ad_max_pct}
             onChange={e => set('house_ad_max_pct', Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0)))} />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: C.textMid, fontFamily: F.sans, cursor: 'pointer' }}>
+            <input type="checkbox" checked={fields.programmatic_backfill_enabled}
+              onChange={e => set('programmatic_backfill_enabled', e.target.checked)} />
+            Allow programmatic backfill on this screen
+          </label>
+          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: -8 }}>
+            When there's no paid campaign or house ad to play, fill with external programmatic demand instead of the idle slide. Never bumps a paid campaign or house ad.
+          </div>
         </div>
         {msg && (
           <div style={{ fontSize: 12, color: msg.ok ? C.green : C.red, fontFamily: F.sans, marginBottom: 12 }}>
@@ -213,7 +223,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
 
   // Fetch screen record. screen_token is no longer column-readable (it is a
   // bearer secret); fetch it via the owner-scoped get_screen_token RPC.
-  const SCREEN_COLS = 'id, name, owner_id, owner_name, owner_type, city_id, city, location, status, lat, lon, monthly_revenue, impressions, own_slots, blocked_categories, max_ad_duration, min_dwell_time, allow_competitors, created_at, updated_at, operator_id, cpm_floor, display_size, monthly_traffic_estimate, content_categories_blocked, operating_hours_start, operating_hours_end, lng, last_seen, cv_last_seen, health_status, venue_category, venue_subtype, environment, screen_position, state, country, screen_photos, auto_approve, timezone, resolution_w, resolution_h, accepted_formats, max_file_mb, screen_photo_frames, house_ad_max_pct';
+  const SCREEN_COLS = 'id, name, owner_id, owner_name, owner_type, city_id, city, location, status, lat, lon, monthly_revenue, impressions, own_slots, blocked_categories, max_ad_duration, min_dwell_time, allow_competitors, created_at, updated_at, operator_id, cpm_floor, display_size, monthly_traffic_estimate, content_categories_blocked, operating_hours_start, operating_hours_end, lng, last_seen, cv_last_seen, health_status, venue_category, venue_subtype, environment, screen_position, state, country, screen_photos, auto_approve, timezone, resolution_w, resolution_h, accepted_formats, max_file_mb, screen_photo_frames, house_ad_max_pct, programmatic_backfill_enabled';
   useEffect(() => {
     if (!screenId) return;
     setLoading(true);
