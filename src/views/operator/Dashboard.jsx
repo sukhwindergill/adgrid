@@ -17,6 +17,7 @@ import { MoneySummaryCard } from '../../components/shared/MoneySummaryCard.jsx';
 import { DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
 import { useOperatorCampaignIds } from '../../hooks/useOperatorCampaignIds.js';
 import { normalizeBooking } from '../../lib/normalizeBooking.js';
+import { summarizeInviteFunnel } from '../../lib/inviteFunnel.js';
 import { IconDollar, IconClipboard, IconQr, IconWarning, IconScreen } from '../../components/icons.jsx';
 
 // B14 fix: nothing previously told an operator their payouts weren't set
@@ -111,6 +112,19 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
   const [currentCampaigns, setCurrentCampaigns] = useState([]);
   const [activeLoading, setActiveLoading] = useState(true);
   const [activeLoadError, setActiveLoadError] = useState(false);
+  const [inviteFunnel, setInviteFunnel] = useState(null);
+  const myScreenIdsKey = myScreenIds.slice().sort().join(',');
+
+  // Aggregate screen-referral-invite performance across every screen this
+  // operator owns, for the Dashboard's own summary (per-screen detail
+  // already lives on ScreenDetail).
+  useEffect(() => {
+    if (myScreenIds.length === 0) { setInviteFunnel(null); return; }
+    supabase.from('screen_invites')
+      .select('status')
+      .in('screen_id', myScreenIds)
+      .then(({ data, error }) => setInviteFunnel(error ? null : summarizeInviteFunnel(data)));
+  }, [myScreenIdsKey]);
 
   useEffect(() => {
     if (operatorCampaignIds.size === 0) { setCurrentCampaigns([]); setActiveLoading(false); return; }
@@ -238,6 +252,27 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
         </div>
         <ProgressBar value={totalSpent} max={totalSpend} height={8} />
       </Card>
+
+      {inviteFunnel && inviteFunnel.sent > 0 && (
+        <Card style={{ marginBottom: 24, padding: 20 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
+            Screen Invite Performance
+          </div>
+          <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap' }}>
+            {[
+              ['Sent', inviteFunnel.sent],
+              ['Viewed', inviteFunnel.viewed],
+              ['Signed Up', inviteFunnel.signedUp],
+              ['Booked', inviteFunnel.booked],
+            ].map(([l, v]) => (
+              <div key={l}>
+                <div style={{ fontFamily: F.mono, fontSize: 20, fontWeight: 600, color: C.textMid }}>{v}</div>
+                <div style={{ fontFamily: F.sans, fontSize: 11, color: C.textMuted, marginTop: 2 }}>{l}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Active campaigns + screen health */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 320px', gap: 20 }}>
