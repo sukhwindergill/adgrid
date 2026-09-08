@@ -4,7 +4,8 @@ import { supabase } from "../../lib/supabase.js";
 import { useToast } from "../../components/primitives/Toast.jsx";
 import { useConfirm } from "../../components/primitives/ConfirmModal.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { IconCard } from "../../components/icons.jsx";
+import { IconCard, IconWarning } from "../../components/icons.jsx";
+import { defaultCardExpiryWarning } from "../../lib/cardExpiry.js";
 import { PageHeader } from "../../components/primitives/PageHeader.jsx";
 import { Btn } from "../../components/primitives/Btn.jsx";
 
@@ -239,6 +240,28 @@ export default function BillingView() {
           </div>
         </div>
       )}
+
+      {(() => {
+        const warning = defaultCardExpiryWarning(data.paymentMethods);
+        if (!warning) return null;
+        const { paymentMethod: pm } = warning;
+        return (
+          <div style={{
+            display: "flex", gap: 8, padding: "12px 16px", marginBottom: 20,
+            background: C.amberSoft, border: `1px solid ${C.amber}44`, borderRadius: 8,
+            fontSize: 13, color: C.text, lineHeight: 1.5,
+          }}>
+            <span style={{ flexShrink: 0, color: C.amber }}><IconWarning size={16} /></span>
+            <span>
+              {warning.status === "expired" ? (
+                <><strong>Your default card has expired</strong> ({pm.brand} ···· {pm.last4}, expired {pm.expMonth}/{pm.expYear}).</>
+              ) : (
+                <><strong>Your default card expires soon</strong> — {pm.brand} ···· {pm.last4} expires {pm.expMonth}/{pm.expYear}, in {warning.daysUntil} day{warning.daysUntil === 1 ? "" : "s"}.</>
+              )} Update it below so a running campaign doesn't pause mid-flight when the next charge fails.
+            </span>
+          </div>
+        );
+      })()}
 
       <div style={{
         background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
