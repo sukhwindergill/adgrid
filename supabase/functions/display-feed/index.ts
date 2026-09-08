@@ -5,6 +5,7 @@ import { resolveDayWindow, isTimeInWindow } from "../_shared/dayparting.ts";
 import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { capHouseAds } from "../_shared/houseAdCap.ts";
 import { capAdvertiserLoopShare } from "../_shared/advertiserLoopCap.ts";
+import { shouldServeProgrammaticFill } from "../_shared/programmaticFill.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -36,7 +37,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: screen, error: screenError } = await supabase
     .from("screens")
-    .select("id, name, operator_id, status, operating_hours_start, operating_hours_end, timezone, max_ad_duration, house_ad_max_pct")
+    .select("id, name, operator_id, status, operating_hours_start, operating_hours_end, timezone, max_ad_duration, house_ad_max_pct, programmatic_backfill_enabled")
     .eq("screen_token", screenToken)
     .single();
 
@@ -218,7 +219,33 @@ Deno.serve(async (req: Request) => {
     houseEntries as { duration: number }[],
     (screen.house_ad_max_pct as number | null) ?? 20,
   );
-  const feedCampaigns = [...paidEntries, ...cappedHouseEntries];
+  let feedCampaigns = [...paidEntries, ...cappedHouseEntries];
+
+  // Programmatic backfill (G20) -- the lowest-priority tier, only ever
+  // claiming loop time nothing else claimed. See programmaticFill.ts:
+  // this poll's loop must be completely empty (no paid, no house ad) for
+  // a cached fill to be eligible, so it can never bump a higher tier.
+  if (screen.programmatic_backfill_enabled && feedCampaigns.length === 0) {
+    const { data: fill } = await supabase
+      .from("programmatic_fills")
+      .select("id, played, expires_at, media_url, media_type, duration")
+      .eq("screen_id", screen.id)
+      .eq("played", false)
+      .order("fetched_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (shouldServeProgrammaticFill(screen, feedCampaigns.length, fill)) {
+      feedCampaigns = [{
+        id: fill.id,
+        is_programmatic: true,
+        media_url: fill.media_url,
+        media_type: fill.media_type,
+        duration: fill.duration,
+      }];
+      supabase.from("programmatic_fills").update({ played: true }).eq("id", fill.id).then(() => {});
+    }
+  }
 
   // Log heartbeat + keep last_seen fresh (fire and forget).
   // last_seen update ensures idle screens (no active campaigns) still show as
