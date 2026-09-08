@@ -1,4 +1,19 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fireOperatorWebhook } from "../_shared/operatorWebhook.ts";
+
+// Events that also fire an operator's configured webhook (in addition to,
+// never instead of, the in-app notification and email below) -- see
+// docs/superpowers/specs/2026-09-08-operator-webhook-integration-design.md.
+const OPERATOR_WEBHOOK_EVENTS = new Set([
+  "campaign_submitted",
+  "screen_offline",
+  "screen_dropped_sla",
+  "operator_missed_sla",
+  "delivery_shortfall_credited",
+  "payout_transfer_failed",
+  "dispute_won_resumed",
+  "screen_registered",
+]);
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -423,6 +438,12 @@ Deno.serve(async (req: Request) => {
 
   // Always insert in-app notification
   await supabase.from("notifications").insert({ user_id: userId, type, title, body });
+
+  // Fire the operator's configured webhook, if any -- additive, never
+  // blocking or replacing the in-app notification/email below.
+  if (OPERATOR_WEBHOOK_EVENTS.has(type)) {
+    fireOperatorWebhook(supabase, userId, type, sanitizedData).catch(() => {});
+  }
 
   // Check notification pref before sending email
   const { data: profile } = await supabase
