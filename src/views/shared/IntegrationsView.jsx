@@ -1,155 +1,70 @@
-import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext.jsx';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
-import { Badge } from '../../components/primitives/Badge.jsx';
-import { Table } from '../../components/primitives/Table.jsx';
-import { Btn } from '../../components/primitives/Btn.jsx';
-import { CopyButton } from '../../components/primitives/CopyButton.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
-import { Tabs } from '../../components/primitives/Tabs.jsx';
-import { KPI } from '../../components/primitives/KPI.jsx';
 import { BrandIcon } from '../../components/shared/BrandIcon.jsx';
 import { IconWarning } from '../../components/icons.jsx';
 
-const INTEGRATIONS_LIST = [
-  { id: 'meta',      name: 'Meta Conversions API',  color: '#1877f2', category: 'Advertising', status: 'disconnected', detail: 'Not connected', events: ['Scan → ViewContent', 'Consent → Lead', 'Impression → Custom'] },
-  { id: 'google',    name: 'Google Ads',            color: '#4285f4', category: 'Advertising', status: 'disconnected', detail: 'Not connected', events: ['Consent → Customer Match', 'Scan → Offline Conversion'] },
-  { id: 'shopify',   name: 'Shopify',               color: '#96bf48', category: 'E-commerce',  status: 'disconnected', detail: 'Not connected', events: ['Consent → Create Customer', 'Scan → Custom Event'] },
-  { id: 'salesforce',name: 'Salesforce',            color: '#00a1e0', category: 'CRM',         status: 'disconnected', detail: 'Not connected', events: ['Consent → Create Lead', 'Scan → Campaign Activity'] },
-  { id: 'hubspot',   name: 'HubSpot',               color: '#ff7a59', category: 'CRM',         status: 'disconnected', detail: 'Not connected', events: ['Consent → Create Contact', 'Scan → Custom Event'] },
-  { id: 'klaviyo',   name: 'Klaviyo',               color: '#00b2a9', category: 'Email',       status: 'disconnected', detail: 'Not connected', events: ['Consent → Add to List', 'Scan → Track Event'] },
-  { id: 'tiktok',    name: 'TikTok Events API',     color: '#ff0050', category: 'Advertising', status: 'disconnected', detail: 'Not connected', events: ['Scan → ViewContent', 'Consent → SubmitForm'] },
-  { id: 'webhook',   name: 'Custom Webhook',        color: '#7c3aed', category: 'Custom',      status: 'inactive',     detail: 'Not configured', events: ['All scan events', 'All impression events'] },
+// Product-audit finding (not from a written spec): this page used to render
+// a full "Integrations" console -- connection status badges, a KPI row, an
+// Event Log tab -- all backed by a hardcoded INTEGRATIONS_LIST with no
+// state, no persistence, and no backend calls at all; every status shown
+// was simply "disconnected", forever. Worse, its "Tracking Pixel" tab
+// handed operators a copy-paste snippet pointing at
+// https://cdn.adgrid.io/pixel.js -- a file that has never existed anywhere
+// in this codebase or been deployed -- so an operator who followed the
+// platform guides and pasted it into their site would get a silent 404
+// and nothing would ever fire. That's actively misleading, not just
+// unfinished: it looked like a working feature and wasn't one.
+//
+// Advertiser-side integrations (Meta/Google/Shopify, real connect flow,
+// real event log) already exist and work -- see AdvIntegrationsView.jsx.
+// This replacement is an honest placeholder: it says what's real today
+// and what's planned, and it does not hand anyone a script that goes
+// nowhere.
+
+const PLANNED_PLATFORMS = [
+  { id: 'salesforce', name: 'Salesforce', category: 'CRM' },
+  { id: 'hubspot', name: 'HubSpot', category: 'CRM' },
+  { id: 'klaviyo', name: 'Klaviyo', category: 'Email' },
+  { id: 'tiktok', name: 'TikTok Events API', category: 'Advertising' },
+  { id: 'webhook', name: 'Custom Webhook', category: 'Custom' },
 ];
 
-
 export function IntegrationsView() {
-  const { user } = useAuth();
-  const pixelId = user ? `AG-${user.id.replace(/-/g, '').slice(0, 8).toUpperCase()}` : 'AG-XXXXXXXX';
-  const [selected, setSelected] = useState(null);
-  const [tab, setTab]           = useState('integrations');
-
   return (
     <div>
       <PageHeader title="Integrations" subtitle="Connect ADGRID scan and impression data to your existing tools" />
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        <KPI label="Connected"  value={INTEGRATIONS_LIST.filter(i => i.status === 'connected').length + ''} sub="integrations" color={C.green} icon="✓" />
-        <KPI label="Errors"     value={INTEGRATIONS_LIST.filter(i => i.status === 'error').length + ''}     sub="need attention" color={C.red} icon={<IconWarning size={16} />} />
-        <KPI label="Available"  value={INTEGRATIONS_LIST.length + ''}                                       sub="platforms" />
-      </div>
 
-      <Tabs tabs={[{ id: 'integrations', label: 'Integrations' }, { id: 'pixel', label: 'Tracking Pixel' }, { id: 'logs', label: 'Event Log' }]} active={tab} onChange={setTab} />
-
-      {tab === 'integrations' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 16, alignItems: 'start' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {INTEGRATIONS_LIST.map(intg => (
-              <Card key={intg.id} onClick={() => setSelected(intg)} style={{ cursor: 'pointer', border: selected?.id === intg.id ? `1px solid ${C.purple}` : undefined, padding: '16px 18px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <BrandIcon id={intg.id} size={16} />
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans }}>{intg.name}</div>
-                      <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>{intg.category}</div>
-                    </div>
-                  </div>
-                  <Badge status={intg.status === 'connected' ? 'active' : intg.status === 'error' ? 'failed' : 'paused'}>{intg.status === 'connected' ? 'Connected' : intg.status === 'error' ? 'Error' : 'Off'}</Badge>
-                </div>
-                <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>{intg.detail}</div>
-              </Card>
-            ))}
+      <Card style={{ padding: 20, marginBottom: 20, borderLeft: `3px solid ${C.amber}` }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+          <span style={{ flexShrink: 0, marginTop: 2 }}><IconWarning size={16} /></span>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>
+              Operator-side integrations aren't available yet
+            </div>
+            <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6 }}>
+              Nothing on this page is connected today, and there's no tracking pixel or webhook to install — this is a preview of what's planned, not a working console. Advertisers can already connect Meta, Google Ads, and Shopify from their own Integrations page.
+            </div>
           </div>
-
-          {selected ? (
-            <Card style={{ position: 'sticky', top: 80 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                <BrandIcon id={selected.id} size={18} />
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.sans }}>{selected.name}</div>
-                  <Badge status={selected.status === 'connected' ? 'active' : selected.status === 'error' ? 'failed' : 'paused'}>{selected.status}</Badge>
-                </div>
-              </div>
-              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.7, marginBottom: 12 }}>Events ADGRID would send:</div>
-              {selected.events.map((e, i) => (
-                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
-                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: C.purple, flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, color: C.textMid, fontFamily: F.sans }}>{e}</span>
-                </div>
-              ))}
-              <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 14, paddingTop: 14 }}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '10px 12px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, marginBottom: 12 }}>
-                  <span style={{ flexShrink: 0, marginTop: 1 }}><IconWarning size={14} /></span>
-                  <span style={{ fontSize: 12, color: C.amber, fontFamily: F.sans, lineHeight: 1.5 }}>
-                    Operator-side integrations aren't available yet — this panel is a preview of what's coming. Advertisers can already connect Meta, Google Ads, and Shopify from their own Integrations page.
-                  </span>
-                </div>
-                <Btn style={{ width: '100%', justifyContent: 'center' }} disabled>
-                  Coming soon
-                </Btn>
-              </div>
-            </Card>
-          ) : (
-            <Card style={{ textAlign: 'center', padding: 32, color: C.textMuted, fontFamily: F.sans }}>
-              <div style={{ fontSize: 24, marginBottom: 8 }}>⇌</div>Select an integration to configure it
-            </Card>
-          )}
         </div>
-      )}
+      </Card>
 
-      {tab === 'pixel' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <Card>
-            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Your Pixel ID</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: C.purple, fontFamily: F.mono, marginBottom: 12 }}>{pixelId}</div>
-            <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.7, marginBottom: 14 }}>Paste this into the &lt;head&gt; of your website. It tracks QR scan arrivals and attributes conversions back to campaigns.</div>
-            <div style={{ position: 'relative' }}>
-              {(() => {
-                const snippet = `<!-- ADGRID Tracking Pixel -->\n<script src="https://cdn.adgrid.io/pixel.js"></script>\n<script>\n  adgrid('init', '${pixelId}');\n  adgrid('track', 'PageView');\n</script>`;
-                return (
-                  <>
-                    <pre style={{ background: C.surfaceAlt, borderRadius: 8, padding: '12px 14px', fontSize: 11, color: C.textMid, lineHeight: 1.8, overflow: 'auto', border: `1px solid ${C.border}`, whiteSpace: 'pre-wrap', fontFamily: F.mono }}>{snippet}</pre>
-                    <CopyButton
-                      value={snippet}
-                      variant="ghost"
-                      size="sm"
-                      style={{ position: 'absolute', top: 8, right: 8, padding: '4px 10px', fontSize: 11, background: C.surface, color: C.textSub, border: `1px solid ${C.border}`, borderRadius: 6 }}
-                    />
-                  </>
-                );
-              })()}
+      <div style={{ fontSize: 12, fontWeight: 600, color: C.textSub, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
+        Planned
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
+        {PLANNED_PLATFORMS.map(p => (
+          <Card key={p.id} style={{ padding: '14px 16px', opacity: 0.7 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <BrandIcon id={p.id} size={16} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans }}>{p.name}</div>
+                <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>{p.category}</div>
+              </div>
             </div>
           </Card>
-          <Card>
-            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Platform Guides</div>
-            {[['🛍️ Shopify', 'Paste in Online Store → Themes → Edit Code → theme.liquid before </head>'], ['⚙️ WordPress', 'Use Insert Headers and Footers plugin → Scripts in Header'], ['◼️ Squarespace', 'Settings → Advanced → Code Injection → Header'], ['⚛️ Next.js', 'Add to _app.js or layout.tsx using next/script']].map(([p, d]) => (
-              <div key={p} style={{ padding: '10px 0', borderBottom: `1px solid ${C.border}` }}>
-                <div style={{ fontSize: 13, fontWeight: 500, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{p}</div>
-                <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5 }}>{d}</div>
-              </div>
-            ))}
-          </Card>
-        </div>
-      )}
-
-      {tab === 'logs' && (
-        INTEGRATIONS_LIST.some(i => i.status === 'connected') ? (
-          <Table
-            columns={[
-              { key: 'ts',    label: 'Time',       render: () => <span style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub }}>{new Date().toLocaleTimeString('en-GB')}</span> },
-              { key: 'intg',  label: 'Integration', render: (_, r) => <span>{r.intg}</span> },
-              { key: 'event', label: 'Event' },
-              { key: 'detail',label: 'Detail' },
-              { key: 'status',label: 'Status',     render: v => <Badge status={v === 'sent' ? 'active' : 'failed'}>{v}</Badge> },
-            ]}
-            rows={[]} />
-        ) : (
-          <Card style={{ textAlign: 'center', padding: 32, color: C.textMuted, fontFamily: F.sans }}>
-            <div style={{ fontSize: 24, marginBottom: 8 }}>⇌</div>
-            No events yet — connect an integration above to start sending scan and impression events.
-          </Card>
-        )
-      )}
+        ))}
+      </div>
     </div>
   );
 }
