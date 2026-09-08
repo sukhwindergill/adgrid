@@ -117,6 +117,56 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  // ── GET tax_summary: every paid payout in one calendar year ──────────────
+  // The `summary` action above caps payouts at 20 (recent-activity view) --
+  // not enough to cover a full year for an operator paid weekly or
+  // bi-weekly. This queries Stripe directly with a year's date range
+  // instead, so nothing outside the last 20 payouts goes missing from a
+  // document meant for tax filing.
+  if (req.method === "GET" && action === "tax_summary") {
+    const yearParam = url.searchParams.get("year");
+    const year = Number(yearParam);
+    if (!yearParam || !Number.isInteger(year) || year < 2000 || year > 2100) {
+      return new Response(JSON.stringify({ error: "year is required and must be a valid 4-digit year" }), { status: 400, headers: CORS });
+    }
+
+    if (!profile.stripe_connect_account_id || profile.connect_status !== "active") {
+      return new Response(JSON.stringify({ year, payouts: [] }), { headers: CORS });
+    }
+
+    const gte = Math.floor(Date.UTC(year, 0, 1) / 1000);
+    const lte = Math.floor(Date.UTC(year + 1, 0, 1) / 1000) - 1;
+
+    try {
+      const payoutsForYear: { id: string; amount: number; status: string; arrival_date: string; currency: string }[] = [];
+      let startingAfter: string | undefined;
+      // Capped at 5 pages (500 payouts) -- generous for any real payout
+      // cadence in a single year, and bounds the request instead of paging
+      // forever if something is malformed upstream.
+      for (let page = 0; page < 5; page++) {
+        const list = await stripe.payouts.list(
+          { limit: 100, created: { gte, lte }, starting_after: startingAfter },
+          { stripeAccount: profile.stripe_connect_account_id },
+        );
+        for (const p of list.data) {
+          payoutsForYear.push({
+            id: p.id,
+            amount: p.amount / 100,
+            status: p.status,
+            arrival_date: new Date(p.arrival_date * 1000).toISOString().split("T")[0],
+            currency: p.currency,
+          });
+        }
+        if (!list.has_more || list.data.length === 0) break;
+        startingAfter = list.data[list.data.length - 1].id;
+      }
+
+      return new Response(JSON.stringify({ year, payouts: payoutsForYear }), { headers: CORS });
+    } catch (_e) {
+      return new Response(JSON.stringify({ year, payouts: [] }), { headers: CORS });
+    }
+  }
+
   // ── POST payout: trigger manual payout to bank ────────────────────────────
   if (req.method === "POST" && action === "payout") {
     if (!profile.stripe_connect_account_id || profile.connect_status !== "active") {
