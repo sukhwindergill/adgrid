@@ -13,6 +13,7 @@ import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { VENUE_TAXONOMY } from '../../lib/venueTypes.js';
 import { healthSignal } from '../../lib/screenHealth.js';
 import { IconScreen } from '../../components/icons.jsx';
+import { BulkImportModal } from '../../components/screens/BulkImportModal.jsx';
 
 function uptime(screen) {
   if (!screen.last_seen) return '—';
@@ -153,9 +154,10 @@ function downloadCsv(csv, filename) {
   URL.revokeObjectURL(url);
 }
 
-export function ScreensView({ dbScreens, loading = false, onSelectScreen, onStartOnboard }) {
+export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelectScreen, onStartOnboard }) {
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
+  const [showBulkImport, setShowBulkImport] = useState(false);
   const { isMobile, isTablet } = useBreakpoint();
 
   if (loading) {
@@ -185,7 +187,23 @@ export function ScreensView({ dbScreens, loading = false, onSelectScreen, onStar
     <div>
       <PageHeader title="Screens"
         subtitle={`${allScreens.length} registered · ${allScreens.filter(s => s.status === 'live').length} live · ${allScreens.filter(s => s.status === 'pending').length} pending`}
-        actions={<><Btn variant="secondary" size="sm" onClick={() => downloadCsv(screensToCsv(shown), 'screens.csv')}>↓ Export</Btn><Btn onClick={onStartOnboard}>+ Register Screen</Btn></>} />
+        actions={<>
+          <Btn variant="secondary" size="sm" onClick={() => downloadCsv(screensToCsv(shown), 'screens.csv')}>↓ Export</Btn>
+          <Btn variant="secondary" size="sm" onClick={() => setShowBulkImport(true)}>↑ Import CSV</Btn>
+          <Btn onClick={onStartOnboard}>+ Register Screen</Btn>
+        </>} />
+
+      {showBulkImport && (
+        <BulkImportModal
+          onClose={() => setShowBulkImport(false)}
+          onImported={(rows) => {
+            setDbScreens?.(prev => [
+              ...prev,
+              ...rows.map(r => ({ ...r, neighbourhood: '', cpm: 3.00, maxDuration: 30, revenue: 0, campaigns: 0, status: 'pending' })),
+            ]);
+          }}
+        />
+      )}
 
       {allScreens.some(s => s.lat == null || s.lon == null) && (
         <Card style={{ padding: 16, marginBottom: 20, borderLeft: `3px solid ${C.amber}` }}>
