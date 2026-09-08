@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
+import QRCode from 'react-qr-code';
 import { supabase } from '../../lib/supabase.js';
+import { buildScreenInviteShareText } from '../../lib/screenInviteShareText.js';
 import { C, F, SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { Skeleton } from '../../components/ui/Skeleton.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
@@ -207,6 +209,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   const [invites, setInvites] = useState([]);
   const [creatingInvite, setCreatingInvite] = useState(false);
   const [inviteError, setInviteError] = useState(null);
+  const [qrInviteId, setQrInviteId] = useState(null);
 
   // Fetch screen record. screen_token is no longer column-readable (it is a
   // bearer secret); fetch it via the owner-scoped get_screen_token RPC.
@@ -650,27 +653,53 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
           <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>No invites sent yet.</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {invites.map(inv => (
-              <div key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: C.surfaceAlt, borderRadius: 8 }}>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 500, color: C.text, fontFamily: F.sans, textTransform: 'capitalize' }}>{inv.status.replace('_', ' ')}</div>
-                  <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{inv.view_count} view{inv.view_count !== 1 ? 's' : ''} · {new Date(inv.created_at).toLocaleDateString()}</div>
-                  {inv.advertiser_name && (
-                    <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>
-                      {inv.status === 'booked' ? 'Booked by ' : 'Signed up: '}{inv.advertiser_name}
+            {invites.map(inv => {
+              const inviteUrl = `${window.location.origin}/invite/screen/${inv.token}`;
+              return (
+                <div key={inv.id} style={{ padding: '8px 10px', background: C.surfaceAlt, borderRadius: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 500, color: C.text, fontFamily: F.sans, textTransform: 'capitalize' }}>{inv.status.replace('_', ' ')}</div>
+                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{inv.view_count} view{inv.view_count !== 1 ? 's' : ''} · {new Date(inv.created_at).toLocaleDateString()}</div>
+                      {inv.advertiser_name && (
+                        <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>
+                          {inv.status === 'booked' ? 'Booked by ' : 'Signed up: '}{inv.advertiser_name}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <CopyButton
+                        value={buildScreenInviteShareText({ screenName: screen?.name, url: inviteUrl })}
+                        label="Copy message"
+                        copiedLabel="✓ Copied"
+                        variant="ghost"
+                        size="sm"
+                        style={{ fontSize: 11, color: C.textSub, padding: 0, border: 'none', background: 'none' }}
+                      />
+                      <button
+                        onClick={() => setQrInviteId(id => id === inv.id ? null : inv.id)}
+                        style={{ fontSize: 11, color: C.purple, padding: 0, border: 'none', background: 'none', cursor: 'pointer', fontFamily: F.sans }}
+                      >
+                        {qrInviteId === inv.id ? 'Hide QR' : 'Show QR'}
+                      </button>
+                      <CopyButton
+                        value={inviteUrl}
+                        label="Copy link"
+                        copiedLabel="✓ Copied"
+                        variant="ghost"
+                        size="sm"
+                        style={{ fontSize: 11, color: C.purple, padding: 0, border: 'none', background: 'none' }}
+                      />
+                    </div>
+                  </div>
+                  {qrInviteId === inv.id && (
+                    <div style={{ marginTop: 12, background: '#fff', padding: 12, borderRadius: 8, width: 132, height: 132 }}>
+                      <QRCode value={inviteUrl} size={108} style={{ width: '100%', height: '100%' }} level="M" />
                     </div>
                   )}
                 </div>
-                <CopyButton
-                  value={`${window.location.origin}/invite/screen/${inv.token}`}
-                  label="Copy link"
-                  copiedLabel="✓ Copied"
-                  variant="ghost"
-                  size="sm"
-                  style={{ fontSize: 11, color: C.purple, padding: 0, border: 'none', background: 'none' }}
-                />
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Card>
