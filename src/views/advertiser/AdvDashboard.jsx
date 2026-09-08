@@ -61,6 +61,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
   const [campaignsLoaded, setCampaignsLoaded] = useState(false);
   const [campaignsError, setCampaignsError] = useState(false);
   const [lifetimeTotals, setLifetimeTotals] = useState({ total_spend: 0, total_scans: 0, total_budget: 0 });
+  const [conversions, setConversions] = useState([]);
   const [campaignScreens, setCampaignScreens] = useState({}); // map: campaignId -> [{screen_id, status}]
   const [delivery, setDelivery] = useState([]);
   const [health, setHealth] = useState(null);
@@ -87,6 +88,12 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
       });
     supabase.rpc('advertiser_lifetime_totals', { p_advertiser_id: advertiserId })
       .then(({ data }) => { if (data?.[0]) setLifetimeTotals(data[0]); });
+    // Conversion pixel + postback (docs/superpowers/specs/2026-09-08-
+    // conversion-pixel-postback-design.md) -- "did OOH actually work" for
+    // advertisers who've wired up their own conversion reporting.
+    supabase.from('conversions').select('source, order_value')
+      .eq('advertiser_id', advertiserId)
+      .then(({ data }) => setConversions(data ?? []));
   }, [advertiserId]);
 
   useEffect(() => {
@@ -258,6 +265,19 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
           <KPI label="CPM" value={cpm === null ? '—' : `$${cpm.toFixed(2)}`} sub="cost per 1,000 impressions" icon={<IconTrendUp size={16} />} />
           <KPI label="Cost per Scan" value={costPerScan === null ? '—' : `$${costPerScan.toFixed(2)}`} sub="spend ÷ billable scans" color={C.green} icon={<IconTarget size={16} />} />
+        </div>
+      )}
+
+      {conversions.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
+          <KPI label="Conversions" value={conversions.length.toLocaleString()}
+               sub={(() => {
+                 const value = conversions.reduce((a, c) => a + (Number(c.order_value) || 0), 0);
+                 return value > 0 ? `$${value.toLocaleString()} reported value` : 'reported so far';
+               })()}
+               color={C.green} icon={<IconTarget size={16} />} />
+          <KPI label="Via QR Scan" value={conversions.filter(c => c.source === 'scan').length.toLocaleString()} sub="scanned then converted" icon={<IconQr size={16} />} />
+          <KPI label="Via Promo Code" value={conversions.filter(c => c.source === 'promo_code' || c.source === 'vanity_url').length.toLocaleString()} sub="saw the ad, never scanned" icon={<IconTrendUp size={16} />} />
         </div>
       )}
 

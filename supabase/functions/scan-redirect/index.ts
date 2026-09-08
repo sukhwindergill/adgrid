@@ -156,6 +156,14 @@ Deno.serve(async (req: Request) => {
     dest.searchParams.set("utm_medium", "ooh");
     dest.searchParams.set("utm_campaign", campaignId);
   }
+  // adgrid_cid: this click's scan id, for the conversion pixel/postback
+  // (see docs/superpowers/specs/2026-09-08-conversion-pixel-postback-
+  // design.md) -- the advertiser's site persists it (cookie/localStorage/
+  // hidden checkout field) and reports it back on conversion. Never
+  // clobbers an advertiser's own existing query param of the same name.
+  if (scanRow?.id && !dest.searchParams.has("adgrid_cid")) {
+    dest.searchParams.set("adgrid_cid", scanRow.id);
+  }
 
   return Response.redirect(dest.toString(), 302);
 });
