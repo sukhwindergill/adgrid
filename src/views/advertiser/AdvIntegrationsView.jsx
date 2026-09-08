@@ -5,6 +5,9 @@ import { useBreakpoint } from "../../lib/useBreakpoint.js";
 import { BrandIcon } from "../../components/shared/BrandIcon.jsx";
 import { PageHeader } from "../../components/primitives/PageHeader.jsx";
 import { Btn } from "../../components/primitives/Btn.jsx";
+import { Inp } from "../../components/primitives/Inp.jsx";
+import { CopyButton } from "../../components/primitives/CopyButton.jsx";
+import { generatePostbackKey, hashPostbackKey } from "../../lib/postbackKey.js";
 
 // ─── Platform definitions ───────────────────────────────────────────────────
 
@@ -259,6 +262,181 @@ function PlatformCard({ platform, integration, eventCount, onConnect, onDisconne
   );
 }
 
+// ─── Conversion Tracking tab ─────────────────────────────────────────────────
+// Competitive Parity Program, Phase 6, G9 widen (docs/superpowers/specs/
+// 2026-09-08-conversion-pixel-postback-design.md): "AdGrid conversion pixel
+// + server postback ... promo-code and vanity-URL attribution for
+// non-scanners." This is the inbound half -- reporting conversions back to
+// AdGrid -- separate from the outbound PLATFORMS above (AdGrid -> Meta/
+// Google/Shopify).
+
+const PIXEL_URL = `${SUPABASE_FUNCTIONS_URL}/conversion-pixel`;
+const POSTBACK_URL = `${SUPABASE_FUNCTIONS_URL}/conversion-postback`;
+
+function PostbackKeyCard({ hasKey, onGenerated }) {
+  const [newKey, setNewKey] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function generate() {
+    setSaving(true);
+    setError(null);
+    const key = generatePostbackKey();
+    const key_hash = await hashPostbackKey(key);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error: err } = await supabase.from("advertiser_integrations").upsert({
+      advertiser_id: user.id,
+      platform: "adgrid_postback",
+      config: { key_hash },
+      enabled: true,
+    }, { onConflict: "advertiser_id,platform" });
+    setSaving(false);
+    if (err) { setError(err.message); return; }
+    setNewKey(key);
+    onGenerated?.();
+  }
+
+  return (
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Postback key</div>
+      <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.5 }}>
+        Report conversions from your own backend (e.g. an order-webhook handler) with a signed <code>POST</code> to <code>{POSTBACK_URL}</code>. More reliable than a client-side pixel -- survives ad blockers and doesn't depend on the buyer's browser.
+      </div>
+      {newKey ? (
+        <div style={{ padding: 12, background: C.surfaceAlt, borderRadius: 8, marginBottom: 12 }}>
+          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 6 }}>
+            Copy this now -- it won't be shown again. Send it as <code>Authorization: Bearer &lt;key&gt;</code>.
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <code style={{ fontSize: 12, fontFamily: F.mono, color: C.text, wordBreak: "break-all" }}>{newKey}</code>
+            <CopyButton value={newKey} label="Copy" copiedLabel="✓ Copied" variant="ghost" size="sm" />
+          </div>
+        </div>
+      ) : hasKey ? (
+        <StatusBadge connected />
+      ) : (
+        <StatusBadge connected={false} />
+      )}
+      {error && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginBottom: 8 }}>{error}</div>}
+      <Btn variant="secondary" size="sm" onClick={generate} disabled={saving} style={{ marginTop: 12 }}>
+        {saving ? "Generating…" : hasKey ? "Regenerate key" : "Generate key"}
+      </Btn>
+    </div>
+  );
+}
+
+function PixelSnippetCard() {
+  const snippet = `<img src="${PIXEL_URL}?adgrid_cid={{adgrid_cid}}&value=49.99" width="1" height="1" style="display:none" />`;
+  return (
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Conversion pixel</div>
+      <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.5 }}>
+        Drop this on your order-confirmation / thank-you page. Replace <code>{"{{adgrid_cid}}"}</code> with the value your site captured from the AdGrid link click (URL param or cookie), or use <code>promo_code=</code> instead for someone who never scanned.
+      </div>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: 12, background: C.surfaceAlt, borderRadius: 8 }}>
+        <code style={{ fontSize: 11, fontFamily: F.mono, color: C.text, wordBreak: "break-all", flex: 1 }}>{snippet}</code>
+        <CopyButton value={snippet} label="Copy" copiedLabel="✓ Copied" variant="ghost" size="sm" />
+      </div>
+    </div>
+  );
+}
+
+function PromoCodesCard({ campaigns, promoCodes, onCreated }) {
+  const [campaignId, setCampaignId] = useState("");
+  const [code, setCode] = useState("");
+  const [vanitySlug, setVanitySlug] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function create() {
+    if (!campaignId || !code.trim()) return;
+    setSaving(true);
+    setError(null);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error: err } = await supabase.from("campaign_promo_codes").insert({
+      campaign_id: campaignId,
+      advertiser_id: user.id,
+      code: code.trim(),
+      vanity_path: vanitySlug.trim() ? `/go/${vanitySlug.trim()}` : null,
+    });
+    setSaving(false);
+    if (err) { setError(err.message); return; }
+    setCode(""); setVanitySlug("");
+    onCreated?.();
+  }
+
+  return (
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20 }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Promo codes &amp; vanity URLs</div>
+      <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.5 }}>
+        For people who see the ad but never scan -- print a code or short link on the creative and report it as a conversion by <code>promo_code</code> instead of <code>adgrid_cid</code>.
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 10, alignItems: "end", marginBottom: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          <label style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans }}>Campaign</label>
+          <select value={campaignId} onChange={e => setCampaignId(e.target.value)}
+            style={{ padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 13, fontFamily: F.sans, color: C.text, background: C.surface }}>
+            <option value="">Select…</option>
+            {campaigns.map(c => <option key={c.id} value={c.id}>{c.campaign_name || c.id}</option>)}
+          </select>
+        </div>
+        <Inp label="Promo code" placeholder="SEEONSCREEN10" value={code} onChange={e => setCode(e.target.value)} />
+        <Inp label="Vanity path (optional)" placeholder="e.g. summer-sale" value={vanitySlug} onChange={e => setVanitySlug(e.target.value)} />
+        <Btn onClick={create} disabled={saving || !campaignId || !code.trim()}>{saving ? "Adding…" : "+ Add"}</Btn>
+      </div>
+      {error && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginBottom: 12 }}>{error}</div>}
+      {promoCodes.length === 0 ? (
+        <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>No promo codes yet.</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {promoCodes.map(p => (
+            <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", background: C.surfaceAlt, borderRadius: 8 }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.mono }}>{p.code}</div>
+                {p.vanity_path && <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>{p.vanity_path}</div>}
+              </div>
+              <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{new Date(p.created_at).toLocaleDateString()}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ConversionTrackingTab() {
+  const [hasKey, setHasKey] = useState(false);
+  const [campaigns, setCampaigns] = useState([]);
+  const [promoCodes, setPromoCodes] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const [postbackRes, campaignsRes, promoRes] = await Promise.all([
+      supabase.from("advertiser_integrations").select("id").eq("advertiser_id", user.id).eq("platform", "adgrid_postback").eq("enabled", true).maybeSingle(),
+      supabase.from("bookings").select("id, campaign_name").eq("advertiser_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("campaign_promo_codes").select("*").eq("advertiser_id", user.id).order("created_at", { ascending: false }),
+    ]);
+    setHasKey(Boolean(postbackRes.data));
+    setCampaigns(campaignsRes.data ?? []);
+    setPromoCodes(promoRes.data ?? []);
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  if (loading) return <div style={{ padding: 20, fontFamily: F.sans, color: C.textSub }}>Loading…</div>;
+
+  return (
+    <div>
+      <PostbackKeyCard hasKey={hasKey} onGenerated={load} />
+      <PixelSnippetCard />
+      <PromoCodesCard campaigns={campaigns} promoCodes={promoCodes} onCreated={load} />
+    </div>
+  );
+}
+
 // ─── Main view ───────────────────────────────────────────────────────────────
 
 export default function AdvIntegrationsView() {
@@ -357,6 +535,12 @@ export default function AdvIntegrationsView() {
         >
           Event Log {events.length > 0 && <span style={{ marginLeft: 6, padding: "1px 7px", background: C.purpleSoft, color: C.purple, borderRadius: 10, fontSize: 11 }}>{events.length}</span>}
         </button>
+        <button style={TAB_STYLE(tab === "conversions")} onClick={() => setTab("conversions")}
+          onMouseEnter={e => { if (tab !== "conversions") e.currentTarget.style.background = C.surface; }}
+          onMouseLeave={e => { if (tab !== "conversions") e.currentTarget.style.background = "transparent"; }}
+        >
+          Conversion Tracking
+        </button>
       </div>
 
       {/* Platforms tab */}
@@ -423,6 +607,9 @@ export default function AdvIntegrationsView() {
           )}
         </div>
       )}
+
+      {/* Conversion Tracking tab */}
+      {tab === "conversions" && <ConversionTrackingTab />}
 
       {/* Connect modal */}
       {modalPlatform && (
