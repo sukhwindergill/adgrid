@@ -326,6 +326,47 @@ select.fi { appearance: none; cursor: pointer; }
 @media (max-width: 768px) {
   .floating-contact-btn { display: none; }
 }
+
+/* ── Cookie banner ──
+   Pinned to the very bottom (unlike the floating buttons, which sit 24px
+   up) with a lower z-index than them, so if both are visible at once the
+   floating buttons stay on top and legible. Transient/first-visit only. */
+.cookie-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 24px;
+  background: #0A0A0F;
+  border-top: 1px solid var(--border);
+  color: var(--sec);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+}
+
+.cookie-banner-dismiss {
+  flex-shrink: 0;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0A0A0F;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cookie-banner-dismiss:focus-visible {
+  outline: 2px solid #7B2FFF;
+  outline-offset: 2px;
+}
 @media (max-width: 768px) {
   .sticky-mobile-cta {
     display: flex; gap: 10px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
