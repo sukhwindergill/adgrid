@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase.js';
 import { C, F } from '../../design/tokens.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { periodDelta, splitByPeriod } from '../../lib/periodDelta.js';
+import { computeFillRateTrend } from '../../lib/fillRateTrend.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
 import { useOperatorCampaignIds } from '../../hooks/useOperatorCampaignIds.js';
@@ -110,6 +111,22 @@ export function Revenue({ operatorScreenIds = [] }) {
       });
   }, [houseAdCampaignIdsKey]);
 
+  // Fill rate (churn-prevention.md names this directly as a leading
+  // indicator of operator churn): the paid share of paid+house impressions,
+  // trended 30d-over-30d. Needs day-level rows for BOTH paid and house
+  // campaigns -- the opportunity-cost fetch above only sums house-ad
+  // impressions with no date, which can't be split into current/prior
+  // periods. Fetched once for every campaign this operator has, tagged with
+  // is_house_ad so the two shares can be told apart after the fact.
+  const allCampaignIdsKey = filteredCampaigns.map(c => c.id).sort().join(',');
+  const [deliveryByDay, setDeliveryByDay] = useState([]);
+  useEffect(() => {
+    const ids = allCampaignIdsKey ? allCampaignIdsKey.split(',') : [];
+    if (ids.length === 0) { setDeliveryByDay([]); return; }
+    supabase.from('campaign_delivery_daily').select('campaign_id, day, impressions').in('campaign_id', ids)
+      .then(({ data }) => setDeliveryByDay(data || []));
+  }, [allCampaignIdsKey]);
+
   if (loading) {
     return (
       <div>
@@ -138,6 +155,16 @@ export function Revenue({ operatorScreenIds = [] }) {
   const spendPeriods = splitByPeriod(filteredCampaigns, 'start_date', 'budget', 30);
   const spendTrend   = periodDelta(spendPeriods.current, spendPeriods.prior);
 
+  const houseAdIdSet = new Set(filteredCampaigns.filter(c => c.is_house_ad).map(c => c.id));
+  const paidDeliveryRows  = deliveryByDay.filter(r => !houseAdIdSet.has(r.campaign_id));
+  const houseDeliveryRows = deliveryByDay.filter(r => houseAdIdSet.has(r.campaign_id));
+  const paidPeriods  = splitByPeriod(paidDeliveryRows, 'day', 'impressions', 30);
+  const housePeriods = splitByPeriod(houseDeliveryRows, 'day', 'impressions', 30);
+  const fillRateTrend = computeFillRateTrend({
+    paidCurrent: paidPeriods.current, houseCurrent: housePeriods.current,
+    paidPrior: paidPeriods.prior, housePrior: housePeriods.prior,
+  });
+
   return (
     <div>
       <PageHeader title="Revenue" subtitle="Platform earnings, owner payouts, and network splits"
@@ -158,6 +185,19 @@ export function Revenue({ operatorScreenIds = [] }) {
             <Btn variant="secondary" size="sm" onClick={() => downloadCsv(revenueToCsv(filteredCampaigns, ownerRevenueShare), 'adgrid-revenue.csv')}>↓ Export Report</Btn>
           </div>
         } />
+
+      {fillRateTrend.flagged && (
+        <div style={{ display: 'flex', gap: 8, padding: '12px 16px', marginBottom: 20, background: C.amberSoft, border: `1px solid ${C.amber}44`, borderRadius: 8, fontSize: 13, color: C.text, fontFamily: F.sans, lineHeight: 1.5 }}>
+          <span style={{ flexShrink: 0, color: C.amber }}><IconScreen size={16} /></span>
+          <span>
+            <strong>Fill rate dropped {Math.abs(fillRateTrend.deltaPts)} points</strong> — paid ads made up{' '}
+            {Math.round(fillRateTrend.currentRate)}% of impressions in the last 30 days, down from{' '}
+            {Math.round(fillRateTrend.priorRate)}% the 30 days before. More airtime is going to house ads
+            instead of paying advertisers — consider adjusting pricing or checking your screen's listing.
+          </span>
+        </div>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(5,1fr)', gap: 14, marginBottom: 24 }}>
         <KPI label="Total Ad Spend"   value={`$${total.toLocaleString()}`}    sub="from advertisers" trend={spendTrend} trendLabel="vs prior 30 days" icon={<IconDollar size={16} />} />
         <KPI label="Platform Revenue" value={`$${platform.toLocaleString()}`} sub="12% fee" color={C.blue} icon={<IconDollar size={16} />} />
