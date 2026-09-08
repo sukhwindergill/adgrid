@@ -8,6 +8,8 @@ import { useToast } from '../../components/primitives/Toast.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
 import { nextPayout, lastCompletedPayout, daysSince } from '../../lib/payoutSummary.js';
+import { summarizeAnnualPayouts, taxSummaryCsvRows, TAX_SUMMARY_CSV_COLUMNS } from '../../lib/taxSummary.js';
+import { downloadCsv } from '../../lib/csv.js';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
@@ -70,6 +72,37 @@ function useFailedTransfers() {
   return { failedTransfers: failed, failedTransfersError: loadError };
 }
 
+// Fetches a full calendar year of paid payouts on demand -- the `summary`
+// action's 20-payout cap is fine for "what's recent" but not for a document
+// meant to cover January through December. Only fires when the Tax Summary
+// tab is actually opened, not on every Billing page load.
+function useTaxSummary(year, enabled) {
+  const [payouts, setPayouts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setLoading(false); return; }
+      const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/operator-billing?action=tax_summary&year=${year}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (cancelled) return;
+      if (!res.ok) { setError(true); setLoading(false); return; }
+      const json = await res.json();
+      setPayouts(json.payouts ?? []);
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [year, enabled]);
+
+  return { payouts, loading, error };
+}
+
 export function Billing() {
   const toast = useToast();
   const { profile } = useAuth();
@@ -79,6 +112,9 @@ export function Billing() {
   const { isMobile } = useBreakpoint();
   const { failedTransfers, failedTransfersError } = useFailedTransfers();
   const { stripeCharges, stripeChargesLoading } = useStripeCharges();
+  const [taxYear, setTaxYear] = useState(new Date().getFullYear());
+  const { payouts: taxPayouts, loading: taxLoading, error: taxError } = useTaxSummary(taxYear, tab === 'tax');
+  const taxSummary = summarizeAnnualPayouts(taxPayouts, taxYear);
 
   const charges       = data?.charges ?? [];
   const payouts       = data?.payouts ?? [];
@@ -168,7 +204,7 @@ export function Billing() {
         <KPI label="Pending Balance"  value={balance ? `$${pendingIn.toLocaleString()}` : '—'} sub="in transit" color={C.amber} icon={<IconClock size={16} />} />
       </div>
 
-      <Tabs tabs={[{ id: 'overview', label: 'Overview' }, { id: 'charges', label: 'Charges' }, { id: 'payouts', label: 'Payouts' }]} active={tab} onChange={setTab} />
+      <Tabs tabs={[{ id: 'overview', label: 'Overview' }, { id: 'charges', label: 'Charges' }, { id: 'payouts', label: 'Payouts' }, { id: 'tax', label: 'Tax Summary' }]} active={tab} onChange={setTab} />
 
       {tab === 'overview' && (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
@@ -274,6 +310,54 @@ export function Billing() {
             ]}
             rows={payouts} />
         )
+      )}
+
+      {tab === 'tax' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <select
+              value={taxYear}
+              onChange={e => setTaxYear(Number(e.target.value))}
+              style={{ padding: '7px 12px', borderRadius: 8, border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface }}
+            >
+              {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+            <Btn
+              variant="secondary" size="sm"
+              disabled={taxLoading || taxSummary.total === 0}
+              onClick={() => downloadCsv(`adgrid-tax-summary-${taxYear}.csv`, TAX_SUMMARY_CSV_COLUMNS, taxSummaryCsvRows(taxSummary))}
+            >↓ Download CSV</Btn>
+          </div>
+
+          {taxLoading ? (
+            <SkeletonTable rows={5} cols={2} />
+          ) : taxError ? (
+            <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, color: C.red, fontFamily: F.sans, fontSize: 13 }}>
+              Couldn't load {taxYear}'s payouts — check your connection and try again.
+            </div>
+          ) : taxSummary.total === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
+              <div style={{ color: C.textMuted, marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconBank size={28} /></div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>No paid payouts in {taxYear}</div>
+              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Only payouts that have actually landed in your bank count toward this total.</div>
+            </div>
+          ) : (
+            <>
+              <div style={{ marginBottom: 16, padding: 16, background: C.surfaceAlt, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Total received in {taxYear}</span>
+                <span style={{ fontSize: 22, fontWeight: 700, color: C.text, fontFamily: F.mono }}>${taxSummary.total.toLocaleString()} {taxSummary.currency.toUpperCase()}</span>
+              </div>
+              <Table
+                columns={[
+                  { key: 'month', label: 'Month' },
+                  { key: 'amount', label: 'Amount', render: v => <span style={{ fontFamily: F.mono, fontWeight: v > 0 ? 600 : 400, color: v > 0 ? C.text : C.textMuted }}>${Number(v).toLocaleString()}</span> },
+                ]}
+                rows={taxSummary.byMonth} />
+            </>
+          )}
+        </div>
       )}
     </div>
   );
