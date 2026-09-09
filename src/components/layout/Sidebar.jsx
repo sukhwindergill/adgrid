@@ -385,15 +385,6 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
         gap: 2,
         flexShrink: 0,
       }}>
-        {/* Notification Prefs */}
-        <NavItem
-          item={{ id: 'notif-prefs', label: 'Notification Prefs', icon: 'notifPrefs' }}
-          active={active}
-          collapsed={collapsed}
-          pendingCount={0}
-          onClick={setActive}
-        />
-
         {/* Account / sign-out row */}
         {!collapsed ? (
           <div style={{

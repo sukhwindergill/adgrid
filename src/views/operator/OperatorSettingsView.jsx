@@ -800,10 +800,10 @@ function VerificationTab({ profile }) {
   );
 }
 
-export function OperatorSettingsView({ setNav } = {}) {
+export function OperatorSettingsView({ setNav, initialTab } = {}) {
   const { profile: authProfile } = useAuth();
   const [profile, setProfile] = useState(authProfile);
-  const [tab, setTab] = useState('profile');
+  const [tab, setTab] = useState(initialTab ?? 'profile');
 
   useEffect(() => { if (authProfile) setProfile(authProfile); }, [authProfile]);
 
