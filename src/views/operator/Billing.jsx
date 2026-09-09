@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
@@ -50,13 +50,22 @@ function useStripeCharges() {
 // B16: operator_transfers.status = 'failed' rows previously existed only in
 // the database — nothing on this page (or anywhere else) ever read them, so
 // a failed payout was invisible until someone happened to run raw SQL.
+//
+// Product-audit finding (later session): visibility only got the operator
+// halfway. trigger-payout -- the edge function documented as "a backfill
+// safety net for transfers distributeOperatorCuts failed to send" -- had no
+// caller anywhere in the app either. The failed-transfer banner told an
+// operator to "contact support" because there was, in fact, no self-serve
+// way to retry; the payout_transfer_failed email's "we'll retry once it's
+// resolved" was never true. booking(start_date, end_date) is fetched here
+// so Retry can call trigger-payout with that exact booking's period.
 function useFailedTransfers() {
   const [failed, setFailed] = useState([]);
   const [loadError, setLoadError] = useState(false);
-  useEffect(() => {
+  const refresh = useCallback(() => {
     supabase
       .from('operator_transfers')
-      .select('id, booking_id, amount, currency, created_at')
+      .select('id, booking_id, amount, currency, created_at, bookings(start_date, end_date, advertiser_name)')
       .eq('status', 'failed')
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
@@ -69,7 +78,8 @@ function useFailedTransfers() {
         setFailed(data ?? []);
       });
   }, []);
-  return { failedTransfers: failed, failedTransfersError: loadError };
+  useEffect(() => { refresh(); }, [refresh]);
+  return { failedTransfers: failed, failedTransfersError: loadError, refreshFailedTransfers: refresh };
 }
 
 // Fetches a full calendar year of paid payouts on demand -- the `summary`
@@ -110,7 +120,8 @@ export function Billing() {
   const [payingOut, setPaying] = useState(false);
   const { data, loading, error, refresh } = useOperatorBilling();
   const { isMobile } = useBreakpoint();
-  const { failedTransfers, failedTransfersError } = useFailedTransfers();
+  const { failedTransfers, failedTransfersError, refreshFailedTransfers } = useFailedTransfers();
+  const [retryingId, setRetryingId] = useState(null);
   const { stripeCharges, stripeChargesLoading } = useStripeCharges();
   const [taxYear, setTaxYear] = useState(new Date().getFullYear());
   const { payouts: taxPayouts, loading: taxLoading, error: taxError } = useTaxSummary(taxYear, tab === 'tax');
@@ -158,6 +169,34 @@ export function Billing() {
     refresh();
   };
 
+  // Calls trigger-payout with the failed booking's own date range as the
+  // period -- trigger-payout re-sums every unhandled (never-transferred or
+  // explicitly failed) booking in that window, which naturally resolves to
+  // just this one booking since anything else already succeeded. See the
+  // useFailedTransfers comment above for why this exists at all.
+  const retryTransfer = async (transfer) => {
+    const booking = transfer.bookings;
+    if (!booking?.start_date || !booking?.end_date) {
+      toast.error("Can't retry — this booking's dates are missing.");
+      return;
+    }
+    setRetryingId(transfer.id);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { toast.error('Session expired. Please log in again.'); setRetryingId(null); return; }
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/trigger-payout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ periodStart: booking.start_date, periodEnd: booking.end_date }),
+    });
+    const json = await res.json().catch(() => ({}));
+    setRetryingId(null);
+    if (!res.ok && !json.ok) { toast.error(json.error ?? 'Retry failed — check your Connect status in Settings.'); return; }
+    if (json.failures?.length > 0) { toast.error(json.failures[0].error ?? 'Retry failed again.'); return; }
+    toast.success('Payout retried successfully.');
+    refreshFailedTransfers();
+    refresh();
+  };
+
   if (loading) {
     return (
       <div>
@@ -186,14 +225,26 @@ export function Billing() {
       )}
 
       {failedTransfers.length > 0 && (
-        <div style={{ display: 'flex', gap: 8, padding: '12px 16px', marginBottom: 20, background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`, borderRadius: 8, fontSize: 13, color: C.red, fontFamily: F.sans, lineHeight: 1.6 }}>
-          <span style={{ flexShrink: 0 }}><IconWarning size={16} /></span>
-          <span>
-          <strong>{failedTransfers.length} payout transfer{failedTransfers.length !== 1 ? 's' : ''} failed</strong> —
-          {' '}totalling ${failedTransfers.reduce((a, t) => a + Number(t.amount), 0).toLocaleString()}.
-          This usually means Stripe needs more information from your connected account.
-          Check your Connect status in Settings, then contact support if it's already active.
-          </span>
+        <div style={{ padding: '12px 16px', marginBottom: 20, background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`, borderRadius: 8, fontSize: 13, color: C.red, fontFamily: F.sans }}>
+          <div style={{ display: 'flex', gap: 8, lineHeight: 1.6, marginBottom: 10 }}>
+            <span style={{ flexShrink: 0 }}><IconWarning size={16} /></span>
+            <span>
+            <strong>{failedTransfers.length} payout transfer{failedTransfers.length !== 1 ? 's' : ''} failed</strong> —
+            {' '}totalling ${failedTransfers.reduce((a, t) => a + Number(t.amount), 0).toLocaleString()}.
+            This usually means Stripe needs more information from your connected account.
+            Fix your Connect status in Settings, then retry below.
+            </span>
+          </div>
+          {failedTransfers.map(t => (
+            <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '8px 0 8px 24px', borderTop: `1px solid ${C.redBorder ?? '#fecaca'}` }}>
+              <span style={{ color: C.text, fontFamily: F.sans, fontSize: 12.5 }}>
+                {t.bookings?.advertiser_name ?? t.booking_id} — ${Number(t.amount).toLocaleString()} {t.currency?.toUpperCase()}
+              </span>
+              <Btn variant="danger" size="sm" disabled={retryingId === t.id} onClick={() => retryTransfer(t)}>
+                {retryingId === t.id ? 'Retrying…' : 'Retry'}
+              </Btn>
+            </div>
+          ))}
         </div>
       )}
 
