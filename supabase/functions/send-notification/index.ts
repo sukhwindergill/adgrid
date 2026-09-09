@@ -412,20 +412,44 @@ Deno.serve(async (req: Request) => {
     callerRole = prof?.role ?? null;
   }
 
-  const { userId, type, data: notifData = {} } = await req.json();
+  const { userId, type, campaignId, data: notifData = {} } = await req.json();
   if (!userId || !type) return new Response("Missing userId or type", { status: 400, headers: CORS });
 
-  // Non-internal callers can only send to themselves, unless they are an
-  // operator (existing behavior), or the call matches one of these narrow,
-  // server-verified exceptions:
+  // Non-internal callers can only send to themselves, unless the call
+  // matches one of these narrow, server-verified exceptions:
+  //   - campaign_approved: an operator may notify the advertiser on a
+  //     campaign they just approved, but only for a campaign that actually
+  //     targets a screen this operator owns (mirrors the ownership check
+  //     charge-campaign already applies for the same "operator acting on
+  //     an advertiser's campaign" case) -- never any user with any type.
   //   - campaign_submitted: any advertiser may notify a user who is
   //     genuinely an operator (operator_id is already public on the screens
   //     the advertiser booked).
   //   - grant_invite: the caller may notify the grantee of an
   //     account_grants row they themselves just created.
-  if (!isInternal && callerRole !== "operator" && callerUserId !== userId) {
+  //
+  // Security-audit finding: this used to let ANY operator send ANY
+  // notification type (including grant_invite, with an attacker-controlled
+  // acceptUrl, and payment_failed/account_suspended with fabricated data)
+  // to ANY user in the system -- a phishing/impersonation vector emailed
+  // from AdGrid's own domain via Resend, gated only on the caller's role
+  // and unrelated to any real relationship with the target user.
+  if (!isInternal && callerUserId !== userId) {
     let allowed = false;
-    if (type === "campaign_submitted" && callerRole === "advertiser") {
+    if (type === "campaign_approved" && callerRole === "operator" && typeof campaignId === "string" && campaignId) {
+      const { data: opScreens } = await supabase.from("screens").select("id").eq("operator_id", callerUserId);
+      const opScreenIds = (opScreens ?? []).map((s: { id: string }) => s.id);
+      if (opScreenIds.length > 0) {
+        const { data: link } = await supabase
+          .from("campaign_screens")
+          .select("id")
+          .eq("campaign_id", campaignId)
+          .in("screen_id", opScreenIds)
+          .limit(1)
+          .maybeSingle();
+        allowed = !!link;
+      }
+    } else if (type === "campaign_submitted" && callerRole === "advertiser") {
       const { data: targetProf } = await supabase.from("profiles").select("role").eq("id", userId).single();
       allowed = targetProf?.role === "operator";
     } else if (type === "grant_invite") {

@@ -23,7 +23,7 @@ const REJECT_REASONS = [
   'Other',
 ];
 
-async function notifyCampaignApproved(advertiserId, campaignName) {
+async function notifyCampaignApproved(advertiserId, campaignName, campaignId) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return;
   fetch(`${SUPABASE_FUNCTIONS_URL}/send-notification`, {
@@ -32,6 +32,7 @@ async function notifyCampaignApproved(advertiserId, campaignName) {
     body: JSON.stringify({
       userId: advertiserId,
       type: 'campaign_approved',
+      campaignId,
       data: { campaignName, appUrl: window.location.origin },
     }),
   }).catch(() => {});
@@ -165,7 +166,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
       .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
     const allClear = campaign.start_when === 'partial' || !remaining || remaining.length === 0;
     if (allClear) {
-      notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
+      notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser, campaign.id);
       await attemptCharge();
     }
     setActing(false);
@@ -198,7 +199,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
       .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
     const allClear = campaign.start_when === 'partial' || !remaining || remaining.length === 0;
     if (allClear) {
-      notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
+      notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser, campaign.id);
       await attemptCharge();
     }
     setActing(false);
@@ -610,7 +611,7 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
         .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
       const allClear = campaign.start_when === 'partial' || !remaining || remaining.length === 0;
       if (allClear) {
-        notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser);
+        notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser, campaign.id);
         if (session) {
           try {
             const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/charge-campaign`, {
