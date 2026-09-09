@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { fireOperatorWebhook } from "../_shared/operatorWebhook.ts";
+import { resolveChannelPrefs } from "../_shared/notificationPrefs.ts";
 
 // Events that also fire an operator's configured webhook (in addition to,
 // never instead of, the in-app notification and email below) -- see
@@ -436,24 +437,36 @@ Deno.serve(async (req: Request) => {
 
   const { title, body, html } = template(sanitizedData);
 
-  // Always insert in-app notification
-  await supabase.from("notifications").insert({ user_id: userId, type, title, body });
-
-  // Fire the operator's configured webhook, if any -- additive, never
-  // blocking or replacing the in-app notification/email below.
-  if (OPERATOR_WEBHOOK_EVENTS.has(type)) {
-    fireOperatorWebhook(supabase, userId, type, sanitizedData).catch(() => {});
-  }
-
-  // Check notification pref before sending email
+  // Fetch once so both the in-app notification and the email below can
+  // honor the caller's per-event, per-channel preference.
   const { data: profile } = await supabase
     .from("profiles")
     .select("email, notification_prefs")
     .eq("id", userId)
     .single();
 
-  const prefs = profile?.notification_prefs ?? {};
-  if (prefs[type] === false || !profile?.email) {
+  const channelPrefs = resolveChannelPrefs((profile?.notification_prefs ?? {})[type]);
+
+  // Product-audit finding: this used to insert unconditionally, ignoring
+  // notification_prefs entirely -- the "In-app" toggle in
+  // NotificationPrefsView.jsx saved a value but never suppressed anything.
+  if (channelPrefs.inApp) {
+    await supabase.from("notifications").insert({ user_id: userId, type, title, body });
+  }
+
+  // Fire the operator's configured webhook, if any -- additive, never
+  // blocking or replacing the in-app notification/email below, and (like
+  // the existing advertiser integrations) not gated by notification_prefs,
+  // which governs AdGrid's own in-app/email channels.
+  if (OPERATOR_WEBHOOK_EVENTS.has(type)) {
+    fireOperatorWebhook(supabase, userId, type, sanitizedData).catch(() => {});
+  }
+
+  // Product-audit finding: this used to check `prefs[type] === false`,
+  // which can only be true if prefs[type] is the literal boolean `false` --
+  // never true for the { inApp, email } object NotificationPrefsView.jsx
+  // actually saves, so the "Email" toggle also had zero effect.
+  if (!channelPrefs.email || !profile?.email) {
     return new Response(JSON.stringify({ ok: true, emailSent: false }), {
       headers: CORS,
     });

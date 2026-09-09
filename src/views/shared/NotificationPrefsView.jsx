@@ -6,11 +6,18 @@ import { Card } from '../../components/primitives/Card.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useToast } from '../../components/primitives/Toast.jsx';
 
+// Product-audit finding: three of these keys (campaign_rejected, scan_spike,
+// payout_processed) never matched any event send-notification's TEMPLATES
+// actually dispatches under -- there is no campaign-rejection notification
+// today, and the real equivalents are named scan_milestone and
+// payout_completed. Toggling those three did nothing because nothing was
+// ever checking them. Replaced with the real event names below (see
+// supabase/functions/send-notification/index.ts's TEMPLATES map).
 const EVENTS = [
   { key: 'campaign_approved', label: 'Campaign approved',   defaultInApp: true,  defaultEmail: true },
-  { key: 'campaign_rejected', label: 'Campaign rejected',   defaultInApp: true,  defaultEmail: true },
-  { key: 'scan_spike',        label: 'Scan spike detected', defaultInApp: true,  defaultEmail: false },
-  { key: 'payout_processed',  label: 'Payout processed',   defaultInApp: true,  defaultEmail: true },
+  { key: 'campaign_live',     label: 'Campaign went live',  defaultInApp: true,  defaultEmail: true },
+  { key: 'scan_milestone',    label: 'Scan milestone reached', defaultInApp: true, defaultEmail: false },
+  { key: 'payout_completed',  label: 'Payout sent',         defaultInApp: true,  defaultEmail: true },
   { key: 'new_advertiser',    label: 'New advertiser',      defaultInApp: true,  defaultEmail: false },
   { key: 'marketplace_thread_message', label: 'Marketplace messages', defaultInApp: true, defaultEmail: false },
 ];
