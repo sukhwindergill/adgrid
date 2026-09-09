@@ -246,9 +246,29 @@ export function AuthProvider({ children }) {
   async function updatePassword(password) {
     const result = await supabase.auth.updateUser({ password })
     if (!result.error) {
+      // Product-audit finding: revoke-other-sessions (supabase/functions/
+      // revoke-other-sessions) exists specifically so a password change
+      // kicks out every other signed-in device, but nothing ever called
+      // it — updateUser() above only rotates *this* browser's tokens, so
+      // a compromised account stayed logged in everywhere else even after
+      // the password was changed. Best-effort: a failure here must never
+      // block the password change the user already successfully made.
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          await fetch(`${SUPABASE_FUNCTIONS_URL}/revoke-other-sessions`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          })
+        }
+      } catch {
+        // best-effort — see comment above
+      }
       setPasswordRecovery(false)
       // Never let a recovery-link session flow straight into the app —
-      // end it and require a fresh sign-in with the new password.
+      // end it and require a fresh sign-in with the new password. Also
+      // now the expected outcome of the global revoke above, which
+      // invalidates this session's own refresh token too.
       await signOut()
     }
     return result

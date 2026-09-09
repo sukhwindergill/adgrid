@@ -148,7 +148,8 @@ export function ProfileTab({ profile, onSaved }) {
   );
 }
 
-function SecurityTab() {
+export function SecurityTab() {
+  const { updatePassword } = useAuth();
   const [newEmail, setNewEmail] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
@@ -168,16 +169,25 @@ function SecurityTab() {
     setTimeout(() => setEmailMsg(null), 5000);
   }
 
+  // Goes through AuthContext's updatePassword() rather than a direct
+  // supabase.auth.updateUser() call -- that's the one place that also
+  // revokes every other signed-in session (see the comment there), which
+  // matters for a password change more than almost anything else this
+  // page does. It signs the current session out too once that's done, so
+  // this intentionally ends on the login screen rather than staying here.
   async function changePassword() {
     if (newPw !== confirmPw) { setPwMsg({ text: 'Passwords do not match.', ok: false }); return; }
     if (newPw.length < 8) { setPwMsg({ text: 'Password must be at least 8 characters.', ok: false }); return; }
     setPwSaving(true);
     setPwMsg(null);
-    const { error } = await supabase.auth.updateUser({ password: newPw });
-    setPwSaving(false);
-    setPwMsg(error ? { text: error.message, ok: false } : { text: 'Password updated.', ok: true });
-    setNewPw(''); setConfirmPw('');
-    setTimeout(() => setPwMsg(null), 4000);
+    const { error } = await updatePassword(newPw);
+    if (error) {
+      setPwSaving(false);
+      setPwMsg({ text: error.message, ok: false });
+    }
+    // On success the session is gone and this component is about to
+    // unmount (App.jsx renders the login screen once user goes null) --
+    // no further local state update needed.
   }
 
   return (
