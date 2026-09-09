@@ -264,6 +264,28 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
     body: "Your AdGrid account has been suspended. Contact support for assistance.",
     html: emailHtml("Account Suspended", "Your AdGrid account has been suspended by an operator. Please contact support for assistance.", "Contact Support", "mailto:support@adgrid.io"),
   }),
+  identity_verification_approved: (d) => ({
+    title: "Your identity is verified",
+    body: "Your Stripe Identity verification was reviewed and approved.",
+    html: emailHtml(
+      "Your identity is verified",
+      "Your identity verification was reviewed and approved. The verified badge is now visible on your operator profile.",
+      "View Settings",
+      d.appUrl ?? "",
+    ),
+  }),
+  identity_verification_rejected: (d) => ({
+    title: "Your identity verification was rejected",
+    body: d.reason ? `Your verification was rejected: ${d.reason}` : "Your verification was rejected after manual review.",
+    html: emailHtml(
+      "Your identity verification was rejected",
+      d.reason
+        ? `Your identity verification was reviewed and rejected. <strong>Reason:</strong> ${d.reason}. You can start a new attempt from Settings.`
+        : "Your identity verification was reviewed and rejected after manual review. You can start a new attempt from Settings.",
+      "Try Again",
+      d.appUrl ?? "",
+    ),
+  }),
   screen_offline: (d) => ({
     title: "Screen appears offline",
     body: `"${d.screenName}" hasn't reported a heartbeat in over ${d.minutes} minutes.`,
