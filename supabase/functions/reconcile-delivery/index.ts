@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { expectedPlays, reconciliationWindow } from "../_shared/deliveryExpectation.ts";
 import { shortfallPct, dailyBudgetShare, creditAmount, SHORTFALL_THRESHOLD } from "../_shared/makegood.ts";
+import { requireCronSecret } from "../_shared/cronGuard.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -51,7 +52,10 @@ async function notify(userId: string, type: string, data: Record<string, string>
   }).catch(() => {});
 }
 
-Deno.serve(async (_req: Request) => {
+Deno.serve(async (req: Request) => {
+  const denied = requireCronSecret(req);
+  if (denied) return denied;
+
   // Only paid campaigns can be credited — there is nothing to give back on an
   // unpaid one.
   const { data: campaigns } = await supabase

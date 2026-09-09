@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { evaluateRule, shouldNotify } from "../_shared/ruleEvaluator.ts";
 import { flightProgress, pacingRatio } from "../_shared/pacing.ts";
+import { requireCronSecret } from "../_shared/cronGuard.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -38,7 +39,10 @@ interface SnapshotBundle {
   spentPct: number;
 }
 
-Deno.serve(async (_req: Request) => {
+Deno.serve(async (req: Request) => {
+  const denied = requireCronSecret(req);
+  if (denied) return denied;
+
   const now = new Date();
 
   const { data: rules } = await supabase
