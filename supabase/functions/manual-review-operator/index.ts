@@ -12,6 +12,19 @@ const CORS = {
   "Content-Type": "application/json",
 };
 
+const FUNCTIONS_URL = `${Deno.env.get("SUPABASE_URL")!}/functions/v1`;
+
+async function sendNotification(userId: string, type: string, data: Record<string, string>) {
+  await fetch(`${FUNCTIONS_URL}/send-notification`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-internal-secret": Deno.env.get("INTERNAL_NOTIFICATION_SECRET") ?? "",
+    },
+    body: JSON.stringify({ userId, type, data }),
+  }).catch(() => {});
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
@@ -71,6 +84,17 @@ Deno.serve(async (req: Request) => {
     .in("status", ["pending", "requires_input"])
     .order("created_at", { ascending: false })
     .limit(1);
+
+  // Product-audit finding: VerificationTab.jsx tells an operator awaiting
+  // manual review "we'll email you once it's reviewed" -- nothing ever
+  // did. Fire-and-forget so a notification hiccup never fails the review
+  // action itself; the decision is already saved above either way.
+  const appUrl = `${Deno.env.get("PUBLIC_APP_URL") ?? ""}/app/settings`;
+  if (decision === "approved") {
+    await sendNotification(operatorId, "identity_verification_approved", { appUrl });
+  } else {
+    await sendNotification(operatorId, "identity_verification_rejected", { appUrl, reason: notes ?? "" });
+  }
 
   return new Response(JSON.stringify({ ok: true }), { headers: CORS });
 });
