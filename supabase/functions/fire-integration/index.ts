@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { isSafeWebhookUrl } from "../_shared/webhookUrlGuard.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -119,6 +120,8 @@ async function fireShopify(
 ): Promise<{ status: string; error?: string }> {
   const { webhook_url, secret } = config;
   if (!webhook_url) return { status: "failed", error: "missing webhook_url" };
+  // SSRF guard -- webhook_url is advertiser-supplied; see webhookUrlGuard.ts.
+  if (!isSafeWebhookUrl(webhook_url)) return { status: "failed", error: "webhook_url is not allowed" };
 
   const body = JSON.stringify({
     event: "scan.created",
