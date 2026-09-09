@@ -1,21 +1,15 @@
 // Per-channel notification preference enforcement.
 //
-// Product-audit finding: NotificationPrefsView.jsx (src/views/shared/
-// NotificationPrefsView.jsx) has always saved notification_prefs as
-// { [eventType]: { inApp: boolean, email: boolean } } -- a nested object
-// per event, one boolean per channel. send-notification used to check
-// `prefs[type] === false`, which can only ever be true if prefs[type] is
-// literally the boolean `false` -- never true for the object shape the UI
-// actually writes, and the in-app notification was inserted unconditionally
-// with no prefs check at all. Both toggles in the UI were fully
-// interactive, persisted a value, and had zero effect on what was actually
-// sent -- the same "looks wired up, isn't" pattern as the operator
-// Integrations page fixed earlier this session, just one layer deeper
-// (working save, broken enforcement, rather than no save at all).
-//
-// A legacy row could in principle still carry the old flat-boolean shape
-// from before the UI existed in its current form, so both shapes are
-// honored rather than assuming every row is the new shape.
+// Product-audit finding: two separate UIs used to write notification_prefs
+// in incompatible shapes -- src/views/shared/NotificationPrefsView.jsx
+// wrote the nested { [eventType]: { inApp, email } } shape while the
+// Settings > Notifications tabs (src/views/operator/OperatorSettingsView.jsx,
+// src/views/advertiser/SettingsView.jsx) wrote a flat { [eventType]:
+// boolean } shape. Both are now unified: NotificationPrefsView.jsx was
+// deleted, and both Settings tabs write the nested shape via
+// src/lib/notificationPrefs.js's normalizeChannelPrefs(). The flat-boolean
+// branch below is kept solely to keep reading rows saved by either UI
+// before this change -- nothing currently writes that shape.
 
 export interface ChannelPrefs {
   inApp: boolean;
