@@ -20,11 +20,13 @@ export function ScreenInvitePage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data: invite, error: inviteError } = await supabase
-        .from('screen_invites')
-        .select('screen_id, status')
-        .eq('token', token)
-        .single();
+      // Looked up via a token-scoped RPC, not a direct table read -- the
+      // table's blanket "read by token" RLS policy was removed because it
+      // let anyone list every pending invite (see
+      // scope_invite_lookups_by_token migration).
+      const { data: inviteRows, error: inviteError } = await supabase
+        .rpc('lookup_screen_invite_by_token', { p_token: token });
+      const invite = inviteRows?.[0];
 
       if (cancelled) return;
       if (inviteError) { setState('error'); return; }

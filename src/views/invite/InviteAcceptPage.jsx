@@ -16,15 +16,17 @@ export function InviteAcceptPage() {
 
   useEffect(() => {
     if (!token) { setStatus('invalid'); return }
+    // Looked up via a token-scoped RPC, not a direct table read -- the
+    // table's blanket "read by token" RLS policy was removed because it
+    // let anyone list every pending invite (see
+    // scope_invite_lookups_by_token migration).
     supabase
-      .from('operator_invites')
-      .select('email, status, expires_at')
-      .eq('token', token)
-      .single()
+      .rpc('lookup_operator_invite_by_token', { p_token: token })
       .then(({ data, error: err }) => {
-        if (err || !data) { setStatus('invalid'); return }
-        if (data.status === 'accepted') { setStatus('already_accepted'); return }
-        if (data.status === 'expired' || new Date(data.expires_at) < new Date()) { setStatus('expired'); return }
+        const invite = data?.[0]
+        if (err || !invite) { setStatus('invalid'); return }
+        if (invite.status === 'accepted') { setStatus('already_accepted'); return }
+        if (invite.status === 'expired' || new Date(invite.expires_at) < new Date()) { setStatus('expired'); return }
         setStatus('valid')
       })
   }, [token])
