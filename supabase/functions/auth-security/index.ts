@@ -9,10 +9,12 @@ import { rateLimited, rateLimitResponse, clientIp } from "../_shared/rateLimit.t
 // to GoTrue directly and has no hook point of its own for this.
 //
 // Actions (all POST, JSON body: { action, email, ... }):
-//   check_lockout        -> { locked: boolean }
-//   record_login_failure -> logs the failure; bans the auth user for 15m
-//                            once 5 failures land within 15m
-//   record_login_success -> logs success, clears the lockout window
+//   check_lockout        -> { locked: boolean }, true once 5 failures for
+//                            this email land within 15m (app-level only --
+//                            see record_login_failure's own comment on why
+//                            this no longer bans the account at GoTrue)
+//   record_login_failure -> logs the failure
+//   record_login_success -> logs success
 //   check_reset_throttle -> { allowed: boolean } -- max 3 requests/hour/email
 //   record_reset_request -> logs a password-reset request
 
@@ -88,16 +90,24 @@ Deno.serve(async (req: Request) => {
     case "record_login_failure": {
       await logEvent("login_failed", email);
       const failures = await countRecentEvents(email, "login_failed", LOGIN_WINDOW_MINUTES);
+      // Security-audit finding: this call has no auth and no proof it
+      // followed a real signInWithPassword failure -- AuthContext.jsx
+      // calls it client-side purely as a courtesy, but nothing stops a
+      // caller from POSTing record_login_failure directly for any email
+      // it doesn't hold the password for. This used to also ban the
+      // account at the GoTrue level once the count crossed the
+      // threshold, which meant an unauthenticated caller who knew a
+      // victim's email could force a real 15-minute lockout with five
+      // POSTs and no password at all -- repeatable indefinitely. The
+      // GoTrue-level ban (admin.updateUserById with ban_duration) is
+      // removed for that reason; check_lockout below still reports
+      // `locked` from this same count, so the intended UX (block the
+      // client's own next attempt after repeated failures) is
+      // unchanged for a real user who is actually failing to sign in --
+      // it just can no longer be weaponized against someone else's
+      // account by a caller who never attempted their password.
       if (failures >= LOGIN_FAILURE_LIMIT) {
-        // Ban at the GoTrue level so the lockout holds even if this app's
-        // own check_lockout gate is bypassed -- signInWithPassword itself
-        // will then fail for a banned user.
-        const { data: users } = await supabase.auth.admin.listUsers();
-        const match = users?.users?.find((u) => u.email?.toLowerCase() === email);
-        if (match) {
-          await supabase.auth.admin.updateUserById(match.id, { ban_duration: `${LOCKOUT_MINUTES}m` });
-          await logEvent("account_locked", email, { user_id: match.id, failures });
-        }
+        await logEvent("lockout_threshold_reached", email, { failures });
       }
       return new Response(JSON.stringify({ ok: true }), { headers: CORS });
     }
