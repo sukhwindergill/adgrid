@@ -2,16 +2,23 @@ import { describe, it, expect } from 'vitest';
 import { EVENTS, defaultChannelPrefs, normalizeChannelPrefs } from './notificationPrefs.js';
 
 describe('EVENTS', () => {
-  it('has 14 events with unique keys', () => {
-    expect(EVENTS).toHaveLength(14);
-    expect(new Set(EVENTS.map(e => e.key)).size).toBe(14);
+  it('has 15 events with unique keys', () => {
+    expect(EVENTS).toHaveLength(15);
+    expect(new Set(EVENTS.map(e => e.key)).size).toBe(15);
+  });
+
+  it('includes marketplace_thread_message', () => {
+    const event = EVENTS.find(e => e.key === 'marketplace_thread_message');
+    expect(event).toBeDefined();
+    expect(event.operatorOnly).toBe(false);
+    expect(defaultChannelPrefs().marketplace_thread_message).toEqual({ inApp: true, email: true });
   });
 });
 
 describe('defaultChannelPrefs', () => {
   it('defaults every event to both channels enabled', () => {
     const prefs = defaultChannelPrefs();
-    expect(Object.keys(prefs)).toHaveLength(14);
+    expect(Object.keys(prefs)).toHaveLength(15);
     for (const event of EVENTS) {
       expect(prefs[event.key]).toEqual({ inApp: true, email: true });
     }
@@ -61,5 +68,17 @@ describe('normalizeChannelPrefs', () => {
     expect(prefs.campaign_approved).toEqual({ inApp: false, email: false });
     expect(prefs.scan_milestone).toEqual({ inApp: true, email: false });
     expect(prefs.payout_completed).toEqual({ inApp: true, email: true });
+  });
+
+  it('preserves a stored key that is not in EVENTS instead of dropping it', () => {
+    const raw = {
+      marketplace_thread_message: { inApp: false, email: false },
+      some_unknown_event: false,
+    };
+    const prefs = normalizeChannelPrefs(raw);
+    expect(prefs.marketplace_thread_message).toEqual({ inApp: false, email: false });
+    expect(prefs.some_unknown_event).toEqual({ inApp: false, email: false });
+    // and every known event still gets filled in with defaults
+    expect(prefs.campaign_approved).toEqual({ inApp: true, email: true });
   });
 });

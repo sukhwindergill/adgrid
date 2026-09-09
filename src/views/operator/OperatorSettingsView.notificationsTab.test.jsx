@@ -18,9 +18,9 @@ describe('OperatorSettingsView NotificationsTab', () => {
     supabase.from.mockClear();
   });
 
-  it('renders an in-app and an email toggle for each of the 14 events', () => {
+  it('renders an in-app and an email toggle for each of the 15 events', () => {
     render(<NotificationsTab profile={{ id: 'op-1' }} />);
-    expect(screen.getAllByRole('switch')).toHaveLength(28);
+    expect(screen.getAllByRole('switch')).toHaveLength(30);
   });
 
   it('upgrades a legacy flat-boolean profile.notification_prefs on load', () => {
@@ -50,6 +50,6 @@ describe('OperatorSettingsView NotificationsTab', () => {
     await waitFor(() => expect(updateSpy).toHaveBeenCalled());
     const savedPrefs = updateSpy.mock.calls[0][0].notification_prefs;
     expect(savedPrefs.campaign_approved).toEqual({ inApp: true, email: false });
-    expect(Object.keys(savedPrefs)).toHaveLength(14);
+    expect(Object.keys(savedPrefs)).toHaveLength(15);
   });
 });

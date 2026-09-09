@@ -20,8 +20,8 @@ describe('advertiser SettingsView NotificationsTab', () => {
 
   it('renders an in-app and an email toggle for each non-operator-only event, excluding operator-only ones', () => {
     render(<NotificationsTab profile={{ id: 'adv-1' }} />);
-    // 10 non-operatorOnly events out of 14 (4 are operatorOnly).
-    expect(screen.getAllByRole('switch')).toHaveLength(20);
+    // 11 non-operatorOnly events out of 15 (4 are operatorOnly).
+    expect(screen.getAllByRole('switch')).toHaveLength(22);
     expect(screen.queryByText('New advertiser joined')).not.toBeInTheDocument();
     expect(screen.queryByText('Campaign submitted')).not.toBeInTheDocument();
     expect(screen.queryByText('Payout completed')).not.toBeInTheDocument();
@@ -54,7 +54,7 @@ describe('advertiser SettingsView NotificationsTab', () => {
     await waitFor(() => expect(updateSpy).toHaveBeenCalled());
     const savedPrefs = updateSpy.mock.calls[0][0].notification_prefs;
     expect(savedPrefs.campaign_approved).toEqual({ inApp: false, email: true });
-    // Still saves all 14 (operator-only ones default, even though not shown).
-    expect(Object.keys(savedPrefs)).toHaveLength(14);
+    // Still saves all 15 (operator-only ones default, even though not shown).
+    expect(Object.keys(savedPrefs)).toHaveLength(15);
   });
 });

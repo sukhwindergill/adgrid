@@ -22,6 +22,7 @@ export const EVENTS = [
   { key: 'weekly_revenue',     label: 'Weekly revenue summary',    desc: 'Weekly revenue across your screen network', operatorOnly: true },
   { key: 'team_member_joined', label: 'Team member joined',        desc: 'When someone accepts your team invite', operatorOnly: false },
   { key: 'account_suspended',  label: 'Account suspended',         desc: 'If your account is suspended', operatorOnly: false },
+  { key: 'marketplace_thread_message', label: 'Marketplace messages', desc: 'When you get a new message in a marketplace listing thread', operatorOnly: false },
 ];
 
 export function defaultChannelPrefs() {
@@ -32,17 +33,25 @@ export function normalizeChannelPrefs(raw) {
   const defaults = defaultChannelPrefs();
   if (typeof raw !== 'object' || raw === null) return defaults;
 
+  // Seed from whatever is already stored so keys outside EVENTS (legacy or
+  // future events not yet in this list) survive a round-trip instead of
+  // being silently dropped on the next save.
   const result = {};
-  for (const event of EVENTS) {
-    const stored = raw[event.key];
+  for (const [key, stored] of Object.entries(raw)) {
     if (typeof stored === 'object' && stored !== null) {
-      result[event.key] = {
+      result[key] = {
         inApp: stored.inApp !== false,
         email: stored.email !== false,
       };
     } else if (typeof stored === 'boolean') {
-      result[event.key] = { inApp: stored, email: stored };
-    } else {
+      result[key] = { inApp: stored, email: stored };
+    }
+  }
+
+  // Then make sure every known event is present, filling in defaults for
+  // anything not already covered above.
+  for (const event of EVENTS) {
+    if (!(event.key in result)) {
       result[event.key] = defaults[event.key];
     }
   }
