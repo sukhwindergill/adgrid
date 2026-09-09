@@ -48,7 +48,6 @@ const MarketplaceListingDetail   = lazy(() => import('./views/advertiser/Marketp
 const ApprovalQueue         = lazy(() => import('./views/operator/ApprovalQueue.jsx').then(m => ({ default: m.ApprovalQueue })));
 const ScreenDetailView      = lazy(() => import('./views/operator/ScreenDetail.jsx').then(m => ({ default: m.ScreenDetailView })));
 const ScreenOnboardView     = lazy(() => import('./views/operator/ScreenOnboard.jsx').then(m => ({ default: m.ScreenOnboardView })));
-const NotificationPrefsView = lazy(() => import('./views/shared/NotificationPrefsView.jsx').then(m => ({ default: m.NotificationPrefsView })));
 const MarketplaceListingsView = lazy(() => import('./views/operator/MarketplaceListingsView.jsx').then(m => ({ default: m.MarketplaceListingsView })));
 
 // Shared views
@@ -542,7 +541,7 @@ function AppInner() {
       if (active === 'adv-billing')      return <AdvertiserBillingView />;
       if (active === 'adv-integrations') return <AdvIntegrationsView />;
       if (active === 'adv-settings')     return <SettingsView />;
-      if (active === 'notif-prefs')      return <NotificationPrefsView />;
+      if (active === 'notif-prefs')      return <SettingsView initialTab="notifications" />;
       return <AdvDashboard user={displayUser} setAdvNav={navTo} advertiserId={impersonating?.id ?? user.id} />;
     }
 
@@ -580,7 +579,7 @@ function AppInner() {
       if (!selectedScreenId) { navTo('screens'); return null; }
       return <ScreenDetailView screenId={selectedScreenId} onBack={() => navTo('screens')} profile={profile} onScreenUpdated={updated => setMyScreens(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s))} />;
     }
-    if (active === 'notif-prefs')   return <NotificationPrefsView />;
+    if (active === 'notif-prefs')   return <OperatorSettingsView setNav={navTo} initialTab="notifications" />;
     if (active === 'campaigns')    return <Campaigns operatorScreenIds={visibleMyScreens.map(s => s.id)} dbScreens={visibleMyScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} canReview={canReview} onApprovalChange={bumpApprovalRefresh} />;
     if (active === 'marketplace-listings') {
       return <MarketplaceListingsView operatorId={impersonating?.id ?? user.id} myScreens={myScreens} />;
