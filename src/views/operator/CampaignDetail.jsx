@@ -9,6 +9,7 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
 import { supabase } from '../../lib/supabase.js';
+import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { ShareReportModal } from '../../components/shared/ShareReportModal.jsx';
 import { ApproveBtn } from '../../lib/campaignActions.jsx';
@@ -31,6 +32,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
   const [editingCreative, setEditingCreative] = useState(false);
   const [creativeForm, setCreativeForm] = useState({ accent_color: campaign.color ?? '#7c3aed' });
   const [deliveryCheckRow, setDeliveryCheckRow] = useState(null);
+  const [statusActionBusy, setStatusActionBusy] = useState(false);
   const c = campaign;
 
   useEffect(() => {
@@ -62,6 +64,29 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
     return { h, v: (p[h] ?? Math.max(8, 45 - Math.abs(h - 13) * 4)) * (c.impressions / 2400) || 0 };
   });
   const maxH = Math.max(...hourly.map(d => d.v), 1);
+
+  // Pause/Resume/Cancel used to call onUpdate({...c, status}) directly --
+  // App.jsx's updateCampaign only ever writes to the server for the
+  // "becomingActive" (payment) transition, so this was a pure client-side
+  // state mutation with no backend persistence at all. Routed through
+  // manage-campaign-status, which verifies the caller is this campaign's
+  // advertiser and applies the write with the service role.
+  const manageStatus = async (action) => {
+    setStatusActionBusy(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/manage-campaign-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ campaign_id: c.id, action }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { toast.error(json.error ?? 'That action failed.'); return; }
+      onUpdate({ ...c, status: json.status });
+    } finally {
+      setStatusActionBusy(false);
+    }
+  };
 
   const confirmReject = async () => {
     const reason = rejectReason.trim();
@@ -130,7 +155,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
           {onDuplicate && <Btn variant="secondary" size="sm" onClick={() => onDuplicate(c)}>⧉ Duplicate</Btn>}
           {statusAction(c.status)}
           <Btn variant="secondary" size="sm" onClick={() => setSharing(true)}>Share report</Btn>
-          <Btn variant="secondary" size="sm" icon={<IconEdit size={13} />} onClick={() => { setEditForm({ budget: c.budget, start: c.start, end: c.end }); setEditing(true); }}>Edit</Btn>
+          {isAdvertiserView && <Btn variant="secondary" size="sm" icon={<IconEdit size={13} />} onClick={() => { setEditForm({ budget: c.budget, start: c.start, end: c.end }); setEditing(true); }}>Edit</Btn>}
         </>}
       />
 
@@ -228,7 +253,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
                   </div>
                 </div>
               ))}
-              <Btn variant="secondary" size="sm" icon={<IconEdit size={13} />} style={{ alignSelf: 'flex-start' }} onClick={() => { setTab('creative'); setCreativeForm({ accent_color: c.color ?? '#7c3aed' }); setEditingCreative(true); }}>Edit Creative</Btn>
+              {isAdvertiserView && <Btn variant="secondary" size="sm" icon={<IconEdit size={13} />} style={{ alignSelf: 'flex-start' }} onClick={() => { setTab('creative'); setCreativeForm({ accent_color: c.color ?? '#7c3aed' }); setEditingCreative(true); }}>Edit Creative</Btn>}
             </div>
           </div>
           {editingCreative && (
@@ -274,18 +299,20 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
               </div>
             ))}
           </Card>
-          <Card>
-            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Danger Zone</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <Btn variant="danger" onClick={() => onUpdate({ ...c, status: c.status === 'paused' ? 'active' : 'paused' })}>
-                {c.status === 'paused' ? '▶ Resume Campaign' : '⏸ Pause Campaign'}
-              </Btn>
-              <Btn variant="danger" onClick={() => onUpdate({ ...c, status: 'completed' })}>✕ Cancel Campaign</Btn>
-            </div>
-            <div style={{ marginTop: 12, fontSize: 11, color: C.textMuted, fontFamily: F.sans, lineHeight: 1.6 }}>
-              Cancelling stops the campaign immediately. Unused budget will be reviewed for refund per your agreement.
-            </div>
-          </Card>
+          {isAdvertiserView && (
+            <Card>
+              <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Danger Zone</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <Btn variant="danger" disabled={statusActionBusy} onClick={() => manageStatus(c.status === 'paused' ? 'resume' : 'pause')}>
+                  {c.status === 'paused' ? '▶ Resume Campaign' : '⏸ Pause Campaign'}
+                </Btn>
+                <Btn variant="danger" disabled={statusActionBusy} onClick={() => manageStatus('cancel')}>✕ Cancel Campaign</Btn>
+              </div>
+              <div style={{ marginTop: 12, fontSize: 11, color: C.textMuted, fontFamily: F.sans, lineHeight: 1.6 }}>
+                Cancelling stops the campaign immediately. Unused budget will be reviewed for refund per your agreement.
+              </div>
+            </Card>
+          )}
         </div>
       )}
 
