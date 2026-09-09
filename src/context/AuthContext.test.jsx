@@ -134,4 +134,51 @@ describe('AuthContext password recovery', () => {
     expect(supabase.auth.signOut).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(screen.getByTestId('user').textContent).toBe('none'));
   });
+
+  // Product-audit finding: revoke-other-sessions exists specifically to
+  // kick every other signed-in device out after a password change, but
+  // nothing ever called it -- updateUser() alone only rotates the current
+  // browser's tokens. This locks in that updatePassword() actually fires it.
+  it('revokes other sessions before signing out after a password update', async () => {
+    supabase.auth.getSession.mockResolvedValue({
+      data: { session: { user: { id: 'u-1' }, access_token: 'tok-abc' } },
+    });
+    __profilesSingle.mockResolvedValue({ data: { id: 'u-1', name: 'A', active_mode: 'advertiser' } });
+    supabase.auth.updateUser.mockResolvedValue({ data: {}, error: null });
+    const fetchSpy = vi.fn(() => Promise.resolve({ ok: true }));
+    global.fetch = fetchSpy;
+
+    render(<AuthProvider><AuthProbe /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId('user').textContent).toBe('u-1'));
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('update-password'));
+    });
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('/revoke-other-sessions'),
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({ Authorization: 'Bearer tok-abc' }),
+      }),
+    );
+  });
+
+  it('still signs out even if revoking other sessions fails', async () => {
+    supabase.auth.getSession.mockResolvedValue({
+      data: { session: { user: { id: 'u-1' }, access_token: 'tok-abc' } },
+    });
+    __profilesSingle.mockResolvedValue({ data: { id: 'u-1', name: 'A', active_mode: 'advertiser' } });
+    supabase.auth.updateUser.mockResolvedValue({ data: {}, error: null });
+    global.fetch = vi.fn(() => Promise.reject(new Error('network down')));
+
+    render(<AuthProvider><AuthProbe /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId('user').textContent).toBe('u-1'));
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('update-password'));
+    });
+
+    expect(supabase.auth.signOut).toHaveBeenCalledTimes(1);
+  });
 });
