@@ -139,11 +139,45 @@ Deno.serve(async (req: Request) => {
     return bundle;
   }
 
+  // Security-audit finding: this used to trust rule.scope_campaign_id on
+  // its own (`c.id === rule.scope_campaign_id`, no ownership check at
+  // all) -- since RLS's own INSERT/UPDATE check on automation_rules only
+  // verifies owner_id = auth.uid(), a rule scoped to ANY campaign in the
+  // system, with a trivially-true condition, let any advertiser pause any
+  // OTHER advertiser's live campaign on every cron run. Re-verify real
+  // ownership here too (RLS now checks it at write time as well, but
+  // service_role writes bypass RLS, and a row could predate that fix) --
+  // an operator-owned rule needs a screen the campaign targets; an
+  // advertiser-owned rule needs to be the campaign's own advertiser.
+  const opScreensByOwner = new Map<string, Set<string>>();
+  async function operatorScreenIds(operatorId: string): Promise<Set<string>> {
+    const cached = opScreensByOwner.get(operatorId);
+    if (cached) return cached;
+    const { data } = await supabase.from("screens").select("id").eq("operator_id", operatorId);
+    const ids = new Set((data ?? []).map(s => s.id as string));
+    opScreensByOwner.set(operatorId, ids);
+    return ids;
+  }
+  async function campaignOwnedByRule(campaign: Record<string, unknown>, rule: Record<string, unknown>): Promise<boolean> {
+    if (rule.owner_side === "operator") {
+      const { data: cs } = await supabase.from("campaign_screens").select("screen_id").eq("campaign_id", campaign.id as string);
+      const screenIds = (cs ?? []).map(r => r.screen_id as string);
+      if (screenIds.length === 0) return false;
+      const owned = await operatorScreenIds(rule.owner_id as string);
+      return screenIds.some(id => owned.has(id));
+    }
+    return campaign.advertiser_id === rule.owner_id;
+  }
+
   for (const rule of rules) {
     // Which campaigns this rule covers.
-    const scoped = rule.scope_campaign_id
+    const candidateScope = rule.scope_campaign_id
       ? liveCampaigns.filter(c => c.id === rule.scope_campaign_id)
       : liveCampaigns.filter(c => c.advertiser_id === rule.owner_id);
+    const scoped = [];
+    for (const c of candidateScope) {
+      if (await campaignOwnedByRule(c as Record<string, unknown>, rule as Record<string, unknown>)) scoped.push(c);
+    }
 
     for (const campaign of scoped) {
       const snapshot = await snapshotFor(campaign as Record<string, unknown>);
