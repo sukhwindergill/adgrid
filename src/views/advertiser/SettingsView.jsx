@@ -5,6 +5,7 @@ import { supabase } from "../../lib/supabase.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { PageHeader } from "../../components/primitives/PageHeader.jsx";
 import { Btn } from "../../components/primitives/Btn.jsx";
+import { EVENTS, normalizeChannelPrefs } from '../../lib/notificationPrefs.js';
 
 const TIMEZONES = [
   "UTC", "America/New_York", "America/Chicago", "America/Denver",
@@ -295,18 +296,14 @@ export function SecurityTab() {
   );
 }
 
-function NotificationsTab({ profile }) {
-  const [prefs, setPrefs] = useState(
-    profile?.notification_prefs ?? {
-      campaign_approved: true, campaign_live: true, campaign_paused: true,
-      low_budget: true, campaign_ended: true, scan_milestone: true,
-      weekly_report: true, payment_failed: true, new_advertiser: true,
-      campaign_submitted: true, payout_completed: true, weekly_revenue: true,
-      team_member_joined: true, account_suspended: true,
-    }
-  );
+export function NotificationsTab({ profile }) {
+  const [prefs, setPrefs] = useState(() => normalizeChannelPrefs(profile?.notification_prefs));
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
+
+  useEffect(() => {
+    setPrefs(normalizeChannelPrefs(profile?.notification_prefs));
+  }, [profile?.notification_prefs]);
 
   async function save() {
     setSaving(true);
@@ -319,39 +316,34 @@ function NotificationsTab({ profile }) {
     setTimeout(() => setMsg(null), 3000);
   }
 
-  function toggle(key) {
-    setPrefs((p) => ({ ...p, [key]: !p[key] }));
+  function toggle(key, channel) {
+    setPrefs(p => ({ ...p, [key]: { ...p[key], [channel]: !p[key][channel] } }));
   }
 
-  const items = [
-    { key: "campaign_approved",  label: "Campaign approved",         desc: "When your campaign is approved by the operator" },
-    { key: "campaign_live",      label: "Campaign live",             desc: "When your campaign goes live on a screen" },
-    { key: "campaign_paused",    label: "Campaign paused",           desc: "When your campaign is paused due to low budget" },
-    { key: "low_budget",         label: "Low budget alert",          desc: "When a campaign has less than 20% of its run remaining" },
-    { key: "campaign_ended",     label: "Campaign ended",            desc: "When a campaign completes its scheduled run" },
-    { key: "scan_milestone",     label: "Scan milestones",           desc: "When a campaign hits 100, 500, 1k, or 5k QR scans" },
-    { key: "weekly_report",      label: "Weekly performance report", desc: "Summary of scans, spend, and active campaigns every Monday" },
-    { key: "payment_failed",     label: "Payment failed",            desc: "When a payment for your account fails" },
-    { key: "new_advertiser",     label: "New advertiser joined",     desc: "When a new advertiser signs up (operators only)" },
-    { key: "campaign_submitted", label: "Campaign submitted",        desc: "When an advertiser submits a campaign for approval (operators only)" },
-    { key: "payout_completed",   label: "Payout completed",         desc: "When a payout is transferred to your bank (operators only)" },
-    { key: "weekly_revenue",     label: "Weekly revenue summary",    desc: "Weekly revenue across your screen network (operators only)" },
-    { key: "team_member_joined", label: "Team member joined",        desc: "When someone accepts your team invite" },
-    { key: "account_suspended",  label: "Account suspended",         desc: "If your account is suspended by an operator" },
-  ];
+  const items = EVENTS.filter(e => !e.operatorOnly);
 
   return (
-    <div style={{ maxWidth: 520 }}>
+    <div style={{ maxWidth: 560 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 70px 70px", padding: "0 0 8px", borderBottom: `1px solid ${C.border}` }}>
+        <span />
+        <span style={{ fontSize: 11, fontWeight: 600, color: C.textSub, textAlign: "center" }}>In-app</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: C.textSub, textAlign: "center" }}>Email</span>
+      </div>
       {items.map((item) => (
         <div key={item.key} style={{
-          display: "flex", justifyContent: "space-between", alignItems: "center",
+          display: "grid", gridTemplateColumns: "1fr 70px 70px", alignItems: "center",
           padding: "16px 0", borderBottom: `1px solid ${C.border}`,
         }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 500, color: C.text }}>{item.label}</div>
             <div style={{ fontSize: 12, color: C.textSub, marginTop: 2 }}>{item.desc}</div>
           </div>
-          <Toggle checked={prefs[item.key]} onChange={() => toggle(item.key)} />
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <Toggle checked={prefs[item.key].inApp} onChange={() => toggle(item.key, "inApp")} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <Toggle checked={prefs[item.key].email} onChange={() => toggle(item.key, "email")} />
+          </div>
         </div>
       ))}
       <div style={{ marginTop: 20, display: "flex", gap: 12, alignItems: "center" }}>
