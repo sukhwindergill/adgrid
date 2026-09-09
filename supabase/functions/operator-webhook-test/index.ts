@@ -9,6 +9,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { buildWebhookBody, signWebhookBody } from "../_shared/operatorWebhook.ts";
+import { isSafeWebhookUrl } from "../_shared/webhookUrlGuard.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -44,6 +45,10 @@ Deno.serve(async (req: Request) => {
 
   if (!hook) {
     return new Response(JSON.stringify({ ok: false, error: "No webhook configured" }), { status: 400, headers: CORS });
+  }
+  // SSRF guard -- webhook_url is operator-supplied; see webhookUrlGuard.ts.
+  if (!isSafeWebhookUrl(hook.webhook_url)) {
+    return new Response(JSON.stringify({ ok: false, error: "Webhook URL is not allowed" }), { status: 400, headers: CORS });
   }
 
   const body = buildWebhookBody("screen_registered", { test: true, message: "AdGrid test event" });

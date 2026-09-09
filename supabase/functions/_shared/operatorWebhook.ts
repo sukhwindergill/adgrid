@@ -5,6 +5,8 @@
 // fireShopify HMAC-SHA256 signing shape exactly (X-AdGrid-Signature header
 // instead of X-Shopify-Hmac-Sha256).
 
+import { isSafeWebhookUrl } from "./webhookUrlGuard.ts";
+
 // deno-lint-ignore no-explicit-any
 type SupabaseClient = any;
 
@@ -37,6 +39,8 @@ export async function fireOperatorWebhook(
     .eq("enabled", true)
     .maybeSingle();
   if (!hook) return;
+  // SSRF guard -- webhook_url is operator-supplied; see webhookUrlGuard.ts.
+  if (!isSafeWebhookUrl(hook.webhook_url)) return;
 
   const body = buildWebhookBody(eventType, data);
   const headers: Record<string, string> = { "Content-Type": "application/json" };
