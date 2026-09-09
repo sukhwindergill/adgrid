@@ -7,6 +7,7 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { TeamClientRoles } from '../accounts/TeamClientRoles.jsx';
+import { EVENTS, normalizeChannelPrefs } from '../../lib/notificationPrefs.js';
 
 const TIMEZONES = [
   'UTC', 'America/New_York', 'America/Chicago', 'America/Denver',
@@ -382,21 +383,13 @@ export function ReviewTab({ profile, setNav }) {
   );
 }
 
-function NotificationsTab({ profile }) {
-  const [prefs, setPrefs] = useState(
-    profile?.notification_prefs ?? {
-      campaign_approved: true, campaign_live: true, campaign_paused: true,
-      low_budget: true, campaign_ended: true, scan_milestone: true,
-      weekly_report: true, payment_failed: true, new_advertiser: true,
-      campaign_submitted: true, payout_completed: true, weekly_revenue: true,
-      team_member_joined: true, account_suspended: true,
-    }
-  );
+export function NotificationsTab({ profile }) {
+  const [prefs, setPrefs] = useState(() => normalizeChannelPrefs(profile?.notification_prefs));
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
 
   useEffect(() => {
-    if (profile?.notification_prefs) setPrefs(profile.notification_prefs);
+    setPrefs(normalizeChannelPrefs(profile?.notification_prefs));
   }, [profile?.notification_prefs]);
 
   async function save() {
@@ -407,28 +400,32 @@ function NotificationsTab({ profile }) {
     setTimeout(() => setMsg(null), 3000);
   }
 
-  const items = [
-    { key: 'new_advertiser',     label: 'New advertiser joined',     desc: 'When a new advertiser signs up' },
-    { key: 'campaign_submitted', label: 'Campaign submitted',        desc: 'When an advertiser submits a campaign for approval' },
-    { key: 'payout_completed',   label: 'Payout completed',          desc: 'When a payout is transferred to your bank' },
-    { key: 'weekly_revenue',     label: 'Weekly revenue summary',    desc: 'Weekly revenue across your screen network' },
-    { key: 'team_member_joined', label: 'Team member joined',        desc: 'When someone accepts your team invite' },
-    { key: 'payment_failed',     label: 'Payment failed',            desc: 'When a payment for your account fails' },
-    { key: 'account_suspended',  label: 'Account suspended',         desc: 'If your account is suspended' },
-  ];
+  function toggle(key, channel) {
+    setPrefs(p => ({ ...p, [key]: { ...p[key], [channel]: !p[key][channel] } }));
+  }
 
   return (
-    <div style={{ maxWidth: 520 }}>
-      {items.map(item => (
+    <div style={{ maxWidth: 560 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 70px', padding: '0 0 8px', borderBottom: `1px solid ${C.border}` }}>
+        <span />
+        <span style={{ fontSize: 11, fontWeight: 600, color: C.textSub, textAlign: 'center' }}>In-app</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: C.textSub, textAlign: 'center' }}>Email</span>
+      </div>
+      {EVENTS.map(item => (
         <div key={item.key} style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          display: 'grid', gridTemplateColumns: '1fr 70px 70px', alignItems: 'center',
           padding: '16px 0', borderBottom: `1px solid ${C.border}`,
         }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 500, color: C.text }}>{item.label}</div>
             <div style={{ fontSize: 12, color: C.textSub, marginTop: 2 }}>{item.desc}</div>
           </div>
-          <Toggle checked={prefs[item.key]} onChange={() => setPrefs(p => ({ ...p, [item.key]: !p[item.key] }))} />
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <Toggle checked={prefs[item.key].inApp} onChange={() => toggle(item.key, 'inApp')} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <Toggle checked={prefs[item.key].email} onChange={() => toggle(item.key, 'email')} />
+          </div>
         </div>
       ))}
       <div style={{ marginTop: 20, display: 'flex', gap: 12, alignItems: 'center' }}>
