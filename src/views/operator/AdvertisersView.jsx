@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { C, F } from "../../lib/constants.js";
+import { C, F, SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
 import { useToast } from "../../components/primitives/Toast.jsx";
 import { useConfirm } from "../../components/primitives/ConfirmModal.jsx";
@@ -45,17 +45,35 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
   const totalSpend = campaigns.reduce((s, c) => s + (c.budget ?? 0), 0);
   const activeCampaigns = campaigns.filter((c) => c.status === "active").length;
 
+  // These three actions used to write straight to profiles from the
+  // client (supabase.from("profiles").update(...)) -- the only UPDATE
+  // policy on that table is "own row only", so every one of these calls
+  // was silently affecting zero rows under RLS. Routed through
+  // operator-manage-advertiser, which verifies the operator/advertiser
+  // relationship server-side and applies the write with the service role.
+  async function manageAdvertiser(body) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return { error: "Not signed in" };
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/operator-manage-advertiser`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify(body),
+    });
+    const result = await res.json().catch(() => ({}));
+    return res.ok ? result : { error: result.error ?? "Request failed" };
+  }
+
   async function updateStatus(status) {
     const previousStatus = adv.status ?? "active";
     setSaving(true);
-    const { error: statusError } = await supabase.from("profiles").update({ status }).eq("id", adv.id);
+    const { error: statusError } = await manageAdvertiser({ action: "set_status", advertiser_id: adv.id, status });
     setSaving(false);
     if (statusError) { toast.error("Failed to update status."); return; }
     onUpdated({ ...adv, status });
     setModal(null);
     if (status === "suspended") {
       toast.undo(`${adv.name}'s account suspended.`, async () => {
-        const { error: undoError } = await supabase.from("profiles").update({ status: previousStatus }).eq("id", adv.id);
+        const { error: undoError } = await manageAdvertiser({ action: "set_status", advertiser_id: adv.id, status: previousStatus });
         if (undoError) { toast.error("Failed to undo suspension."); return; }
         onUpdated({ ...adv, status: previousStatus });
       });
@@ -72,11 +90,10 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
     });
     if (!ok) return;
     setSaving(true);
-    const newCredits = (adv.credits ?? 0) + amount;
-    const { error } = await supabase.from("profiles").update({ credits: newCredits }).eq("id", adv.id);
+    const { error, credits } = await manageAdvertiser({ action: "add_credits", advertiser_id: adv.id, amount });
     setSaving(false);
     if (error) { toast.error("Failed to add credits."); return; }
-    onUpdated({ ...adv, credits: newCredits });
+    onUpdated({ ...adv, credits });
     setCreditsAmount("");
     setModal(null);
   }
@@ -92,8 +109,9 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
     });
     if (!ok) return;
     setSaving(true);
-    await supabase.from("profiles").update({ rate_override: rate }).eq("id", adv.id);
+    const { error } = await manageAdvertiser({ action: "set_rate", advertiser_id: adv.id, rate });
     setSaving(false);
+    if (error) { toast.error("Failed to set rate."); return; }
     onUpdated({ ...adv, rate_override: rate });
     setModal(null);
   }
@@ -310,18 +328,32 @@ export default function AdvertisersView({ onImpersonate }) {
     if (!ok) return;
     const previousStatuses = new Map(advertisers.filter((a) => ids.includes(a.id)).map((a) => [a.id, a.status ?? "active"]));
     setBulkBusy(true);
-    const { error } = await supabase.from("profiles").update({ status }).in("id", ids);
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = session && await fetch(`${SUPABASE_FUNCTIONS_URL}/operator-manage-advertiser`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ action: "set_status", advertiser_ids: ids, status }),
+    });
     setBulkBusy(false);
-    if (error) { toast.error("Bulk update failed."); return; }
+    if (!res?.ok) { toast.error("Bulk update failed."); return; }
     setAdvertisers((prev) => prev.map((a) => ids.includes(a.id) ? { ...a, status } : a));
     setChecked(new Set());
     const label = `${ids.length} advertiser${ids.length !== 1 ? "s" : ""} ${status === "suspended" ? "suspended" : "reactivated"}.`;
     if (status === "suspended") {
       toast.undo(label, async () => {
+        const { data: { session: undoSession } } = await supabase.auth.getSession();
+        if (!undoSession) { toast.error("Some accounts failed to restore."); return; }
+        // Restore per-id rather than one shared status -- a selected
+        // advertiser's prior status isn't necessarily uniform across the
+        // batch (e.g. one was already suspended before this action).
         const undoResults = await Promise.all(ids.map((id) =>
-          supabase.from("profiles").update({ status: previousStatuses.get(id) }).eq("id", id)
+          fetch(`${SUPABASE_FUNCTIONS_URL}/operator-manage-advertiser`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${undoSession.access_token}` },
+            body: JSON.stringify({ action: "set_status", advertiser_id: id, status: previousStatuses.get(id) }),
+          })
         ));
-        if (undoResults.some((r) => r.error)) { toast.error("Some accounts failed to restore."); }
+        if (undoResults.some((r) => !r.ok)) { toast.error("Some accounts failed to restore."); }
         setAdvertisers((prev) => prev.map((a) => ids.includes(a.id) ? { ...a, status: previousStatuses.get(a.id) } : a));
       });
     } else {
