@@ -12,22 +12,38 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
+// Product-audit finding: this function had no CORS handling at all -- no
+// OPTIONS preflight response and no Access-Control-Allow-Origin on any real
+// response. A browser enforces that header on the actual response too, not
+// only the preflight, so a real operator's browser calling this (the new
+// Retry button on the Billing page's failed-transfer list, or any future
+// caller) would have gotten a CORS-blocked "Failed to fetch" for every
+// outcome -- the exact same gap charge-campaign's own CORS fix (see its
+// header comment) already documents and fixed there.
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, content-type",
+  "Content-Type": "application/json",
+};
+
 Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
+
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return new Response("Unauthorized", { status: 401 });
+  if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: CORS });
 
   const token = authHeader.replace("Bearer ", "");
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) return new Response("Unauthorized", { status: 401 });
+  if (authError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: CORS });
 
   // Triggers a real Stripe transfer -- cap repeated calls.
   if (await rateLimited(supabase, `trigger-payout:${user.id}`, { limit: 10, windowSeconds: 3600 })) {
-    return new Response("Too many requests", { status: 429 });
+    return new Response(JSON.stringify({ error: "Too many requests" }), { status: 429, headers: CORS });
   }
 
   const { periodStart, periodEnd } = await req.json();
   if (!periodStart || !periodEnd) {
-    return new Response("Missing periodStart or periodEnd", { status: 400 });
+    return new Response(JSON.stringify({ error: "Missing periodStart or periodEnd" }), { status: 400, headers: CORS });
   }
 
   // Get operator profile
@@ -40,7 +56,7 @@ Deno.serve(async (req: Request) => {
   if (!profile?.stripe_connect_account_id || profile.connect_status !== "active") {
     return new Response(
       JSON.stringify({ error: "Stripe Connect account not active" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      { status: 400, headers: CORS }
     );
   }
 
@@ -58,7 +74,7 @@ Deno.serve(async (req: Request) => {
   if (screenIds.length === 0) {
     return new Response(
       JSON.stringify({ error: "No screens found for this operator" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      { status: 400, headers: CORS }
     );
   }
 
@@ -102,17 +118,21 @@ Deno.serve(async (req: Request) => {
   const PLATFORM_FEE_RATE = 0.12;
   const revenueShare = profile.owner_revenue_share ?? 0.40;
 
-  // Group by currency to avoid cross-currency aggregation
+  // Group by currency to avoid cross-currency aggregation. Booking IDs are
+  // tracked alongside the running total so a successful transfer can
+  // reconcile operator_transfers for exactly the bookings it actually paid.
   const byCurrency = new Map<string, number>();
-  for (const c of unhandledCampaigns as { budget: number; currency?: string }[]) {
+  const bookingIdsByCurrency = new Map<string, string[]>();
+  for (const c of unhandledCampaigns as { id: string; budget: number; currency?: string }[]) {
     const cur = (c.currency ?? "cad").toLowerCase();
     byCurrency.set(cur, (byCurrency.get(cur) ?? 0) + (c.budget ?? 0));
+    bookingIdsByCurrency.set(cur, [...(bookingIdsByCurrency.get(cur) ?? []), c.id]);
   }
 
   if (byCurrency.size === 0) {
     return new Response(
       JSON.stringify({ error: "Nothing to pay out for this period" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      { status: 400, headers: CORS }
     );
   }
 
@@ -158,6 +178,27 @@ Deno.serve(async (req: Request) => {
       });
 
       transfers.push({ transferId: transfer.id, amount: payoutAmount / 100, currency: payoutCurrency });
+
+      // Product-audit finding: this used to only insert into `payouts`,
+      // never touching operator_transfers -- so a booking that failed in
+      // charge-campaign's distributeOperatorCuts, then got paid here on
+      // retry, stayed status='failed' forever: an already-paid booking
+      // permanently misreported as still failing on the Billing page's
+      // failed-transfer list. An UPDATE (not upsert) -- this is a
+      // reconciliation of rows distributeOperatorCuts already created, not
+      // a new source of truth for the per-booking amount, which
+      // distributeOperatorCuts computed per-operator-share-of-that-booking
+      // and this function only ever computes combined across every
+      // unhandled booking in the period.
+      const paidBookingIds = bookingIdsByCurrency.get(payoutCurrency) ?? [];
+      if (paidBookingIds.length > 0) {
+        await supabase
+          .from("operator_transfers")
+          .update({ status: "transferred", stripe_transfer_id: transfer.id })
+          .eq("operator_id", user.id)
+          .in("booking_id", paidBookingIds)
+          .eq("status", "failed");
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error(`[trigger-payout] transfer failed for currency ${payoutCurrency}:`, msg);
@@ -168,13 +209,13 @@ Deno.serve(async (req: Request) => {
   if (transfers.length === 0 && failures.length === 0) {
     return new Response(
       JSON.stringify({ error: "Nothing to pay out for this period" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      { status: 400, headers: CORS }
     );
   }
 
   const status = failures.length > 0 ? 207 : 200;
   return new Response(
     JSON.stringify({ ok: transfers.length > 0, transfers, failures }),
-    { status, headers: { "Content-Type": "application/json" } }
+    { status, headers: CORS }
   );
 });
