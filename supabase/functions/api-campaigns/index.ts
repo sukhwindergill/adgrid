@@ -177,7 +177,11 @@ Deno.serve(async (req: Request) => {
     if (!canCancelCampaign(campaign.status, campaign.payment_status)) {
       return json({ error: `Campaign cannot be cancelled once it is "${campaign.status}"` }, 409);
     }
-    const { error } = await supabase.from("bookings").update({ status: "cancelled" }).eq("id", campaignId);
+    // bookings_status_check has no 'cancelled' value -- 'completed' is the
+    // schema's only terminal status (same fix as manage-campaign-status's
+    // 'cancel' action / PR #249). This update was constraint-violating on
+    // every call, 500ing for every external API consumer that tried it.
+    const { error } = await supabase.from("bookings").update({ status: "completed" }).eq("id", campaignId);
     if (error) return json({ error: error.message }, 500);
     return json({ campaign_id: campaignId, cancelled: true });
   }
