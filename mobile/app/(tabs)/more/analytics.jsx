@@ -36,8 +36,15 @@ export default function AnalyticsScreen() {
       const { data: impressionRows } = await supabase
         .from('impression_events').select('people_count').in('screen_id', screenIds);
       const impressions = (impressionRows || []).reduce((a, r) => a + (r.people_count || 0), 0);
+      // Platform-audit finding: filtering status='approved' only excluded
+      // auto_approved campaigns entirely -- the same bug class fixed in
+      // useRevenue.js (mobile Revenue tab), undercounting "Active Campaigns"
+      // for any operator using an auto-approve policy. Every other
+      // campaign_screens status query in this codebase (distributeOperatorCuts,
+      // notification-cron, sweep-approvals, display-feed) treats
+      // approved/auto_approved as the same "cleared to run" state.
       const { count: active } = await supabase
-        .from('campaign_screens').select('id', { count: 'exact', head: true }).in('screen_id', screenIds).eq('status', 'approved');
+        .from('campaign_screens').select('id', { count: 'exact', head: true }).in('screen_id', screenIds).in('status', ['approved', 'auto_approved']);
       setStats({ totalImpressions: impressions || 0, activeCampaigns: active || 0 });
       setLoading(false);
     }
