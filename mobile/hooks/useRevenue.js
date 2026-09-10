@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { SCREEN_OWNER_SHARE } from '@adgrid/core';
+import { SCREEN_OWNER_SHARE, operatorNetRevenue } from '@adgrid/core';
 
 export function useRevenue(operatorId, screenIds, periodDays, ownerRevenueShare) {
   const revShare = ownerRevenueShare ?? SCREEN_OWNER_SHARE;
@@ -15,7 +15,7 @@ export function useRevenue(operatorId, screenIds, periodDays, ownerRevenueShare)
         .from('campaign_screens')
         .select('id, status, approved_at, campaign:bookings(id, name:campaign_name, advertiser_name, budget, start_date)')
         .in('screen_id', screenIds)
-        .eq('status', 'approved');
+        .in('status', ['approved', 'auto_approved']);
       if (periodDays) {
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - periodDays);
@@ -28,6 +28,6 @@ export function useRevenue(operatorId, screenIds, periodDays, ownerRevenueShare)
     load();
   }, [operatorId, JSON.stringify(screenIds), periodDays]);
 
-  const totalRevenue = campaigns.reduce((sum, c) => sum + (c.campaign?.budget || 0) * revShare, 0);
+  const totalRevenue = campaigns.reduce((sum, c) => sum + operatorNetRevenue(c.campaign?.budget, revShare), 0);
   return { campaigns, loading, totalRevenue };
 }
