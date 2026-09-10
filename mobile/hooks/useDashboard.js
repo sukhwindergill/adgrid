@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { SCREEN_OWNER_SHARE } from '@adgrid/core';
+import { SCREEN_OWNER_SHARE, operatorNetRevenue } from '@adgrid/core';
 
 function isLive(screen) {
   if (!screen.last_seen || screen.health_status === 'degraded') return false;
@@ -35,7 +35,7 @@ export function useDashboard(operatorId, ownerRevenueShare) {
         if (campaignIds.length > 0) {
           const { data: bookings } = await supabase
             .from('bookings').select('budget').in('id', campaignIds);
-          revenueThisMonth = (bookings || []).reduce((sum, b) => sum + (b.budget || 0) * revShare, 0);
+          revenueThisMonth = (bookings || []).reduce((sum, b) => sum + operatorNetRevenue(b.budget, revShare), 0);
         }
       }
       setData({ totalScreens: screens?.length || 0, liveScreens, pendingApprovals, revenueThisMonth });

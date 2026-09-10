@@ -4,7 +4,7 @@ import { Card } from '../ui/Card';
 import { Btn } from '../ui/Btn';
 import { Badge } from '../ui/Badge';
 import { C, F } from '../../lib/tokens';
-import { SCREEN_OWNER_SHARE } from '@adgrid/core';
+import { SCREEN_OWNER_SHARE, operatorNetRevenue } from '@adgrid/core';
 
 const REJECT_REASONS = [
   'Inappropriate content',
@@ -21,7 +21,7 @@ export function ApprovalCard({ row, onApprove, onReject, ownerRevenueShare }) {
   const creative = row.campaign?.media_url
     ? { url: row.campaign.media_url, headline: row.campaign.headline }
     : null;
-  const estimatedRevenue = ((row.campaign?.budget || 0) * (ownerRevenueShare ?? SCREEN_OWNER_SHARE)).toFixed(2);
+  const estimatedRevenue = operatorNetRevenue(row.campaign?.budget, ownerRevenueShare ?? SCREEN_OWNER_SHARE).toFixed(2);
 
   async function handleApprove() {
     setActing(true);

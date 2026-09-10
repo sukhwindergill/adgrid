@@ -10,7 +10,7 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { PillFilter } from '../../components/ui/PillFilter';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { C, F } from '../../lib/tokens';
-import { formatCurrency, SCREEN_OWNER_SHARE } from '@adgrid/core';
+import { formatCurrency, SCREEN_OWNER_SHARE, operatorNetRevenue } from '@adgrid/core';
 
 const PERIODS = [
   { label: '30d', value: 30 }, { label: '90d', value: 90 },
@@ -47,7 +47,7 @@ export default function RevenueScreen() {
                 {item.campaign?.name}
               </Text>
               <Text style={[{ fontFamily: F.sansSemi, color: C.green, fontSize: 14 }]}>
-                +{formatCurrency((item.campaign?.budget || 0) * (profile?.owner_revenue_share ?? SCREEN_OWNER_SHARE), 'cad')}
+                +{formatCurrency(operatorNetRevenue(item.campaign?.budget, profile?.owner_revenue_share ?? SCREEN_OWNER_SHARE), 'cad')}
               </Text>
             </View>
             <Text style={[{ fontFamily: F.sans, color: C.textSub, fontSize: 12 }]}>{item.campaign?.advertiser_name}</Text>
