@@ -182,9 +182,25 @@ Deno.serve(async (req: Request) => {
     }
 
     try {
+      // Product/financial-audit finding: every other Stripe money-moving call
+      // in this codebase (charge-campaign, marketplace-book,
+      // distributeOperatorCuts, resolve-dispute, trigger-payout) passes an
+      // idempotencyKey specifically so a double-click or a client-side
+      // network-timeout retry can't create two real charges/transfers for
+      // the same intended action -- this was the one payout call site that
+      // didn't. Stripe's own available-balance check happens to catch the
+      // common case (doPayoutAll always requests the full available
+      // balance, so a second concurrent request usually finds ~0 left), but
+      // that's an incidental side effect, not a real guarantee -- a request
+      // for less than the full balance, or two requests landing in the same
+      // balance-check window, would not be caught by it. Bucketed to the
+      // current minute: a genuine repeat payout request a minute or more
+      // later (new revenue accrued, an earlier one already completed) still
+      // goes through as its own request.
+      const idempotencyKey = `operator-payout:${user.id}:${Math.floor(Date.now() / 60000)}:${Math.round(amount * 100)}:${currency}`;
       const payout = await stripe.payouts.create(
         { amount: Math.round(amount * 100), currency },
-        { stripeAccount: profile.stripe_connect_account_id },
+        { stripeAccount: profile.stripe_connect_account_id, idempotencyKey },
       );
 
       return new Response(
