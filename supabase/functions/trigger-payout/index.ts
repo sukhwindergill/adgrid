@@ -143,19 +143,40 @@ Deno.serve(async (req: Request) => {
     const payoutAmount = Math.round(totalBudget * (1 - PLATFORM_FEE_RATE) * revenueShare * 100); // cents
     if (payoutAmount <= 0) continue;
 
-    // Skip if already transferred for this currency in this period
-    const { data: existingForCurrency } = await supabase
+    // Security/financial-audit fix: claim this (operator, period, currency)
+    // key with a real DB row *before* ever calling Stripe, instead of a
+    // SELECT-then-insert check with the actual insert only happening after
+    // the transfer succeeded. That left a race window where two concurrent
+    // calls (a double-click, two tabs, or two direct API calls with the
+    // operator's own JWT) could both pass the "not already transferred"
+    // check and both create a real Stripe transfer -- a genuine
+    // double-payout. payouts_operator_period_currency_active_uidx (a
+    // partial unique index on non-'failed' rows) makes this insert the
+    // atomic lock: only one caller's insert can succeed for this key while
+    // a pending/transferred row for it exists.
+    const { data: claim, error: claimError } = await supabase
       .from("payouts")
+      .insert({
+        operator_id: user.id,
+        amount: payoutAmount / 100,
+        currency: payoutCurrency,
+        status: "pending",
+        period_start: periodStart,
+        period_end: periodEnd,
+      })
       .select("id")
-      .eq("operator_id", user.id)
-      .eq("period_start", periodStart)
-      .eq("period_end", periodEnd)
-      .eq("currency", payoutCurrency)
-      .eq("status", "transferred")
-      .maybeSingle();
+      .single();
 
-    if (existingForCurrency) {
-      console.log(`[trigger-payout] already transferred ${payoutCurrency} for this period — skipping`);
+    if (claimError) {
+      // 23505 = unique_violation -- another request already holds (or
+      // already completed) this exact payout. Anything else is a real
+      // infra error; either way, never call Stripe without the lock.
+      if (claimError.code !== "23505") {
+        console.error(`[trigger-payout] claim insert failed for ${payoutCurrency}:`, claimError.message);
+        failures.push({ currency: payoutCurrency, error: "Could not start payout processing. Please try again." });
+      } else {
+        console.log(`[trigger-payout] ${payoutCurrency} already transferred or in progress for this period — skipping`);
+      }
       continue;
     }
 
@@ -167,15 +188,9 @@ Deno.serve(async (req: Request) => {
         metadata: { operator_id: user.id, period_start: periodStart, period_end: periodEnd, currency: payoutCurrency },
       });
 
-      await supabase.from("payouts").insert({
-        operator_id: user.id,
-        amount: payoutAmount / 100,
-        currency: payoutCurrency,
-        stripe_transfer_id: transfer.id,
-        status: "transferred",
-        period_start: periodStart,
-        period_end: periodEnd,
-      });
+      await supabase.from("payouts")
+        .update({ stripe_transfer_id: transfer.id, status: "transferred" })
+        .eq("id", claim.id);
 
       transfers.push({ transferId: transfer.id, amount: payoutAmount / 100, currency: payoutCurrency });
 
@@ -202,6 +217,10 @@ Deno.serve(async (req: Request) => {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error(`[trigger-payout] transfer failed for currency ${payoutCurrency}:`, msg);
+      // Release the claim -- a 'failed' row doesn't hold the unique-index
+      // lock, so a genuine retry for this same period/currency can claim
+      // it again instead of being permanently blocked by this attempt.
+      await supabase.from("payouts").update({ status: "failed" }).eq("id", claim.id);
       failures.push({ currency: payoutCurrency, error: msg });
     }
   }
