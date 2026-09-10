@@ -41,7 +41,13 @@ export default function AdvertisersScreen() {
         .from('campaign_screens')
         .select('status, campaign:bookings(id, name:campaign_name, budget, advertiser_id, advertiser_name, advertiser:profiles!bookings_advertiser_id_fkey(email))')
         .in('screen_id', screenIds)
-        .in('status', ['approved', 'pending']);
+        // Platform-audit finding: 'auto_approved' rows (any campaign cleared
+        // by an operator_approval_rules policy instead of a manual tap) were
+        // excluded from this query entirely -- not just uncounted as
+        // "approved" below, but missing from `data` altogether, so an
+        // advertiser whose every campaign auto-approved never appeared on
+        // this screen at all. Same bug class as useRevenue.js/analytics.jsx.
+        .in('status', ['approved', 'auto_approved', 'pending']);
       if (err) { setError(true); setLoading(false); return; }
       const byAdvertiser = {};
       (data || []).forEach(cs => {
@@ -52,7 +58,7 @@ export default function AdvertisersScreen() {
           byAdvertiser[advId] = { id: advId, full_name: campaign.advertiser_name, email: campaign.advertiser?.email, campaignNames: [], approved: 0, pending: 0 };
         }
         byAdvertiser[advId].campaignNames.push(campaign.name);
-        if (cs.status === 'approved') byAdvertiser[advId].approved++;
+        if (cs.status === 'approved' || cs.status === 'auto_approved') byAdvertiser[advId].approved++;
         if (cs.status === 'pending') byAdvertiser[advId].pending++;
       });
       setAdvertisers(Object.values(byAdvertiser));
