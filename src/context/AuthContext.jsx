@@ -182,30 +182,39 @@ export function AuthProvider({ children }) {
     return { data, error }
   }
 
-  async function authSecurity(action, email) {
-    // Fire-and-forget-ish: a failure here (network blip, cold start) must
-    // never block the user's actual sign-in/reset flow, so every call is
-    // wrapped and its result treated as best-effort.
+  async function authSecurity(action, body) {
+    // Security-audit fix: sign_in and request_reset now perform the real
+    // GoTrue call *inside* the edge function (see its own comment) instead
+    // of the client reporting an outcome after calling GoTrue itself --
+    // that reported outcome was never verified, letting anyone forge
+    // login_failed events for an email they never held a password for and
+    // force a real 15-minute lockout on the real user. That means this can
+    // no longer be a swallow-everything fire-and-forget call for those two
+    // actions: a network failure here means the sign-in/reset attempt
+    // itself failed, not just a courtesy log, so it must surface as a real
+    // error rather than silently reporting success.
     try {
-      const { data } = await supabase.functions.invoke('auth-security', { body: { action, email } })
+      const { data, error } = await supabase.functions.invoke('auth-security', { body: { action, ...body } })
+      if (error) return { error: { message: error.message || 'Something went wrong. Please try again.' } }
       return data ?? {}
-    } catch {
-      return {}
+    } catch (err) {
+      return { error: { message: err?.message || 'Something went wrong. Please try again.' } }
     }
   }
 
   async function signIn(email, password) {
-    const { locked } = await authSecurity('check_lockout', email)
-    if (locked) {
-      return { data: null, error: { message: 'Too many failed attempts. Try again in 15 minutes.' } }
-    }
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const { session, error } = await authSecurity('sign_in', { email, password })
     if (error) {
-      await authSecurity('record_login_failure', email)
-    } else {
-      await authSecurity('record_login_success', email)
+      return { data: null, error }
     }
-    return { data, error }
+    if (session) {
+      const { error: setErr } = await supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+      })
+      if (setErr) return { data: null, error: setErr }
+    }
+    return { data: { session }, error: null }
   }
 
   async function signOut() {
@@ -231,16 +240,12 @@ export function AuthProvider({ children }) {
   }
 
   async function resetPasswordForEmail(email) {
-    const { allowed } = await authSecurity('check_reset_throttle', email)
-    if (allowed === false) {
-      // Return a shape identical to a normal Supabase result so the caller's
-      // generic success copy still shows -- must not reveal that throttling
-      // kicked in, or that becomes its own enumeration/probing signal.
-      return { data: null, error: null }
-    }
-    const result = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin })
-    await authSecurity('record_reset_request', email)
-    return result
+    // request_reset performs the real resetPasswordForEmail call itself and
+    // always responds { ok: true } when throttled (see its own comment) --
+    // so this never reveals throttle state, only a genuine failure (bad
+    // request, GoTrue error, network) surfaces as `error`.
+    const { error } = await authSecurity('request_reset', { email })
+    return { data: null, error: error ?? null }
   }
 
   async function updatePassword(password) {
