@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase.js';
+import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
@@ -77,20 +78,33 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
               e.preventDefault(); e.stopPropagation();
               const ok = await confirm({
                 title: 'Cancel campaign?',
-                message: `Cancel campaign "${c.advertiser}"? You can undo this from the toast right after.`,
+                message: `Cancel campaign "${c.advertiser}"? This stops it immediately and can't be undone -- unused budget will be reviewed for refund per your agreement.`,
                 confirmLabel: 'Cancel Campaign',
                 danger: true,
               });
               if (!ok) return;
-              const previousStatus = c.status;
-              const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', c.id);
-              if (error) return;
-              setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: 'cancelled' } : x));
-              toast.undo(`Campaign "${c.advertiser}" cancelled.`, async () => {
-                const { error: undoError } = await supabase.from('bookings').update({ status: previousStatus }).eq('id', c.id);
-                if (undoError) { toast.error('Failed to undo cancellation.'); return; }
-                setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: previousStatus } : x));
+              // Was a direct bookings.update({status:'cancelled'}) -- doubly
+              // broken: authenticated has no column-level UPDATE grant on
+              // bookings.status at all, and 'cancelled' isn't even a value
+              // bookings_status_check allows ('completed' is the schema's
+              // only terminal status). The error was silently swallowed
+              // (`if (error) return;`), so this button did nothing with no
+              // feedback. Routed through manage-campaign-status instead --
+              // see its header comment for the full history. No undo here
+              // (unlike the bulk suspend/reactivate pattern elsewhere):
+              // 'completed' is terminal, and the Danger Zone's own copy
+              // already warns cancelling starts a real refund review --
+              // silently resuming out from under that would be its own bug.
+              const { data: { session } } = await supabase.auth.getSession();
+              const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/manage-campaign-status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+                body: JSON.stringify({ campaign_id: c.id, action: 'cancel' }),
               });
+              const json = await res.json().catch(() => ({}));
+              if (!res.ok) { toast.error(json.error ?? 'Failed to cancel campaign.'); return; }
+              setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: json.status } : x));
+              toast.success(`Campaign "${c.advertiser}" cancelled.`);
             }}>✕ Cancel</Btn>
           </div>
         ) : (
