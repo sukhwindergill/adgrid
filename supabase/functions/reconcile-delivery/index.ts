@@ -172,14 +172,16 @@ Deno.serve(async (req: Request) => {
         }
         rowsWritten++;
 
-        // Issue the credit exactly once per reconciliation row.
+        // Issue the credit exactly once per reconciliation row. Atomic RPC,
+        // not a read-then-write -- reconcile-delivery and sweep-approvals
+        // are two independently-scheduled crons that can credit the same
+        // advertiser around the same time, and a `SELECT credits` followed
+        // by a computed `UPDATE` is a lost-update race between them.
         if (credit > 0 && !existing?.credited_at) {
-          const { data: profile } = await supabase
-            .from("profiles").select("credits").eq("id", billedTo).single();
-
-          const newBalance = Number(profile?.credits ?? 0) + credit;
-          const { error: creditError } = await supabase
-            .from("profiles").update({ credits: newBalance }).eq("id", billedTo);
+          const { error: creditError } = await supabase.rpc("increment_profile_credits", {
+            p_profile_id: billedTo,
+            p_delta: credit,
+          });
 
           if (!creditError) {
             await supabase

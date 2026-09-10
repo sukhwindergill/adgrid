@@ -206,9 +206,14 @@ Deno.serve(async (_req: Request) => {
 
       if (credit > 0) {
         const billedTo = (campaign.billed_to_profile_id ?? campaign.advertiser_id) as string;
-        const { data: profile } = await supabase.from("profiles").select("credits").eq("id", billedTo).single();
-        const newBalance = Number(profile?.credits ?? 0) + credit;
-        const { error } = await supabase.from("profiles").update({ credits: newBalance }).eq("id", billedTo);
+        // Atomic RPC, not a read-then-write -- see reconcile-delivery's own
+        // comment on this: two independently-scheduled crons can credit the
+        // same advertiser around the same time, and a computed UPDATE loses
+        // whichever write commits first.
+        const { error } = await supabase.rpc("increment_profile_credits", {
+          p_profile_id: billedTo,
+          p_delta: credit,
+        });
         if (!error) creditLabel = `${credit.toFixed(2)} ${String(campaign.currency ?? "CAD").toUpperCase()}`;
       }
     }
