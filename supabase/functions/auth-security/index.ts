@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { requestTooLarge } from "../_shared/requestSize.ts";
+import { readJsonLimited, RequestTooLargeError } from "../_shared/requestSize.ts";
 import { rateLimited, rateLimitResponse, clientIp } from "../_shared/rateLimit.ts";
 
 // Backs three related security controls with one append-only ledger
@@ -59,7 +59,18 @@ async function logEvent(eventType: string, email: string | null, metadata: Recor
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: CORS });
-  if (requestTooLarge(req, 8192)) return new Response(JSON.stringify({ error: "Payload too large" }), { status: 413, headers: CORS });
+  // Stream-enforced against the body's actual byte count, not just a
+  // declared Content-Length header -- see readJsonLimited's own comment on
+  // why the header alone is not a real cap against an adversarial caller.
+  let body: Record<string, unknown>;
+  try {
+    body = await readJsonLimited(req, 8192) as Record<string, unknown>;
+  } catch (err) {
+    if (err instanceof RequestTooLargeError) {
+      return new Response(JSON.stringify({ error: "Payload too large" }), { status: 413, headers: CORS });
+    }
+    return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: CORS });
+  }
 
   // The per-email lockout/throttle logic below caps abuse of one target
   // account, but nothing capped the endpoint itself -- an attacker could
@@ -68,13 +79,6 @@ Deno.serve(async (req: Request) => {
   // tripping. Outer per-IP guard closes that.
   if (await rateLimited(supabase, `auth-security:${clientIp(req)}`, { limit: 30, windowSeconds: 60 })) {
     return rateLimitResponse(CORS);
-  }
-
-  let body: Record<string, unknown>;
-  try {
-    body = await req.json();
-  } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: CORS });
   }
 
   const action = body.action;
