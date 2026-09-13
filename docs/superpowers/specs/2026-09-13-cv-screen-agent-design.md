@@ -94,6 +94,41 @@ so one crashing never takes down the other:
      the inner one so a transient camera-open failure doesn't require a
      full process restart.
 
+## Model accuracy caveat
+
+The well-established small CPU-only age/gender models (Caffe, Levi-Hassner
+lineage) are known to be inaccurate and biased across lighting conditions
+and skin tones — this is a limitation of every model in this weight class,
+not a implementation bug to fix. Treat `age_18_24`...`gender_unknown` as
+directional/approximate in any UI or investor-facing material that surfaces
+them (e.g. label as "estimated" in `CV Insights` tab), not as ground truth.
+Do not silently upgrade this claim later without re-validating the model.
+
+## Device reliability: SD card, mounting, clock
+
+Three environmental issues that don't change the architecture above but
+will cause real field failures if unaddressed:
+
+- **SD card corruption on power loss.** A Pi running unattended 24/7 with no
+  graceful shutdown risks a corrupted filesystem on a yanked cord — the
+  single most common cause of "the screen just stopped working, no error."
+  Mitigate with a read-only root filesystem (overlay FS, writes only to a
+  small tmpfs/writable partition) or at minimum `fs.data=writeback` +
+  aggressive log rotation so logs alone don't wear/corrupt the card. Decide
+  which before mass-provisioning devices, not after the first field failure.
+- **Camera mounting/FOV isn't specified.** Detection accuracy depends
+  entirely on camera height and angle relative to actual foot traffic.
+  Setup Guide needs an explicit mounting spec (height range, angle,
+  unobstructed line of sight) alongside the existing venue-signage
+  requirement — a camera aimed at the ceiling produces confidently wrong
+  zero-counts, not an error.
+- **Clock sync.** `window_start`/`window_end` timestamps assume the Pi's
+  clock is correct. Pi 5 has no onboard RTC battery by default — a bad NTP
+  sync at boot (e.g. network not up yet) can silently skew every timestamp
+  for that boot. Confirm NTP client is enabled and blocks agent startup
+  until synced (or accept a short startup delay) rather than starting on a
+  wrong clock.
+
 ## Provisioning: how the agent gets its screen_token
 
 Kiosk browser gets its token today via the existing pairing flow (operator
