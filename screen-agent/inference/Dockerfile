@@ -8,11 +8,11 @@ RUN apt-get update && apt-get install -y \
 # DeepFace for demographic estimation (age/gender)
 # OpenCV for image reading
 RUN pip install --no-cache-dir \
-    opencv-python-headless \
-    mediapipe \
-    deepface \
-    tf-keras \
-    numpy
+    opencv-python-headless==4.10.0.84 \
+    mediapipe==0.10.14 \
+    deepface==0.0.93 \
+    tf-keras==2.17.0 \
+    numpy==1.26.4
 
 WORKDIR /app
 COPY detector.py .

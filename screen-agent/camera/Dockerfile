@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y \
     v4l-utils \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir opencv-python-headless
+RUN pip install --no-cache-dir opencv-python-headless==4.10.0.84
 
 WORKDIR /app
 COPY capture.py .

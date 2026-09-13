@@ -5,11 +5,19 @@ version: "3.9"
 # Handles: ad display feed polling, computer vision impression tracking,
 # and demographic estimation — all processing stays local.
 # Only aggregated anonymous stats leave the device.
-
+#
+# Image tag is pinned to a specific commit SHA, not `latest` — CI
+# (.github/workflows/docker-publish.yml) pushes every image tagged both
+# `:latest` and `:<github.sha>` on every merge to main. Floating on `:latest`
+# means a bad merge auto-deploys to every live screen on its next restart
+# with no pinned version to roll back to. SCREEN_AGENT_TAG defaults to the
+# commit that last touched screen-agent/ at the time this was pinned; bump
+# it deliberately (in .env) when you want a fleet to pick up a newer build,
+# never by letting it silently float.
 services:
   # ── Camera capture service ─────────────────────────────────────────────────
   camera:
-    image: sgill16/screen-agent-camera:latest
+    image: sgill16/screen-agent-camera:${SCREEN_AGENT_TAG:-559b9a7bf32bd1067e43f3956325ceb28183f09b}
     build: ./camera
     volumes:
       - frame_data:/frames
@@ -22,7 +30,7 @@ services:
 
   # ── CV inference service ───────────────────────────────────────────────────
   inference:
-    image: sgill16/screen-agent-inference:latest
+    image: sgill16/screen-agent-inference:${SCREEN_AGENT_TAG:-559b9a7bf32bd1067e43f3956325ceb28183f09b}
     build: ./inference
     volumes:
       - frame_data:/frames
@@ -38,7 +46,7 @@ services:
 
   # ── Event pusher ───────────────────────────────────────────────────────────
   pusher:
-    image: sgill16/screen-agent-pusher:latest
+    image: sgill16/screen-agent-pusher:${SCREEN_AGENT_TAG:-559b9a7bf32bd1067e43f3956325ceb28183f09b}
     build: ./pusher
     volumes:
       - frame_data:/frames
