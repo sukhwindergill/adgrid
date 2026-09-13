@@ -74,12 +74,26 @@ so one crashing never takes down the other:
      re-voted every frame.
    - Tracks a simple attention proxy (fraction of detected faces with a
      forward-facing head pose vs. profile/turned-away) as `attention_score`
-     (0-1, matches existing clamp range)
+     (0-1, matches existing clamp range). **Open question for the
+     implementation plan, not resolved here:** a face detector's bounding
+     box alone doesn't give head pose — this needs either a landmark/pose
+     model (added inference cost) or a cheaper proxy (e.g. face
+     width:height ratio as a symmetry heuristic for "facing the camera").
+     Pick one during implementation and note the tradeoff in code, don't
+     silently ship whichever was easiest.
    - Every `PUSH_INTERVAL_SECONDS` (default 30s, matching the existing
      comment in `ingest-impressions`), POSTs one summary to
      `ingest-impressions` with `screen_token`, `people_count`,
-     `dwell_seconds` (time window covered), `attention_score`, and the
-     age/gender bucket counts. No `campaign_id` (see non-goals).
+     **`dwell_seconds` = the actual average track lifetime (last-seen minus
+     first-seen) across tracks that ended within this window** — not the
+     30s poll interval itself. The browser player reuses this same field
+     as a window-bookkeeping placeholder (it has no real per-visitor dwell
+     data to send), but the DB column (`avg_dwell_seconds`) is consumed
+     elsewhere as a genuine audience-behavior stat (CV Insights,
+     `footfallCurves.js`). Sending a constant 30s from every CV agent would
+     make that number meaningless everywhere it's read. `attention_score`,
+     and the age/gender bucket counts also included. No `campaign_id` (see
+     non-goals).
    - Separately POSTs `{ screen_token, heartbeat_only: true }` on its own
      cadence so `cv_last_seen` stays fresh independent of whether an ad is
      even playing.
@@ -122,6 +136,12 @@ will cause real field failures if unaddressed:
   unobstructed line of sight) alongside the existing venue-signage
   requirement — a camera aimed at the ceiling produces confidently wrong
   zero-counts, not an error.
+- **CPU contention with the kiosk browser.** Chromium's video decode and the
+  CV inference loop share one Pi 5 CPU with no isolation — under load,
+  inference could stutter ad playback (the thing actually being sold).
+  Run `event_pusher.py` at a lower scheduling priority (`nice`/cgroup CPU
+  weight) so playback always wins contention; verify this on-device once
+  hardware arrives, don't assume it from spec alone.
 - **Clock sync.** `window_start`/`window_end` timestamps assume the Pi's
   clock is correct. Pi 5 has no onboard RTC battery by default — a bad NTP
   sync at boot (e.g. network not up yet) can silently skew every timestamp
