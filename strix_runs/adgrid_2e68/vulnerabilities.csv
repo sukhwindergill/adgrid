@@ -1,0 +1,8 @@
+id,title,severity,timestamp,file
+vuln-0002,CVE-2026-14257 in brace-expansion 1.1.15 / 2.1.1 (memory-exhaustion DoS),HIGH,2026-08-31 04:35:04 UTC,vulnerabilities/vuln-0002.md
+vuln-0003,CVE-2026-69152 in brace-expansion 1.1.15 / 2.1.1 (maxLength bypass DoS),HIGH,2026-08-31 04:35:18 UTC,vulnerabilities/vuln-0003.md
+vuln-0004,CVE-2025-71329 in image-size 1.2.1 (infinite loop via zero-size box in JXL/HEIF parser),HIGH,2026-08-31 04:35:34 UTC,vulnerabilities/vuln-0004.md
+vuln-0005,CVE-2025-71330 in image-size 1.2.1 (infinite loop via crafted ICNS buffer),HIGH,2026-08-31 04:35:47 UTC,vulnerabilities/vuln-0005.md
+vuln-0006,CVE-2026-59869 in js-yaml 3.14.2 / 4.2.0 (quadratic CPU via merge-key chains),HIGH,2026-08-31 04:36:03 UTC,vulnerabilities/vuln-0006.md
+vuln-0001,CVE-2026-13149 in brace-expansion 1.1.15 / 2.1.1 (ReDoS-style exponential expansion DoS),MEDIUM,2026-08-31 04:34:47 UTC,vulnerabilities/vuln-0001.md
+vuln-0007,CVE-2026-53550 in js-yaml 3.14.2 (quadratic CPU via repeated merge-key aliases),MEDIUM,2026-08-31 04:36:17 UTC,vulnerabilities/vuln-0007.md

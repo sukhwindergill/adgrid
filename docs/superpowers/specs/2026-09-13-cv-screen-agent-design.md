@@ -62,9 +62,16 @@ so one crashing never takes down the other:
      ~5MB) + a small age/gender Caffe model (well-established, CPU-only,
      no internet dependency once downloaded at setup) — both run comfortably
      within a Pi 5's CPU budget at 2-5 FPS sampling.
-   - Maintains an in-memory rolling count of unique faces seen (dedup within
-     a short window so one person standing still isn't counted every frame)
-     bucketed into the age/gender buckets the schema already has
+   - Maintains a lightweight centroid tracker (match each sampled frame's
+     detections to existing tracks by nearest centroid within a distance
+     threshold; a track that goes unmatched for N sampling intervals is
+     considered gone) so the same person standing in frame for the whole
+     30s window is counted **once**, not once per sampled frame. Raw
+     per-frame detections without this tracker overcount by 5-10x for
+     anyone who lingers — this is not optional polish, the reported
+     `people_count` is meaningless without it. Age/gender bucket is
+     assigned once per track (first confident classification), not
+     re-voted every frame.
    - Tracks a simple attention proxy (fraction of detected faces with a
      forward-facing head pose vs. profile/turned-away) as `attention_score`
      (0-1, matches existing clamp range)
@@ -86,6 +93,30 @@ so one crashing never takes down the other:
      than dying silently — systemd restart is the outer safety net, this is
      the inner one so a transient camera-open failure doesn't require a
      full process restart.
+
+## Provisioning: how the agent gets its screen_token
+
+Kiosk browser gets its token today via the existing pairing flow (operator
+scans/enters it once, browser holds it). `event_pusher.py` is a fully
+separate process and needs the **same** token to authenticate to
+`ingest-impressions` — this has no answer yet in the current pairing design
+and is part of this build, not a detail to leave implicit:
+
+- At provisioning time (flashing/first boot), write the screen's token to a
+  local config file (e.g. `/etc/adgrid/screen_token`) as part of the same
+  setup step that configures the kiosk browser's URL — one provisioning
+  script, one token, both processes read from the same source of truth.
+  Do not have the agent scrape the token out of the browser's storage
+  (fragile, couples two independent processes back together).
+- **Token rotation:** if an operator resets/re-pairs a screen, the kiosk
+  browser's flow updates its own copy, but `event_pusher.py` has no
+  mechanism to notice unless one is built. Left unhandled, the agent
+  silently 401s against `ingest-impressions` forever and `cv_last_seen`
+  goes stale with no operator-visible signal beyond that (no distinct
+  "bad token" alert exists today). Fix: the agent treats a 401 from
+  `ingest-impressions` as "re-read the token file" (not just "retry the
+  same request") — pairs with the provisioning script also being the tool
+  an operator reruns on re-pair, writing a fresh token to that same file.
 
 ## Data flow
 
@@ -112,6 +143,8 @@ correctly ahead of the agent that would actually use it.
   code comment, so no backend change needed
 - Model inference errors on a bad frame → skip that frame, don't crash the
   process
+- 401 from `ingest-impressions` → re-read the token file rather than
+  blind-retrying the same stale token (see Provisioning section)
 
 ## Testing
 

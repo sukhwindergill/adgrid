@@ -1,0 +1,495 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Strix",
+          "informationUri": "https://strix.ai",
+          "rules": [
+            {
+              "id": "CWE-407",
+              "name": "CVE-2026-13149 in brace-expansion 1.1.15 / 2.1.1 (ReDoS-style exponential expansion DoS)",
+              "shortDescription": {
+                "text": "CVE-2026-13149 in brace-expansion 1.1.15 / 2.1.1 (ReDoS-style exponential expansion DoS)"
+              },
+              "fullDescription": {
+                "text": "The `brace-expansion` package resolved transitively into the repository's `pnpm-lock.yaml` at two vulnerable installations — `1.1.15` and `2.1.1` — is affected by **CVE-2026-13149**. The `expand()` function exhibits exponential-time complexity when processing a crafted string containing many consecutive non-expanding `{}` brace groups, allowing an attacker-controlled input to block the Node.js event loop."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "help": {
+                "text": "The `brace-expansion` package resolved transitively into the repository's `pnpm-lock.yaml` at two vulnerable installations — `1.1.15` and `2.1.1` — is affected by **CVE-2026-13149**. The `expand()` function exhibits exponential-time complexity when processing a crafted string containing many consecutive non-expanding `{}` brace groups, allowing an attacker-controlled input to block the Node.js event loop.\n\nIf a code path in the build/CLI tooling (Metro bundler's `minimatch`/`glob` usage during Expo/React Native builds) ever passes attacker-influenced glob patterns to `brace-expansion.expand()`, an attacker could trigger CPU exhaustion and stall the bundler/build process (denial of service of the build pipeline). No confidentiality or integrity impact is associated with this CVE.\n\nBump the mobile workspace's `react-native` and `expo` dependencies to versions that resolve a patched `minimatch`/`glob`/`brace-expansion` chain, or force the resolution directly with a pnpm `pnpm.overrides` entry pinning `brace-expansion` to `>=1.1.16 <2.0.0 || >=2.1.2` in the root `package.json`. Re-run `pnpm install` and confirm the lockfile no longer resolves the vulnerable versions.",
+                "markdown": "The `brace-expansion` package resolved transitively into the repository's `pnpm-lock.yaml` at two vulnerable installations — `1.1.15` and `2.1.1` — is affected by **CVE-2026-13149**. The `expand()` function exhibits exponential-time complexity when processing a crafted string containing many consecutive non-expanding `{}` brace groups, allowing an attacker-controlled input to block the Node.js event loop.\n\nIf a code path in the build/CLI tooling (Metro bundler's `minimatch`/`glob` usage during Expo/React Native builds) ever passes attacker-influenced glob patterns to `brace-expansion.expand()`, an attacker could trigger CPU exhaustion and stall the bundler/build process (denial of service of the build pipeline). No confidentiality or integrity impact is associated with this CVE.\n\nBump the mobile workspace's `react-native` and `expo` dependencies to versions that resolve a patched `minimatch`/`glob`/`brace-expansion` chain, or force the resolution directly with a pnpm `pnpm.overrides` entry pinning `brace-expansion` to `>=1.1.16 <2.0.0 || >=2.1.2` in the root `package.json`. Re-run `pnpm install` and confirm the lockfile no longer resolves the vulnerable versions."
+              },
+              "properties": {
+                "security-severity": "5.3",
+                "tags": [
+                  "security",
+                  "CWE-407",
+                  "CVE-2026-13149",
+                  "stride:T",
+                  "stride:I"
+                ]
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/407.html"
+            },
+            {
+              "id": "CWE-400",
+              "name": "CVE-2026-14257 in brace-expansion 1.1.15 / 2.1.1 (memory-exhaustion DoS)",
+              "shortDescription": {
+                "text": "CVE-2026-14257 in brace-expansion 1.1.15 / 2.1.1 (memory-exhaustion DoS)"
+              },
+              "fullDescription": {
+                "text": "The transitively-resolved `brace-expansion` installations (`1.1.15` and `2.1.1`) in the repository's `pnpm-lock.yaml` are affected by **CVE-2026-14257**. The `expand()` function bounds the result *count* via a `max` option but not the *length* of each result string, so chaining multiple brace groups lets an attacker keep the count under the limit while making each result progressively longer, causing memory exhaustion."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "help": {
+                "text": "The transitively-resolved `brace-expansion` installations (`1.1.15` and `2.1.1`) in the repository's `pnpm-lock.yaml` are affected by **CVE-2026-14257**. The `expand()` function bounds the result *count* via a `max` option but not the *length* of each result string, so chaining multiple brace groups lets an attacker keep the count under the limit while making each result progressively longer, causing memory exhaustion.\n\nA crafted glob/brace pattern reaching `expand()` in the Metro/Expo CLI build toolchain could exhaust available memory and crash or hang the build process. No confidentiality or integrity impact is associated with this CVE.\n\nUpgrade `react-native`/`expo` to versions resolving a patched `minimatch`/`glob`/`brace-expansion` chain, or add a pnpm `pnpm.overrides` entry pinning `brace-expansion` to a fixed release (`1.1.17`, `2.1.3`, or later) in the root `package.json`, then regenerate the lockfile.",
+                "markdown": "The transitively-resolved `brace-expansion` installations (`1.1.15` and `2.1.1`) in the repository's `pnpm-lock.yaml` are affected by **CVE-2026-14257**. The `expand()` function bounds the result *count* via a `max` option but not the *length* of each result string, so chaining multiple brace groups lets an attacker keep the count under the limit while making each result progressively longer, causing memory exhaustion.\n\nA crafted glob/brace pattern reaching `expand()` in the Metro/Expo CLI build toolchain could exhaust available memory and crash or hang the build process. No confidentiality or integrity impact is associated with this CVE.\n\nUpgrade `react-native`/`expo` to versions resolving a patched `minimatch`/`glob`/`brace-expansion` chain, or add a pnpm `pnpm.overrides` entry pinning `brace-expansion` to a fixed release (`1.1.17`, `2.1.3`, or later) in the root `package.json`, then regenerate the lockfile."
+              },
+              "properties": {
+                "security-severity": "7.5",
+                "tags": [
+                  "security",
+                  "CWE-400",
+                  "CVE-2026-14257",
+                  "stride:D"
+                ]
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/400.html"
+            },
+            {
+              "id": "CWE-835",
+              "name": "CVE-2025-71329 in image-size 1.2.1 (infinite loop via zero-size box in JXL/HEIF parser)",
+              "shortDescription": {
+                "text": "CVE-2025-71329 in image-size 1.2.1 (infinite loop via zero-size box in JXL/HEIF parser)"
+              },
+              "fullDescription": {
+                "text": "The `image-size` package resolved to `1.2.1` in the repository's `pnpm-lock.yaml` is affected by **CVE-2025-71329**. Supplying a crafted image buffer with a zero-valued size field in a recognized box-type can trigger an infinite loop in the JXL or HEIF image parsers, permanently blocking the Node.js event loop."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "help": {
+                "text": "The `image-size` package resolved to `1.2.1` in the repository's `pnpm-lock.yaml` is affected by **CVE-2025-71329**. Supplying a crafted image buffer with a zero-valued size field in a recognized box-type can trigger an infinite loop in the JXL or HEIF image parsers, permanently blocking the Node.js event loop.\n\nIf Metro (React Native's bundler) uses `image-size` to probe dimensions of an attacker-supplied image asset during a build or asset-serving step, a crafted JXL/HEIF file could hang the Node.js process indefinitely. No published fix is currently available; there is no confidentiality or integrity impact associated with this CVE.\n\nNo fixed version has been published upstream as of this scan. Track the `image-size` GitHub repository for a patched release and upgrade Metro/`react-native` once available. In the interim, avoid running Metro's dev server or bundler against untrusted image assets, and consider a pnpm `pnpm.overrides` pin once a fix ships.",
+                "markdown": "The `image-size` package resolved to `1.2.1` in the repository's `pnpm-lock.yaml` is affected by **CVE-2025-71329**. Supplying a crafted image buffer with a zero-valued size field in a recognized box-type can trigger an infinite loop in the JXL or HEIF image parsers, permanently blocking the Node.js event loop.\n\nIf Metro (React Native's bundler) uses `image-size` to probe dimensions of an attacker-supplied image asset during a build or asset-serving step, a crafted JXL/HEIF file could hang the Node.js process indefinitely. No published fix is currently available; there is no confidentiality or integrity impact associated with this CVE.\n\nNo fixed version has been published upstream as of this scan. Track the `image-size` GitHub repository for a patched release and upgrade Metro/`react-native` once available. In the interim, avoid running Metro's dev server or bundler against untrusted image assets, and consider a pnpm `pnpm.overrides` pin once a fix ships."
+              },
+              "properties": {
+                "security-severity": "7.5",
+                "tags": [
+                  "security",
+                  "CWE-835",
+                  "CVE-2025-71329",
+                  "stride:T",
+                  "stride:I"
+                ]
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/835.html"
+            }
+          ],
+          "version": "1.5.3"
+        }
+      },
+      "results": [
+        {
+          "ruleId": "CWE-407",
+          "ruleIndex": 0,
+          "level": "warning",
+          "message": {
+            "text": "CVE-2026-13149 in brace-expansion 1.1.15 / 2.1.1 (ReDoS-style exponential expansion DoS)\n\nThe `brace-expansion` package resolved transitively into the repository's `pnpm-lock.yaml` at two vulnerable installations — `1.1.15` and `2.1.1` — is affected by **CVE-2026-13149**. The `expand()` function exhibits exponential-time complexity when processing a crafted string containing many consecutive non-expanding `{}` brace groups, allowing an attacker-controlled input to block the Node.js event loop."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "SECURITY.md"
+                }
+              }
+            },
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "local codebase: adgrid (pnpm-lock.yaml)",
+                  "kind": "resource"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "c0e4c5ad1639e61036fe62e80d25f51392a19685458ffdb75eec900368390612"
+          },
+          "properties": {
+            "security-severity": "5.3",
+            "strix_vuln_class_hash": "7dff5faf938775bb33ef61d1fd677f6ca533bdc53e9ee32e9cb9edee56eb6a4e",
+            "synthetic_location": true,
+            "strix": {
+              "id": "vuln-0001",
+              "severity": "medium",
+              "cvss": 5.3,
+              "timestamp": "2026-08-31 04:34:47 UTC",
+              "target": "local codebase: adgrid (pnpm-lock.yaml)",
+              "cve": "CVE-2026-13149",
+              "cwe": "CWE-407",
+              "impact": "If a code path in the build/CLI tooling (Metro bundler's `minimatch`/`glob` usage during Expo/React Native builds) ever passes attacker-influenced glob patterns to `brace-expansion.expand()`, an attacker could trigger CPU exhaustion and stall the bundler/build process (denial of service of the build pipeline). No confidentiality or integrity impact is associated with this CVE.",
+              "technical_analysis": "Two separate resolutions exist in the lockfile: `brace-expansion@1.1.15` is pulled in via `mobile/package.json`'s `react-native@0.81.5 > glob@7.2.3 > minimatch@3.1.5`, and `brace-expansion@2.1.1` is pulled in via `expo@54.0.36 > @expo/cli@54.0.26 > minimatch@9.0.9`. Both are deep transitive dependencies of the Metro bundler / Expo CLI toolchain used only at build/dev time for the mobile app, not imported by any application source under `src/`, `mobile/app`, or `packages/core`.",
+              "remediation_steps": "Bump the mobile workspace's `react-native` and `expo` dependencies to versions that resolve a patched `minimatch`/`glob`/`brace-expansion` chain, or force the resolution directly with a pnpm `pnpm.overrides` entry pinning `brace-expansion` to `>=1.1.16 <2.0.0 || >=2.1.2` in the root `package.json`. Re-run `pnpm install` and confirm the lockfile no longer resolves the vulnerable versions.",
+              "dependency_metadata": {
+                "package_name": "brace-expansion",
+                "installed_version": "1.1.15 (also present as 2.1.1)",
+                "package_ecosystem": "npm",
+                "manifest_path": "pnpm-lock.yaml",
+                "fixed_version": "1.1.16, 2.1.2, 5.0.7",
+                "introduced_by": "react-native@0.81.5",
+                "dependency_path": "react-native@0.81.5 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.15",
+                "reachability": "not_imported",
+                "reachability_evidence": "`rg` search across `src/`, `mobile/app`, `mobile/components`, `packages/core`, and `supabase` for `brace-expansion` imports returned no matches; the package is only reachable via the Metro/Expo CLI dependency chain (`react-native@0.81.5 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion` and `expo@54.0.36 > @expo/cli@54.0.26 > minimatch@9.0.9 > brace-expansion`)."
+              }
+            }
+          }
+        },
+        {
+          "ruleId": "CWE-400",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "CVE-2026-14257 in brace-expansion 1.1.15 / 2.1.1 (memory-exhaustion DoS)\n\nThe transitively-resolved `brace-expansion` installations (`1.1.15` and `2.1.1`) in the repository's `pnpm-lock.yaml` are affected by **CVE-2026-14257**. The `expand()` function bounds the result *count* via a `max` option but not the *length* of each result string, so chaining multiple brace groups lets an attacker keep the count under the limit while making each result progressively longer, causing memory exhaustion."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "SECURITY.md"
+                }
+              }
+            },
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "local codebase: adgrid (pnpm-lock.yaml)",
+                  "kind": "resource"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "bc8ba30935653f6d8b906bc7f7b32afdddf45ba596d77aa04471b2adaf8cd3e4"
+          },
+          "properties": {
+            "security-severity": "7.5",
+            "strix_vuln_class_hash": "b49ce6ec733f81493d4c8f29eb38f55a2dd92b1b124f8d12d3390b0847b5d780",
+            "synthetic_location": true,
+            "strix": {
+              "id": "vuln-0002",
+              "severity": "high",
+              "cvss": 7.5,
+              "timestamp": "2026-08-31 04:35:04 UTC",
+              "target": "local codebase: adgrid (pnpm-lock.yaml)",
+              "cve": "CVE-2026-14257",
+              "cwe": "CWE-400",
+              "impact": "A crafted glob/brace pattern reaching `expand()` in the Metro/Expo CLI build toolchain could exhaust available memory and crash or hang the build process. No confidentiality or integrity impact is associated with this CVE.",
+              "technical_analysis": "Same dual-resolution situation as CVE-2026-13149: `1.1.15` via `react-native@0.81.5 > glob@7.2.3 > minimatch@3.1.5`, and `2.1.1` via `expo@54.0.36 > @expo/cli@54.0.26 > minimatch@9.0.9`. Both are deep build-tool transitive dependencies, not imported by application source.",
+              "remediation_steps": "Upgrade `react-native`/`expo` to versions resolving a patched `minimatch`/`glob`/`brace-expansion` chain, or add a pnpm `pnpm.overrides` entry pinning `brace-expansion` to a fixed release (`1.1.17`, `2.1.3`, or later) in the root `package.json`, then regenerate the lockfile.",
+              "dependency_metadata": {
+                "package_name": "brace-expansion",
+                "installed_version": "1.1.15 (also present as 2.1.1)",
+                "package_ecosystem": "npm",
+                "manifest_path": "pnpm-lock.yaml",
+                "fixed_version": "1.1.17, 2.1.3, 3.0.3, 5.0.8",
+                "introduced_by": "react-native@0.81.5",
+                "dependency_path": "react-native@0.81.5 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.15",
+                "reachability": "not_imported",
+                "reachability_evidence": "`rg` search across `src/`, `mobile/app`, `mobile/components`, `packages/core`, and `supabase` for `brace-expansion` imports returned no matches; only reachable via the Metro/Expo CLI dependency chain identified above."
+              }
+            }
+          }
+        },
+        {
+          "ruleId": "CWE-400",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "CVE-2026-69152 in brace-expansion 1.1.15 / 2.1.1 (maxLength bypass DoS)\n\nThe transitively-resolved `brace-expansion` installations (`1.1.15` and `2.1.1`) in the repository's `pnpm-lock.yaml` are affected by **CVE-2026-69152**, a bypass of the fix for CVE-2026-14257: `expand()` does not apply `maxLength` while constructing comma-alternative intermediate arrays or padded sequences, again allowing attacker-controlled input to exhaust memory or block the event loop."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "SECURITY.md"
+                }
+              }
+            },
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "local codebase: adgrid (pnpm-lock.yaml)",
+                  "kind": "resource"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "0166d1a0925d4459fad88c7518bee3ddef96dfeeb5c0bf60777a1449ce5b9b51"
+          },
+          "properties": {
+            "security-severity": "7.5",
+            "strix_vuln_class_hash": "4d43ef97975ac2e77f212d99da2c629297d3b4b549f501b8af37aeeab4145e1a",
+            "synthetic_location": true,
+            "strix": {
+              "id": "vuln-0003",
+              "severity": "high",
+              "cvss": 7.5,
+              "timestamp": "2026-08-31 04:35:18 UTC",
+              "target": "local codebase: adgrid (pnpm-lock.yaml)",
+              "cve": "CVE-2026-69152",
+              "cwe": "CWE-400",
+              "impact": "A crafted glob/brace pattern reaching `expand()` in the Metro/Expo CLI build toolchain could exhaust memory or block the event loop of the build process. No confidentiality or integrity impact is associated with this CVE.",
+              "technical_analysis": "Same dual-resolution situation as the two prior brace-expansion CVEs: `1.1.15` via `react-native@0.81.5 > glob@7.2.3 > minimatch@3.1.5`, and `2.1.1` via `expo@54.0.36 > @expo/cli@54.0.26 > minimatch@9.0.9`. Both are deep build-tool transitive dependencies, not imported by application source.",
+              "remediation_steps": "Upgrade `react-native`/`expo` to versions resolving a patched `minimatch`/`glob`/`brace-expansion` chain (`1.1.18`, `2.1.4`, or later), or add a pnpm `pnpm.overrides` entry pinning `brace-expansion` accordingly in the root `package.json`, then regenerate the lockfile.",
+              "dependency_metadata": {
+                "package_name": "brace-expansion",
+                "installed_version": "1.1.15 (also present as 2.1.1)",
+                "package_ecosystem": "npm",
+                "manifest_path": "pnpm-lock.yaml",
+                "fixed_version": "1.1.18, 2.1.4, 3.0.6, 5.0.9",
+                "introduced_by": "react-native@0.81.5",
+                "dependency_path": "react-native@0.81.5 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.15",
+                "reachability": "not_imported",
+                "reachability_evidence": "`rg` search across `src/`, `mobile/app`, `mobile/components`, `packages/core`, and `supabase` for `brace-expansion` imports returned no matches; only reachable via the Metro/Expo CLI dependency chain identified above."
+              }
+            }
+          }
+        },
+        {
+          "ruleId": "CWE-835",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "CVE-2025-71329 in image-size 1.2.1 (infinite loop via zero-size box in JXL/HEIF parser)\n\nThe `image-size` package resolved to `1.2.1` in the repository's `pnpm-lock.yaml` is affected by **CVE-2025-71329**. Supplying a crafted image buffer with a zero-valued size field in a recognized box-type can trigger an infinite loop in the JXL or HEIF image parsers, permanently blocking the Node.js event loop."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "SECURITY.md"
+                }
+              }
+            },
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "local codebase: adgrid (pnpm-lock.yaml)",
+                  "kind": "resource"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "690206bab162086ea336e731f6de03731d34ba21d865e29df55c2f48408a6df8"
+          },
+          "properties": {
+            "security-severity": "7.5",
+            "strix_vuln_class_hash": "270ff3562cd25b40731b50c7cb88051e57cbe67c312724c19100ce296eacfa5a",
+            "synthetic_location": true,
+            "strix": {
+              "id": "vuln-0004",
+              "severity": "high",
+              "cvss": 7.5,
+              "timestamp": "2026-08-31 04:35:34 UTC",
+              "target": "local codebase: adgrid (pnpm-lock.yaml)",
+              "cve": "CVE-2025-71329",
+              "cwe": "CWE-835",
+              "impact": "If Metro (React Native's bundler) uses `image-size` to probe dimensions of an attacker-supplied image asset during a build or asset-serving step, a crafted JXL/HEIF file could hang the Node.js process indefinitely. No published fix is currently available; there is no confidentiality or integrity impact associated with this CVE.",
+              "technical_analysis": "`image-size@1.2.1` is a deep transitive dependency of Metro (the React Native bundler), reached via `react-native@0.81.5 > @react-native/community-cli-plugin@0.81.5 > metro@0.83.3`. It is used internally by Metro's asset pipeline to read image dimensions during bundling/dev-server operation; the application code in `mobile/` never imports it directly.",
+              "remediation_steps": "No fixed version has been published upstream as of this scan. Track the `image-size` GitHub repository for a patched release and upgrade Metro/`react-native` once available. In the interim, avoid running Metro's dev server or bundler against untrusted image assets, and consider a pnpm `pnpm.overrides` pin once a fix ships.",
+              "dependency_metadata": {
+                "package_name": "image-size",
+                "installed_version": "1.2.1",
+                "package_ecosystem": "npm",
+                "manifest_path": "pnpm-lock.yaml",
+                "introduced_by": "react-native@0.81.5",
+                "dependency_path": "react-native@0.81.5 > @react-native/community-cli-plugin@0.81.5 > metro@0.83.3 > image-size@1.2.1",
+                "reachability": "not_imported",
+                "reachability_evidence": "`rg` search across `src/`, `mobile/app`, `mobile/components`, `packages/core`, and `supabase` for `image-size` imports returned no matches; only reachable via Metro's internal dependency chain identified above."
+              }
+            }
+          }
+        },
+        {
+          "ruleId": "CWE-835",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "CVE-2025-71330 in image-size 1.2.1 (infinite loop via crafted ICNS buffer)\n\nThe `image-size` package resolved to `1.2.1` in the repository's `pnpm-lock.yaml` is affected by **CVE-2025-71330**. A crafted ICNS image buffer with valid magic bytes and a zero-valued entry length field triggers an infinite loop in the ICNS parser, permanently blocking the Node.js event loop."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "SECURITY.md"
+                }
+              }
+            },
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "local codebase: adgrid (pnpm-lock.yaml)",
+                  "kind": "resource"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "1220e4bfc3fc0740549357eb99feb26816f1a0db18438d3335ca5cb9f6ccd97f"
+          },
+          "properties": {
+            "security-severity": "7.5",
+            "strix_vuln_class_hash": "e95518fa5746fc26cad28033f8f1cdf09b61d7dafef64d4aa7e9cd9bbbea7aae",
+            "synthetic_location": true,
+            "strix": {
+              "id": "vuln-0005",
+              "severity": "high",
+              "cvss": 7.5,
+              "timestamp": "2026-08-31 04:35:47 UTC",
+              "target": "local codebase: adgrid (pnpm-lock.yaml)",
+              "cve": "CVE-2025-71330",
+              "cwe": "CWE-835",
+              "impact": "If Metro (React Native's bundler) probes an attacker-supplied ICNS image asset during a build or asset-serving step, the crafted file could hang the Node.js process indefinitely. No published fix is currently available; there is no confidentiality or integrity impact associated with this CVE.",
+              "technical_analysis": "Same resolution path as CVE-2025-71329: `image-size@1.2.1` is reached via `react-native@0.81.5 > @react-native/community-cli-plugin@0.81.5 > metro@0.83.3`, used internally by Metro's asset pipeline; not imported directly by `mobile/` application source.",
+              "remediation_steps": "No fixed version has been published upstream as of this scan. Track the `image-size` GitHub repository for a patched release and upgrade Metro/`react-native` once available. In the interim, avoid running Metro's dev server or bundler against untrusted image assets, and consider a pnpm `pnpm.overrides` pin once a fix ships.",
+              "dependency_metadata": {
+                "package_name": "image-size",
+                "installed_version": "1.2.1",
+                "package_ecosystem": "npm",
+                "manifest_path": "pnpm-lock.yaml",
+                "introduced_by": "react-native@0.81.5",
+                "dependency_path": "react-native@0.81.5 > @react-native/community-cli-plugin@0.81.5 > metro@0.83.3 > image-size@1.2.1",
+                "reachability": "not_imported",
+                "reachability_evidence": "`rg` search across `src/`, `mobile/app`, `mobile/components`, `packages/core`, and `supabase` for `image-size` imports returned no matches; only reachable via Metro's internal dependency chain identified above."
+              }
+            }
+          }
+        },
+        {
+          "ruleId": "CWE-407",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "CVE-2026-59869 in js-yaml 3.14.2 / 4.2.0 (quadratic CPU via merge-key chains)\n\nThe `js-yaml` package resolved to both `3.14.2` and `4.2.0` in the repository's `pnpm-lock.yaml` is affected by **CVE-2026-59869**. Parsing a document whose size grows only linearly but contains a chain of mappings using merge keys (each merging the previous one) causes `js-yaml` to spend quadratic CPU time, enabling a denial-of-service via a crafted YAML document."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "SECURITY.md"
+                }
+              }
+            },
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "local codebase: adgrid (pnpm-lock.yaml)",
+                  "kind": "resource"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "9184ef565e55c1473704953f594f7ef9d29d21282d2b38b14d1b75d927644bd4"
+          },
+          "properties": {
+            "security-severity": "7.5",
+            "strix_vuln_class_hash": "8e9cf2b0d363dd75f5f4f676275def7bddb92ae50e978ba684292ecbe71d6cdf",
+            "synthetic_location": true,
+            "strix": {
+              "id": "vuln-0006",
+              "severity": "high",
+              "cvss": 7.5,
+              "timestamp": "2026-08-31 04:36:03 UTC",
+              "target": "local codebase: adgrid (pnpm-lock.yaml)",
+              "cve": "CVE-2026-59869",
+              "cwe": "CWE-407",
+              "impact": "If build tooling ever parses an attacker-influenced YAML document with this `js-yaml` instance, CPU exhaustion could stall the build/test process. No confidentiality or integrity impact is associated with this CVE.",
+              "technical_analysis": "Two resolutions exist: `js-yaml@3.14.2` via the Jest/Babel coverage-config chain (`react-native@0.81.5 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > @istanbuljs/load-nyc-config@1.1.0`), and `js-yaml@4.2.0` via the Expo CLI (`expo@54.0.36 > @expo/cli@54.0.26 > @expo/xcpretty@4.4.4`). Both are build/test-tooling transitive dependencies, not imported by application source.",
+              "remediation_steps": "Upgrade `jest`/`babel-jest`/`react-native` and `expo`/`@expo/cli` to versions that resolve a patched `js-yaml` (`3.15.0`/`4.3.0` or later), or add a pnpm `pnpm.overrides` entry pinning `js-yaml` in the root `package.json`, then regenerate the lockfile.",
+              "dependency_metadata": {
+                "package_name": "js-yaml",
+                "installed_version": "3.14.2 (also present as 4.2.0)",
+                "package_ecosystem": "npm",
+                "manifest_path": "pnpm-lock.yaml",
+                "fixed_version": "3.15.0, 4.3.0",
+                "introduced_by": "react-native@0.81.5",
+                "dependency_path": "react-native@0.81.5 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > @istanbuljs/load-nyc-config@1.1.0 > js-yaml@3.14.2",
+                "reachability": "not_imported",
+                "reachability_evidence": "`rg` search across `src/`, `mobile/app`, `mobile/components`, `packages/core`, and `supabase` for `js-yaml` imports returned no matches; only reachable via the Jest/Babel and Expo CLI dependency chains identified above."
+              }
+            }
+          }
+        },
+        {
+          "ruleId": "CWE-407",
+          "ruleIndex": 0,
+          "level": "warning",
+          "message": {
+            "text": "CVE-2026-53550 in js-yaml 3.14.2 (quadratic CPU via repeated merge-key aliases)\n\nThe `js-yaml` package resolved to `3.14.2` in the repository's `pnpm-lock.yaml` is affected by **CVE-2026-53550**. A crafted YAML document can trigger algorithmic CPU exhaustion in merge-key processing (`<<`) by repeating the same alias many times in a merge sequence, causing quadratic parse-time behavior that can block a Node.js worker/event loop for seconds with a relatively small (tens-of-KB) payload."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "SECURITY.md"
+                }
+              }
+            },
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "local codebase: adgrid (pnpm-lock.yaml)",
+                  "kind": "resource"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "3a0e7bb54c15c9fec48d455f8794101954dc8a0c538a7bdad78e94dd40f688bc"
+          },
+          "properties": {
+            "security-severity": "5.3",
+            "strix_vuln_class_hash": "a6d1b621213dca90581a9d8309b192923db80d3416342d7aa7b03f32bebc975c",
+            "synthetic_location": true,
+            "strix": {
+              "id": "vuln-0007",
+              "severity": "medium",
+              "cvss": 5.3,
+              "timestamp": "2026-08-31 04:36:17 UTC",
+              "target": "local codebase: adgrid (pnpm-lock.yaml)",
+              "cve": "CVE-2026-53550",
+              "cwe": "CWE-407",
+              "impact": "If build tooling parses an attacker-influenced YAML document with this `js-yaml` instance, CPU exhaustion could stall the build/test process for several seconds per request. No confidentiality or integrity impact is associated with this CVE. (Note: version `4.2.0`, also present in the lockfile, is already patched for this specific CVE.)",
+              "technical_analysis": "`js-yaml@3.14.2` is reached via the Jest/Babel coverage-config loader chain (`react-native@0.81.5 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > @istanbuljs/load-nyc-config@1.1.0`), a build/test-tooling transitive dependency not imported by application source.",
+              "remediation_steps": "Upgrade `jest`/`babel-jest`/`react-native` to a version that resolves `js-yaml@3.15.0` or later, or add a pnpm `pnpm.overrides` entry pinning `js-yaml` to `^3.15.0` in the root `package.json`, then regenerate the lockfile.",
+              "dependency_metadata": {
+                "package_name": "js-yaml",
+                "installed_version": "3.14.2",
+                "package_ecosystem": "npm",
+                "manifest_path": "pnpm-lock.yaml",
+                "fixed_version": "3.15.0, 4.2.0",
+                "introduced_by": "react-native@0.81.5",
+                "dependency_path": "react-native@0.81.5 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > @istanbuljs/load-nyc-config@1.1.0 > js-yaml@3.14.2",
+                "reachability": "not_imported",
+                "reachability_evidence": "`rg` search across `src/`, `mobile/app`, `mobile/components`, `packages/core`, and `supabase` for `js-yaml` imports returned no matches; only reachable via the Jest/Babel dependency chain identified above."
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "syntheticLocationCount": 7
+      }
+    }
+  ]
+}
