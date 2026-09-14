@@ -127,6 +127,13 @@ export function LoginPage() {
 
   const handleOAuth = async (provider) => {
     setOauthLoading(provider);
+    // Same intent persistence as the email/password signUp() path below --
+    // fetchProfile in AuthContext reads this on first login regardless of
+    // how the account was created, but only the password path was writing
+    // it. Without this, picking "List my screens" and then "Continue with
+    // Google" silently landed a new operator on the advertiser dashboard,
+    // same bug the fetchProfile comment describes having fixed already.
+    if (activeMode === 'signup') localStorage.setItem('adgrid_signup_intent', intent);
     const { error } = await signInWithOAuth(provider);
     if (error) { setErr(error.message); setOauthLoading(''); }
   };

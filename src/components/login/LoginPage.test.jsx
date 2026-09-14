@@ -3,10 +3,11 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { LoginPage } from './LoginPage.jsx';
 
 const signIn = vi.fn();
+const signInWithOAuth = vi.fn();
 
 vi.mock('../../context/AuthContext.jsx', () => ({
   useAuth: () => ({
-    signIn, signUp: vi.fn(), signInWithOAuth: vi.fn(),
+    signIn, signUp: vi.fn(), signInWithOAuth,
     passwordRecovery: false, resetPasswordForEmail: vi.fn(), updatePassword: vi.fn(),
   }),
 }));
@@ -50,6 +51,31 @@ describe('LoginPage demo login', () => {
     fireEvent.click(screen.getByText(/Try Demo/));
 
     await waitFor(() => screen.getByText('Demo account unavailable'));
+  });
+});
+
+describe('LoginPage OAuth signup intent', () => {
+  beforeEach(() => {
+    signInWithOAuth.mockReset().mockResolvedValue({ error: null });
+    localStorage.clear();
+  });
+
+  it('persists the picked intent before an OAuth signup, same as the password path', async () => {
+    render(<LoginPage />);
+    fireEvent.click(screen.getByText('Sign up'));
+    fireEvent.click(screen.getByText('List my screens'));
+    fireEvent.click(screen.getByText(/Continue with Google/));
+
+    await waitFor(() => expect(signInWithOAuth).toHaveBeenCalledWith('google'));
+    expect(localStorage.getItem('adgrid_signup_intent')).toBe('operator');
+  });
+
+  it('does not set an intent for OAuth sign-in (no intent picker shown)', async () => {
+    render(<LoginPage />);
+    fireEvent.click(screen.getByText(/Continue with Google/));
+
+    await waitFor(() => expect(signInWithOAuth).toHaveBeenCalledWith('google'));
+    expect(localStorage.getItem('adgrid_signup_intent')).toBeNull();
   });
 });
 
