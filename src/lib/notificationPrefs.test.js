@@ -3,8 +3,8 @@ import { EVENTS, defaultChannelPrefs, normalizeChannelPrefs } from './notificati
 
 describe('EVENTS', () => {
   it('has 15 events with unique keys', () => {
-    expect(EVENTS).toHaveLength(15);
-    expect(new Set(EVENTS.map(e => e.key)).size).toBe(15);
+    expect(EVENTS).toHaveLength(17);
+    expect(new Set(EVENTS.map(e => e.key)).size).toBe(17);
   });
 
   it('includes marketplace_thread_message', () => {
@@ -18,7 +18,7 @@ describe('EVENTS', () => {
 describe('defaultChannelPrefs', () => {
   it('defaults every event to both channels enabled', () => {
     const prefs = defaultChannelPrefs();
-    expect(Object.keys(prefs)).toHaveLength(15);
+    expect(Object.keys(prefs)).toHaveLength(17);
     for (const event of EVENTS) {
       expect(prefs[event.key]).toEqual({ inApp: true, email: true });
     }

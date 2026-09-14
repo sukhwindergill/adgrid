@@ -23,6 +23,8 @@ export const EVENTS = [
   { key: 'team_member_joined', label: 'Team member joined',        desc: 'When someone accepts your team invite', operatorOnly: false },
   { key: 'account_suspended',  label: 'Account suspended',         desc: 'If your account is suspended', operatorOnly: false },
   { key: 'marketplace_thread_message', label: 'Marketplace messages', desc: 'When you get a new message in a marketplace listing thread', operatorOnly: false },
+  { key: 'screen_offline',             label: 'Screen offline',           desc: 'When one of your screens stops checking in', operatorOnly: true },
+  { key: 'screen_offline_during_flight', label: 'Screen down mid-campaign', desc: "When a screen your live campaign is booked on goes offline", operatorOnly: false },
 ];
 
 export function defaultChannelPrefs() {
