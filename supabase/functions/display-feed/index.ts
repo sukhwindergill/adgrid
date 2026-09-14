@@ -45,6 +45,36 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "Invalid screen token" }), { status: 404, headers: CORS });
   }
 
+  // Deactivate (ScreenDetail's Reactivate/Deactivate toggle) sets status
+  // to anything other than 'live' via a direct client-side UPDATE. The
+  // require_connect_active_for_live_screen DB trigger only gates the
+  // transition *into* 'live' — nothing previously stopped an already-live
+  // screen that was then deactivated from still being served its approved,
+  // paid campaign_screens rows here. That let "Deactivate" silently do
+  // nothing: the screen kept polling, kept playing ads, kept billing
+  // advertisers as if still live. Same empty-feed shape as the
+  // operating-hours gate below, not an error — the display itself is fine,
+  // it's just not supposed to be showing ads right now.
+  //
+  // Heartbeat/last_seen are still recorded here (not skipped) — a 'pending'
+  // screen mid-onboarding relies on exactly this row for ScreenOnboard's
+  // "Test Connection" step (checkAndGoLive reads display_heartbeats to
+  // decide eligibility for the *first* transition into 'live'). Only the ad
+  // feed itself is withheld pre-live/post-deactivation, not connectivity
+  // proof.
+  if (screen.status !== "live") {
+    supabase.from("display_heartbeats").insert({
+      screen_id: screen.id,
+      campaign_id: null,
+      status: "idle",
+    }).then(() => {});
+    supabase.from("screens").update({ last_seen: new Date().toISOString() }).eq("id", screen.id).then(() => {});
+    return new Response(
+      JSON.stringify({ screen_id: screen.id, screen_name: screen.name, campaigns: [] }),
+      { headers: CORS },
+    );
+  }
+
   const tz = (screen.timezone as string | null) ?? "America/Toronto";
   const now = new Date();
 
