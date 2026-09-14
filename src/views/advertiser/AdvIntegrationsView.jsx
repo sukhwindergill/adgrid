@@ -342,6 +342,120 @@ function PixelSnippetCard() {
   );
 }
 
+// Product gap fix (2026-09-14): the pixel/postback/promo-code infra above
+// (conversion-pixel-postback-design.md) is fully built and platform-agnostic
+// -- but "here's a generic <img> tag, go figure out where your site puts it"
+// is a real barrier for anyone not already comfortable editing site code.
+// Every advertiser on this platform is running their storefront/site on one
+// of a handful of common builders, each with its own specific place to paste
+// a script and its own quirks (Squarespace gating code injection behind a
+// paid plan, Shopify deprecating Additional Scripts for Plus stores, etc.).
+// This doesn't add any new attribution mechanism -- same pixel URL, same
+// promo-code path -- it just answers "where do I actually put this" for the
+// platforms advertisers are most likely to already be running.
+const SETUP_GUIDES = [
+  {
+    id: "shopify", name: "Shopify",
+    steps: [
+      "Go to Settings → Checkout in your Shopify admin.",
+      "Scroll to Order status page → Additional scripts.",
+      "Paste the pixel snippet below and Save.",
+    ],
+    note: "Additional Scripts is being retired for Shopify Plus stores in favor of the Web Pixels API/Customer Events -- if yours is already migrated, use the Postback key above from your order-webhook handler instead; it doesn't depend on this page at all.",
+    snippet: (pixelUrl) => `<img src="${pixelUrl}?adgrid_cid={{ landing_site_ref }}&value={{ checkout.total_price | money_without_currency }}" width="1" height="1" style="display:none" />`,
+  },
+  {
+    id: "woocommerce", name: "WooCommerce",
+    steps: [
+      "Install a lightweight snippet plugin (e.g. \"Code Snippets\") -- avoids editing your theme's functions.php directly.",
+      "Add a new PHP snippet hooked to woocommerce_thankyou, running on the order-received page only.",
+      "Echo the pixel img tag below, filling in the order total from $order->get_total().",
+    ],
+    note: "Prefer the Postback key instead if you're comfortable with a webhook -- WooCommerce's built-in Order created webhook can POST straight to the postback URL server-side, which survives ad blockers and doesn't touch your theme at all.",
+    snippet: (pixelUrl) => `add_action('woocommerce_thankyou', function ($order_id) {\n  $order = wc_get_order($order_id);\n  $cid = isset($_COOKIE['adgrid_cid']) ? esc_attr($_COOKIE['adgrid_cid']) : '';\n  if (!$cid) return;\n  echo '<img src="${pixelUrl}?adgrid_cid=' . $cid . '&value=' . esc_attr($order->get_total()) . '" width="1" height="1" style="display:none" />';\n});`,
+  },
+  {
+    id: "bigcommerce", name: "BigCommerce",
+    steps: [
+      "Go to Storefront → Script Manager in your BigCommerce admin.",
+      "Create a new script: Location footer, Page Order confirmation only.",
+      "Paste the pixel snippet below and Save.",
+    ],
+    note: null,
+    snippet: (pixelUrl) => `<img src="${pixelUrl}?adgrid_cid={{ADGRID_CID}}&value={{checkout.grand_total}}" width="1" height="1" style="display:none" />`,
+  },
+  {
+    id: "squarespace", name: "Squarespace",
+    steps: [
+      "Go to Settings → Advanced → Code Injection.",
+      "Paste the pixel snippet below into the Order Confirmation Page field.",
+    ],
+    note: "Code Injection on the order confirmation page requires a Squarespace Commerce (Advanced) plan -- on a lower plan, use the Promo codes path below instead: print a code on the creative and report it via the Postback key from wherever you already track orders.",
+    snippet: (pixelUrl) => `<img src="${pixelUrl}?adgrid_cid={{ADGRID_CID}}&value={{ORDER_TOTAL}}" width="1" height="1" style="display:none" />`,
+  },
+  {
+    id: "wordpress", name: "WordPress",
+    steps: [
+      "Install a header/footer plugin (e.g. \"WPCode\" or \"Insert Headers and Footers\").",
+      "Add the pixel snippet below, scoped to your thank-you / confirmation page only (not sitewide).",
+    ],
+    note: "For a signup or lead-gen site without an order total, drop ?value= entirely -- the conversion still counts, just without a reported dollar amount.",
+    snippet: (pixelUrl) => `<img src="${pixelUrl}?adgrid_cid={{ADGRID_CID}}" width="1" height="1" style="display:none" />`,
+  },
+  {
+    id: "ga4", name: "Google Analytics",
+    steps: [
+      "Nothing to install -- every AdGrid QR scan already lands on your site with utm_source=adgrid&utm_medium=ooh&utm_campaign=<campaign id> (scan-redirect appends these automatically).",
+      "In GA4: Reports → Acquisition → Traffic acquisition, then filter Session source / medium to adgrid / ooh.",
+    ],
+    note: "This shows scan-driven traffic, not conversions -- pair it with the pixel/postback above (on one of the platforms to the left) to see which of that traffic actually converted.",
+    snippet: null,
+  },
+];
+
+function PlatformSetupGuide() {
+  const [platformId, setPlatformId] = useState(SETUP_GUIDES[0].id);
+  const platform = SETUP_GUIDES.find(p => p.id === platformId);
+  const snippet = platform.snippet ? platform.snippet(PIXEL_URL) : null;
+
+  return (
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Where do I put this?</div>
+      <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 14, lineHeight: 1.5 }}>
+        Same pixel, same postback key above -- just the exact steps for where your site actually puts it.
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+        {SETUP_GUIDES.map(p => (
+          <button key={p.id} type="button" onClick={() => setPlatformId(p.id)}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "6px 12px", borderRadius: 20, cursor: "pointer",
+              border: `1px solid ${platformId === p.id ? C.purple : C.border}`,
+              background: platformId === p.id ? C.purpleSoft : C.surface,
+              color: platformId === p.id ? C.purple : C.textSub,
+              fontSize: 12, fontWeight: 500, fontFamily: F.sans,
+            }}>
+            <BrandIcon id={p.id === "ga4" ? "google" : p.id} size={12} />
+            {p.name}
+          </button>
+        ))}
+      </div>
+      <ol style={{ margin: "0 0 12px", paddingLeft: 20, fontFamily: F.sans, fontSize: 13, color: C.textSub, lineHeight: 1.9 }}>
+        {platform.steps.map((s, i) => <li key={i}>{s}</li>)}
+      </ol>
+      {snippet && (
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: 12, background: C.surfaceAlt, borderRadius: 8, marginBottom: platform.note ? 12 : 0 }}>
+          <pre style={{ margin: 0, fontSize: 11, fontFamily: F.mono, color: C.text, whiteSpace: "pre-wrap", wordBreak: "break-all", flex: 1 }}>{snippet}</pre>
+          <CopyButton value={snippet} label="Copy" copiedLabel="✓ Copied" variant="ghost" size="sm" />
+        </div>
+      )}
+      {platform.note && (
+        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, lineHeight: 1.6 }}>{platform.note}</div>
+      )}
+    </div>
+  );
+}
+
 function PromoCodesCard({ campaigns, promoCodes, onCreated }) {
   const [campaignId, setCampaignId] = useState("");
   const [code, setCode] = useState("");
@@ -433,6 +547,7 @@ function ConversionTrackingTab() {
     <div>
       <PostbackKeyCard hasKey={hasKey} onGenerated={load} />
       <PixelSnippetCard />
+      <PlatformSetupGuide />
       <PromoCodesCard campaigns={campaigns} promoCodes={promoCodes} onCreated={load} />
     </div>
   );
