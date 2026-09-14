@@ -8,6 +8,11 @@ import { requireCronSecret } from "../_shared/cronGuard.ts";
 // Without this job those tables grew forever despite the policy promising deletion.
 // ad_plays is proof-of-play telemetry and was missing from the original pass —
 // added so it is covered by the same 12-month window as the other telemetry.
+// conversions (added 2026-09-08, conversion-pixel/conversion-postback) was
+// never added to this job or the Privacy Policy's retention list at all —
+// same 24-month window as scans since a conversion is scan/campaign
+// performance data of the same kind, and scan_id already ON DELETE SET NULL
+// so it survives its source scan row aging out first.
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -48,20 +53,27 @@ Deno.serve(async (_req: Request) => {
     .delete({ count: "exact" })
     .lt("scanned_at", scanCutoff);
 
+  const { error: conversionErr, count: conversionCount } = await supabase
+    .from("conversions")
+    .delete({ count: "exact" })
+    .lt("created_at", scanCutoff);
+
   return new Response(
     JSON.stringify({
-      ok: !heartbeatErr && !impressionErr && !adPlayErr && !scanErr,
+      ok: !heartbeatErr && !impressionErr && !adPlayErr && !scanErr && !conversionErr,
       deleted: {
         display_heartbeats: heartbeatCount ?? 0,
         impression_events: impressionCount ?? 0,
         ad_plays: adPlayCount ?? 0,
         scans: scanCount ?? 0,
+        conversions: conversionCount ?? 0,
       },
       errors: {
         display_heartbeats: heartbeatErr?.message ?? null,
         impression_events: impressionErr?.message ?? null,
         ad_plays: adPlayErr?.message ?? null,
         scans: scanErr?.message ?? null,
+        conversions: conversionErr?.message ?? null,
       },
     }),
     { headers: { "Content-Type": "application/json" } },

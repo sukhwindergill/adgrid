@@ -111,7 +111,8 @@ export function PrivacyPolicy() {
           account and for 90 days following account deletion, after which it is permanently
           deleted. Screen telemetry,
           heartbeat records, and aggregate audience-measurement statistics are retained for
-          12 months, then automatically deleted. QR scan events are retained for 24 months
+          12 months, then automatically deleted. QR scan events and conversion records
+          (from our conversion pixel or server postback) are retained for 24 months
           to support campaign analytics, then automatically deleted. Stripe retains payment
           records independently per their own privacy policy.
         </p>
