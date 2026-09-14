@@ -18,7 +18,7 @@ import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS } from '../../lib/venueTypes.js';
 import { healthSignal, cvAgentSignal } from '../../lib/screenHealth.js';
-import { checkAndGoLive } from '../../lib/screenGoLive.js';
+import { checkAndGoLive, isProfileComplete } from '../../lib/screenGoLive.js';
 import { ScreenLocationPicker } from '../../components/ScreenLocationPicker.jsx';
 import { IconEdit, IconCamera } from '../../components/icons.jsx';
 import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
@@ -475,14 +475,27 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
                 onClick={async () => {
                   setReactivateError(null);
                   const newStatus = screen.status === 'live' ? 'inactive' : 'live';
+                  // Check profile completeness client-side before even trying --
+                  // both this trigger and require_connect_active_for_live_screen
+                  // reject the same UPDATE, and a generic Postgres error can't
+                  // tell the two apart. Checking here means the operator gets
+                  // the right fix (Edit Screen vs. the Payout Setup card) instead
+                  // of "set up payouts" on a screen whose profile, not its
+                  // Connect status, is actually the problem.
+                  if (newStatus === 'live' && !isProfileComplete(screen)) {
+                    setReactivateError("This screen's profile is incomplete (location, environment, display size, or foot traffic) — finish it via Edit above before reactivating.");
+                    return;
+                  }
                   const { error } = await supabase.from('screens').update({ status: newStatus }).eq('id', screen.id);
                   if (!error) {
                     setScreen(s => ({ ...s, status: newStatus }));
                     onScreenUpdated?.({ ...screen, status: newStatus });
                   } else if (newStatus === 'live') {
-                    // Most likely require_connect_active_for_live_screen — this
-                    // screen was deactivated and Connect isn't (or is no longer)
-                    // active. Same fix either way: the Payout Setup card below.
+                    // Profile is confirmed complete (checked above), so a
+                    // rejected UPDATE here is most likely
+                    // require_connect_active_for_live_screen — Connect isn't
+                    // (or is no longer) active. Same fix either way: the
+                    // Payout Setup card below.
                     setReactivateError('Set up payouts (below) before reactivating this screen.');
                   }
                 }}
@@ -1052,6 +1065,11 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         {connStatus === 'needs_payout' && (
           <span style={{ fontSize: 13, color: C.amber, fontFamily: F.sans }}>
             Heartbeat received — set up payouts below before this screen can go live.
+          </span>
+        )}
+        {connStatus === 'needs_profile' && (
+          <span style={{ fontSize: 13, color: C.amber, fontFamily: F.sans }}>
+            Heartbeat received — finish this screen's profile (Edit above) before it can go live.
           </span>
         )}
         {connStatus === 'check_failed' && (
