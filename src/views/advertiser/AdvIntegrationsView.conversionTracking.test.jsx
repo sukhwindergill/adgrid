@@ -64,7 +64,25 @@ describe('AdvIntegrationsView — Conversion Tracking tab', () => {
     render(<AdvIntegrationsView />);
     fireEvent.click(await screen.findByText('Conversion Tracking'));
     expect(await screen.findByText('Conversion pixel')).toBeInTheDocument();
-    expect(screen.getByText(/adgrid_cid=/)).toBeInTheDocument();
+    // The per-platform setup guide (PlatformSetupGuide) also renders a
+    // snippet containing adgrid_cid= for whichever platform is selected, so
+    // more than one match here is expected -- assert at least one exists
+    // rather than a single unique match.
+    expect(screen.getAllByText(/adgrid_cid=/).length).toBeGreaterThan(0);
+  });
+
+  it('shows a per-platform setup guide alongside the generic snippet', async () => {
+    render(<AdvIntegrationsView />);
+    fireEvent.click(await screen.findByText('Conversion Tracking'));
+    expect(await screen.findByText('Where do I put this?')).toBeInTheDocument();
+    // Shopify is the default-selected platform.
+    expect(screen.getByText(/Additional scripts/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('WooCommerce'));
+    expect(await screen.findByText(/wc_get_order/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Google Analytics'));
+    expect(await screen.findByText(/Traffic acquisition/)).toBeInTheDocument();
   });
 
   it('creates a promo code for a selected campaign', async () => {
