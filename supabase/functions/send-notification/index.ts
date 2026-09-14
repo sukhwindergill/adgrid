@@ -379,7 +379,7 @@ function emailHtml(title: string, body: string, ctaLabel: string, ctaUrl: string
     ${ctaUrl ? `<a href="${ctaUrl}" style="display:inline-block;padding:10px 22px;background:#2563eb;color:#fff;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;">${ctaLabel}</a>` : ""}
   </div>
   <div style="padding:16px 28px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;">
-    AdGrid · You're receiving this because you have notifications enabled. <a href="${Deno.env.get("PUBLIC_APP_URL") ?? ""}/app/notification-prefs" style="color:#6b7280;">Unsubscribe</a>
+    AdGrid · You're receiving this because you have notifications enabled. <a href="${Deno.env.get("PUBLIC_APP_URL") ?? ""}/app/notif-prefs" style="color:#6b7280;">Unsubscribe</a>
   </div>
 </div>
 </body></html>`;
