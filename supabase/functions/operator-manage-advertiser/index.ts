@@ -121,11 +121,22 @@ Deno.serve(async (req: Request) => {
     if (!Number.isFinite(amount) || amount <= 0) {
       return new Response(JSON.stringify({ error: "amount must be a positive number" }), { status: 400, headers: CORS });
     }
-    const { data: profile, error: fetchErr } = await supabase.from("profiles").select("credits").eq("id", advertiserIds[0]).single();
-    if (fetchErr || !profile) return new Response(JSON.stringify({ error: "Advertiser not found" }), { status: 404, headers: CORS });
-    const newCredits = Number(profile.credits ?? 0) + amount;
-    const { error } = await supabase.from("profiles").update({ credits: newCredits }).eq("id", advertiserIds[0]);
+    // Platform-audit finding: a SELECT-then-UPDATE here is the same
+    // lost-update race already fixed for reconcile-delivery/sweep-approvals
+    // (see increment_profile_credits' own migration comment) -- this
+    // endpoint is one more independent writer to the same profiles.credits
+    // column, so two operators (or a double-click) crediting the same
+    // advertiser around the same time could silently drop one of the
+    // credits. Atomic RPC instead of a computed UPDATE.
+    const { data: newCredits, error } = await supabase.rpc("increment_profile_credits", {
+      p_profile_id: advertiserIds[0],
+      p_delta: amount,
+    });
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: CORS });
+    // The RPC's UPDATE matches zero rows (and RETURNING yields no row, so
+    // newCredits comes back null) when advertiserIds[0] doesn't exist --
+    // the same case the removed SELECT-first version caught as 404.
+    if (newCredits === null) return new Response(JSON.stringify({ error: "Advertiser not found" }), { status: 404, headers: CORS });
     return new Response(JSON.stringify({ ok: true, credits: newCredits }), { headers: CORS });
   }
 
