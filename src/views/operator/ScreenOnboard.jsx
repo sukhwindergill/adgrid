@@ -15,6 +15,7 @@ import { checkAndGoLive } from '../../lib/screenGoLive.js';
 import { ScreenPhotoManager } from '../../components/screens/ScreenPhotoManager.jsx';
 import { DemandSignal } from '../../components/shared/DemandSignal.jsx';
 import { IconBolt, IconDollar, IconScreen, IconCheckCircle, IconCard, IconWarning, IconSignal } from '../../components/icons.jsx';
+import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
@@ -58,9 +59,10 @@ function WizardProgress({ step, total, onCancel }) {
 // ─── Step 1: Welcome ──────────────────────────────────────────────────────────
 
 function StepWelcome({ onNext }) {
+  const { isMobile } = useBreakpoint();
   return (
     <div style={{ maxWidth: 560, margin: '0 auto' }}>
-      <Card style={{ padding: 40, textAlign: 'center' }}>
+      <Card style={{ padding: isMobile ? 24 : 40, textAlign: 'center' }}>
         <div style={{ color: C.purple, marginBottom: 20, display: 'flex', justifyContent: 'center' }}><IconScreen size={48} /></div>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: C.text, fontFamily: F.display, marginBottom: 12, margin: '0 0 12px' }}>
           Let's get your screen on the network
@@ -69,7 +71,7 @@ function StepWelcome({ onNext }) {
           ADGRID connects your display to advertisers who pay to reach your audience. Setup takes about 5 minutes.
         </p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 36 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 16, marginBottom: 36 }}>
           {[
             { icon: IconScreen, text: 'Works on any display — TV, monitor, or commercial screen' },
             { icon: IconBolt, text: '5 minutes to set up' },
