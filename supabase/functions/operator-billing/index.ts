@@ -97,7 +97,7 @@ Deno.serve(async (req: Request) => {
         balance = {
           available: bal.available.reduce((a, b) => a + b.amount, 0) / 100,
           pending:   bal.pending.reduce((a, b) => a + b.amount, 0) / 100,
-          currency:  bal.available[0]?.currency ?? "gbp",
+          currency:  bal.available[0]?.currency ?? "cad",
         };
 
         payouts = payoutList.data.map(p => ({
