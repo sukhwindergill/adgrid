@@ -16,7 +16,7 @@
 //
 // This mirrors — and is backstopped by — the `screens` triggers in
 // 20260807180309_gate_live_status_on_connect_status.sql (connect) and
-// 20260914180000_gate_live_status_on_profile_complete.sql (profile). The
+// 20260914204724_gate_live_status_on_profile_complete.sql (profile). The
 // triggers are the real authority (they run no matter which client code
 // path attempts the update); this module exists so the UI can explain *why*
 // before it even tries, instead of surfacing a raw Postgres exception.
