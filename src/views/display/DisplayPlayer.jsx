@@ -205,7 +205,18 @@ export function DisplayPlayer({ screenToken }) {
   const fetchFeed = async () => {
     if (stopPollingRef.current) return;
     try {
-      const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/display-feed?token=${screenToken}`);
+      // Onboarding friction fix: resolution used to be a manual optional
+      // field an operator had to type in (often guessed wrong, or skipped).
+      // The device running this player already knows its own real
+      // resolution — report it on every poll so display-feed can fill in
+      // screens.resolution_w/h itself the first time it sees a value, no
+      // operator input required. window.screen (not innerWidth/Height) is
+      // the OS-reported panel resolution, independent of any browser
+      // chrome/zoom this kiosk browser may have.
+      const w = window.screen?.width;
+      const h = window.screen?.height;
+      const resParams = (w && h) ? `&w=${w}&h=${h}` : '';
+      const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/display-feed?token=${screenToken}${resParams}`);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         if (res.status === 404) {

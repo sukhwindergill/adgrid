@@ -44,7 +44,7 @@ function WizardProgress({ step, total, onCancel }) {
         }} />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-        {['Welcome', 'Register', 'Setup', 'Connect', 'Payouts'].map((label, i) => (
+        {['Welcome', 'Register', 'Setup', 'Profile', 'Connect', 'Payouts'].map((label, i) => (
           <div key={label} style={{
             fontSize: 11, fontFamily: F.sans,
             color: i + 1 <= step ? C.purple : C.textMuted,
@@ -128,40 +128,34 @@ function PillGroup({ options, value, onChange }) {
   );
 }
 
-const FORMAT_OPTIONS = ['jpg', 'png', 'gif', 'webp', 'mp4', 'webm', 'mov'];
+// Creative spec (resolution override, accepted formats, max file size) is no
+// longer collected anywhere in this wizard: resolution is auto-captured from
+// the device (see StepProfile's comment and display-feed's w/h params), and
+// the rest stays genuinely optional -- set later via Screens > Edit Screen
+// (EditScreenModal.jsx) if an operator wants to restrict creative formats.
 
-function FormatChips({ value, onChange }) {
-  return (
-    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-      {FORMAT_OPTIONS.map(fmt => {
-        const active = value.includes(fmt);
-        return (
-          <button key={fmt} type="button" onClick={() => {
-            onChange(active ? value.filter(f => f !== fmt) : [...value, fmt]);
-          }} style={{
-            padding: '6px 12px', borderRadius: 16, cursor: 'pointer',
-            border: `1px solid ${active ? C.purple : C.border}`,
-            background: active ? C.purpleSoft : C.surface,
-            color: active ? C.purple : C.textSub,
-            fontSize: 12, fontFamily: F.sans, transition: 'background 0.15s',
-          }}
-            onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
-            onMouseLeave={e => { if (!active) e.currentTarget.style.background = C.surface; }}
-          >{fmt}</button>
-        );
-      })}
-    </div>
-  );
-}
-
+// Onboarding friction fix (2026-09-14): this step used to gate screen
+// creation on 12 fields at once -- including several (display size,
+// resolution, exact map pin, foot-traffic estimate) that either can't be
+// known until the display device itself is plugged in, or that an
+// operator standing in the venue without a tape measure/analytics can't
+// answer accurately on the spot. Split into what only a human can supply
+// right now (name/owner/venue category/rough area) vs what genuinely
+// belongs later:
+//   - resolution_w/h: auto-captured from the device's own screen once it
+//     loads the player URL (see DisplayPlayer.jsx + display-feed's `w`/`h`
+//     query params) -- no operator input needed at all.
+//   - exact address/map pin, environment, screen position, display size,
+//     monthly foot traffic: collected in the new StepProfile, after the
+//     operator has actually seen the device running. Required before the
+//     screen can go live (see screenGoLive.js's 'needs_profile' reason) so
+//     advertisers never see a bookable screen with missing core info, but
+//     not required to get a token and start hardware setup.
 function StepRegister({ onBack, onScreenCreated }) {
   const { user } = useAuth();
   const [form, setForm] = useState({
     name: '', owner_name: '', country: 'CA', state: '', city: '',
-    location: '', venue_category: '', venue_subtype: '', environment: '',
-    screen_position: '', display_size: '', lat: '', lng: '',
-    monthly_traffic_estimate: '',
-    resolution_w: '', resolution_h: '', accepted_formats: [], max_file_mb: '',
+    venue_category: '', venue_subtype: '',
   });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
@@ -176,24 +170,15 @@ function StepRegister({ onBack, onScreenCreated }) {
 
   // The Next button below is simply disabled when any of these fail, with
   // no other indication of which one -- a real operator missing a single
-  // field (e.g. never dropping a map pin) sees an unresponsive button and
-  // no clue why. missingFields drives an inline "still need: ..." hint so
-  // the disabled state is never a dead end.
+  // field sees an unresponsive button and no clue why. missingFields drives
+  // an inline "still need: ..." hint so the disabled state is never a dead end.
   const missingFields = [
     !form.name.trim() && 'screen name',
     !form.owner_name.trim() && 'business / owner name',
     !form.state.trim() && (STATE_LABEL[form.country] || 'province / state'),
     !form.city.trim() && 'city',
-    !form.location.trim() && 'location / address',
     !form.venue_category && 'venue category',
     subtypes.length > 0 && !form.venue_subtype && 'venue type',
-    !form.environment && 'environment (indoor/outdoor)',
-    !form.screen_position && 'screen position',
-    !form.display_size.trim() && 'display size',
-    !(Number(form.monthly_traffic_estimate) > 0) && 'estimated monthly foot traffic',
-    // Coordinates are required: without them the screen is invisible to radius
-    // targeting and cannot contribute to reach estimation.
-    !(Number.isFinite(parseFloat(form.lat)) && Number.isFinite(parseFloat(form.lng))) && 'screen location on the map',
   ].filter(Boolean);
 
   const valid = missingFields.length === 0;
@@ -214,23 +199,16 @@ function StepRegister({ onBack, onScreenCreated }) {
       country:         form.country,
       state:           form.state.trim(),
       city:            form.city.trim(),
-      location:        form.location.trim(),
+      // Defaults to the city until StepProfile fills in the real street
+      // address -- same fallback EditScreenModal already uses so an
+      // unfinished profile never leaves this column blank.
+      location:        form.city.trim(),
       venue_category:  form.venue_category,
       venue_subtype:   form.venue_subtype || null,
-      environment:     form.environment,
-      screen_position: form.screen_position,
-      display_size:    form.display_size.trim(),
-      resolution_w:      Number(form.resolution_w) > 0 ? parseInt(form.resolution_w, 10) : null,
-      resolution_h:      Number(form.resolution_h) > 0 ? parseInt(form.resolution_h, 10) : null,
-      accepted_formats:  form.accepted_formats.length > 0 ? form.accepted_formats : null,
-      max_file_mb:       Number(form.max_file_mb) > 0 ? parseInt(form.max_file_mb, 10) : null,
       status:          'pending',
       operator_id:     user.id,
       max_ad_duration: 30,
-      lat:             form.lat ? parseFloat(form.lat) : null,
-      lon:             form.lng ? parseFloat(form.lng) : null,
       timezone,
-      monthly_traffic_estimate: Number(form.monthly_traffic_estimate),
     };
     // Insert only returns id/name (screen_token is not column-readable, see
     // below) -- the caller's list view needs the full row it just submitted
@@ -297,9 +275,6 @@ function StepRegister({ onBack, onScreenCreated }) {
           <Inp label="City" placeholder="e.g. Toronto"
             value={form.city} onChange={e => set('city', e.target.value)} />
 
-          <Inp label="Location / Address" placeholder="e.g. King St W & Bay St"
-            value={form.location} onChange={e => set('location', e.target.value)} />
-
           <div>
             <SelInput label="Venue Category" value={form.venue_category} onChange={e => handleCategoryChange(e.target.value)}>
               <option value="">Select category…</option>
@@ -317,71 +292,11 @@ function StepRegister({ onBack, onScreenCreated }) {
           )}
 
           <DemandSignal city={form.city.trim()} venueCategory={form.venue_category} />
+        </div>
 
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Environment</div>
-            <PillGroup
-              options={[{ value: 'indoor', label: 'Indoor' }, { value: 'outdoor', label: 'Outdoor' }]}
-              value={form.environment}
-              onChange={val => set('environment', val)}
-            />
-          </div>
-
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Screen Position</div>
-            <PillGroup
-              options={SCREEN_POSITION_OPTIONS}
-              value={form.screen_position}
-              onChange={val => set('screen_position', val)}
-            />
-          </div>
-
-          <Inp label="Display Size" placeholder="e.g. 55 inch 4K, 72 inch LED"
-            value={form.display_size} onChange={e => set('display_size', e.target.value)} />
-
-          <div style={{ marginTop: 8 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 4 }}>
-              Creative spec <span style={{ color: C.textMuted, fontWeight: 400 }}>(optional)</span>
-            </div>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 10, lineHeight: 1.5 }}>
-              Lets advertisers know before they upload whether their creative fits your screen.
-              Leave blank if you're not sure — it won't block anything.
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-              <Inp label="Resolution width (px)" type="number" min="1" placeholder="e.g. 1080"
-                value={form.resolution_w} onChange={e => set('resolution_w', e.target.value)} />
-              <Inp label="Resolution height (px)" type="number" min="1" placeholder="e.g. 1920"
-                value={form.resolution_h} onChange={e => set('resolution_h', e.target.value)} />
-            </div>
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 6 }}>Accepted file formats</div>
-              <FormatChips value={form.accepted_formats} onChange={v => set('accepted_formats', v)} />
-            </div>
-            <Inp label="Max file size (MB)" type="number" min="1" placeholder="e.g. 20"
-              value={form.max_file_mb} onChange={e => set('max_file_mb', e.target.value)} />
-          </div>
-
-          <Inp
-            label="Estimated monthly foot traffic"
-            type="number" min="0" step="1"
-            placeholder="e.g. 8000"
-            value={form.monthly_traffic_estimate}
-            onChange={e => set('monthly_traffic_estimate', e.target.value)}
-          />
-          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: -10 }}>
-            Rough headcount past this screen per month. Drives the reach estimate advertisers see —
-            an empty or zero value shows their campaign as having no audience.
-          </div>
-
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>
-              Screen Location
-            </div>
-            <ScreenLocationPicker
-              value={form.lat !== '' && form.lng !== '' ? { lat: Number(form.lat), lng: Number(form.lng) } : null}
-              onChange={({ lat, lng }) => setForm(s => ({ ...s, lat, lng }))}
-            />
-          </div>
+        <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, marginBottom: 20, lineHeight: 1.5 }}>
+          Exact address, display size, and foot traffic come next — after you've got the display
+          running, so you're not guessing at specs before you've even plugged it in.
         </div>
 
         <ErrorBanner message={err} onDismiss={() => setErr(null)} />
@@ -577,8 +492,135 @@ function StepSetup({ screen, onNext, onBack, onSkip }) {
   );
 }
 
+// ─── Step 4: Profile ────────────────────────────────────────────────────────
+// The exact-address/environment/position/display-size/foot-traffic fields
+// StepRegister used to require up front -- moved here so a screen can get a
+// token and start hardware setup before the operator has to answer things
+// they can only really judge once they've seen the display running. Skippable
+// (the screen already exists and can proceed to Connect/Payouts), but
+// incomplete forever isn't the goal either: screenGoLive.js's 'needs_profile'
+// reason blocks the actual go-live transition until this is filled in, so an
+// advertiser never sees a bookable screen with missing core targeting/reach
+// data. Resolution is deliberately absent from this form -- it's
+// auto-captured from the device itself once it loads the player URL (see
+// DisplayPlayer.jsx's w/h query params into display-feed).
+function StepProfile({ screen, onNext, onBack, onSkip }) {
+  const [form, setForm] = useState({
+    location: screen.location && screen.location !== screen.city ? screen.location : '',
+    environment: screen.environment || '',
+    screen_position: screen.screen_position || '',
+    display_size: screen.display_size || '',
+    monthly_traffic_estimate: screen.monthly_traffic_estimate ? String(screen.monthly_traffic_estimate) : '',
+    lat: screen.lat ?? '',
+    lng: screen.lon ?? '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState(null);
+
+  const set = (key, val) => setForm(s => ({ ...s, [key]: val }));
+
+  const handleSave = async () => {
+    setSaving(true);
+    setErr(null);
+    const updates = {
+      location:                 form.location.trim() || screen.city,
+      environment:               form.environment || null,
+      screen_position:           form.screen_position || null,
+      display_size:              form.display_size.trim() || null,
+      monthly_traffic_estimate:  form.monthly_traffic_estimate ? parseInt(form.monthly_traffic_estimate, 10) : null,
+      lat: form.lat !== '' ? parseFloat(form.lat) : null,
+      lon: form.lng !== '' ? parseFloat(form.lng) : null,
+    };
+    // No .select() -- same screen_token column-grant reason EditScreenModal's
+    // save() documents; merge the known update locally instead.
+    const { error } = await supabase.from('screens').update(updates).eq('id', screen.id);
+    setSaving(false);
+    if (error) { setErr(error.message); return; }
+    onNext({ ...screen, ...updates });
+  };
+
+  return (
+    <div style={{ maxWidth: 600, margin: '0 auto' }}>
+      <Card style={{ padding: 36 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>
+          Finish your screen's profile
+        </h2>
+        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 28px', lineHeight: 1.5 }}>
+          This is what advertisers see when deciding whether to book {screen.name}. You can skip it for
+          now, but the screen can't go live and start taking bookings until it's filled in.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 20 }}>
+          <Inp label="Location / Address" placeholder="e.g. King St W & Bay St"
+            value={form.location} onChange={e => set('location', e.target.value)} />
+
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>
+              Screen Location
+            </div>
+            <ScreenLocationPicker
+              value={form.lat !== '' && form.lng !== '' ? { lat: Number(form.lat), lng: Number(form.lng) } : null}
+              onChange={({ lat, lng }) => setForm(s => ({ ...s, lat, lng }))}
+            />
+          </div>
+
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Environment</div>
+            <PillGroup
+              options={[{ value: 'indoor', label: 'Indoor' }, { value: 'outdoor', label: 'Outdoor' }]}
+              value={form.environment}
+              onChange={val => set('environment', val)}
+            />
+          </div>
+
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Screen Position</div>
+            <PillGroup
+              options={SCREEN_POSITION_OPTIONS}
+              value={form.screen_position}
+              onChange={val => set('screen_position', val)}
+            />
+          </div>
+
+          <Inp label="Display Size" placeholder="e.g. 55 inch 4K, 72 inch LED"
+            value={form.display_size} onChange={e => set('display_size', e.target.value)} />
+
+          <Inp
+            label="Estimated monthly foot traffic"
+            type="number" min="0" step="1"
+            placeholder="e.g. 8000"
+            value={form.monthly_traffic_estimate}
+            onChange={e => set('monthly_traffic_estimate', e.target.value)}
+          />
+          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: -10 }}>
+            Rough headcount past this screen per month. Drives the reach estimate advertisers see.
+          </div>
+        </div>
+
+        <ErrorBanner message={err} onDismiss={() => setErr(null)} />
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Btn variant="secondary" onClick={onBack} style={{ flex: 1 }}>← Back</Btn>
+          <Btn onClick={handleSave} disabled={saving} style={{ flex: 1 }}>
+            {saving ? 'Saving…' : 'Save & continue →'}
+          </Btn>
+        </div>
+        <div style={{ textAlign: 'center', marginTop: 12 }}>
+          <button onClick={onSkip} style={{
+            background: 'none', border: 'none', fontSize: 12, color: C.textMuted,
+            cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
+            onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
+          >Do this later →</button>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 function StepConnect({ screen, onDone, onSkip, onBack }) {
-  // 'idle' | 'checking' | 'connected' | 'none' | 'needs_payout'
+  // 'idle' | 'checking' | 'connected' | 'none' | 'needs_payout' | 'needs_profile'
   const [status, setStatus] = useState('idle');
   const { profile } = useAuth();
 
@@ -587,29 +629,35 @@ function StepConnect({ screen, onDone, onSkip, onBack }) {
     const { eligible, reason } = await checkAndGoLive(supabase, screen.id, profile?.connect_status);
     if (eligible) {
       setStatus('connected');
+    } else if (reason === 'needs_payout' || reason === 'needs_profile') {
+      // Both mean the heartbeat worked -- the screen just can't go live
+      // until something else is finished. Don't report either as a
+      // connection failure.
+      setStatus(reason);
     } else {
-      // 'needs_payout' still means the heartbeat worked — the screen just
-      // can't go live until Stripe Connect is set up (next step). Don't
-      // report it as a connection failure.
-      setStatus(reason === 'needs_payout' ? 'needs_payout' : 'none');
+      setStatus('none');
     }
   };
+
+  const blockedByOwnAction = status === 'needs_payout' || status === 'needs_profile';
 
   return (
     <div style={{ maxWidth: 520, margin: '0 auto' }}>
       <Card style={{ padding: 40, textAlign: 'center' }}>
         <div style={{
-          color: status === 'connected' ? C.green : status === 'needs_payout' ? C.purple : status === 'none' ? C.amber : C.textMuted,
+          color: status === 'connected' ? C.green : blockedByOwnAction ? C.purple : status === 'none' ? C.amber : C.textMuted,
           marginBottom: 20, display: 'flex', justifyContent: 'center',
         }}>
-          {status === 'connected' ? <IconCheckCircle size={48} /> : status === 'needs_payout' ? <IconCard size={48} /> : status === 'none' ? <IconWarning size={48} /> : <IconSignal size={48} />}
+          {status === 'connected' ? <IconCheckCircle size={48} /> : blockedByOwnAction ? <IconCard size={48} /> : status === 'none' ? <IconWarning size={48} /> : <IconSignal size={48} />}
         </div>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
-          {status === 'connected' ? 'Screen is live!' : status === 'needs_payout' ? 'Heartbeat confirmed' : 'Test your connection'}
+          {status === 'connected' ? 'Screen is live!' : blockedByOwnAction ? 'Heartbeat confirmed' : 'Test your connection'}
         </h2>
         <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, margin: '0 0 28px' }}>
           {status === 'connected'
             ? `${screen.name} is connected and sending heartbeats. You're all set.`
+            : status === 'needs_profile'
+            ? `${screen.name} is online. It can't go live yet, though — its listing profile (location, environment, display size, foot traffic) is still incomplete. Go back and finish it.`
             : status === 'needs_payout'
             ? `${screen.name} is online. One more step before it can go live: set up payouts so you actually get paid when it's booked.`
             : status === 'none'
@@ -617,13 +665,19 @@ function StepConnect({ screen, onDone, onSkip, onBack }) {
             : "Click the button below after your display is running. We'll check if it's sending a heartbeat to our servers."}
         </p>
 
-        {status !== 'connected' && status !== 'needs_payout' && (
+        {status !== 'connected' && !blockedByOwnAction && (
           <Btn
             onClick={check}
             disabled={status === 'checking'}
             style={{ width: '100%', marginBottom: 12 }}
           >
             {status === 'checking' ? 'Checking…' : status === 'none' ? 'Retry' : 'Test Connection'}
+          </Btn>
+        )}
+
+        {status === 'needs_profile' && (
+          <Btn onClick={onBack} style={{ width: '100%', marginBottom: 12 }}>
+            Finish profile →
           </Btn>
         )}
 
@@ -756,7 +810,7 @@ export function ScreenOnboardView({ onComplete, onCancel }) {
 
   return (
     <div style={{ padding: '8px 0' }}>
-      <WizardProgress step={step} total={5} onCancel={onCancel} />
+      <WizardProgress step={step} total={6} onCancel={onCancel} />
 
       {step === 1 && (
         <StepWelcome onNext={() => setStep(2)} />
@@ -776,18 +830,26 @@ export function ScreenOnboardView({ onComplete, onCancel }) {
         />
       )}
       {step === 4 && newScreen && (
-        <StepConnect
+        <StepProfile
           screen={newScreen}
-          onDone={() => setStep(5)}
-          onSkip={() => setStep(5)}
+          onNext={(updated) => { setNewScreen(updated); setStep(5); }}
           onBack={() => setStep(3)}
+          onSkip={() => setStep(5)}
         />
       )}
       {step === 5 && newScreen && (
+        <StepConnect
+          screen={newScreen}
+          onDone={() => setStep(6)}
+          onSkip={() => setStep(6)}
+          onBack={() => setStep(4)}
+        />
+      )}
+      {step === 6 && newScreen && (
         <StepPayouts
           onDone={() => onComplete(newScreen)}
           onSkip={() => onComplete(newScreen)}
-          onBack={() => setStep(4)}
+          onBack={() => setStep(5)}
         />
       )}
     </div>

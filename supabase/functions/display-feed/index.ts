@@ -37,12 +37,33 @@ Deno.serve(async (req: Request) => {
 
   const { data: screen, error: screenError } = await supabase
     .from("screens")
-    .select("id, name, operator_id, status, operating_hours_start, operating_hours_end, timezone, max_ad_duration, house_ad_max_pct, programmatic_backfill_enabled")
+    .select("id, name, operator_id, status, operating_hours_start, operating_hours_end, timezone, max_ad_duration, house_ad_max_pct, programmatic_backfill_enabled, resolution_w, resolution_h")
     .eq("screen_token", screenToken)
     .single();
 
   if (screenError || !screen) {
     return new Response(JSON.stringify({ error: "Invalid screen token" }), { status: 404, headers: CORS });
+  }
+
+  // Onboarding friction fix (2026-09-14): resolution used to be a manual,
+  // optional field an operator typed in during Register (often skipped, or
+  // guessed wrong). DisplayPlayer now reports the device's own real
+  // window.screen.width/height on every poll (see its fetchFeed comment) --
+  // the first time this screen has none on file, adopt it. Deliberately
+  // one-shot (only fires while resolution_w is still null): a kiosk browser
+  // window resized or a device swapped later shouldn't silently overwrite a
+  // value the operator may since have corrected by hand in Edit Screen.
+  const reportedW = Number(url.searchParams.get("w"));
+  const reportedH = Number(url.searchParams.get("h"));
+  if (
+    screen.resolution_w == null &&
+    Number.isFinite(reportedW) && reportedW > 0 &&
+    Number.isFinite(reportedH) && reportedH > 0
+  ) {
+    supabase.from("screens")
+      .update({ resolution_w: Math.round(reportedW), resolution_h: Math.round(reportedH) })
+      .eq("id", screen.id)
+      .then(() => {});
   }
 
   // Deactivate (ScreenDetail's Reactivate/Deactivate toggle) sets status
