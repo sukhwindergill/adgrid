@@ -21,6 +21,18 @@ PUSH_INTERVAL  = int(os.getenv("PUSH_INTERVAL_SECONDS", "30"))
 INGEST_URL     = f"{SUPABASE_URL}/functions/v1/ingest-impressions"
 
 PUSHED_LOG = os.path.join(RESULTS_DIR, ".pushed")
+# Result files were only pruned inside the `if push_result(...)` success
+# branch below -- during an extended outage (connectivity down for hours or
+# days, or the ingest endpoint failing) nothing ever gets pushed, so nothing
+# ever gets pruned, and inference keeps writing a new result file every
+# WINDOW_SECONDS forever. A device meant to run unattended for months/years
+# (see save_pushed's own comment) can fill its disk on a long-enough outage.
+# Enforce this cap unconditionally at the end of every loop instead, so a
+# stuck outage still bounds disk use -- at the cost of losing the oldest
+# unsent audience-measurement results once past the cap, which is the same
+# accepted tradeoff DisplayPlayer.jsx's MAX_STALE_MS makes for stale content:
+# bounded loss beats an unbounded resource leak on a real device.
+MAX_RESULT_FILES = 100
 
 def load_pushed() -> set:
     if not Path(PUSHED_LOG).exists():
@@ -102,18 +114,21 @@ if __name__ == "__main__":
                     result = json.load(f)
                 if push_result(result, filename):
                     pushed.add(filename)
-                    # Keep last 100 result files, delete older ones
-                    all_files = sorted(glob.glob(os.path.join(RESULTS_DIR, "*.json")))
-                    for old in all_files[:-100]:
-                        try:
-                            os.remove(old)
-                        except OSError:
-                            pass
             except Exception as e:
                 print(f"[pusher] Error reading {filename}: {e}", flush=True)
 
+        # Enforce the file cap unconditionally, not just after a successful
+        # push -- see MAX_RESULT_FILES comment above. Oldest files first,
+        # regardless of whether they were ever pushed.
+        all_files = sorted(glob.glob(os.path.join(RESULTS_DIR, "*.json")))
+        for old in all_files[:-MAX_RESULT_FILES]:
+            try:
+                os.remove(old)
+            except OSError:
+                pass
+
         # Bound .pushed to filenames still on disk instead of remembering
-        # every push since boot — keeps it in lockstep with the 100-file cap
+        # every push since boot — keeps it in lockstep with the file cap
         # above on a device meant to run unattended for months/years.
         existing = {os.path.basename(p) for p in glob.glob(os.path.join(RESULTS_DIR, "*.json"))}
         save_pushed(pushed & existing)
