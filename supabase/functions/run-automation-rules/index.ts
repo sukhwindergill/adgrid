@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { evaluateRule, shouldNotify } from "../_shared/ruleEvaluator.ts";
 import { flightProgress, pacingRatio } from "../_shared/pacing.ts";
 import { requireCronSecret } from "../_shared/cronGuard.ts";
+import { scopedCampaigns } from "../_shared/ruleScope.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -63,6 +64,45 @@ Deno.serve(async (req: Request) => {
 
   const liveCampaigns = campaigns ?? [];
   let firedCount = 0;
+
+  // AutomationRulesView.jsx never sets scope_campaign_id on create -- every
+  // rule, operator or advertiser, is inserted with it null. Without this,
+  // an unscoped rule was matched by `c.advertiser_id === rule.owner_id`
+  // regardless of owner_side, which never matches an operator's own id
+  // against a booking's advertiser_id: every operator-created rule (their
+  // whole "Alerts & Rules" surface) silently never fired at all. Resolve
+  // which live campaigns run on this operator's own screens instead, same
+  // ownership join operator-schedule-unpaid-campaign/manage-campaign-status
+  // use elsewhere.
+  const operatorIds = [...new Set(
+    rules.filter(r => r.owner_side === "operator" && !r.scope_campaign_id).map(r => r.owner_id as string)
+  )];
+  const operatorCampaignIds = new Map<string, Set<string>>();
+  if (operatorIds.length > 0 && liveCampaigns.length > 0) {
+    const { data: opScreens } = await supabase
+      .from("screens")
+      .select("id, operator_id")
+      .in("operator_id", operatorIds);
+    const screenToOperator = new Map((opScreens ?? []).map(s => [s.id as string, s.operator_id as string]));
+    const screenIds = [...screenToOperator.keys()];
+
+    if (screenIds.length > 0) {
+      const { data: csForOperators } = await supabase
+        .from("campaign_screens")
+        .select("campaign_id, screen_id")
+        .in("campaign_id", liveCampaigns.map(c => c.id))
+        .in("screen_id", screenIds)
+        .eq("is_control", false);
+
+      for (const row of csForOperators ?? []) {
+        const opId = screenToOperator.get(row.screen_id as string);
+        if (!opId) continue;
+        const set = operatorCampaignIds.get(opId) ?? new Set<string>();
+        set.add(row.campaign_id as string);
+        operatorCampaignIds.set(opId, set);
+      }
+    }
+  }
 
   // Snapshot cache: one build per campaign, reused across that campaign's rules.
   const snapshots = new Map<string, SnapshotBundle>();
@@ -141,9 +181,11 @@ Deno.serve(async (req: Request) => {
 
   for (const rule of rules) {
     // Which campaigns this rule covers.
-    const scoped = rule.scope_campaign_id
-      ? liveCampaigns.filter(c => c.id === rule.scope_campaign_id)
-      : liveCampaigns.filter(c => c.advertiser_id === rule.owner_id);
+    const scoped = scopedCampaigns(
+      rule as { owner_id: string; owner_side: string | null; scope_campaign_id: string | null },
+      liveCampaigns as { id: string; advertiser_id: string | null }[],
+      operatorCampaignIds,
+    );
 
     for (const campaign of scoped) {
       const snapshot = await snapshotFor(campaign as Record<string, unknown>);
