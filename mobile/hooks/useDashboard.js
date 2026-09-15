@@ -28,8 +28,13 @@ export function useDashboard(operatorId, ownerRevenueShare) {
         pendingApprovals = pending?.length || 0;
         const startOfMonth = new Date();
         startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0);
+        // No status filter here counted every campaign_screens row created
+        // this month toward revenue -- including still-pending and
+        // rejected ones, which generate no revenue at all. Only
+        // approved/auto_approved rows are actually cleared to run.
         const { data: csRows } = await supabase
           .from('campaign_screens').select('campaign_id').in('screen_id', screenIds)
+          .in('status', ['approved', 'auto_approved'])
           .gte('created_at', startOfMonth.toISOString());
         const campaignIds = [...new Set((csRows || []).map(r => r.campaign_id))];
         if (campaignIds.length > 0) {
