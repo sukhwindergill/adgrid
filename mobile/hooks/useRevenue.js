@@ -11,11 +11,15 @@ export function useRevenue(operatorId, screenIds, periodDays, ownerRevenueShare)
     if (!operatorId || !screenIds || screenIds.length === 0) { setCampaigns([]); setLoading(false); return; }
     async function load() {
       setLoading(true);
+      // 'approved' and 'auto_approved' are both cleared-to-run states --
+      // filtering on 'approved' alone silently excludes every screen with
+      // auto_approve on, undercounting revenue. Same bug class already
+      // fixed in analytics.jsx/advertisers.jsx/screens/[id].jsx.
       let query = supabase
         .from('campaign_screens')
         .select('id, status, approved_at, campaign:bookings(id, name:campaign_name, advertiser_name, budget, start_date)')
         .in('screen_id', screenIds)
-        .eq('status', 'approved');
+        .in('status', ['approved', 'auto_approved']);
       if (periodDays) {
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - periodDays);
