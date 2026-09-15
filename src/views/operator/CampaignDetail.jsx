@@ -108,8 +108,8 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
   };
 
   const statusAction = (s) => {
-    if (s === 'active') return <Btn variant="danger" size="sm" onClick={() => onUpdate({ ...c, status: 'paused' })}>⏸ Pause</Btn>;
-    if (s === 'paused') return <Btn variant="success" size="sm" onClick={() => onUpdate({ ...c, status: 'active' })}>▶ Resume</Btn>;
+    if (s === 'active') return <Btn variant="danger" size="sm" loading={statusActionLoading} onClick={() => runStatusAction('pause')}>⏸ Pause</Btn>;
+    if (s === 'paused') return <Btn variant="success" size="sm" loading={statusActionLoading} onClick={() => runStatusAction('resume')}>▶ Resume</Btn>;
     if (s === 'pending_review' && canReview) return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {rejecting ? (
