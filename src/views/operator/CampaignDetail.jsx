@@ -16,6 +16,7 @@ import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
 import { DeliveryCheckPanel } from '../../components/shared/DeliveryCheckPanel.jsx';
 import { PacingCard } from '../../components/shared/PacingCard.jsx';
 import { IconEdit, IconClock } from '../../components/icons.jsx';
+import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 
 export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onDuplicate, canReview = false, setCampaigns, onApprovalChange, isAdvertiserView = false }) {
   const toast = useToast();
@@ -31,7 +32,32 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
   const [editingCreative, setEditingCreative] = useState(false);
   const [creativeForm, setCreativeForm] = useState({ accent_color: campaign.color ?? '#7c3aed' });
   const [deliveryCheckRow, setDeliveryCheckRow] = useState(null);
+  const [statusActionLoading, setStatusActionLoading] = useState(false);
   const c = campaign;
+
+  // Was onUpdate({...c, status: ...}) -> App.jsx's updateCampaign, which
+  // only ever writes to the server for the "becomingActive" (payment)
+  // transition and otherwise just mutates local state -- Pause/Resume/
+  // Cancel had NO backend write at all, and Resume's naive toggle to
+  // 'active' would have mistakenly re-run the charge-campaign payment flow
+  // on an already-paid campaign. Routed through manage-campaign-status
+  // instead, which re-derives the correct target status server-side and
+  // is the only thing that actually has a column-level UPDATE grant on
+  // bookings.status.
+  async function runStatusAction(action) {
+    setStatusActionLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/manage-campaign-status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+      body: JSON.stringify({ campaign_id: c.id, action }),
+    });
+    const json = await res.json().catch(() => ({}));
+    setStatusActionLoading(false);
+    if (!res.ok) { toast.error(json.error ?? `Failed to ${action} campaign.`); return; }
+    onUpdate({ ...c, status: json.status, __skipServerWrite: true });
+    toast.success(`Campaign ${action === 'pause' ? 'paused' : action === 'resume' ? 'resumed' : 'cancelled'}.`);
+  }
 
   useEffect(() => {
     if (!c.holdout_enabled) return;
@@ -277,10 +303,10 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
           <Card>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Danger Zone</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <Btn variant="danger" onClick={() => onUpdate({ ...c, status: c.status === 'paused' ? 'active' : 'paused' })}>
+              <Btn variant="danger" loading={statusActionLoading} onClick={() => runStatusAction(c.status === 'paused' ? 'resume' : 'pause')}>
                 {c.status === 'paused' ? '▶ Resume Campaign' : '⏸ Pause Campaign'}
               </Btn>
-              <Btn variant="danger" onClick={() => onUpdate({ ...c, status: 'completed' })}>✕ Cancel Campaign</Btn>
+              <Btn variant="danger" loading={statusActionLoading} onClick={() => runStatusAction('cancel')}>✕ Cancel Campaign</Btn>
             </div>
             <div style={{ marginTop: 12, fontSize: 11, color: C.textMuted, fontFamily: F.sans, lineHeight: 1.6 }}>
               Cancelling stops the campaign immediately. Unused budget will be reviewed for refund per your agreement.
