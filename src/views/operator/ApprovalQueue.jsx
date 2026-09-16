@@ -178,7 +178,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
     const snoozedUntil = approvalPolicy?.auto_approve_prompt_snoozed_until
       ? new Date(approvalPolicy.auto_approve_prompt_snoozed_until).getTime()
       : 0;
-    if (isAdvertiserVerified && !approvalPolicy?.auto_approve_verified_advertisers && Date.now() > snoozedUntil) {
+    if (approvalPolicy !== null && isAdvertiserVerified && !approvalPolicy?.auto_approve_verified_advertisers && Date.now() > snoozedUntil) {
       setShowNudge(true);
     }
   };
