@@ -144,7 +144,7 @@ export function AdvertiserVerificationQueue() {
                   {v.profiles?.name ?? 'Unnamed advertiser'} · {v.profiles?.email}
                 </div>
               </div>
-              <Badge status={v.status === 'rejected' ? 'rejected' : 'approved'}>
+              <Badge status={v.status === 'rejected' ? 'rejected' : 'verified'}>
                 {v.status === 'rejected' ? 'Rejected' : 'Verified'}
               </Badge>
             </Card>

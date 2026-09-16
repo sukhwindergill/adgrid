@@ -59,6 +59,9 @@ Deno.serve(async (req: Request) => {
   if (fetchError || !verification) {
     return new Response(JSON.stringify({ error: "Verification not found" }), { status: 404, headers: CORS });
   }
+  if (verification.status !== "pending_manual") {
+    return new Response(JSON.stringify({ error: "This verification has already been reviewed" }), { status: 409, headers: CORS });
+  }
 
   const newStatus = decision === "approved" ? "verified" : "rejected";
   const { error: updateError } = await supabase
@@ -74,9 +77,27 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: updateError.message }), { status: 500, headers: CORS });
   }
 
+  // Derive the profile flag from the advertiser's LATEST verification row,
+  // not just this decision -- history is kept (a rejection doesn't overwrite
+  // an earlier row, resubmission creates a new one), so reviewing an older
+  // row must never clobber a newer row's outcome. Since the 409 guard above
+  // only allows reviewing a row that was still pending_manual, the row just
+  // updated is normally the latest one anyway; this query is the safe
+  // general rule if that ever isn't true.
+  const { data: latest, error: latestError } = await supabase
+    .from("advertiser_verifications")
+    .select("status")
+    .eq("profile_id", verification.profile_id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+  if (latestError || !latest) {
+    return new Response(JSON.stringify({ error: latestError?.message ?? "Could not determine latest verification" }), { status: 500, headers: CORS });
+  }
+
   const { error: profileError } = await supabase
     .from("profiles")
-    .update({ is_verified_advertiser: decision === "approved" })
+    .update({ is_verified_advertiser: latest.status === "verified" })
     .eq("id", verification.profile_id);
   if (profileError) {
     return new Response(JSON.stringify({ error: profileError.message }), { status: 500, headers: CORS });

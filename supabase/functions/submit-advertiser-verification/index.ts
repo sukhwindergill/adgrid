@@ -30,7 +30,7 @@ Deno.serve(async (req: Request) => {
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) return new Response("Unauthorized", { status: 401, headers: CORS });
 
-  const { data: profile } = await supabase.from("profiles").select("role, email").eq("id", user.id).single();
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   if (profile?.role !== "advertiser") {
     return new Response(JSON.stringify({ error: "Only advertiser accounts can submit verification" }), { status: 403, headers: CORS });
   }
@@ -45,7 +45,11 @@ Deno.serve(async (req: Request) => {
   }
 
   const normalizedInputDomain = normalizeDomain(businessDomain);
-  const accountDomain = extractDomain(profile?.email ?? "");
+  // user.email comes from auth.users via the authenticated JWT, not the
+  // client-writable profiles.email column -- an advertiser could otherwise
+  // rewrite profiles.email to an arbitrary domain and get instantly
+  // auto-verified for a business they don't control.
+  const accountDomain = extractDomain(user.email ?? "");
   const isDomainMatch = normalizedInputDomain.length > 0 && normalizedInputDomain === accountDomain;
 
   // Providing a document always routes to manual review, even on a domain
