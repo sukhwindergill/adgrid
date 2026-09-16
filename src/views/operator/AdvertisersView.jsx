@@ -328,9 +328,9 @@ export default function AdvertisersView({ onImpersonate }) {
     if (!ok) return;
     const previousStatuses = new Map(advertisers.filter((a) => ids.includes(a.id)).map((a) => [a.id, a.status ?? "active"]));
     setBulkBusy(true);
-    const { ok, error } = await callManageAdvertiser("set_status", { advertiserIds: ids, status });
+    const { ok: succeeded, error } = await callManageAdvertiser("set_status", { advertiserIds: ids, status });
     setBulkBusy(false);
-    if (!ok) { toast.error(error ?? "Bulk update failed."); return; }
+    if (!succeeded) { toast.error(error ?? "Bulk update failed."); return; }
     setAdvertisers((prev) => prev.map((a) => ids.includes(a.id) ? { ...a, status } : a));
     setChecked(new Set());
     const label = `${ids.length} advertiser${ids.length !== 1 ? "s" : ""} ${status === "suspended" ? "suspended" : "reactivated"}.`;
