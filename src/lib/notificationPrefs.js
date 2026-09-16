@@ -22,6 +22,8 @@ export const EVENTS = [
   { key: 'weekly_revenue',     label: 'Weekly revenue summary',    desc: 'Weekly revenue across your screen network', operatorOnly: true },
   { key: 'team_member_joined', label: 'Team member joined',        desc: 'When someone accepts your team invite', operatorOnly: false },
   { key: 'account_suspended',  label: 'Account suspended',         desc: 'If your account is suspended', operatorOnly: false },
+  { key: 'advertiser_verification_approved', label: 'Business verification approved', desc: 'When your business verification is approved', operatorOnly: false },
+  { key: 'advertiser_verification_rejected', label: 'Business verification rejected', desc: 'When your business verification needs changes', operatorOnly: false },
   { key: 'marketplace_thread_message', label: 'Marketplace messages', desc: 'When you get a new message in a marketplace listing thread', operatorOnly: false },
   { key: 'screen_offline',             label: 'Screen offline',           desc: 'When one of your screens stops checking in', operatorOnly: true },
   { key: 'screen_offline_during_flight', label: 'Screen down mid-campaign', desc: "When a screen your live campaign is booked on goes offline", operatorOnly: false },
