@@ -21,6 +21,7 @@ function makeQuery(state, resolve) {
     update: (payload) => { state.updatePayload = payload; return builder; },
     in: (col, vals) => { state.filters[col] = { op: 'in', vals }; return builder; },
     eq: (col, val) => { state.filters[col] = { op: 'eq', val }; return builder; },
+    maybeSingle: () => builder,
     then: (onFulfilled, onRejected) => Promise.resolve(resolve(state)).then(onFulfilled, onRejected),
   };
   return builder;
@@ -29,6 +30,8 @@ function makeQuery(state, resolve) {
 function respond(state) {
   const { table, selectCols, updatePayload, filters } = state;
   if (table === 'campaign_creative_screens') return { data: [], error: null };
+  if (table === 'profiles') return { data: [], error: null };
+  if (table === 'operator_approval_rules') return { data: null, error: null };
   if (table === 'bookings') {
     return { data: campaigns.filter(c => (filters.id?.vals ?? []).includes(c.id)), error: null };
   }
