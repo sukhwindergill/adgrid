@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { EVENTS, defaultChannelPrefs, normalizeChannelPrefs } from './notificationPrefs.js';
 
 describe('EVENTS', () => {
-  it('has 15 events with unique keys', () => {
-    expect(EVENTS).toHaveLength(17);
-    expect(new Set(EVENTS.map(e => e.key)).size).toBe(17);
+  it('has 19 events with unique keys', () => {
+    expect(EVENTS).toHaveLength(19);
+    expect(new Set(EVENTS.map(e => e.key)).size).toBe(19);
   });
 
   it('includes marketplace_thread_message', () => {
@@ -18,7 +18,7 @@ describe('EVENTS', () => {
 describe('defaultChannelPrefs', () => {
   it('defaults every event to both channels enabled', () => {
     const prefs = defaultChannelPrefs();
-    expect(Object.keys(prefs)).toHaveLength(17);
+    expect(Object.keys(prefs)).toHaveLength(19);
     for (const event of EVENTS) {
       expect(prefs[event.key]).toEqual({ inApp: true, email: true });
     }
