@@ -63,6 +63,7 @@ const AcceptGrantView = lazy(() => import('./views/accounts/AcceptGrantView.jsx'
 const AdminInvites = lazy(() => import('./views/admin/AdminInvites.jsx').then(m => ({ default: m.AdminInvites })));
 const DisputeQueue = lazy(() => import('./views/admin/DisputeQueue.jsx').then(m => ({ default: m.DisputeQueue })));
 const OperatorVerificationQueue = lazy(() => import('./views/admin/OperatorVerificationQueue.jsx').then(m => ({ default: m.OperatorVerificationQueue })));
+const AdvertiserVerificationView = lazy(() => import('./views/advertiser/AdvertiserVerificationView.jsx').then(m => ({ default: m.AdvertiserVerificationView })));
 
 // Public views (no auth required) — also lazy so the marketing/display
 // bundles don't ship with the authenticated dashboard's first paint.
@@ -674,6 +675,7 @@ export default function App() {
         <Route path="/invite/screen/:token" element={<ScreenInvitePage />} />
         <Route path="/invite/:token" element={<InviteAcceptPage />} />
         <Route path="/app/accounts" element={<RequireAuth><AccountHubRoute /></RequireAuth>} />
+        <Route path="/app/verification" element={<RequireAuth><AdvertiserVerificationView /></RequireAuth>} />
         <Route
           path="/app/admin/invites"
           element={<RequireAuth><RequirePlatformOwner><AdminInvites /></RequirePlatformOwner></RequireAuth>}
