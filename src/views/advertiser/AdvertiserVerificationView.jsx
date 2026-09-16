@@ -68,14 +68,14 @@ export function AdvertiserVerificationView() {
       docStoragePath = path;
     }
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { toast.error('Session expired. Please log in again.'); setSubmitting(false); return; }
-
     const cleanupOrphan = () => {
       if (docStoragePath) {
         supabase.storage.from('advertiser-docs').remove([docStoragePath]).catch(() => {});
       }
     };
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { cleanupOrphan(); toast.error('Session expired. Please log in again.'); setSubmitting(false); return; }
 
     let res;
     try {
