@@ -79,6 +79,15 @@ Deno.serve(async (req: Request) => {
       .update({ is_verified_advertiser: true })
       .eq("id", user.id);
     if (profileError) {
+      // The advertiser_verifications row above already committed as "verified",
+      // but the profile flag failed to flip -- without a rollback this leaves an
+      // orphaned verified row with no way for the advertiser to recover (a 500
+      // gives no indication a row exists, and resubmitting would just create a
+      // second row instead of fixing the first). Best-effort delete the row we
+      // just inserted so a failed submission leaves no trace and can be cleanly
+      // resubmitted. This is not a real transaction, just a compensating action,
+      // matching how other edge functions in this codebase handle partial failure.
+      await supabase.from("advertiser_verifications").delete().eq("id", row.id);
       return new Response(JSON.stringify({ error: profileError.message }), { status: 500, headers: CORS });
     }
   }
