@@ -46,7 +46,7 @@ Deno.serve(async (req: Request) => {
     return rateLimitResponse(CORS);
   }
 
-  const { returnUrl, state } = await req.json();
+  const { returnUrl, state } = await req.json().catch(() => ({}));
   if (!returnUrl) return new Response(JSON.stringify({ error: "Missing returnUrl" }), { status: 400, headers: CORS });
   if (!state) return new Response(JSON.stringify({ error: "Missing state" }), { status: 400, headers: CORS });
 

@@ -1,6 +1,7 @@
 import Stripe from "https://esm.sh/stripe@14?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { rateLimited } from "../_shared/rateLimit.ts";
+import { countServingScreensByCampaign, operatorSharePct } from "../_shared/payoutSharing.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
   apiVersion: "2023-10-16",
@@ -41,7 +42,7 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "Too many requests" }), { status: 429, headers: CORS });
   }
 
-  const { periodStart, periodEnd } = await req.json();
+  const { periodStart, periodEnd } = await req.json().catch(() => ({}));
   if (!periodStart || !periodEnd) {
     return new Response(JSON.stringify({ error: "Missing periodStart or periodEnd" }), { status: 400, headers: CORS });
   }
@@ -78,12 +79,38 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Resolve campaign IDs on operator's screens via campaign_screens
+  // Resolve campaign IDs on operator's screens via campaign_screens. Same
+  // "never pay for a screen that didn't serve" reasoning as
+  // distributeOperatorCuts excludes control (holdout) screens and any
+  // screen that isn't approved/auto_approved.
   const { data: csRows } = await supabase
     .from("campaign_screens")
     .select("campaign_id")
-    .in("screen_id", screenIds);
-  const campaignIds = (csRows ?? []).map((r: { campaign_id: string }) => r.campaign_id);
+    .in("screen_id", screenIds)
+    .eq("is_control", false)
+    .in("status", ["approved", "auto_approved"]);
+  const campaignIds = [...new Set((csRows ?? []).map((r: { campaign_id: string }) => r.campaign_id))];
+  const operatorScreenCountByCampaign = countServingScreensByCampaign((csRows ?? []) as { campaign_id: string }[]);
+
+  // Financial-audit fix: this used to pay the calling operator their full
+  // revenueShare of each campaign's ENTIRE budget, with no regard for how
+  // many other operators/screens also share it -- distributeOperatorCuts
+  // (charge-campaign's primary payout path, which this function is a
+  // backfill safety net for) splits every campaign's payout by
+  // operatorScreenCount / totalScreens across ALL operators on it. Fetch
+  // every non-control approved/auto_approved screen on these campaigns
+  // (any operator) to compute the same denominator, or this operator
+  // gets paid for other operators' screens too on any multi-operator
+  // campaign.
+  const { data: allScreenRows } = campaignIds.length > 0
+    ? await supabase
+        .from("campaign_screens")
+        .select("campaign_id")
+        .in("campaign_id", campaignIds)
+        .eq("is_control", false)
+        .in("status", ["approved", "auto_approved"])
+    : { data: [] };
+  const totalScreenCountByCampaign = countServingScreensByCampaign((allScreenRows ?? []) as { campaign_id: string }[]);
 
   // Sum campaign budgets within period
   const { data: campaigns } = campaignIds.length > 0
@@ -121,11 +148,19 @@ Deno.serve(async (req: Request) => {
   // Group by currency to avoid cross-currency aggregation. Booking IDs are
   // tracked alongside the running total so a successful transfer can
   // reconcile operator_transfers for exactly the bookings it actually paid.
+  // Each booking's budget is weighted by this operator's screen share
+  // before being added in -- see the operatorScreenCountByCampaign /
+  // totalScreenCountByCampaign fix above.
   const byCurrency = new Map<string, number>();
   const bookingIdsByCurrency = new Map<string, string[]>();
   for (const c of unhandledCampaigns as { id: string; budget: number; currency?: string }[]) {
+    const totalScreens = totalScreenCountByCampaign.get(c.id) ?? 0;
+    const ownScreens = operatorScreenCountByCampaign.get(c.id) ?? 0;
+    const share = operatorSharePct(ownScreens, totalScreens);
+    if (share === 0) continue;
     const cur = (c.currency ?? "cad").toLowerCase();
-    byCurrency.set(cur, (byCurrency.get(cur) ?? 0) + (c.budget ?? 0));
+    const weightedBudget = (c.budget ?? 0) * share;
+    byCurrency.set(cur, (byCurrency.get(cur) ?? 0) + weightedBudget);
     bookingIdsByCurrency.set(cur, [...(bookingIdsByCurrency.get(cur) ?? []), c.id]);
   }
 

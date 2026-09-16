@@ -140,7 +140,7 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "Too many requests" }), { status: 429, headers: CORS });
   }
 
-  const { listingId, autoRenew } = await req.json();
+  const { listingId, autoRenew } = await req.json().catch(() => ({}));
   if (!listingId) {
     return new Response(JSON.stringify({ error: "listingId required" }), { status: 400, headers: CORS });
   }

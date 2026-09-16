@@ -49,7 +49,7 @@ Deno.serve(async (req: Request) => {
     return rateLimitResponse(CORS);
   }
 
-  const { operatorId, decision, notes } = await req.json();
+  const { operatorId, decision, notes } = await req.json().catch(() => ({}));
   if (!operatorId || !decision) {
     return new Response(JSON.stringify({ error: "Missing operatorId or decision" }), { status: 400, headers: CORS });
   }
