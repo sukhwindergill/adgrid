@@ -11,6 +11,7 @@ import { Badge } from '../../components/primitives/Badge.jsx';
 
 const ALLOWED_DOC_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
 const MAX_DOC_MB = 10;
+const MIME_TO_EXT = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png' };
 
 export function AdvertiserVerificationView() {
   const navigate = useNavigate();
@@ -57,7 +58,8 @@ export function AdvertiserVerificationView() {
 
     let docStoragePath = null;
     if (docFile) {
-      const ext = (docFile.name.split('.').pop() || 'pdf').toLowerCase();
+      const dotExt = docFile.name.includes('.') ? docFile.name.split('.').pop().toLowerCase() : null;
+      const ext = dotExt || MIME_TO_EXT[docFile.type] || 'pdf';
       const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
       const { error: uploadErr } = await supabase.storage
         .from('advertiser-docs')
@@ -69,15 +71,33 @@ export function AdvertiserVerificationView() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { toast.error('Session expired. Please log in again.'); setSubmitting(false); return; }
 
-    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/submit-advertiser-verification`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ companyName, businessNumber: businessNumber || null, businessDomain, docStoragePath }),
-    });
+    const cleanupOrphan = () => {
+      if (docStoragePath) {
+        supabase.storage.from('advertiser-docs').remove([docStoragePath]).catch(() => {});
+      }
+    };
+
+    let res;
+    try {
+      res = await fetch(`${SUPABASE_FUNCTIONS_URL}/submit-advertiser-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ companyName, businessNumber: businessNumber || null, businessDomain, docStoragePath }),
+      });
+    } catch {
+      cleanupOrphan();
+      setSubmitting(false);
+      toast.error('Network error — please try again.');
+      return;
+    }
     const body = await res.json().catch(() => ({}));
     setSubmitting(false);
 
-    if (!res.ok) { toast.error(body?.error ?? 'Submission failed.'); return; }
+    if (!res.ok) {
+      cleanupOrphan();
+      toast.error(body?.error ?? 'Submission failed.');
+      return;
+    }
     toast.success(body.tier === 'domain_match' ? 'Verified!' : 'Submitted for review.');
     refresh();
   };
