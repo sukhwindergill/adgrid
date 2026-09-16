@@ -60,7 +60,7 @@ Deno.serve(async (_req: Request) => {
   const { data: policies } = operatorIds.length
     ? await supabase
         .from("operator_approval_rules")
-        .select("operator_id, enabled, auto_approve_categories, min_completed_campaigns")
+        .select("operator_id, enabled, auto_approve_categories, min_completed_campaigns, auto_approve_verified_advertisers")
         .in("operator_id", operatorIds)
     : { data: [] as Record<string, unknown>[] };
   const policyByOperator = new Map((policies ?? []).map(p => [p.operator_id as string, p]));
@@ -76,6 +76,11 @@ Deno.serve(async (_req: Request) => {
       .eq("status", "completed");
     completedByAdvertiser.set(advertiserId, count ?? 0);
   }
+
+  const { data: advertiserProfiles } = advertiserIds.length
+    ? await supabase.from("profiles").select("id, is_verified_advertiser").in("id", advertiserIds)
+    : { data: [] as Record<string, unknown>[] };
+  const verifiedByAdvertiser = new Map((advertiserProfiles ?? []).map(p => [p.id as string, Boolean(p.is_verified_advertiser)]));
 
   let autoApproved = 0;
   let expired = 0;
@@ -101,6 +106,7 @@ Deno.serve(async (_req: Request) => {
     const decision = policyApproves(policy as never, {
       category: campaign.category as string,
       completedCampaigns: completedByAdvertiser.get(campaign.advertiser_id as string) ?? 0,
+      advertiserIsVerified: verifiedByAdvertiser.get(campaign.advertiser_id as string) ?? false,
     });
 
     if (decision.approved) {
