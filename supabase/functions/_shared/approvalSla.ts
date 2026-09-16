@@ -15,6 +15,7 @@ export interface ApprovalPolicy {
   enabled?: boolean;
   auto_approve_categories?: string[] | null;
   min_completed_campaigns?: number | null;
+  auto_approve_verified_advertisers?: boolean;
 }
 
 export interface PolicyDecision {
@@ -64,9 +65,16 @@ export function hoursRemaining(dueAt: string | null | undefined, now: Date = new
 
 export function policyApproves(
   policy: ApprovalPolicy | null | undefined,
-  campaign: { category?: string | null; completedCampaigns?: number | null },
+  campaign: { category?: string | null; completedCampaigns?: number | null; advertiserIsVerified?: boolean },
 ): PolicyDecision {
   if (!policy) return { approved: false, reason: 'no_policy' };
+
+  // Verified-advertiser trust is independent of the category policy below --
+  // an operator can turn this on without ever enabling category auto-approve.
+  if (policy.auto_approve_verified_advertisers && campaign?.advertiserIsVerified) {
+    return { approved: true, reason: null };
+  }
+
   if (!policy.enabled) return { approved: false, reason: 'policy_disabled' };
 
   const allowed = Array.isArray(policy.auto_approve_categories) ? policy.auto_approve_categories : [];
