@@ -72,6 +72,16 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
     body: `"${d.campaignName}" has been approved and is now scheduled to go live.`,
     html: emailHtml("Your campaign is approved", `Your campaign <strong>${d.campaignName}</strong> has been approved and is scheduled to go live.`, "View Campaign", d.appUrl ?? ""),
   }),
+  advertiser_verification_approved: (d) => ({
+    title: "Business verification approved",
+    body: "Your business is now verified — you'll show as a verified advertiser to operators.",
+    html: emailHtml("Business verification approved", "Your business is now verified. You'll show as a verified advertiser to operators, and may qualify for faster approvals.", "View Account", d.appUrl ?? ""),
+  }),
+  advertiser_verification_rejected: (d) => ({
+    title: "Business verification needs changes",
+    body: d.reason ? `Your submission needs changes: ${d.reason}` : "Your business verification submission needs changes.",
+    html: emailHtml("Business verification needs changes", `Your submission needs changes${d.reason ? `: <strong>${d.reason}</strong>` : "."}`, "Review Submission", d.appUrl ?? ""),
+  }),
   campaign_live: (d) => ({
     title: "Campaign is now live",
     body: `"${d.campaignName}" is now live on ${d.screenName}.`,
@@ -130,6 +140,15 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
       `Your campaign <strong>${d.campaignName}</strong> was paused automatically by your rule <strong>${d.ruleName}</strong> (${d.metric} was ${d.value}). Nothing further will be spent until you resume it.`,
       "View Campaign",
       d.appUrl ?? "",
+    ),
+  }),
+  auto_approved_verified_advertiser: (d) => ({
+    title: "Booking auto-approved",
+    body: `"${d.campaignName}" was auto-approved on ${d.screenName} — the advertiser is verified.`,
+    html: emailHtml(
+      "Booking auto-approved",
+      `<strong>${d.campaignName}</strong> was automatically approved on <strong>${d.screenName}</strong> because the advertiser is verified. You can turn this off anytime in Settings.`,
+      "View Booking", d.appUrl ?? "",
     ),
   }),
   approval_sla_approaching: (d) => ({

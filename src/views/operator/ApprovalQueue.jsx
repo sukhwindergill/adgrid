@@ -5,6 +5,7 @@ import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { Badge } from '../../components/primitives/Badge.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
 import { checkCreativeFit, REASON_LABEL } from '../../lib/creativeFit.js';
@@ -62,13 +63,15 @@ function healthLabel(screen) {
   return { label: 'Offline', color: C.red };
 }
 
-function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByScreen, onApproved, onRejected, setCampaigns, index = 0, ownerRevenueShare = DEFAULT_OWNER_REVENUE_SHARE }) {
+function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByScreen, onApproved, onRejected, setCampaigns, index = 0, ownerRevenueShare = DEFAULT_OWNER_REVENUE_SHARE, isAdvertiserVerified = false, approvalPolicy = null, refreshPolicy }) {
   const { isMobile } = useBreakpoint();
+  const { user } = useAuth();
   const confirm = useConfirm();
   const [rejectScreenId, setRejectScreenId] = useState(null);
   const [rejectReason, setRejectReason] = useState(REJECT_REASONS[0]);
   const [acting, setActing] = useState(false);
   const [actionErr, setActionErr] = useState(null);
+  const [showNudge, setShowNudge] = useState(false);
 
   const attemptCharge = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -171,6 +174,13 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
     }
     setActing(false);
     onApproved(campaign.id, screenId);
+
+    const snoozedUntil = approvalPolicy?.auto_approve_prompt_snoozed_until
+      ? new Date(approvalPolicy.auto_approve_prompt_snoozed_until).getTime()
+      : 0;
+    if (approvalPolicy !== null && isAdvertiserVerified && !approvalPolicy?.auto_approve_verified_advertisers && Date.now() > snoozedUntil) {
+      setShowNudge(true);
+    }
   };
 
   const approveAll = async () => {
@@ -235,11 +245,39 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
         padding: '10px 16px', borderBottom: `1px solid ${C.border}`, background: C.surfaceAlt,
       }}>
         <div style={{ width: 8, height: 8, borderRadius: '50%', background: campaign.accent_color || campaign.color || C.purple, flexShrink: 0 }} />
-        <span style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: F.sans, flex: 1 }}>{campaign.advertiser_name || campaign.advertiser}</span>
+        <span style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: F.sans, flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+          {campaign.advertiser_name || campaign.advertiser}
+          {isAdvertiserVerified && <Badge status="verified">Verified</Badge>}
+        </span>
         <span style={{ fontSize: 10, background: C.amber, color: '#fff', padding: '2px 8px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>PENDING</span>
         <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>{campaign.category}</span>
         <span style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{timeAgo(campaign.created_at)}</span>
       </div>
+
+      {showNudge && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '10px 16px', background: C.purpleSoft, borderBottom: `1px solid ${C.purpleBorder}`, fontFamily: F.sans, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 12, color: C.text }}>Auto-approve verified advertisers like this one?</div>
+          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+            <Btn size="sm" variant="primary" onClick={async () => {
+              await supabase.from('operator_approval_rules').upsert({ operator_id: user.id, auto_approve_verified_advertisers: true, updated_at: new Date().toISOString() }, { onConflict: 'operator_id' });
+              setShowNudge(false);
+              refreshPolicy?.();
+            }}>Enable</Btn>
+            <Btn size="sm" variant="ghost" onClick={async () => {
+              const in30days = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
+              await supabase.from('operator_approval_rules').upsert({ operator_id: user.id, auto_approve_prompt_snoozed_until: in30days, updated_at: new Date().toISOString() }, { onConflict: 'operator_id' });
+              setShowNudge(false);
+              refreshPolicy?.();
+            }}>Remind in 30 days</Btn>
+            <Btn size="sm" variant="ghost" onClick={async () => {
+              const farFuture = new Date('2099-01-01').toISOString();
+              await supabase.from('operator_approval_rules').upsert({ operator_id: user.id, auto_approve_prompt_snoozed_until: farFuture, updated_at: new Date().toISOString() }, { onConflict: 'operator_id' });
+              setShowNudge(false);
+              refreshPolicy?.();
+            }}>Don't ask again</Btn>
+          </div>
+        </div>
+      )}
 
       {/* Body */}
       <div style={{
@@ -529,6 +567,39 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
     campaign_screens: campaignScreens[c.id] || [],
   }));
 
+  // Verified-advertiser status for the distinct advertisers on this page, and
+  // the operator's own approval policy row -- both fetched once here (not
+  // per-card) and handed down as props, matching the batched-query pattern
+  // the rest of this component already uses for campaignScreens/bookingsById.
+  const [verifiedAdvertisers, setVerifiedAdvertisers] = useState(new Set());
+  const [approvalPolicy, setApprovalPolicy] = useState(null);
+
+  const advertiserIds = [...new Set(enriched.map(c => c.advertiser_id).filter(Boolean))];
+  const advertiserIdsKey = advertiserIds.slice().sort().join(',');
+
+  useEffect(() => {
+    if (advertiserIds.length === 0) { setVerifiedAdvertisers(new Set()); return; }
+    supabase.from('profiles')
+      .select('id, is_verified_advertiser')
+      .in('id', advertiserIds)
+      .then(({ data }) => {
+        setVerifiedAdvertisers(new Set((data || []).filter(p => p.is_verified_advertiser).map(p => p.id)));
+      });
+  }, [advertiserIdsKey]);
+
+  const loadApprovalPolicy = () => {
+    if (!user?.id) { setApprovalPolicy(null); return; }
+    supabase.from('operator_approval_rules')
+      .select('auto_approve_verified_advertisers, auto_approve_prompt_snoozed_until')
+      .eq('operator_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setApprovalPolicy(data || { auto_approve_verified_advertisers: false, auto_approve_prompt_snoozed_until: null });
+      });
+  };
+
+  useEffect(() => { loadApprovalPolicy(); }, [user?.id]);
+
   const applyApproved = (campaignId, screenId) => {
     setCampaignScreens(prev => ({
       ...prev,
@@ -750,6 +821,9 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
             onRejected={handleRejected}
             setCampaigns={setCampaigns}
             ownerRevenueShare={ownerRevenueShare}
+            isAdvertiserVerified={verifiedAdvertisers.has(c.advertiser_id)}
+            approvalPolicy={approvalPolicy}
+            refreshPolicy={loadApprovalPolicy}
           />
         ))
       )}
