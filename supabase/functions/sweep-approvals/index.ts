@@ -116,6 +116,18 @@ Deno.serve(async (_req: Request) => {
         .eq("id", row.id);
       autoApproved++;
       autoApprovedCampaignIds.add(row.campaign_id as string);
+
+      // Verified-advertiser auto-approve skips the operator's queue entirely
+      // (unlike a human approve, which the operator obviously saw) -- notify
+      // them per-screen so it's never silent. The pre-existing category-based
+      // auto-approve path (reason: null) is untouched and stays as it was.
+      if (decision.reason === "verified_advertiser" && screen.operator_id) {
+        await notify(screen.operator_id as string, "auto_approved_verified_advertiser", {
+          campaignName: (campaign.campaign_name ?? campaign.advertiser_name ?? campaign.id) as string,
+          screenName: (screen.name as string) ?? (screen.id as string),
+          appUrl: APP_URL,
+        });
+      }
     } else {
       stillPending.push(row);
     }

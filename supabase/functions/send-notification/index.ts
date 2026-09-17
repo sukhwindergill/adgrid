@@ -142,6 +142,15 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
       d.appUrl ?? "",
     ),
   }),
+  auto_approved_verified_advertiser: (d) => ({
+    title: "Booking auto-approved",
+    body: `"${d.campaignName}" was auto-approved on ${d.screenName} — the advertiser is verified.`,
+    html: emailHtml(
+      "Booking auto-approved",
+      `<strong>${d.campaignName}</strong> was automatically approved on <strong>${d.screenName}</strong> because the advertiser is verified. You can turn this off anytime in Settings.`,
+      "View Booking", d.appUrl ?? "",
+    ),
+  }),
   approval_sla_approaching: (d) => ({
     title: "A campaign is waiting on your review",
     body: `"${d.campaignName}" needs your approval on ${d.screenName} within ${d.hoursLeft} hours.`,

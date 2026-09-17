@@ -18,6 +18,7 @@ export const EVENTS = [
   { key: 'payment_failed',     label: 'Payment failed',            desc: 'When a payment for your account fails', operatorOnly: false },
   { key: 'new_advertiser',     label: 'New advertiser joined',     desc: 'When a new advertiser signs up', operatorOnly: true },
   { key: 'campaign_submitted', label: 'Campaign submitted',        desc: 'When an advertiser submits a campaign for approval', operatorOnly: true },
+  { key: 'auto_approved_verified_advertiser', label: 'Auto-approved (verified advertiser)', desc: 'When a booking skips your review queue because the advertiser is verified', operatorOnly: true },
   { key: 'payout_completed',   label: 'Payout completed',          desc: 'When a payout is transferred to your bank', operatorOnly: true },
   { key: 'weekly_revenue',     label: 'Weekly revenue summary',    desc: 'Weekly revenue across your screen network', operatorOnly: true },
   { key: 'team_member_joined', label: 'Team member joined',        desc: 'When someone accepts your team invite', operatorOnly: false },

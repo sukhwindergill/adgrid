@@ -163,7 +163,7 @@ describe('policyApproves', () => {
   it('verified-advertiser toggle approves regardless of category policy', () => {
     const p = { enabled: false, auto_approve_categories: [], auto_approve_verified_advertisers: true };
     const decision = policyApproves(p, { category: 'retail', completedCampaigns: 0, advertiserIsVerified: true });
-    expect(decision).toStrictEqual({ approved: true, reason: null });
+    expect(decision).toStrictEqual({ approved: true, reason: 'verified_advertiser' });
   });
 
   it('verified-advertiser toggle off does not approve an unrelated verified advertiser', () => {

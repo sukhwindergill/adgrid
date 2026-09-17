@@ -55,6 +55,6 @@ describe('advertiser SettingsView NotificationsTab', () => {
     const savedPrefs = updateSpy.mock.calls[0][0].notification_prefs;
     expect(savedPrefs.campaign_approved).toEqual({ inApp: false, email: true });
     // Still saves all 19 (operator-only ones default, even though not shown).
-    expect(Object.keys(savedPrefs)).toHaveLength(19);
+    expect(Object.keys(savedPrefs)).toHaveLength(20);
   });
 });

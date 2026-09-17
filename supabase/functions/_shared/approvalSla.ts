@@ -72,7 +72,12 @@ export function policyApproves(
   // Verified-advertiser trust is independent of the category policy below --
   // an operator can turn this on without ever enabling category auto-approve.
   if (policy.auto_approve_verified_advertisers && campaign?.advertiserIsVerified) {
-    return { approved: true, reason: null };
+    // Tagged (unlike the category-approval path below, which stays `reason:
+    // null`) so sweep-approvals can tell operators specifically when a
+    // verified-advertiser auto-approve fired -- the pre-existing
+    // category-based auto-approve is untouched and stays silent to operators,
+    // matching its behavior before this feature existed.
+    return { approved: true, reason: 'verified_advertiser' };
   }
 
   if (!policy.enabled) return { approved: false, reason: 'policy_disabled' };
