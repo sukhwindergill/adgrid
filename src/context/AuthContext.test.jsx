@@ -123,6 +123,11 @@ describe('AuthContext password recovery', () => {
     supabase.auth.getSession.mockResolvedValue({ data: { session: { user: { id: 'u-1' } } } });
     __profilesSingle.mockResolvedValue({ data: { id: 'u-1', name: 'A', active_mode: 'advertiser' } });
     supabase.auth.updateUser.mockResolvedValue({ data: {}, error: null });
+    // updatePassword() also best-effort calls the revoke-other-sessions
+    // endpoint before signing out (see AuthContext.jsx) -- mock fetch so
+    // that await doesn't fall through to a real, slow network call that
+    // outlasts act()'s flush and makes the signOut assertion below flaky.
+    global.fetch = vi.fn(() => Promise.resolve({ ok: true }));
 
     render(<AuthProvider><AuthProbe /></AuthProvider>);
     await waitFor(() => expect(screen.getByTestId('user').textContent).toBe('u-1'));

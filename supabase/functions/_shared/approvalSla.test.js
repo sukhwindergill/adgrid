@@ -159,4 +159,23 @@ describe('policyApproves', () => {
     const open = { ...policy, min_completed_campaigns: 0 };
     expect(policyApproves(open, { category: 'Retail', completedCampaigns: 0 }).approved).toBe(true);
   });
+
+  it('verified-advertiser toggle approves regardless of category policy', () => {
+    const p = { enabled: false, auto_approve_categories: [], auto_approve_verified_advertisers: true };
+    const decision = policyApproves(p, { category: 'retail', completedCampaigns: 0, advertiserIsVerified: true });
+    expect(decision).toStrictEqual({ approved: true, reason: 'verified_advertiser' });
+  });
+
+  it('verified-advertiser toggle off does not approve an unrelated verified advertiser', () => {
+    const p = { enabled: false, auto_approve_categories: [], auto_approve_verified_advertisers: false };
+    const decision = policyApproves(p, { category: 'retail', completedCampaigns: 0, advertiserIsVerified: true });
+    expect(decision.approved).toBe(false);
+  });
+
+  it('verified-advertiser toggle on but advertiser not verified falls through to category check', () => {
+    const p = { enabled: false, auto_approve_categories: [], auto_approve_verified_advertisers: true };
+    const decision = policyApproves(p, { category: 'retail', completedCampaigns: 0, advertiserIsVerified: false });
+    expect(decision.approved).toBe(false);
+    expect(decision.reason).toBe('policy_disabled');
+  });
 });
