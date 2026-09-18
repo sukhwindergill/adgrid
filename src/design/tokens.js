@@ -28,7 +28,7 @@ export const C = {
 
 export const F = {
   // Body/UI text — a real system sans, not a display font stretched over paragraphs.
-  sans: "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Helvetica, Arial, sans-serif",
+  sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
   // Headings, KPI numbers, display text only.
   display: "'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif",
   mono: "'JetBrains Mono', 'SF Mono', 'Fira Code', monospace",

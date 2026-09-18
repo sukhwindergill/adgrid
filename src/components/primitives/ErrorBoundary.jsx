@@ -21,7 +21,7 @@ export class ErrorBoundary extends Component {
         <div style={{
           padding: '40px 32px', margin: 24, borderRadius: 12,
           border: '1px solid #fca5a5', background: '#fef2f2',
-          fontFamily: 'Inter, sans-serif',
+          fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
         }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#dc2626', marginBottom: 8 }}>
             Something went wrong

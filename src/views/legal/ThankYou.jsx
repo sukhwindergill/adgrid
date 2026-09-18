@@ -6,7 +6,7 @@ const page = {
   minHeight: '100vh',
   background: '#0b0d12',
   color: 'rgba(255,255,255,0.85)',
-  fontFamily: "'Inter', sans-serif",
+  fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
   padding: '48px 24px',
   display: 'flex',
   alignItems: 'center',

@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
 .mktg, .mktg * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 .mktg *, .mktg *::before, .mktg *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -8,7 +6,7 @@
   --white: #FFFFFF; --sec: #8A8A9A; --muted: #55556A;
   --lbg: #fafafa; --lcard: #ffffff; --lborder: #e5e5e5; --ltext: #0a0a0a; --lsub: #525252; --lmuted: #737373;
   --purple: #7B2FFF; --purple-dark: #6B1FEF; --purple-light: #B79CFF;
-  --inter: 'Inter', -apple-system, sans-serif;
+  --inter: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   --r: 14px; --r-btn: 8px;
   --maxw: 1160px;
   font-family: var(--inter);
@@ -347,7 +345,7 @@ select.fi { appearance: none; cursor: pointer; }
   background: #0A0A0F;
   border-top: 1px solid var(--border);
   color: var(--sec);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 13px;
 }
 

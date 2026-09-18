@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-const nav = { fontFamily: "'Inter', sans-serif", fontSize: 13, marginBottom: 24 };
+const nav = { fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", fontSize: 13, marginBottom: 24 };
 const link = { color: 'rgba(255,255,255,0.5)', textDecoration: 'none' };
 const sep = { color: 'rgba(255,255,255,0.3)', margin: '0 8px' };
 const current = { color: 'rgba(255,255,255,0.85)' };

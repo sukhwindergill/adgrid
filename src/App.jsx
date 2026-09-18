@@ -762,7 +762,7 @@ function DisplayCrashFallback() {
   }, []);
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#050a10', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', fontFamily: "'Inter', sans-serif", letterSpacing: 1 }}>
+      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: 1 }}>
         RECONNECTING…
       </div>
     </div>

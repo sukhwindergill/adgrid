@@ -69,7 +69,7 @@ function CreativeSlide({ campaign, screenId }) {
       <div style={{
         position: 'absolute', top: 'clamp(20px, 3vw, 48px)', left: 'clamp(20px, 3vw, 48px)',
         fontSize: 'clamp(10px, 1.2vw, 16px)', fontWeight: 700, letterSpacing: '3px',
-        color: 'rgba(255,255,255,0.2)', fontFamily: "'Inter', sans-serif", textTransform: 'uppercase',
+        color: 'rgba(255,255,255,0.2)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", textTransform: 'uppercase',
       }}>
         ADGRID
       </div>
@@ -92,7 +92,7 @@ function CreativeSlide({ campaign, screenId }) {
           <QRCode value={qrUrl} size={256} style={{ width: '100%', height: 'auto', display: 'block' }} level="M" fgColor={plan.qrFgColor} bgColor={plan.qrBgColor} />
           <div style={{
             fontSize: 'clamp(8px, 0.8vw, 12px)', color: '#555', textAlign: 'center',
-            marginTop: 6, fontFamily: "'Inter', sans-serif", fontWeight: 500,
+            marginTop: 6, fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", fontWeight: 500,
           }}>Scan to learn more</div>
         </div>
       )}
@@ -101,7 +101,7 @@ function CreativeSlide({ campaign, screenId }) {
       {showTextOverlay && category && (
         <div style={{
           fontSize: 'clamp(10px, 1vw, 14px)', letterSpacing: '3px', textTransform: 'uppercase',
-          color: 'rgba(255,255,255,0.4)', fontFamily: "'Inter', sans-serif", marginBottom: 'clamp(12px, 2vw, 24px)',
+          color: 'rgba(255,255,255,0.4)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", marginBottom: 'clamp(12px, 2vw, 24px)',
         }}>
           {category}
         </div>
@@ -126,7 +126,7 @@ function CreativeSlide({ campaign, screenId }) {
           border: `2px solid ${bg}`,
           color: bg, fontSize: 'clamp(12px, 1.4vw, 22px)',
           fontWeight: 600, borderRadius: 4,
-          fontFamily: "'Inter', sans-serif", letterSpacing: '1px',
+          fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: '1px',
         }}>
           {cta}
         </div>
@@ -145,14 +145,14 @@ function IdleSlide() {
     }}>
       <div style={{
         fontSize: 'clamp(24px, 5vw, 64px)', fontWeight: 800, letterSpacing: '8px',
-        color: 'rgba(255,255,255,0.08)', fontFamily: "'Inter', sans-serif",
+        color: 'rgba(255,255,255,0.08)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
         textTransform: 'uppercase', marginBottom: 24,
       }}>
         ADGRID
       </div>
       <div style={{
         fontSize: 'clamp(12px, 1.5vw, 18px)', color: 'rgba(255,255,255,0.2)',
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
       }}>
         No active campaigns scheduled
       </div>
@@ -358,7 +358,7 @@ export function DisplayPlayer({ screenToken }) {
   if (status === 'loading') {
     return (
       <div style={{ position: 'fixed', inset: 0, background: '#050a10', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)', fontFamily: "'Inter', sans-serif", letterSpacing: 2 }}>
+        <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: 2 }}>
           CONNECTING…
         </div>
       </div>
@@ -368,10 +368,10 @@ export function DisplayPlayer({ screenToken }) {
   if (status === 'invalid') {
     return (
       <div style={{ position: 'fixed', inset: 0, background: '#050a10', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: "'Inter', sans-serif", letterSpacing: 1 }}>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: 1 }}>
           SCREEN TOKEN NOT RECOGNISED
         </div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', fontFamily: "'Inter', sans-serif" }}>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif" }}>
           Check the URL and reconnect from your AdGrid dashboard.
         </div>
       </div>
@@ -422,10 +422,10 @@ export function DisplayPlayer({ screenToken }) {
         background: 'rgba(0,0,0,0.8)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
       }}>
-        <span style={{ fontSize: 'clamp(9px, 0.9vw, 12px)', color: 'rgba(255,255,255,0.35)', fontFamily: "'Inter', sans-serif" }}>
+        <span style={{ fontSize: 'clamp(9px, 0.9vw, 12px)', color: 'rgba(255,255,255,0.35)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif" }}>
           AdGrid advertising display. QR code scans are recorded anonymously.
         </span>
-        <a href="/privacy" style={{ fontSize: 'clamp(9px, 0.9vw, 12px)', color: 'rgba(255,255,255,0.25)', fontFamily: "'Inter', sans-serif", textDecoration: 'underline' }}>
+        <a href="/privacy" style={{ fontSize: 'clamp(9px, 0.9vw, 12px)', color: 'rgba(255,255,255,0.25)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", textDecoration: 'underline' }}>
           Privacy Policy ↗
         </a>
       </div>

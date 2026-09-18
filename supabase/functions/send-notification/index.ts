@@ -387,7 +387,7 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
 };
 
 function emailHtml(title: string, body: string, ctaLabel: string, ctaUrl: string): string {
-  return `<!DOCTYPE html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;background:#f9fafb;margin:0;padding:40px 0;">
+  return `<!DOCTYPE html><html><body style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f9fafb;margin:0;padding:40px 0;">
 <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;">
   <div style="background:#2563eb;padding:20px 28px;">
     <span style="color:#fff;font-size:16px;font-weight:700;letter-spacing:-0.5px;">ADGRID</span>
