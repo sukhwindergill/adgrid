@@ -37,12 +37,20 @@ async function distributeOperatorCuts(
 ): Promise<void> {
   // 1. Find all screens for this campaign
   // Control screens (holdout test) never served this campaign's creative --
-  // an operator should not be paid for a screen that showed nothing.
+  // an operator should not be paid for a screen that showed nothing. Same
+  // reasoning excludes rejected/still-pending screens: this function only
+  // blocks the charge outright when EVERY screen rejected (see the
+  // booking.status === "rejected" / screenLinks.every check above this
+  // function's call site), so a mixed campaign -- some screens approved,
+  // one operator's screen rejected -- gets charged and, without this
+  // filter, would still pay the operator who rejected it and never ran
+  // the ad at all.
   const { data: csRows } = await supabase
     .from("campaign_screens")
     .select("screen_id")
     .eq("campaign_id", bookingId)
-    .eq("is_control", false);
+    .eq("is_control", false)
+    .in("status", ["approved", "auto_approved"]);
 
   if (!csRows || csRows.length === 0) return;
 
