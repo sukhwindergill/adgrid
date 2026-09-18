@@ -1,5 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireCronSecret } from "../_shared/cronGuard.ts";
+import { countServingScreensByCampaign, operatorSharePct } from "../_shared/payoutSharing.ts";
+
+const PLATFORM_FEE_RATE = 0.12;
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -309,7 +312,6 @@ Deno.serve(async (req: Request) => {
     // budget * 0.4 unconditionally, both skipping the 12% platform fee
     // (overstating revenue by ~14%) and ignoring any operator's actual,
     // possibly-customized owner_revenue_share.
-    const PLATFORM_FEE_RATE = 0.12;
 
     for (const op of operators ?? []) {
       const { data: opScreens } = await supabase
@@ -326,18 +328,40 @@ Deno.serve(async (req: Request) => {
           .from("campaign_screens")
           .select("campaign_id")
           .in("screen_id", screenIds)
+          .eq("is_control", false)
           .in("status", ["approved", "auto_approved"]);
-        const campaignIds = (csRows ?? []).map((r: { campaign_id: string }) => r.campaign_id);
+        const campaignIds = [...new Set((csRows ?? []).map((r: { campaign_id: string }) => r.campaign_id))];
+        const ownScreenCountByCampaign = countServingScreensByCampaign((csRows ?? []) as { campaign_id: string }[]);
+
         if (campaignIds.length > 0) {
+          // Same "never claim revenue for a screen that isn't actually
+          // serving" and "split by screen share across every operator on
+          // the campaign" reasoning as distributeOperatorCuts/trigger-payout
+          // (charge-campaign) -- summing raw budgets at a flat 0.4 both
+          // ignored this operator's real owner_revenue_share and, on any
+          // multi-operator campaign, overstated their share of the payout
+          // by counting the full campaign budget instead of their fraction
+          // of its serving screens.
+          const { data: allScreenRows } = await supabase
+            .from("campaign_screens")
+            .select("campaign_id")
+            .in("campaign_id", campaignIds)
+            .eq("is_control", false)
+            .in("status", ["approved", "auto_approved"]);
+          const totalScreenCountByCampaign = countServingScreensByCampaign((allScreenRows ?? []) as { campaign_id: string }[]);
+
           const { data: opCampaigns } = await supabase
             .from("bookings")
-            .select("budget")
+            .select("id, budget")
             .in("id", campaignIds)
             .eq("status", "active");
-          const grossBudget = (opCampaigns ?? []).reduce(
-            (s: number, c: { budget: number }) => s + (c.budget ?? 0), 0
-          );
-          revenue = grossBudget * (1 - PLATFORM_FEE_RATE) * revenueShare;
+          revenue = (opCampaigns ?? []).reduce((s: number, c: { id: string; budget: number }) => {
+            const totalScreens = totalScreenCountByCampaign.get(c.id) ?? 0;
+            const ownScreens = ownScreenCountByCampaign.get(c.id) ?? 0;
+            const share = operatorSharePct(ownScreens, totalScreens);
+            const netBudget = (c.budget ?? 0) * (1 - PLATFORM_FEE_RATE);
+            return s + netBudget * revenueShare * share;
+          }, 0);
         }
       }
 
