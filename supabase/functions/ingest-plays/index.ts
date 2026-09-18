@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { validatePlayBatch } from "../_shared/playValidation.ts";
-import { requestTooLarge } from "../_shared/requestSize.ts";
+import { readJsonLimited, RequestTooLargeError } from "../_shared/requestSize.ts";
 import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const supabase = createClient(
@@ -17,12 +17,16 @@ const CORS = {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: CORS });
-  if (requestTooLarge(req, 1048576)) return new Response(JSON.stringify({ error: "Payload too large" }), { status: 413, headers: CORS });
-
+  // Stream-enforced against the body's actual byte count, not just a
+  // declared Content-Length header -- see readJsonLimited's own comment on
+  // why the header alone is not a real cap against an adversarial caller.
   let body: { screen_token?: string; plays?: unknown };
   try {
-    body = await req.json();
-  } catch {
+    body = await readJsonLimited(req, 1048576) as { screen_token?: string; plays?: unknown };
+  } catch (err) {
+    if (err instanceof RequestTooLargeError) {
+      return new Response(JSON.stringify({ error: "Payload too large" }), { status: 413, headers: CORS });
+    }
     return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: CORS });
   }
 

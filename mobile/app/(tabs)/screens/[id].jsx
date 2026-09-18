@@ -69,7 +69,10 @@ export default function ScreenDetailScreen() {
   }
 
   const venueLabel = screen.venue_subtype || VENUE_TAXONOMY[screen.venue_category]?.label || '';
-  const activeCampaigns = campaigns.filter(c => c.status === 'approved').length;
+  // Platform-audit finding: same bug class as analytics.jsx/advertisers.jsx
+  // -- filtering status === 'approved' only silently excluded
+  // 'auto_approved' campaigns from this screen's own "Active Ads" count.
+  const activeCampaigns = campaigns.filter(c => c.status === 'approved' || c.status === 'auto_approved').length;
   const pendingCampaigns = campaigns.filter(c => c.status === 'pending').length;
 
   return (
@@ -126,7 +129,7 @@ export default function ScreenDetailScreen() {
                   <Text style={{ fontFamily: F.sansMed, color: C.text, fontSize: 14, flex: 1 }} numberOfLines={1}>
                     {cs.campaign?.name || 'Campaign'}
                   </Text>
-                  <Badge label={cs.status} variant={cs.status === 'approved' ? 'green' : cs.status === 'pending' ? 'amber' : 'muted'} />
+                  <Badge label={cs.status} variant={cs.status === 'approved' || cs.status === 'auto_approved' ? 'green' : cs.status === 'pending' ? 'amber' : 'muted'} />
                 </View>
                 <Text style={{ fontFamily: F.sans, color: C.textSub, fontSize: 12, marginTop: 4 }}>
                   {cs.campaign?.advertiser_name}

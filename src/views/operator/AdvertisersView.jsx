@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { C, F } from "../../lib/constants.js";
+import { C, F, SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
 import { useToast } from "../../components/primitives/Toast.jsx";
 import { useConfirm } from "../../components/primitives/ConfirmModal.jsx";
@@ -7,6 +7,24 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useOperatorCampaignIds } from "../../hooks/useOperatorCampaignIds.js";
 import { PageHeader } from "../../components/primitives/PageHeader.jsx";
 import { Btn } from "../../components/primitives/Btn.jsx";
+
+// profiles.status/credits/rate_override are pinned by a BEFORE UPDATE
+// trigger (20260909194813_pin_profile_admin_columns.sql) to everyone
+// except service_role -- a direct supabase-js .update() from here silently
+// reverts the column instead of erroring, so these actions must go through
+// operator-manage-advertiser instead of writing to `profiles` directly.
+async function callManageAdvertiser(action, payload) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return { ok: false, error: "Session expired. Please log in again." };
+  const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/operator-manage-advertiser`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+    body: JSON.stringify({ action, ...payload }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) return { ok: false, error: body?.error ?? "Request failed." };
+  return { ok: true };
+}
 
 function StatusBadge({ status }) {
   const styles = {
@@ -48,15 +66,15 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
   async function updateStatus(status) {
     const previousStatus = adv.status ?? "active";
     setSaving(true);
-    const { error: statusError } = await supabase.from("profiles").update({ status }).eq("id", adv.id);
+    const { ok, error } = await callManageAdvertiser("set_status", { advertiserIds: [adv.id], status });
     setSaving(false);
-    if (statusError) { toast.error("Failed to update status."); return; }
+    if (!ok) { toast.error(error ?? "Failed to update status."); return; }
     onUpdated({ ...adv, status });
     setModal(null);
     if (status === "suspended") {
       toast.undo(`${adv.name}'s account suspended.`, async () => {
-        const { error: undoError } = await supabase.from("profiles").update({ status: previousStatus }).eq("id", adv.id);
-        if (undoError) { toast.error("Failed to undo suspension."); return; }
+        const undo = await callManageAdvertiser("set_status", { advertiserIds: [adv.id], status: previousStatus });
+        if (!undo.ok) { toast.error(undo.error ?? "Failed to undo suspension."); return; }
         onUpdated({ ...adv, status: previousStatus });
       });
     }
@@ -72,11 +90,10 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
     });
     if (!ok) return;
     setSaving(true);
-    const newCredits = (adv.credits ?? 0) + amount;
-    const { error } = await supabase.from("profiles").update({ credits: newCredits }).eq("id", adv.id);
+    const { ok: succeeded, error } = await callManageAdvertiser("add_credits", { advertiserIds: [adv.id], amount });
     setSaving(false);
-    if (error) { toast.error("Failed to add credits."); return; }
-    onUpdated({ ...adv, credits: newCredits });
+    if (!succeeded) { toast.error(error ?? "Failed to add credits."); return; }
+    onUpdated({ ...adv, credits: (adv.credits ?? 0) + amount });
     setCreditsAmount("");
     setModal(null);
   }
@@ -92,8 +109,9 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
     });
     if (!ok) return;
     setSaving(true);
-    await supabase.from("profiles").update({ rate_override: rate }).eq("id", adv.id);
+    const { ok: succeeded, error } = await callManageAdvertiser("set_rate_override", { advertiserIds: [adv.id], rate });
     setSaving(false);
+    if (!succeeded) { toast.error(error ?? "Failed to save rate."); return; }
     onUpdated({ ...adv, rate_override: rate });
     setModal(null);
   }
@@ -310,18 +328,30 @@ export default function AdvertisersView({ onImpersonate }) {
     if (!ok) return;
     const previousStatuses = new Map(advertisers.filter((a) => ids.includes(a.id)).map((a) => [a.id, a.status ?? "active"]));
     setBulkBusy(true);
-    const { error } = await supabase.from("profiles").update({ status }).in("id", ids);
+    const { ok: succeeded, error } = await callManageAdvertiser("set_status", { advertiserIds: ids, status });
     setBulkBusy(false);
-    if (error) { toast.error("Bulk update failed."); return; }
+    if (!succeeded) { toast.error(error ?? "Bulk update failed."); return; }
     setAdvertisers((prev) => prev.map((a) => ids.includes(a.id) ? { ...a, status } : a));
     setChecked(new Set());
     const label = `${ids.length} advertiser${ids.length !== 1 ? "s" : ""} ${status === "suspended" ? "suspended" : "reactivated"}.`;
     if (status === "suspended") {
       toast.undo(label, async () => {
-        const undoResults = await Promise.all(ids.map((id) =>
-          supabase.from("profiles").update({ status: previousStatuses.get(id) }).eq("id", id)
-        ));
-        if (undoResults.some((r) => r.error)) { toast.error("Some accounts failed to restore."); }
+        // Statuses being restored can differ per-row (a mixed
+        // active/suspended selection before the bulk suspend), so this
+        // can't be a single set_status call -- group ids by their prior
+        // status and send one call per group.
+        const byPrevStatus = new Map();
+        for (const id of ids) {
+          const prev = previousStatuses.get(id);
+          if (!byPrevStatus.has(prev)) byPrevStatus.set(prev, []);
+          byPrevStatus.get(prev).push(id);
+        }
+        const undoResults = await Promise.all(
+          [...byPrevStatus.entries()].map(([prevStatus, groupIds]) =>
+            callManageAdvertiser("set_status", { advertiserIds: groupIds, status: prevStatus })
+          )
+        );
+        if (undoResults.some((r) => !r.ok)) { toast.error("Some accounts failed to restore."); }
         setAdvertisers((prev) => prev.map((a) => ids.includes(a.id) ? { ...a, status: previousStatuses.get(a.id) } : a));
       });
     } else {

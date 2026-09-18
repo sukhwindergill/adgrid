@@ -223,7 +223,7 @@ export function SecurityTab() {
 }
 
 export function ReviewTab({ profile, setNav }) {
-  const [policy, setPolicy] = useState({ enabled: false, auto_approve_categories: [], min_completed_campaigns: 1 });
+  const [policy, setPolicy] = useState({ enabled: false, auto_approve_categories: [], min_completed_campaigns: 1, auto_approve_verified_advertisers: false });
   const [slaHours, setSlaHours] = useState(24);
   const [categories, setCategories] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -234,7 +234,7 @@ export function ReviewTab({ profile, setNav }) {
     async function load() {
       const { data } = await supabase
         .from('operator_approval_rules')
-        .select('enabled, auto_approve_categories, min_completed_campaigns')
+        .select('enabled, auto_approve_categories, min_completed_campaigns, auto_approve_verified_advertisers')
         .eq('operator_id', profile.id)
         .maybeSingle();
       if (!cancelled && data) {
@@ -242,6 +242,7 @@ export function ReviewTab({ profile, setNav }) {
           enabled: data.enabled,
           auto_approve_categories: data.auto_approve_categories ?? [],
           min_completed_campaigns: data.min_completed_campaigns ?? 0,
+          auto_approve_verified_advertisers: data.auto_approve_verified_advertisers ?? false,
         });
       }
 
@@ -274,6 +275,7 @@ export function ReviewTab({ profile, setNav }) {
         enabled: policy.enabled,
         auto_approve_categories: policy.auto_approve_categories,
         min_completed_campaigns: Number(policy.min_completed_campaigns) || 0,
+        auto_approve_verified_advertisers: policy.auto_approve_verified_advertisers,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'operator_id' });
 
@@ -335,6 +337,17 @@ export function ReviewTab({ profile, setNav }) {
           <div style={{ fontSize: 12, color: C.textSub, marginTop: 2 }}>Skip manual review for work you already trust</div>
         </div>
         <Toggle checked={policy.enabled} onChange={() => setPolicy(p => ({ ...p, enabled: !p.enabled }))} />
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderTop: `1px solid ${C.border}` }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: C.text }}>Auto-approve verified advertisers</div>
+          <div style={{ fontSize: 12, color: C.textSub, marginTop: 2 }}>Skip review for advertisers with a verified business — independent of the category rule above</div>
+        </div>
+        <Toggle
+          checked={policy.auto_approve_verified_advertisers}
+          onChange={() => setPolicy(p => ({ ...p, auto_approve_verified_advertisers: !p.auto_approve_verified_advertisers }))}
+        />
       </div>
 
       {policy.enabled && (
