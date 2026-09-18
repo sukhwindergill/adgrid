@@ -9,18 +9,35 @@ import { rateLimited, rateLimitResponse, clientIp } from "../_shared/rateLimit.t
 // to GoTrue directly and has no hook point of its own for this.
 //
 // Actions (all POST, JSON body: { action, email, ... }):
-//   check_lockout        -> { locked: boolean }, true once 5 failures for
-//                            this email land within 15m (app-level only --
-//                            see record_login_failure's own comment on why
-//                            this no longer bans the account at GoTrue)
-//   record_login_failure -> logs the failure
-//   record_login_success -> logs success
-//   check_reset_throttle -> { allowed: boolean } -- max 3 requests/hour/email
-//   record_reset_request -> logs a password-reset request
+//   check_lockout -> { locked: boolean }, true once 5 failures for this
+//                     email land within 15m
+//   sign_in       -> { session } | { error }. Verifies the password itself
+//                     via a request-scoped anon-key client and logs
+//                     login_failed/login_success from that real outcome --
+//                     see the security-audit comment below on why a
+//                     client-reported outcome can no longer be trusted.
+//   request_reset -> { ok: true } | { error }. Same pattern: this function
+//                     itself calls resetPasswordForEmail and only logs
+//                     password_reset_requested when that call actually
+//                     fired, instead of trusting a client-reported "I sent
+//                     one" after the fact.
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+);
+
+// Security-audit finding: sign_in and request_reset both need to make a
+// real GoTrue call (signInWithPassword / resetPasswordForEmail) themselves,
+// not just log a client-reported outcome -- see the removed
+// record_login_failure/record_reset_request actions below. A dedicated
+// anon-key client (not the service-role one above) makes those calls with
+// no elevated privilege, exactly as a browser client would; persistence is
+// off since this runs in a stateless edge function, not a browser.
+const anonSupabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_ANON_KEY")!,
+  { auth: { persistSession: false, autoRefreshToken: false } },
 );
 
 const CORS = {
@@ -31,9 +48,9 @@ const CORS = {
 
 const LOGIN_FAILURE_LIMIT = 5;
 const LOGIN_WINDOW_MINUTES = 15;
-const LOCKOUT_MINUTES = 15;
 const RESET_LIMIT = 3;
 const RESET_WINDOW_MINUTES = 60;
+const LOCKED_MESSAGE = "Too many failed attempts. Try again in 15 minutes.";
 
 function normEmail(email: unknown): string | null {
   if (typeof email !== "string") return null;
@@ -63,9 +80,8 @@ Deno.serve(async (req: Request) => {
 
   // The per-email lockout/throttle logic below caps abuse of one target
   // account, but nothing capped the endpoint itself -- an attacker could
-  // sweep thousands of different emails from one IP (each record_login_failure
-  // also does an admin.listUsers() call) with no per-email signal ever
-  // tripping. Outer per-IP guard closes that.
+  // sweep thousands of different emails from one IP with no per-email
+  // signal ever tripping. Outer per-IP guard closes that.
   if (await rateLimited(supabase, `auth-security:${clientIp(req)}`, { limit: 30, windowSeconds: 60 })) {
     return rateLimitResponse(CORS);
   }
@@ -87,42 +103,64 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ locked: failures >= LOGIN_FAILURE_LIMIT }), { headers: CORS });
     }
 
-    case "record_login_failure": {
-      await logEvent("login_failed", email);
-      const failures = await countRecentEvents(email, "login_failed", LOGIN_WINDOW_MINUTES);
-      // Security-audit finding: this call has no auth and no proof it
-      // followed a real signInWithPassword failure -- AuthContext.jsx
-      // calls it client-side purely as a courtesy, but nothing stops a
-      // caller from POSTing record_login_failure directly for any email
-      // it doesn't hold the password for. This used to also ban the
-      // account at the GoTrue level once the count crossed the
-      // threshold, which meant an unauthenticated caller who knew a
-      // victim's email could force a real 15-minute lockout with five
-      // POSTs and no password at all -- repeatable indefinitely. The
-      // GoTrue-level ban (admin.updateUserById with ban_duration) is
-      // removed for that reason; check_lockout below still reports
-      // `locked` from this same count, so the intended UX (block the
-      // client's own next attempt after repeated failures) is
-      // unchanged for a real user who is actually failing to sign in --
-      // it just can no longer be weaponized against someone else's
-      // account by a caller who never attempted their password.
-      if (failures >= LOGIN_FAILURE_LIMIT) {
-        await logEvent("lockout_threshold_reached", email, { failures });
+    // Security-audit finding: this used to be two client-driven calls --
+    // check_lockout, then (after the client itself called
+    // supabase.auth.signInWithPassword) a separate record_login_failure or
+    // record_login_success POST reporting what happened. Nothing tied that
+    // report to a real GoTrue result: any unauthenticated caller could POST
+    // record_login_failure directly for an email it never held a password
+    // for. Five such POSTs tripped check_lockout's threshold and blocked
+    // that victim's own real sign-in attempts for 15 minutes -- an
+    // indefinitely repeatable account-lockout griefing vector needing no
+    // credential at all.
+    //
+    // Fix: this function now performs the sign-in itself (via the anon
+    // client above) and logs strictly from what GoTrue actually returned.
+    // A failure can only be recorded when GoTrue itself rejected that
+    // email/password pair.
+    case "sign_in": {
+      const password = body.password;
+      if (typeof password !== "string" || !password) {
+        return new Response(JSON.stringify({ error: { message: "Password required" } }), { status: 400, headers: CORS });
       }
-      return new Response(JSON.stringify({ ok: true }), { headers: CORS });
-    }
 
-    case "record_login_success": {
+      const failures = await countRecentEvents(email, "login_failed", LOGIN_WINDOW_MINUTES);
+      if (failures >= LOGIN_FAILURE_LIMIT) {
+        return new Response(JSON.stringify({ error: { message: LOCKED_MESSAGE } }), { headers: CORS });
+      }
+
+      const { data, error } = await anonSupabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        await logEvent("login_failed", email);
+        return new Response(JSON.stringify({ error: { message: error.message } }), { headers: CORS });
+      }
+
       await logEvent("login_success", email);
-      return new Response(JSON.stringify({ ok: true }), { headers: CORS });
+      return new Response(JSON.stringify({ session: data.session }), { headers: CORS });
     }
 
-    case "check_reset_throttle": {
+    // Same shape of fix as sign_in: request_reset now fires
+    // resetPasswordForEmail itself and only logs a throttle-counted event
+    // when that call actually happened, instead of trusting a client
+    // report an attacker could send without ever triggering a real reset
+    // email -- which would have let anyone lock a victim out of
+    // *requesting* their own password reset for an hour at a time.
+    case "request_reset": {
       const recent = await countRecentEvents(email, "password_reset_requested", RESET_WINDOW_MINUTES);
-      return new Response(JSON.stringify({ allowed: recent < RESET_LIMIT }), { headers: CORS });
-    }
+      if (recent >= RESET_LIMIT) {
+        // Same shape as a normal success -- must not reveal that
+        // throttling kicked in, or that becomes its own enumeration/
+        // probing signal.
+        return new Response(JSON.stringify({ ok: true }), { headers: CORS });
+      }
 
-    case "record_reset_request": {
+      const { error } = await anonSupabase.auth.resetPasswordForEmail(email, {
+        redirectTo: Deno.env.get("PUBLIC_APP_URL") ?? undefined,
+      });
+      if (error) {
+        return new Response(JSON.stringify({ error: { message: error.message } }), { headers: CORS });
+      }
+
       await logEvent("password_reset_requested", email);
       return new Response(JSON.stringify({ ok: true }), { headers: CORS });
     }
