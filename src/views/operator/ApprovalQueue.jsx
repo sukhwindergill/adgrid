@@ -99,13 +99,27 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
         danger: false,
       });
       if (confirmed) {
-        const { error: dbErr } = await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
-        if (dbErr) {
+        // Platform-audit finding: bookings.status has no client UPDATE grant
+        // at all (REVOKE UPDATE (..., status, ...) ON bookings FROM
+        // authenticated) -- a direct client write here failed outright,
+        // every time, for every operator. Routed through
+        // operator-schedule-unpaid-campaign, which verifies the caller owns
+        // a screen on this campaign and re-derives the "all clear" gate
+        // server-side before writing with the service role.
+        const { data: { session: schedSession } } = await supabase.auth.getSession();
+        const schedRes = schedSession && await fetch(`${SUPABASE_FUNCTIONS_URL}/operator-schedule-unpaid-campaign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${schedSession.access_token}` },
+          body: JSON.stringify({ campaign_id: campaign.id }),
+        });
+        const schedBody = schedRes ? await schedRes.json().catch(() => ({})) : {};
+        const schedResult = schedBody?.results?.[0];
+        if (!schedRes?.ok || !schedResult?.ok) {
           // Unlike the charge-failure path below, there's no payment here
           // to worry about double-charging -- but a failure still silently
           // left the booking at its real status while the UI optimistically
           // showed "scheduled" regardless of whether the write happened.
-          setActionErr(`Failed to update booking status: ${dbErr.message}. Try again.`);
+          setActionErr(`Failed to update booking status: ${schedResult?.error ?? schedBody?.error ?? 'Unknown error'}. Try again.`);
           return;
         }
         setCampaigns(prev => prev.map(x =>
@@ -714,18 +728,26 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
         danger: false,
       });
       if (scheduleAnyway) {
-        // Each write's error must be checked individually -- unconditionally
-        // marking every campaign "scheduled" in the UI afterward previously
-        // meant a single failed write among the batch silently diverged from
-        // the real booking status, with no indication anything had failed.
-        const results = await Promise.all(needsConsent.map(campaign =>
-          supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id)
-            .then(({ error }) => ({ campaign, error }))
-        ));
+        // Platform-audit finding: same broken direct write as the
+        // single-campaign path above -- bookings.status has no client
+        // UPDATE grant at all, so this failed for every campaign in the
+        // batch, every time. Routed through operator-schedule-unpaid-campaign
+        // (bulk form), which verifies ownership and re-derives the "all
+        // clear" gate server-side per campaign, still reporting each
+        // write's outcome individually.
+        const { data: { session: schedSession } } = await supabase.auth.getSession();
+        const schedRes = schedSession && await fetch(`${SUPABASE_FUNCTIONS_URL}/operator-schedule-unpaid-campaign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${schedSession.access_token}` },
+          body: JSON.stringify({ campaign_ids: needsConsent.map(c => c.id) }),
+        });
+        const schedBody = schedRes ? await schedRes.json().catch(() => ({})) : {};
+        const resultById = new Map((schedBody?.results ?? []).map(r => [r.campaign_id, r]));
         const scheduledIds = new Set();
-        for (const { campaign, error } of results) {
-          if (error) {
-            failures.push({ id: campaign.id, name: campaign.advertiser_name || campaign.advertiser, message: error.message });
+        for (const campaign of needsConsent) {
+          const result = resultById.get(campaign.id);
+          if (!schedRes?.ok || !result?.ok) {
+            failures.push({ id: campaign.id, name: campaign.advertiser_name || campaign.advertiser, message: result?.error ?? schedBody?.error ?? 'Unknown error' });
           } else {
             scheduledIds.add(campaign.id);
           }

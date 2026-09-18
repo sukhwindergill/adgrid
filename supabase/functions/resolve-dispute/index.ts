@@ -53,7 +53,7 @@ Deno.serve(async (req: Request) => {
     return rateLimitResponse(CORS);
   }
 
-  const { dispute_id, resolution, amount, note } = await req.json();
+  const { dispute_id, resolution, amount, note } = await req.json().catch(() => ({}));
   if (!dispute_id || !resolution) {
     return new Response(JSON.stringify({ error: "dispute_id and resolution are required" }), { status: 400, headers: CORS });
   }

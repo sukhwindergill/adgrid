@@ -51,6 +51,44 @@ export function canEditCampaign(paymentStatus: string): boolean {
 }
 
 /**
+ * Validates a PATCH /v1/campaigns/:id body. Unlike create, every field is
+ * optional (only the ones present get updated), but any field that IS
+ * present must satisfy the same shape/range rules createCampaign enforces
+ * -- otherwise a caller could set budget to a negative number, duration to
+ * 0, or media_type to an arbitrary string, and those bad values would sit
+ * in `bookings` unvalidated until charge-campaign or delivery rendering
+ * choked on them downstream.
+ */
+export function validateEditCampaignBody(body: Record<string, unknown>): string[] {
+  const errors: string[] = [];
+  if ("budget" in body && !(typeof body.budget === "number" && body.budget > 0)) {
+    errors.push("budget must be a positive number");
+  }
+  if ("start_date" in body && !(typeof body.start_date === "string" && body.start_date)) {
+    errors.push("start_date must be a non-empty string");
+  }
+  if ("end_date" in body && !(typeof body.end_date === "string" && body.end_date)) {
+    errors.push("end_date must be a non-empty string");
+  }
+  if ("media_url" in body && !(typeof body.media_url === "string" && body.media_url)) {
+    errors.push("media_url must be a non-empty string");
+  }
+  if ("media_type" in body && !(typeof body.media_type === "string" && ["image", "video"].includes(body.media_type))) {
+    errors.push('media_type must be "image" or "video"');
+  }
+  if ("destination_url" in body && typeof body.destination_url !== "string") {
+    errors.push("destination_url must be a string");
+  }
+  if ("duration" in body && !(typeof body.duration === "number" && body.duration > 0)) {
+    errors.push("duration must be a positive number");
+  }
+  if ("campaign_name" in body && typeof body.campaign_name !== "string") {
+    errors.push("campaign_name must be a string");
+  }
+  return errors;
+}
+
+/**
  * A campaign can only be cancelled via the API before it's live and
  * delivering -- there is no refund/makegood logic for an already-active
  * or completed campaign anywhere in this codebase yet, so cancellation is

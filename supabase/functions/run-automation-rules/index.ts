@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { evaluateRule, shouldNotify } from "../_shared/ruleEvaluator.ts";
 import { flightProgress, pacingRatio } from "../_shared/pacing.ts";
 import { requireCronSecret } from "../_shared/cronGuard.ts";
+import { scopedCampaigns } from "../_shared/ruleScope.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -63,6 +64,45 @@ Deno.serve(async (req: Request) => {
 
   const liveCampaigns = campaigns ?? [];
   let firedCount = 0;
+
+  // AutomationRulesView.jsx never sets scope_campaign_id on create -- every
+  // rule, operator or advertiser, is inserted with it null. Without this,
+  // an unscoped rule was matched by `c.advertiser_id === rule.owner_id`
+  // regardless of owner_side, which never matches an operator's own id
+  // against a booking's advertiser_id: every operator-created rule (their
+  // whole "Alerts & Rules" surface) silently never fired at all. Resolve
+  // which live campaigns run on this operator's own screens instead, same
+  // ownership join operator-schedule-unpaid-campaign/manage-campaign-status
+  // use elsewhere.
+  const operatorIds = [...new Set(
+    rules.filter(r => r.owner_side === "operator" && !r.scope_campaign_id).map(r => r.owner_id as string)
+  )];
+  const operatorCampaignIds = new Map<string, Set<string>>();
+  if (operatorIds.length > 0 && liveCampaigns.length > 0) {
+    const { data: opScreens } = await supabase
+      .from("screens")
+      .select("id, operator_id")
+      .in("operator_id", operatorIds);
+    const screenToOperator = new Map((opScreens ?? []).map(s => [s.id as string, s.operator_id as string]));
+    const screenIds = [...screenToOperator.keys()];
+
+    if (screenIds.length > 0) {
+      const { data: csForOperators } = await supabase
+        .from("campaign_screens")
+        .select("campaign_id, screen_id")
+        .in("campaign_id", liveCampaigns.map(c => c.id))
+        .in("screen_id", screenIds)
+        .eq("is_control", false);
+
+      for (const row of csForOperators ?? []) {
+        const opId = screenToOperator.get(row.screen_id as string);
+        if (!opId) continue;
+        const set = operatorCampaignIds.get(opId) ?? new Set<string>();
+        set.add(row.campaign_id as string);
+        operatorCampaignIds.set(opId, set);
+      }
+    }
+  }
 
   // Snapshot cache: one build per campaign, reused across that campaign's rules.
   const snapshots = new Map<string, SnapshotBundle>();
@@ -139,11 +179,55 @@ Deno.serve(async (req: Request) => {
     return bundle;
   }
 
+  // Security-audit finding: this used to trust rule.scope_campaign_id on
+  // its own (`c.id === rule.scope_campaign_id`, no ownership check at
+  // all) -- since RLS's own INSERT/UPDATE check on automation_rules only
+  // verifies owner_id = auth.uid(), a rule scoped to ANY campaign in the
+  // system, with a trivially-true condition, let any advertiser pause any
+  // OTHER advertiser's live campaign on every cron run. Re-verify real
+  // ownership here too (RLS now checks it at write time as well, but
+  // service_role writes bypass RLS, and a row could predate that fix) --
+  // an operator-owned rule needs a screen the campaign targets; an
+  // advertiser-owned rule needs to be the campaign's own advertiser.
+  const opScreensByOwner = new Map<string, Set<string>>();
+  async function operatorScreenIds(operatorId: string): Promise<Set<string>> {
+    const cached = opScreensByOwner.get(operatorId);
+    if (cached) return cached;
+    const { data } = await supabase.from("screens").select("id").eq("operator_id", operatorId);
+    const ids = new Set((data ?? []).map(s => s.id as string));
+    opScreensByOwner.set(operatorId, ids);
+    return ids;
+  }
+  async function campaignOwnedByRule(campaign: Record<string, unknown>, rule: Record<string, unknown>): Promise<boolean> {
+    if (rule.owner_side === "operator") {
+      const { data: cs } = await supabase.from("campaign_screens").select("screen_id").eq("campaign_id", campaign.id as string);
+      const screenIds = (cs ?? []).map(r => r.screen_id as string);
+      if (screenIds.length === 0) return false;
+      const owned = await operatorScreenIds(rule.owner_id as string);
+      return screenIds.some(id => owned.has(id));
+    }
+    return campaign.advertiser_id === rule.owner_id;
+  }
+
   for (const rule of rules) {
     // Which campaigns this rule covers.
-    const scoped = rule.scope_campaign_id
-      ? liveCampaigns.filter(c => c.id === rule.scope_campaign_id)
-      : liveCampaigns.filter(c => c.advertiser_id === rule.owner_id);
+    // scopedCampaigns resolves which campaigns an unscoped rule covers
+    // (correctly, for both owner_side values -- see its own comment), but
+    // for an explicit scope_campaign_id it just matches the id against
+    // liveCampaigns with no ownership check. campaignOwnedByRule is that
+    // check: it verifies the rule's actual owner (operator's own screens,
+    // or advertiser_id) really owns each candidate campaign, closing the
+    // sabotage vector where a forged scope_campaign_id could point a rule
+    // at someone else's campaign.
+    const candidateScope = scopedCampaigns(
+      rule as { owner_id: string; owner_side: string | null; scope_campaign_id: string | null },
+      liveCampaigns as { id: string; advertiser_id: string | null }[],
+      operatorCampaignIds,
+    );
+    const scoped = [];
+    for (const c of candidateScope) {
+      if (await campaignOwnedByRule(c as Record<string, unknown>, rule as Record<string, unknown>)) scoped.push(c);
+    }
 
     for (const campaign of scoped) {
       const snapshot = await snapshotFor(campaign as Record<string, unknown>);

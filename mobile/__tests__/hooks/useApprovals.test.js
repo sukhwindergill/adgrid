@@ -139,10 +139,7 @@ describe('useApprovals', () => {
       return { select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), in: jest.fn().mockResolvedValue({ data: [], error: null }) };
     }
 
-    let bookingsUpdateSpy;
-
     beforeEach(() => {
-      bookingsUpdateSpy = jest.fn().mockReturnValue({ eq: jest.fn().mockResolvedValue({ error: null }) });
       mockSupabase.auth.getSession.mockResolvedValue({ data: { session: { access_token: 'tok' } }, error: null });
       global.fetch = jest.fn();
     });
@@ -185,7 +182,6 @@ describe('useApprovals', () => {
     it('asks before scheduling an unpaid campaign, and does not schedule it if declined', async () => {
       mockSupabase.from.mockImplementation(table => {
         if (table === 'campaign_screens') return mockScreensChain([]);
-        if (table === 'bookings') return { update: bookingsUpdateSpy };
         return mockEmptyChain();
       });
       global.fetch.mockResolvedValue({ ok: false, json: async () => ({ error: 'Advertiser has no card on file.' }) });
@@ -198,16 +194,28 @@ describe('useApprovals', () => {
       await act(async () => { await result.current.approve('cs-1', 'c-1', 'partial'); });
 
       expect(Alert.alert).toHaveBeenCalledWith('Approve without charging?', expect.stringContaining('no card on file'), expect.any(Array));
-      expect(bookingsUpdateSpy).not.toHaveBeenCalled();
+      // Only the initial charge-campaign attempt should have fired -- since
+      // the user declined, operator-schedule-unpaid-campaign must never be
+      // called.
+      expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
-    it('schedules the campaign without charging once the user confirms', async () => {
+    // Regression test for a real bug: on confirm, this used to call
+    // `supabase.from('bookings').update({ status: 'scheduled' })` directly
+    // from the client. bookings.status has NO client UPDATE grant at all
+    // (REVOKE UPDATE (..., status, ...) ON bookings FROM authenticated), so
+    // that write always failed with a column-privilege error -- "approve
+    // without charging" never actually worked. It's now routed through the
+    // operator-schedule-unpaid-campaign edge function, same as web's
+    // ApprovalQueue.jsx.
+    it('schedules the campaign without charging via operator-schedule-unpaid-campaign once the user confirms', async () => {
       mockSupabase.from.mockImplementation(table => {
         if (table === 'campaign_screens') return mockScreensChain([]);
-        if (table === 'bookings') return { update: bookingsUpdateSpy };
         return mockEmptyChain();
       });
-      global.fetch.mockResolvedValue({ ok: false, json: async () => ({ error: 'Advertiser has no card on file.' }) });
+      global.fetch
+        .mockResolvedValueOnce({ ok: false, json: async () => ({ error: 'Advertiser has no card on file.' }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [{ campaign_id: 'c-1', ok: true }] }) });
       jest.spyOn(Alert, 'alert').mockImplementation((title, message, buttons) => {
         buttons.find(b => b.text === 'Approve anyway').onPress();
       });
@@ -216,7 +224,30 @@ describe('useApprovals', () => {
       await waitFor(() => expect(result.current.loading).toBe(false));
       await act(async () => { await result.current.approve('cs-1', 'c-1', 'partial'); });
 
-      expect(bookingsUpdateSpy).toHaveBeenCalledWith({ status: 'scheduled' });
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+      const [url, opts] = global.fetch.mock.calls[1];
+      expect(url).toMatch(/\/operator-schedule-unpaid-campaign$/);
+      expect(JSON.parse(opts.body)).toEqual({ campaign_id: 'c-1' });
+      expect(result.current.error).toBe(null);
+    });
+
+    it('surfaces an error when operator-schedule-unpaid-campaign itself fails', async () => {
+      mockSupabase.from.mockImplementation(table => {
+        if (table === 'campaign_screens') return mockScreensChain([]);
+        return mockEmptyChain();
+      });
+      global.fetch
+        .mockResolvedValueOnce({ ok: false, json: async () => ({ error: 'Advertiser has no card on file.' }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [{ campaign_id: 'c-1', ok: false, error: 'Not one of your campaigns' }] }) });
+      jest.spyOn(Alert, 'alert').mockImplementation((title, message, buttons) => {
+        buttons.find(b => b.text === 'Approve anyway').onPress();
+      });
+
+      const { result } = renderHook(() => useApprovals('op-1', ['s-1']));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      await act(async () => { await result.current.approve('cs-1', 'c-1', 'partial'); });
+
+      expect(result.current.error).toMatch(/Not one of your campaigns/);
     });
   });
 });

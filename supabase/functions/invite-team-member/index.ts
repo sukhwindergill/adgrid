@@ -22,7 +22,7 @@ Deno.serve(async (req: Request) => {
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) return new Response("Unauthorized", { status: 401, headers: CORS });
 
-  const { email, role, orgProfileId } = await req.json();
+  const { email, role, orgProfileId } = await req.json().catch(() => ({}));
   if (!email || !orgProfileId) return new Response(JSON.stringify({ error: "Missing fields" }), { status: 400, headers: CORS });
 
   // Caller must be the org owner
@@ -42,11 +42,24 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  await supabase.from("team_members").insert({
+  const { error: memberError } = await supabase.from("team_members").insert({
     org_profile_id: orgProfileId,
     user_profile_id: inviteData.user.id,
     role: role ?? "viewer",
   });
+
+  // The auth invite above already went out (or was a resend) even on
+  // failure here -- report it so the caller doesn't believe the org
+  // membership was created when it wasn't (e.g. this person is already
+  // on the team and hit the org_profile_id/user_profile_id unique
+  // constraint).
+  if (memberError) {
+    const alreadyMember = memberError.code === "23505";
+    return new Response(
+      JSON.stringify({ error: alreadyMember ? "This person is already on your team." : memberError.message }),
+      { status: alreadyMember ? 409 : 500, headers: CORS },
+    );
+  }
 
   return new Response(JSON.stringify({ ok: true }), {
     headers: CORS,
