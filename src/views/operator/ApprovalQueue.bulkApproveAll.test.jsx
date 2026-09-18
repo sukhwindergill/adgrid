@@ -121,12 +121,33 @@ describe('ApprovalQueue bulkApproveAll', () => {
   // collecting unpaid campaigns instead of scheduling them inline, then
   // asking once via a single batched confirm listing every affected
   // advertiser -- not one modal per campaign.
+  // Fetch mock that distinguishes charge-campaign (always "no card on
+  // file", the fallback trigger) from operator-schedule-unpaid-campaign
+  // (the real write path since bookings.status has no client UPDATE grant
+  // -- see that function's own header comment).
+  function mockChargeFailsScheduleSucceeds() {
+    return vi.fn((url, opts) => {
+      if (String(url).includes('charge-campaign')) {
+        return Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({ error: 'Advertiser has no card on file. Ask them to add a payment method.' }),
+        });
+      }
+      if (String(url).includes('operator-schedule-unpaid-campaign')) {
+        const { campaign_ids } = JSON.parse(opts.body);
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ results: campaign_ids.map(id => ({ campaign_id: id, ok: true })) }),
+        });
+      }
+      return Promise.resolve({ ok: false, json: () => Promise.resolve({}) });
+    });
+  }
+
   it('asks once, batched, before scheduling unpaid campaigns -- does not silently schedule like it used to', async () => {
     sessionState.session = { access_token: 'tok' };
-    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({
-      ok: false,
-      json: () => Promise.resolve({ error: 'Advertiser has no card on file. Ask them to add a payment method.' }),
-    })));
+    const fetchMock = mockChargeFailsScheduleSucceeds();
+    vi.stubGlobal('fetch', fetchMock);
 
     render(
       <ApprovalQueue setCampaigns={() => {}} dbScreens={dbScreens} onApprovalChange={() => {}} />
@@ -143,12 +164,14 @@ describe('ApprovalQueue bulkApproveAll', () => {
     expect(consentCall.message).toContain('Acme');
     expect(consentCall.message).toContain('Globex');
 
-    // and only after that confirm resolves does it actually schedule them
+    // and only after that confirm resolves does it call
+    // operator-schedule-unpaid-campaign for both campaigns in one batched
+    // request -- not a direct (silently no-op) bookings write.
     await waitFor(() => {
-      const bookingSchedules = capturedStates.filter(s =>
-        s.table === 'bookings' && s.updatePayload?.status === 'scheduled'
-      );
-      expect(bookingSchedules.length).toBe(2);
+      const scheduleCalls = fetchMock.mock.calls.filter(([url]) => String(url).includes('operator-schedule-unpaid-campaign'));
+      expect(scheduleCalls.length).toBe(1);
+      const { campaign_ids } = JSON.parse(scheduleCalls[0][1].body);
+      expect(campaign_ids.sort()).toEqual(['camp-1', 'camp-2']);
     });
   });
 
@@ -157,10 +180,8 @@ describe('ApprovalQueue bulkApproveAll', () => {
     confirmMock.mockImplementation((opts) =>
       Promise.resolve(!/without charging/i.test(opts?.title ?? ''))
     );
-    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({
-      ok: false,
-      json: () => Promise.resolve({ error: 'Advertiser has no card on file.' }),
-    })));
+    const fetchMock = mockChargeFailsScheduleSucceeds();
+    vi.stubGlobal('fetch', fetchMock);
 
     render(
       <ApprovalQueue setCampaigns={() => {}} dbScreens={dbScreens} onApprovalChange={() => {}} />
@@ -171,9 +192,7 @@ describe('ApprovalQueue bulkApproveAll', () => {
 
     await waitFor(() => expect(confirmMock).toHaveBeenCalledTimes(2));
     await new Promise(r => setTimeout(r, 50));
-    const bookingSchedules = capturedStates.filter(s =>
-      s.table === 'bookings' && s.updatePayload?.status === 'scheduled'
-    );
-    expect(bookingSchedules.length).toBe(0);
+    const scheduleCalls = fetchMock.mock.calls.filter(([url]) => String(url).includes('operator-schedule-unpaid-campaign'));
+    expect(scheduleCalls.length).toBe(0);
   });
 });
