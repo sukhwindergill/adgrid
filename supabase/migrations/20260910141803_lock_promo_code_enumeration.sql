@@ -1,0 +1,21 @@
+-- Security-audit finding, continuing the ongoing sweep: campaign_promo_codes
+-- carries "public_reads_promo_code_by_value", a SELECT USING (true) policy
+-- for anon AND authenticated -- meaning anyone holding only the public
+-- anon key can read every row in the table with no filter at all
+-- (select * from campaign_promo_codes), platform-wide: every advertiser's
+-- promo codes, vanity paths, and which campaign each belongs to.
+--
+-- The policy's own comment says it exists so the unauthenticated
+-- conversion-pixel and vanity-redirect edge functions can resolve a code
+-- without an advertiser session -- but both of those functions construct
+-- their Supabase client with SUPABASE_SERVICE_ROLE_KEY, which bypasses RLS
+-- entirely. Neither one needs this policy, or any anon-key access at all.
+-- No client code queries this table unfiltered either (AdvIntegrationsView
+-- always scopes by advertiser_id = the caller's own id). This is unused
+-- excess privilege -- the same shape of leftover access already closed on
+-- marketplace_threads.
+--
+-- Fix: drop the public policy. advertiser_own_promo_codes (already scoped
+-- to advertiser_id = auth.uid()) is the only remaining access path for any
+-- non-service_role caller.
+DROP POLICY IF EXISTS "public_reads_promo_code_by_value" ON public.campaign_promo_codes;
