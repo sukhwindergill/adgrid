@@ -218,7 +218,7 @@ Deno.serve(async (req: Request) => {
     callerRole = callerProfile?.role ?? null;
   }
 
-  const { campaign_id } = await req.json();
+  const { campaign_id } = await req.json().catch(() => ({}));
   if (!campaign_id) {
     return new Response(JSON.stringify({ error: "campaign_id required" }), {
       status: 400,

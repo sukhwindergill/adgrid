@@ -21,7 +21,7 @@ Deno.serve(async (req: Request) => {
   const { data: { user }, error: authError } = await supabase.auth.getUser(bearer);
   if (authError || !user) return new Response("Unauthorized", { status: 401, headers: CORS });
 
-  const { token } = await req.json();
+  const { token } = await req.json().catch(() => ({}));
   if (!token || typeof token !== "string") {
     return new Response(JSON.stringify({ error: "invalid_token" }), { status: 400, headers: CORS });
   }

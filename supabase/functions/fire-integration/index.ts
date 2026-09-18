@@ -179,7 +179,7 @@ Deno.serve(async (req: Request) => {
     testCallerId = user.id;
   }
 
-  const payload: FirePayload = await req.json();
+  const payload = await req.json().catch(() => ({})) as FirePayload;
   const { scan_id, campaign_id } = payload;
   // A test caller can only ever fire against their own advertiser_id --
   // never trust the client-supplied value for anything but the internal

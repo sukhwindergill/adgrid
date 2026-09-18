@@ -37,7 +37,7 @@ Deno.serve(async (req: Request) => {
     return rateLimitResponse(CORS);
   }
 
-  const { email } = await req.json();
+  const { email } = await req.json().catch(() => ({}));
   if (!email || typeof email !== "string" || !email.includes("@")) {
     return new Response(JSON.stringify({ error: "Invalid email" }), { status: 400, headers: CORS });
   }

@@ -42,7 +42,7 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "Too many requests" }), { status: 429, headers: CORS });
   }
 
-  const { periodStart, periodEnd } = await req.json();
+  const { periodStart, periodEnd } = await req.json().catch(() => ({}));
   if (!periodStart || !periodEnd) {
     return new Response(JSON.stringify({ error: "Missing periodStart or periodEnd" }), { status: 400, headers: CORS });
   }

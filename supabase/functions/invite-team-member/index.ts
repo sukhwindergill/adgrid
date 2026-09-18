@@ -22,7 +22,7 @@ Deno.serve(async (req: Request) => {
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) return new Response("Unauthorized", { status: 401, headers: CORS });
 
-  const { email, role, orgProfileId } = await req.json();
+  const { email, role, orgProfileId } = await req.json().catch(() => ({}));
   if (!email || !orgProfileId) return new Response(JSON.stringify({ error: "Missing fields" }), { status: 400, headers: CORS });
 
   // Caller must be the org owner

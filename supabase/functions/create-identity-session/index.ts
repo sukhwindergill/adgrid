@@ -32,7 +32,7 @@ Deno.serve(async (req: Request) => {
     return rateLimitResponse(CORS);
   }
 
-  const { returnUrl } = await req.json();
+  const { returnUrl } = await req.json().catch(() => ({}));
   if (!returnUrl) return new Response(JSON.stringify({ error: "Missing returnUrl" }), { status: 400, headers: CORS });
 
   const { data: profile } = await supabase

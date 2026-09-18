@@ -431,7 +431,7 @@ Deno.serve(async (req: Request) => {
     callerRole = prof?.role ?? null;
   }
 
-  const { userId, type, campaignId, data: notifData = {} } = await req.json();
+  const { userId, type, campaignId, data: notifData = {} } = await req.json().catch(() => ({}));
   if (!userId || !type) return new Response("Missing userId or type", { status: 400, headers: CORS });
 
   // Non-internal callers can only send to themselves, unless the call
