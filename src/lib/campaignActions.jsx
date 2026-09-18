@@ -42,8 +42,25 @@ export function ApproveBtn({ campaign, setCampaigns, onSuccess }) {
           danger: false,
         });
         if (!confirmed) { setLoading(false); return; }
-        const { error: dbErr } = await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign.id);
-        if (dbErr) { setErr(dbErr.message); setLoading(false); return; }
+        // Was a direct bookings.update({status:'scheduled'}) -- always
+        // failed, since authenticated has no column-level UPDATE grant on
+        // bookings.status at all. Routed through
+        // operator-schedule-unpaid-campaign instead (same fix as mobile's
+        // useApprovals.js and web's ApprovalQueue.jsx), which verifies the
+        // caller owns a screen on this campaign and writes with the
+        // service role.
+        const schedRes = await fetch(`${SUPABASE_FUNCTIONS_URL}/operator-schedule-unpaid-campaign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ campaign_id: campaign.id }),
+        });
+        const schedBody = await schedRes.json().catch(() => ({}));
+        const schedResult = schedBody?.results?.[0];
+        if (!schedRes.ok || !schedResult?.ok) {
+          setErr(schedResult?.error ?? schedBody?.error ?? 'Unknown error');
+          setLoading(false);
+          return;
+        }
         setCampaigns(prev => prev.map(x => x.id === campaign.id ? { ...x, status: 'scheduled' } : x));
         setLoading(false);
         onSuccess?.();
@@ -55,18 +72,12 @@ export function ApproveBtn({ campaign, setCampaigns, onSuccess }) {
       return;
     }
 
-    const { error: dbErr } = await supabase.from('bookings').update({ status: 'scheduled', payment_status: 'paid' }).eq('id', campaign.id);
-    if (dbErr) {
-      // charge-campaign already succeeded at this point -- the advertiser
-      // was actually charged. A failure here previously proceeded anyway,
-      // optimistically marking the row scheduled/paid in the UI regardless
-      // of whether the DB write happened, leaving the real booking stuck at
-      // pending_review with no indication the operator needs to retry or
-      // escalate a charge that already went through.
-      setErr(`Charged, but failed to update booking status: ${dbErr.message}. Retry or update manually — do not charge again.`);
-      setLoading(false);
-      return;
-    }
+    // charge-campaign (service role) already set status: 'scheduled' and
+    // payment_status: 'paid' server-side on success -- a redundant client
+    // write here to those same columns always failed (authenticated has no
+    // column-level UPDATE grant on bookings.status or payment_status),
+    // showing a false "Charged, but failed to update booking status" error
+    // on every single successful approval. Just sync local state.
     setCampaigns(prev => prev.map(x => x.id === campaign.id ? { ...x, status: 'scheduled', payment_status: 'paid' } : x));
     setLoading(false);
     onSuccess?.();
