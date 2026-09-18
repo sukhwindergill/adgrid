@@ -9,6 +9,20 @@ const mockSupabase = createClient('', '');
 const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
 
 describe('LoginScreen', () => {
+  beforeEach(() => {
+    // signIn and resetPasswordForEmail now go through auth-security (see
+    // AuthContext.jsx) instead of calling supabase.auth directly -- default
+    // every call to a successful sign_in/request_reset response so these
+    // tests, which only care about the surrounding form flow, don't have to
+    // mock the network themselves.
+    global.fetch = jest.fn().mockResolvedValue({
+      json: () => Promise.resolve({
+        ok: true,
+        session: { access_token: 'at-1', refresh_token: 'rt-1' },
+      }),
+    });
+  });
+
   it('renders email and password fields', () => {
     const { getByPlaceholderText } = render(<LoginScreen />, { wrapper });
     expect(getByPlaceholderText('you@example.com')).toBeTruthy();

@@ -28,6 +28,7 @@ function makeQuery(state, resolve) {
       return builder;
     },
     eq: (col, val) => { state.filters[col] = { op: 'eq', val }; return builder; },
+    maybeSingle: () => builder,
     then: (onFulfilled, onRejected) => Promise.resolve(resolve(state)).then(onFulfilled, onRejected),
   };
   return builder;
@@ -39,6 +40,8 @@ function respond(state) {
     return { data: [{ id: 'camp-1', advertiser_name: 'Acme', advertiser_id: 'adv-1', status: 'pending_review', start_when: 'all', budget: 500 }], error: null };
   }
   if (table === 'campaign_creative_screens') return { data: [], error: null };
+  if (table === 'profiles') return { data: [], error: null };
+  if (table === 'operator_approval_rules') return { data: null, error: null };
   if (table !== 'campaign_screens') return { data: [], error: null };
   if (updatePayload) return { data: null, error: null };
   if (selectCols === 'campaign_id') return { data: [{ campaign_id: 'camp-1' }] };

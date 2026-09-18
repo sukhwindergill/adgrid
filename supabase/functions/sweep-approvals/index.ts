@@ -60,7 +60,7 @@ Deno.serve(async (_req: Request) => {
   const { data: policies } = operatorIds.length
     ? await supabase
         .from("operator_approval_rules")
-        .select("operator_id, enabled, auto_approve_categories, min_completed_campaigns")
+        .select("operator_id, enabled, auto_approve_categories, min_completed_campaigns, auto_approve_verified_advertisers")
         .in("operator_id", operatorIds)
     : { data: [] as Record<string, unknown>[] };
   const policyByOperator = new Map((policies ?? []).map(p => [p.operator_id as string, p]));
@@ -76,6 +76,11 @@ Deno.serve(async (_req: Request) => {
       .eq("status", "completed");
     completedByAdvertiser.set(advertiserId, count ?? 0);
   }
+
+  const { data: advertiserProfiles } = advertiserIds.length
+    ? await supabase.from("profiles").select("id, is_verified_advertiser").in("id", advertiserIds)
+    : { data: [] as Record<string, unknown>[] };
+  const verifiedByAdvertiser = new Map((advertiserProfiles ?? []).map(p => [p.id as string, Boolean(p.is_verified_advertiser)]));
 
   let autoApproved = 0;
   let expired = 0;
@@ -101,6 +106,7 @@ Deno.serve(async (_req: Request) => {
     const decision = policyApproves(policy as never, {
       category: campaign.category as string,
       completedCampaigns: completedByAdvertiser.get(campaign.advertiser_id as string) ?? 0,
+      advertiserIsVerified: verifiedByAdvertiser.get(campaign.advertiser_id as string) ?? false,
     });
 
     if (decision.approved) {
@@ -110,6 +116,18 @@ Deno.serve(async (_req: Request) => {
         .eq("id", row.id);
       autoApproved++;
       autoApprovedCampaignIds.add(row.campaign_id as string);
+
+      // Verified-advertiser auto-approve skips the operator's queue entirely
+      // (unlike a human approve, which the operator obviously saw) -- notify
+      // them per-screen so it's never silent. The pre-existing category-based
+      // auto-approve path (reason: null) is untouched and stays as it was.
+      if (decision.reason === "verified_advertiser" && screen.operator_id) {
+        await notify(screen.operator_id as string, "auto_approved_verified_advertiser", {
+          campaignName: (campaign.campaign_name ?? campaign.advertiser_name ?? campaign.id) as string,
+          screenName: (screen.name as string) ?? (screen.id as string),
+          appUrl: APP_URL,
+        });
+      }
     } else {
       stillPending.push(row);
     }
@@ -206,9 +224,14 @@ Deno.serve(async (_req: Request) => {
 
       if (credit > 0) {
         const billedTo = (campaign.billed_to_profile_id ?? campaign.advertiser_id) as string;
-        const { data: profile } = await supabase.from("profiles").select("credits").eq("id", billedTo).single();
-        const newBalance = Number(profile?.credits ?? 0) + credit;
-        const { error } = await supabase.from("profiles").update({ credits: newBalance }).eq("id", billedTo);
+        // Atomic RPC, not a read-then-write -- see reconcile-delivery's own
+        // comment on this: two independently-scheduled crons can credit the
+        // same advertiser around the same time, and a computed UPDATE loses
+        // whichever write commits first.
+        const { error } = await supabase.rpc("increment_profile_credits", {
+          p_profile_id: billedTo,
+          p_delta: credit,
+        });
         if (!error) creditLabel = `${credit.toFixed(2)} ${String(campaign.currency ?? "CAD").toUpperCase()}`;
       }
     }

@@ -128,7 +128,23 @@ export function useApprovals(operatorId, screenIds) {
     if (isNoPayment) {
       const confirmed = await confirmAsync('Approve without charging?', `${msg}\n\nYou can collect payment manually.`);
       if (confirmed) {
-        await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaignId);
+        // bookings.status has NO client UPDATE grant at all (REVOKE UPDATE
+        // (..., status, ...) ON bookings FROM authenticated) -- a direct
+        // client write here always failed with a column-privilege error,
+        // same bug web's ApprovalQueue.jsx had before it was routed through
+        // operator-schedule-unpaid-campaign, which verifies the caller owns
+        // a screen on this campaign and re-derives the "all clear" gate
+        // server-side before writing with the service role.
+        const schedRes = await fetch(`${FUNCTIONS_URL}/operator-schedule-unpaid-campaign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ campaign_id: campaignId }),
+        });
+        const schedBody = await schedRes.json().catch(() => ({}));
+        const schedResult = schedBody?.results?.[0];
+        if (!schedRes.ok || !schedResult?.ok) {
+          setError(`Failed to update booking status: ${schedResult?.error ?? schedBody?.error ?? 'Unknown error'}. Try again.`);
+        }
       }
       return;
     }
