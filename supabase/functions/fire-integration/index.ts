@@ -14,6 +14,8 @@ interface FirePayload {
   campaign_id: string;
   email?: string | null;
   consent?: boolean;
+  _test_platform?: string;
+  _test_config?: Record<string, string>;
 }
 
 async function sha256Hex(value: string): Promise<string> {
@@ -149,16 +151,55 @@ async function fireShopify(
   return { status: "sent" };
 }
 
+async function fireForPlatform(
+  platform: string,
+  config: Record<string, string>,
+  payload: FirePayload,
+): Promise<{ status: string; error?: string }> {
+  if (platform === "meta") return fireMeta(config, payload);
+  if (platform === "google") return fireGoogle(config, payload);
+  if (platform === "shopify") return fireShopify(config, payload);
+  return { status: "failed", error: `unknown platform: ${platform}` };
+}
+
 Deno.serve(async (req: Request) => {
-  if (req.headers.get("Authorization") !== `Bearer ${INTERNAL_SECRET}`) {
-    return new Response("Unauthorized", { status: 401 });
+  // Two callers: scan-redirect (server-to-server, real scans) authenticates
+  // with the internal secret. AdvIntegrationsView.jsx's "Send Test Event"
+  // button sends the advertiser's own session JWT instead -- there was no
+  // code path accepting that at all, so every test click 401'd
+  // unconditionally and the feature never worked.
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const isInternal = !!INTERNAL_SECRET && authHeader === `Bearer ${INTERNAL_SECRET}`;
+
+  let testCallerId: string | null = null;
+  if (!isInternal) {
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user } } = await supabase.auth.getUser(token);
+    if (!user) return new Response("Unauthorized", { status: 401 });
+    testCallerId = user.id;
   }
 
   const payload: FirePayload = await req.json();
-  const { scan_id, advertiser_id, campaign_id } = payload;
+  const { scan_id, campaign_id } = payload;
+  // A test caller can only ever fire against their own advertiser_id --
+  // never trust the client-supplied value for anything but the internal
+  // (already-trusted) caller.
+  const advertiser_id = isInternal ? payload.advertiser_id : testCallerId!;
 
   if (!scan_id || !advertiser_id) {
     return new Response("Missing scan_id or advertiser_id", { status: 400 });
+  }
+
+  // Test path: fire exactly the draft platform/config being edited in the
+  // modal right now, not whatever (if anything) is already saved for this
+  // advertiser -- and never write a fake test firing into integration_events,
+  // the real per-scan delivery log.
+  if (testCallerId && payload._test_platform && payload._test_config) {
+    const result = await fireForPlatform(payload._test_platform, payload._test_config, payload);
+    return new Response(JSON.stringify({ fired: result.status === "sent" ? 1 : 0, results: [{ platform: payload._test_platform, ...result }] }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   const { data: integrations } = await supabase
@@ -173,17 +214,7 @@ Deno.serve(async (req: Request) => {
 
   const results = await Promise.allSettled(
     integrations.map(async (intg) => {
-      let result: { status: string; error?: string };
-
-      if (intg.platform === "meta") {
-        result = await fireMeta(intg.config, payload);
-      } else if (intg.platform === "google") {
-        result = await fireGoogle(intg.config, payload);
-      } else if (intg.platform === "shopify") {
-        result = await fireShopify(intg.config, payload);
-      } else {
-        result = { status: "failed", error: `unknown platform: ${intg.platform}` };
-      }
+      const result = await fireForPlatform(intg.platform, intg.config, payload);
 
       await supabase.from("integration_events").insert({
         advertiser_id,
