@@ -422,7 +422,13 @@ function AppInner() {
   // ── Mutation helpers ───────────────────────────────────────────────────────
   const updateCampaign = async updated => {
     const prevCampaign = campaigns.find(c => c.id === updated.id);
-    const becomingActive = updated.status === 'active' && prevCampaign?.status !== 'active';
+    // manage-campaign-status already resolved and wrote the real status
+    // server-side (Pause/Resume/Cancel in CampaignDetail's Danger Zone) --
+    // this call is here purely to sync local state. Without this flag,
+    // Resume's target status of 'active' looks identical to a real
+    // becomingActive payment transition and would wrongly re-trigger
+    // charge-campaign against an already-paid campaign.
+    const becomingActive = !updated.__skipServerWrite && updated.status === 'active' && prevCampaign?.status !== 'active';
 
     // Charge advertiser before activating campaign
     if (becomingActive) {
@@ -447,8 +453,9 @@ function AppInner() {
     // status is set by charge-campaign (service role) on payment, or by edge
     // functions for other transitions. The authenticated role does not have a
     // column-level UPDATE grant on status, so we skip the redundant client write.
-    setCampaigns(prev => prev.map(c => c.id === updated.id ? updated : c));
-    setDetail(updated);
+    const { __skipServerWrite, ...cleanUpdated } = updated;
+    setCampaigns(prev => prev.map(c => c.id === cleanUpdated.id ? cleanUpdated : c));
+    setDetail(cleanUpdated);
     if (becomingActive && updated.advertiser_id) {
       callNotification(updated.advertiser_id, 'campaign_approved', {
         campaignName: updated.advertiser_name ?? updated.advertiser ?? '',
