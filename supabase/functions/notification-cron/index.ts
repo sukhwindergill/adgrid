@@ -304,6 +304,15 @@ Deno.serve(async (req: Request) => {
       .select("id, owner_revenue_share")
       .eq("role", "operator");
 
+    // Matches distributeOperatorCuts' (charge-campaign) own math: the
+    // platform fee comes off the top before the operator's revenue share
+    // is applied, and a null owner_revenue_share falls back to the same
+    // 40% default charge-campaign uses -- not a bare 0.4 of gross budget.
+    // Product-audit finding: this weekly_revenue estimate previously used
+    // budget * 0.4 unconditionally, both skipping the 12% platform fee
+    // (overstating revenue by ~14%) and ignoring any operator's actual,
+    // possibly-customized owner_revenue_share.
+
     for (const op of operators ?? []) {
       const { data: opScreens } = await supabase
         .from("screens")
@@ -312,6 +321,7 @@ Deno.serve(async (req: Request) => {
 
       const screenIds = (opScreens ?? []).map((s: { id: string }) => s.id);
       let revenue = 0;
+      const revenueShare = (op as { owner_revenue_share: number | null }).owner_revenue_share ?? 0.40;
 
       if (screenIds.length > 0) {
         const { data: csRows } = await supabase
@@ -345,8 +355,6 @@ Deno.serve(async (req: Request) => {
             .select("id, budget")
             .in("id", campaignIds)
             .eq("status", "active");
-
-          const revenueShare = op.owner_revenue_share ?? 0.40;
           revenue = (opCampaigns ?? []).reduce((s: number, c: { id: string; budget: number }) => {
             const totalScreens = totalScreenCountByCampaign.get(c.id) ?? 0;
             const ownScreens = ownScreenCountByCampaign.get(c.id) ?? 0;

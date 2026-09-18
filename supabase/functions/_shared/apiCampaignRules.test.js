@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateCreateCampaignBody, canEditCampaign, canCancelCampaign } from './apiCampaignRules.ts';
+import { validateCreateCampaignBody, validateEditCampaignBody, canEditCampaign, canCancelCampaign } from './apiCampaignRules.ts';
 
 const validBody = {
   screen_ids: ['s1', 's2'], budget: 500, start_date: '2026-09-10', end_date: '2026-10-10',
@@ -33,6 +33,44 @@ describe('validateCreateCampaignBody', () => {
   it('collects multiple errors at once', () => {
     const errors = validateCreateCampaignBody({});
     expect(errors.length).toBeGreaterThan(1);
+  });
+});
+
+describe('validateEditCampaignBody', () => {
+  it('passes an empty body (no fields to update) with no errors', () => {
+    expect(validateEditCampaignBody({})).toEqual([]);
+  });
+
+  it('passes a partial body with only valid fields', () => {
+    expect(validateEditCampaignBody({ budget: 750 })).toEqual([]);
+    expect(validateEditCampaignBody({ media_type: 'video' })).toEqual([]);
+    expect(validateEditCampaignBody({ destination_url: '' })).toEqual([]);
+  });
+
+  it('flags a non-positive budget when budget is present', () => {
+    expect(validateEditCampaignBody({ budget: 0 })).toContain('budget must be a positive number');
+    expect(validateEditCampaignBody({ budget: -50 })).toContain('budget must be a positive number');
+    expect(validateEditCampaignBody({ budget: '500' })).toContain('budget must be a positive number');
+  });
+
+  it('flags a non-positive duration when duration is present', () => {
+    expect(validateEditCampaignBody({ duration: 0 })).toContain('duration must be a positive number');
+    expect(validateEditCampaignBody({ duration: -5 })).toContain('duration must be a positive number');
+  });
+
+  it('flags an invalid media_type when present', () => {
+    expect(validateEditCampaignBody({ media_type: 'pdf' })).toContain('media_type must be "image" or "video"');
+  });
+
+  it('flags empty date/media_url strings when present', () => {
+    expect(validateEditCampaignBody({ start_date: '' })).toContain('start_date must be a non-empty string');
+    expect(validateEditCampaignBody({ end_date: '' })).toContain('end_date must be a non-empty string');
+    expect(validateEditCampaignBody({ media_url: '' })).toContain('media_url must be a non-empty string');
+  });
+
+  it('flags a non-string campaign_name or destination_url when present', () => {
+    expect(validateEditCampaignBody({ campaign_name: 123 })).toContain('campaign_name must be a string');
+    expect(validateEditCampaignBody({ destination_url: 123 })).toContain('destination_url must be a string');
   });
 });
 

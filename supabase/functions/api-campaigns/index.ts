@@ -11,7 +11,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { authenticateApiKey } from "../_shared/apiKeyAuth.ts";
-import { validateCreateCampaignBody, canEditCampaign, canCancelCampaign } from "../_shared/apiCampaignRules.ts";
+import { validateCreateCampaignBody, validateEditCampaignBody, canEditCampaign, canCancelCampaign } from "../_shared/apiCampaignRules.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -150,6 +150,9 @@ Deno.serve(async (req: Request) => {
     for (const field of allowedFields) if (field in body) updates[field] = body[field];
     if (Object.keys(updates).length === 0) return json({ error: "No editable fields provided" }, 400);
 
+    const editErrors = validateEditCampaignBody(updates);
+    if (editErrors.length > 0) return json({ error: "Invalid campaign update", details: editErrors }, 400);
+
     const { error } = await supabase.from("bookings").update(updates).eq("id", campaignId);
     if (error) return json({ error: error.message }, 500);
     return json({ campaign_id: campaignId, updated: true });
@@ -177,7 +180,11 @@ Deno.serve(async (req: Request) => {
     if (!canCancelCampaign(campaign.status, campaign.payment_status)) {
       return json({ error: `Campaign cannot be cancelled once it is "${campaign.status}"` }, 409);
     }
-    const { error } = await supabase.from("bookings").update({ status: "cancelled" }).eq("id", campaignId);
+    // bookings_status_check has no 'cancelled' value -- 'completed' is the
+    // schema's only terminal status (same fix as manage-campaign-status's
+    // 'cancel' action / PR #249). This update was constraint-violating on
+    // every call, 500ing for every external API consumer that tried it.
+    const { error } = await supabase.from("bookings").update({ status: "completed" }).eq("id", campaignId);
     if (error) return json({ error: error.message }, 500);
     return json({ campaign_id: campaignId, cancelled: true });
   }

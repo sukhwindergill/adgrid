@@ -4,6 +4,7 @@ import { Dot } from './Dot.jsx';
 export const Badge = ({ status, children }) => {
   const m = {
     active:           { bg: C.greenSoft,  c: C.green,    b: C.greenBorder },
+    verified:         { bg: C.purpleSoft, c: C.purple,   b: C.purpleBorder },
     live:             { bg: C.greenSoft,  c: C.green,    b: C.greenBorder },
     scheduled:        { bg: C.blueSoft,   c: C.blue,     b: C.blueBorder },
     pending:          { bg: C.amberSoft,  c: C.amber,    b: C.amberBorder },
