@@ -11,7 +11,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { authenticateApiKey } from "../_shared/apiKeyAuth.ts";
-import { validateCreateCampaignBody, canEditCampaign, canCancelCampaign } from "../_shared/apiCampaignRules.ts";
+import { validateCreateCampaignBody, validateEditCampaignBody, canEditCampaign, canCancelCampaign } from "../_shared/apiCampaignRules.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -149,6 +149,9 @@ Deno.serve(async (req: Request) => {
     const updates: Record<string, unknown> = {};
     for (const field of allowedFields) if (field in body) updates[field] = body[field];
     if (Object.keys(updates).length === 0) return json({ error: "No editable fields provided" }, 400);
+
+    const editErrors = validateEditCampaignBody(updates);
+    if (editErrors.length > 0) return json({ error: "Invalid campaign update", details: editErrors }, 400);
 
     const { error } = await supabase.from("bookings").update(updates).eq("id", campaignId);
     if (error) return json({ error: error.message }, 500);
