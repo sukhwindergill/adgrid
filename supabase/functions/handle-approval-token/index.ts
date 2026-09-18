@@ -2,6 +2,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { rateLimited, clientIp } from '../_shared/rateLimit.ts'
+import { rejectedOutcome, pendingOutcome, chargeSucceededOutcome, chargeFailedOutcome } from '../_shared/approvalTokenOutcome.ts'
 
 serve(async (req) => {
   const url = new URL(req.url)
@@ -85,27 +86,52 @@ serve(async (req) => {
     .eq('campaign_id', campaign_id)
     .eq('screen_id', screen_id)
 
+  let outcome = action === 'approve' ? pendingOutcome() : rejectedOutcome()
+
   if (action === 'approve') {
     const { data: booking } = await supabase
       .from('bookings').select('start_when').eq('id', campaign_id).single()
-    if (booking?.start_when === 'partial') {
-      await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign_id)
-    } else {
-      const { data: remaining } = await supabase
-        .from('campaign_screens').select('status').eq('campaign_id', campaign_id).eq('status', 'pending')
-      if (!remaining || remaining.length === 0) {
-        await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign_id)
+    const { data: remaining } = await supabase
+      .from('campaign_screens').select('status').eq('campaign_id', campaign_id).eq('status', 'pending')
+    const allClear = booking?.start_when === 'partial' || !remaining || remaining.length === 0
+
+    if (allClear) {
+      // Every other approval path (ApprovalQueue.jsx, mobile's
+      // useApprovals.js, campaignActions.jsx's ApproveBtn, sweep-approvals)
+      // charges the advertiser via charge-campaign the moment a campaign
+      // clears every screen -- this email-link flow used to just flip
+      // bookings.status to 'scheduled' directly, skipping payment entirely.
+      // A campaign approved by clicking the email link would go live and
+      // run without the advertiser ever being charged. Route through the
+      // same internal-secret trusted-caller path sweep-approvals uses.
+      const res = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/charge-campaign`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-internal-secret': Deno.env.get('INTERNAL_NOTIFICATION_SECRET') ?? '',
+        },
+        body: JSON.stringify({ campaign_id }),
+      })
+      if (res.ok) {
+        outcome = chargeSucceededOutcome()
+      } else {
+        const body = await res.json().catch(() => ({}))
+        outcome = chargeFailedOutcome(body.error ?? 'Unknown error')
+        if (outcome.scheduleWithoutCharge) {
+          // Same "approve without charging" fallback every other approval
+          // surface offers when the advertiser has no card on file yet --
+          // there's no interactive confirm dialog on this static page, so
+          // schedule it and say so plainly rather than leaving the operator
+          // stuck with no way to approve at all.
+          await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign_id)
+        }
       }
     }
   }
 
   await supabase.from('approval_tokens').update({ used: true }).eq('token', token)
 
-  const msg = action === 'approve'
-    ? 'Campaign approved! It will start running on your screen.'
-    : 'Campaign rejected.'
-
-  return new Response(html(action === 'approve' ? '✓ Approved' : '✗ Rejected', msg), {
+  return new Response(html(outcome.title, escapeHtml(outcome.msg)), {
     status: 200, headers: { 'Content-Type': 'text/html' },
   })
 })
