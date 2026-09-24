@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveDayWindow, isTimeInWindow } from './dayparting.ts';
+import { resolveDayWindow, isTimeInWindow, isWithinOperatingHours } from './dayparting.ts';
 
 describe('resolveDayWindow', () => {
   it('falls back to the flat window when dayparting is null', () => {
@@ -48,5 +48,29 @@ describe('isTimeInWindow', () => {
   it('includes both endpoints of an overnight window', () => {
     expect(isTimeInWindow('22:00', '22:00', '02:00')).toBe(true);
     expect(isTimeInWindow('02:00', '22:00', '02:00')).toBe(true);
+  });
+});
+
+describe('isWithinOperatingHours', () => {
+  it('is open when either bound is missing', () => {
+    expect(isWithinOperatingHours('03:00', null, null)).toBe(true);
+    expect(isWithinOperatingHours('03:00', '07:00', null)).toBe(true);
+  });
+
+  it('respects a same-day window, including Postgres HH:MM:SS bounds', () => {
+    expect(isWithinOperatingHours('07:00', '07:00:00', '22:00:00')).toBe(true);
+    expect(isWithinOperatingHours('22:00', '07:00:00', '22:00:00')).toBe(true);
+    expect(isWithinOperatingHours('06:59', '07:00:00', '22:00:00')).toBe(false);
+    expect(isWithinOperatingHours('22:01', '07:00:00', '22:00:00')).toBe(false);
+  });
+
+  it('wraps overnight hours past midnight', () => {
+    expect(isWithinOperatingHours('23:30', '18:00', '02:00')).toBe(true);
+    expect(isWithinOperatingHours('01:15', '18:00', '02:00')).toBe(true);
+    expect(isWithinOperatingHours('12:00', '18:00', '02:00')).toBe(false);
+  });
+
+  it('treats equal start and end as open around the clock', () => {
+    expect(isWithinOperatingHours('04:00', '00:00:00', '00:00:00')).toBe(true);
   });
 });

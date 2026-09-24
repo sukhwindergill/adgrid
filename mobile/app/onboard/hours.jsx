@@ -23,8 +23,11 @@ export default function HoursScreen() {
       setError('Enter times as HH:MM, e.g. 08:00');
       return;
     }
-    if (form.operating_hours_start >= form.operating_hours_end) {
-      setError('Start time must be before end time');
+    // End before start is a valid overnight window (e.g. 18:00-02:00 for a
+    // bar) -- display-feed wraps it past midnight. Only identical times are
+    // ambiguous.
+    if (form.operating_hours_start === form.operating_hours_end) {
+      setError('Start and end times are the same. For a 24-hour screen use 00:00 to 23:59.');
       return;
     }
     setError('');
@@ -48,6 +51,11 @@ export default function HoursScreen() {
         <ErrorBanner message={error} />
         <Inp label="Start time (HH:MM)" value={form.operating_hours_start} onChangeText={v => update({ operating_hours_start: v })} placeholder="08:00" keyboardType="numbers-and-punctuation" />
         <Inp label="End time (HH:MM)" value={form.operating_hours_end} onChangeText={v => update({ operating_hours_end: v })} placeholder="22:00" keyboardType="numbers-and-punctuation" />
+        {TIME_RE.test(form.operating_hours_start) && TIME_RE.test(form.operating_hours_end) && form.operating_hours_end < form.operating_hours_start && (
+          <Text style={[styles.hint, { fontFamily: F.sans, marginTop: -4, marginBottom: 12 }]}>
+            Runs overnight — closes at {form.operating_hours_end} the next day.
+          </Text>
+        )}
         <Inp label="Timezone (IANA)" value={form.timezone} onChangeText={v => update({ timezone: v })} placeholder="America/Toronto" />
         <Text style={[styles.hint, { fontFamily: F.sans }]}>Timezone is auto-detected from your province/region.</Text>
         <Btn onPress={handleNext} loading={loading} size="lg" style={{ marginTop: 24 }}>Next</Btn>

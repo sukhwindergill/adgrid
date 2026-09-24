@@ -56,9 +56,28 @@ export function overlapSeconds(
   const ss = parseHhMm(screenStart) ?? 0;
   const se = parseHhMm(screenEnd) ?? 86_400;
 
-  const start = Math.max(cs, ss);
-  const end = Math.min(ce, se);
-  return Math.max(0, end - start);
+  // Either window may wrap past midnight (end < start: an 18:00-02:00 bar,
+  // or a 22:00-06:00 overnight campaign) -- display-feed serves both via
+  // isTimeInWindow/isWithinOperatingHours, so expectations must count the
+  // same airtime rather than treating a wrapped window as empty. Screen
+  // hours with start === end mean open around the clock, matching
+  // isWithinOperatingHours.
+  const campaign = toIntervals(cs, ce, false);
+  const screen = toIntervals(ss, se, true);
+
+  let total = 0;
+  for (const [a0, a1] of campaign) {
+    for (const [b0, b1] of screen) {
+      total += Math.max(0, Math.min(a1, b1) - Math.max(a0, b0));
+    }
+  }
+  return total;
+}
+
+function toIntervals(start: number, end: number, equalMeansAllDay: boolean): [number, number][] {
+  if (start === end) return equalMeansAllDay ? [[0, 86_400]] : [];
+  if (end < start) return [[start, 86_400], [0, end]];
+  return [[start, end]];
 }
 
 function isScheduledDay(scheduleDays: string[] | null | undefined, day: Date): boolean {

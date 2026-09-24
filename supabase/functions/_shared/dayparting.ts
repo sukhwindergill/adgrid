@@ -37,3 +37,25 @@ export function isTimeInWindow(currentTime: string, start: string, end: string):
   }
   return currentTime >= start && currentTime <= end;
 }
+
+// Whether a screen is inside its operating hours at `currentTime` (HH:MM).
+// screens.operating_hours_* are Postgres `time` columns, which come back as
+// "HH:MM:SS" -- compared as raw strings against an "HH:MM" clock, "07:00"
+// sorts before "07:00:00" and the opening minute would read as closed, so
+// both bounds are trimmed to HH:MM first. A missing bound means no
+// restriction. start === end means open around the clock (there is no
+// meaningful zero-length operating day). Overnight hours (e.g. 18:00-02:00
+// for a bar) wrap past midnight via isTimeInWindow -- the plain
+// `currentTime < start || currentTime > end` check this replaces was always
+// true for them, so a late-night venue's screen never served a single ad.
+export function isWithinOperatingHours(
+  currentTime: string,
+  start: string | null | undefined,
+  end: string | null | undefined,
+): boolean {
+  if (!start || !end) return true;
+  const s = start.slice(0, 5);
+  const e = end.slice(0, 5);
+  if (s === e) return true;
+  return isTimeInWindow(currentTime, s, e);
+}

@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { expandCreativeAssignments } from "../_shared/creativeSelection.ts";
 import { clampDurationToScreen } from "../_shared/adDuration.ts";
-import { resolveDayWindow, isTimeInWindow } from "../_shared/dayparting.ts";
+import { resolveDayWindow, isTimeInWindow, isWithinOperatingHours } from "../_shared/dayparting.ts";
 import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { capHouseAds } from "../_shared/houseAdCap.ts";
 import { capAdvertiserLoopShare } from "../_shared/advertiserLoopCap.ts";
@@ -113,10 +113,23 @@ Deno.serve(async (req: Request) => {
   const dayNames: Record<string, string> = { Sun: "Sun", Mon: "Mon", Tue: "Tue", Wed: "Wed", Thu: "Thu", Fri: "Fri", Sat: "Sat" };
   const currentDay = dayNames[get("weekday")] ?? get("weekday");
 
-  // Enforce operating hours — return empty feed outside configured window
-  const opStart = screen.operating_hours_start as string | null;
-  const opEnd   = screen.operating_hours_end   as string | null;
-  if (opStart && opEnd && (currentTime < opStart || currentTime > opEnd)) {
+  // Enforce operating hours — return empty feed outside configured window.
+  // Overnight hours (18:00-02:00) wrap past midnight; see
+  // isWithinOperatingHours.
+  //
+  // Heartbeat/last_seen are still recorded, same as the not-live branch
+  // above. Returning before them meant every screen went silent the moment
+  // it closed for the night (DB default hours are 07:00-22:00), so
+  // screen-health-cron flipped it 'offline' an hour later and emailed the
+  // operator a screen_offline alert -- and advertisers' offline-minutes
+  // automation rules fired too -- every night, for screens that were fine.
+  if (!isWithinOperatingHours(currentTime, screen.operating_hours_start as string | null, screen.operating_hours_end as string | null)) {
+    supabase.from("display_heartbeats").insert({
+      screen_id: screen.id,
+      campaign_id: null,
+      status: "idle",
+    }).then(() => {});
+    supabase.from("screens").update({ last_seen: now.toISOString() }).eq("id", screen.id).then(() => {});
     return new Response(
       JSON.stringify({ screen_id: screen.id, screen_name: screen.name, current_time: currentTime, campaigns: [] }),
       { headers: CORS },

@@ -92,8 +92,25 @@ describe('overlapSeconds', () => {
     expect(overlapSeconds('09:00', '17:00', null, null)).toBe(8 * 3600);
   });
 
-  it('treats an inverted window as zero rather than negative', () => {
-    expect(overlapSeconds('17:00', '09:00', '07:00', '22:00')).toBe(0);
+  it('wraps an overnight campaign window past midnight', () => {
+    // 17:00-09:00 on a 07:00-22:00 screen = 17-22 (5h) + 07-09 (2h).
+    expect(overlapSeconds('17:00', '09:00', '07:00', '22:00')).toBe(7 * 3600);
+  });
+
+  it('wraps overnight screen hours past midnight', () => {
+    // An 18:00-02:00 bar used to yield 0 expected plays.
+    expect(overlapSeconds(null, null, '18:00', '02:00')).toBe(8 * 3600);
+    expect(overlapSeconds('20:00', '23:00', '18:00', '02:00')).toBe(3 * 3600);
+    expect(overlapSeconds('01:00', '04:00', '18:00:00', '02:00:00')).toBe(1 * 3600);
+  });
+
+  it('handles both windows wrapping', () => {
+    // 22:00-03:00 campaign on an 18:00-02:00 screen = 22-24 + 00-02 = 4h.
+    expect(overlapSeconds('22:00', '03:00', '18:00', '02:00')).toBe(4 * 3600);
+  });
+
+  it('treats equal screen start/end as open around the clock', () => {
+    expect(overlapSeconds('09:00', '17:00', '00:00', '00:00')).toBe(8 * 3600);
   });
 });
 
