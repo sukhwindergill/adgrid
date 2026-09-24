@@ -31,4 +31,6 @@ packageExtensions:
       react: '19.1.0'
 allowBuilds:
   # esbuild is vitest's bundler; its install script links the platform binary.
+  # core-js (via posthog-js) only prints a banner on install.
+  core-js: false
   esbuild: true

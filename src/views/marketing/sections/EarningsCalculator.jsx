@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useReveal } from './useReveal.js';
 import { estimateMonthlyEarnings, ESTIMATE_ASSUMPTIONS } from '../../../lib/earningsEstimate.js';
+import { track } from '../../../lib/analytics.js';
 
 const FILL_OPTIONS = [
   [0.25, 'Quiet', '25% of ad spots booked'],
@@ -15,6 +16,12 @@ export function EarningsCalculator({ onOperatorSignup }) {
   const [screens, setScreens] = useState(1);
   const [dailyVisitors, setDailyVisitors] = useState(400);
   const [fillRate, setFillRate] = useState(0.5);
+  // One event per page view, on first interaction, not per slider tick.
+  const tracked = useRef(false);
+  const touched = setter => value => {
+    if (!tracked.current) { tracked.current = true; track('earnings_calculator_used'); }
+    setter(value);
+  };
 
   const { operator } = estimateMonthlyEarnings({ screens, dailyVisitors, fillRate });
   const { cpm, adSpotsPerLoop, ownerShare } = ESTIMATE_ASSUMPTIONS;
@@ -34,7 +41,7 @@ export function EarningsCalculator({ onOperatorSignup }) {
             <div className="calc-field">
               <label htmlFor="calc-screens">Screens <strong>{screens}</strong></label>
               <input id="calc-screens" type="range" min="1" max="20" step="1"
-                value={screens} onChange={e => setScreens(Number(e.target.value))} />
+                value={screens} onChange={e => touched(setScreens)(Number(e.target.value))} />
             </div>
 
             <div className="calc-field">
@@ -42,7 +49,7 @@ export function EarningsCalculator({ onOperatorSignup }) {
                 Visitors per day, per screen <strong>{dailyVisitors.toLocaleString('en-CA')}</strong>
               </label>
               <input id="calc-visitors" type="range" min="50" max="3000" step="50"
-                value={dailyVisitors} onChange={e => setDailyVisitors(Number(e.target.value))} />
+                value={dailyVisitors} onChange={e => touched(setDailyVisitors)(Number(e.target.value))} />
             </div>
 
             <fieldset className="calc-field calc-fill">
@@ -52,7 +59,7 @@ export function EarningsCalculator({ onOperatorSignup }) {
                   <button key={value} type="button" title={title}
                     aria-pressed={fillRate === value}
                     className={fillRate === value ? 'on' : ''}
-                    onClick={() => setFillRate(value)}>
+                    onClick={() => touched(setFillRate)(value)}>
                     {label}
                   </button>
                 ))}

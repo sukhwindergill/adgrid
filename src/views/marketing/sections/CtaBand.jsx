@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useReveal } from './useReveal.js';
 import { supabase } from '../../../lib/supabase.js';
 import { getUtmLabel } from '../../../lib/utm.js';
+import { track } from '../../../lib/analytics.js';
 
 export function applyUtmPrefill(prev, label) {
   return prev.source ? prev : { ...prev, source: label };
@@ -66,6 +67,7 @@ export function CtaBand({ role: roleProp, onRoleChange }) {
       setSubmitErr('Something went wrong. Please try again.');
       return;
     }
+    track('waitlist_submitted', { role });
     navigate(`/thank-you?role=${role}`);
   };
 

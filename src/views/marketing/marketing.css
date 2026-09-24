@@ -409,3 +409,11 @@ select.fi { appearance: none; cursor: pointer; }
 .calc-result-sub { font-size: 15px; color: var(--sec); margin: 6px 0 28px; }
 .calc-note { font-size: 12px; line-height: 1.6; color: var(--muted); margin-top: 20px; }
 @media (max-width: 900px) { .calc { grid-template-columns: 1fr; gap: 36px; } .calc-result { padding: 28px 22px; } }
+
+/* ── Cookie consent (only when analytics is configured) ── */
+.cookie-banner-dismiss.secondary { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+/* Equal visual weight for both choices; neither is buried. Two buttons
+   don't fit beside the text on phones, so let them wrap below it. */
+@media (max-width: 768px) {
+  .cookie-banner:has(.secondary) { flex-wrap: wrap; }
+}
