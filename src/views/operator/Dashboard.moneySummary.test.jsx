@@ -47,9 +47,9 @@ describe('Dashboard — money summary card', () => {
     await waitFor(() => screen.getByText('Your Money'));
     expect(screen.getByText('$320')).toBeInTheDocument();
     expect(screen.getByText('$75')).toBeInTheDocument();
-    // spent 1000, 55% owner share, 12% platform fee: 1000*0.88*0.55 = $484
-    await waitFor(() => expect(screen.getByText('$484')).toBeInTheDocument());
-    expect(screen.getByText('55% of network spend, after platform fee')).toBeInTheDocument();
+    // spent 1000, 55% owner share of gross: 1000*0.55 = $550
+    await waitFor(() => expect(screen.getByText('$550')).toBeInTheDocument());
+    expect(screen.getByText('55% of advertiser spend')).toBeInTheDocument();
     expect(screen.getByText('Billing →')).toBeInTheDocument();
     expect(screen.getByText('Revenue →')).toBeInTheDocument();
   });

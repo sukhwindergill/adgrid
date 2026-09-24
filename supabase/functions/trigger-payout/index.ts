@@ -1,7 +1,7 @@
 import Stripe from "https://esm.sh/stripe@14?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { rateLimited } from "../_shared/rateLimit.ts";
-import { countServingScreensByCampaign, operatorSharePct } from "../_shared/payoutSharing.ts";
+import { countServingScreensByCampaign, DEFAULT_OWNER_REVENUE_SHARE, operatorSharePct } from "../_shared/payoutSharing.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
   apiVersion: "2023-10-16",
@@ -142,8 +142,7 @@ Deno.serve(async (req: Request) => {
   const handledIds = new Set((alreadyHandled ?? []).map((r: { booking_id: string }) => r.booking_id));
   const unhandledCampaigns = (campaigns ?? []).filter((c: { id: string }) => !handledIds.has(c.id));
 
-  const PLATFORM_FEE_RATE = 0.12;
-  const revenueShare = profile.owner_revenue_share ?? 0.40;
+  const revenueShare = profile.owner_revenue_share ?? DEFAULT_OWNER_REVENUE_SHARE;
 
   // Group by currency to avoid cross-currency aggregation. Booking IDs are
   // tracked alongside the running total so a successful transfer can
@@ -175,7 +174,7 @@ Deno.serve(async (req: Request) => {
   const failures: { currency: string; error: string }[] = [];
 
   for (const [payoutCurrency, totalBudget] of byCurrency) {
-    const payoutAmount = Math.round(totalBudget * (1 - PLATFORM_FEE_RATE) * revenueShare * 100); // cents
+    const payoutAmount = Math.round(totalBudget * revenueShare * 100); // cents
     if (payoutAmount <= 0) continue;
 
     // Security/financial-audit fix: claim this (operator, period, currency)

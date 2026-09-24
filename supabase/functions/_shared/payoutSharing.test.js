@@ -27,16 +27,16 @@ describe('operatorCutAmount', () => {
   // regard for other operators sharing it -- this is the formula
   // distributeOperatorCuts (charge-campaign's primary payout path) actually
   // uses, which correctly divides by the campaign's total serving screens.
-  it('pays a sole operator their full net revenue share', () => {
-    // $1000 budget, 12% platform fee, 40% operator revenue share, sole operator (1/1 screens)
-    const cut = operatorCutAmount(1000, 0.12, 0.40, 1, 1);
-    expect(cut).toBeCloseTo(1000 * 0.88 * 0.40);
+  it('pays a sole operator their full revenue share of the gross budget', () => {
+    // $1000 budget, 70% operator revenue share, sole operator (1/1 screens)
+    const cut = operatorCutAmount(1000, 0.70, 1, 1);
+    expect(cut).toBeCloseTo(700);
   });
 
   it('splits the payout across operators by their screen share, never paying the full budget to one', () => {
     // Same $1000 campaign, but operator A has 1 of 4 total serving screens.
-    const cutA = operatorCutAmount(1000, 0.12, 0.40, 1, 4);
-    const fullShareCut = operatorCutAmount(1000, 0.12, 0.40, 1, 1);
+    const cutA = operatorCutAmount(1000, 0.70, 1, 4);
+    const fullShareCut = operatorCutAmount(1000, 0.70, 1, 1);
     expect(cutA).toBeCloseTo(fullShareCut * 0.25);
     expect(cutA).toBeLessThan(fullShareCut);
   });
@@ -45,7 +45,7 @@ describe('operatorCutAmount', () => {
     // totalServingScreens already excludes their screen -- passing 0 for
     // their own count (as the caller would after filtering to
     // approved/auto_approved) yields no payout.
-    expect(operatorCutAmount(1000, 0.12, 0.40, 0, 3)).toBe(0);
+    expect(operatorCutAmount(1000, 0.70, 0, 3)).toBe(0);
   });
 });
 

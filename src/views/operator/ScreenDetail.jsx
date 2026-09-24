@@ -387,7 +387,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   const totalCampRevenue = screenCampaigns.reduce((a, c) => a + (c.budget || 0), 0);
   const ownerRevenueShare = profile?.owner_revenue_share ?? DEFAULT_OWNER_REVENUE_SHARE;
   const ownerPct = Math.round(ownerRevenueShare * 100);
-  const { platform: platformSplit, owner: ownerSplit, pool: poolSplit } = computeRevenueSplit(totalCampRevenue, ownerRevenueShare);
+  const { platform: platformSplit, owner: ownerSplit } = computeRevenueSplit(totalCampRevenue, ownerRevenueShare);
 
   // Loading state for the screen record itself
   if (loading) {
@@ -625,14 +625,12 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         <Card>
           <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Revenue Split</div>
           <div style={{ height: 6, borderRadius: 3, overflow: 'hidden', display: 'flex', marginBottom: 12 }}>
-            <div style={{ width: '12%', background: C.blue }} />
             <div style={{ width: `${ownerPct}%`, background: C.green }} />
-            <div style={{ flex: 1, background: C.surfaceAlt }} />
+            <div style={{ flex: 1, background: C.blue }} />
           </div>
           {[
-            ['Platform (12%)', `$${platformSplit.toLocaleString()}`, C.blue],
             [`Owner (${ownerPct}%)`, `$${ownerSplit.toLocaleString()}`, C.green],
-            ['Network pool', `$${poolSplit.toLocaleString()}`, C.textSub],
+            [`Platform (${100 - ownerPct}%)`, `$${platformSplit.toLocaleString()}`, C.blue],
           ].map(([l, v, c]) => (
             <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
               <span style={{ fontSize: 12, color: C.textSub }}>{l}</span>

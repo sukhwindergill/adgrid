@@ -3,10 +3,15 @@
 // -- so vitest can run this directly, same pattern as apiCampaignRules.ts.
 //
 // A campaign can run on screens owned by multiple operators. Each
-// operator's payout is their revenue share of the campaign's NET budget,
-// scaled by how many of the campaign's serving screens are theirs --
-// never the full campaign budget, regardless of how many other operators
-// or screens also share it.
+// operator's payout is their revenue share of the campaign's gross budget
+// (what the advertiser paid), scaled by how many of the campaign's serving
+// screens are theirs -- never the full campaign budget, regardless of how
+// many other operators or screens also share it. The platform keeps the
+// rest; there is no separate platform fee or network pool.
+
+// Operators get 70% of advertiser spend by default; profiles.owner_revenue_share
+// overrides it per operator. Keep in sync with src/lib/revenueSplit.js.
+export const DEFAULT_OWNER_REVENUE_SHARE = 0.70;
 
 export function operatorSharePct(operatorScreenCount: number, totalServingScreens: number): number {
   if (totalServingScreens <= 0 || operatorScreenCount <= 0) return 0;
@@ -15,13 +20,11 @@ export function operatorSharePct(operatorScreenCount: number, totalServingScreen
 
 export function operatorCutAmount(
   budget: number,
-  platformFeeRate: number,
   revenueShare: number,
   operatorScreenCount: number,
   totalServingScreens: number,
 ): number {
-  const netBudget = budget * (1 - platformFeeRate);
-  return netBudget * revenueShare * operatorSharePct(operatorScreenCount, totalServingScreens);
+  return budget * revenueShare * operatorSharePct(operatorScreenCount, totalServingScreens);
 }
 
 /** Counts non-control, approved/auto_approved screen rows per campaign_id -- the set of screens that actually served the creative. */

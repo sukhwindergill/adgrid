@@ -1,5 +1,6 @@
 import Stripe from "https://esm.sh/stripe@14?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { DEFAULT_OWNER_REVENUE_SHARE, operatorCutAmount } from "../_shared/payoutSharing.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
   apiVersion: "2023-10-16",
@@ -14,7 +15,6 @@ const supabase = createClient(
 const FUNCTIONS_URL = `${Deno.env.get("SUPABASE_URL")!}/functions/v1`;
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_NOTIFICATION_SECRET") ?? "";
 
-const PLATFORM_FEE_RATE = 0.12;
 
 // Every Response this function returns needs this, not just the OPTIONS
 // preflight — a browser enforces Access-Control-Allow-Origin on the actual
@@ -84,8 +84,6 @@ async function distributeOperatorCuts(
   if (!profiles) return;
 
   // 5. For each operator, compute their cut and create a Stripe Transfer
-  const netBudget = budget * (1 - PLATFORM_FEE_RATE);
-
   for (const profile of profiles as {
     id: string;
     stripe_connect_account_id: string | null;
@@ -100,8 +98,8 @@ async function distributeOperatorCuts(
     const operatorScreenCount = byOperator.get(profile.id) ?? 0;
     if (operatorScreenCount === 0) continue;
 
-    const revenueShare = profile.owner_revenue_share ?? 0.40;
-    const operatorCut = netBudget * revenueShare * (operatorScreenCount / totalScreens);
+    const revenueShare = profile.owner_revenue_share ?? DEFAULT_OWNER_REVENUE_SHARE;
+    const operatorCut = operatorCutAmount(budget, revenueShare, operatorScreenCount, totalScreens);
     const amountCents = Math.round(operatorCut * 100);
 
     if (amountCents <= 0) continue;
