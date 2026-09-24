@@ -23,6 +23,9 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { listDrafts, deleteDraft } from '../../lib/campaignDrafts.js';
 import { DraftsCard } from './createCampaign/DraftsCard.jsx';
 import { normalizeBooking } from '../../lib/normalizeBooking.js';
+import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
+import { advertiserSteps } from '../../lib/gettingStarted.js';
+import { GettingStartedCard } from '../../components/shared/GettingStartedCard.jsx';
 import { IconDollar, IconEye, IconQr, IconTrendUp, IconTarget, IconScreen, IconWarning } from '../../components/icons.jsx';
 
 const RECENT_CAMPAIGNS_LIMIT = 20;
@@ -32,7 +35,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
   // Drafts are stored per real signed-in user (see campaignDrafts.js), not
   // per impersonated/delegate account -- `user` here can be a display-only
   // stand-in during impersonation, so this reads the actual auth user.
-  const { user: authUser } = useAuth();
+  const { user: authUser, profile } = useAuth();
   const [drafts, setDrafts] = useState(() => (authUser ? listDrafts(authUser.id) : []));
   const resumeDraft = (draftId) => {
     sessionStorage.setItem('adgrid_resume_draft_id', draftId);
@@ -57,6 +60,32 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
   // is computed server-side via the advertiser_lifetime_totals RPC instead
   // (see supabase/migrations/20260901165732_advertiser_lifetime_totals.sql)
   // rather than requiring the full unbounded history client-side.
+  // Getting-started checklist. Only for the signed-in user's own account:
+  // during impersonation/delegation `profile` is the real user's, not the
+  // account being viewed, so its verification/card state would be wrong.
+  const isOwnAccount = Boolean(authUser && advertiserId === authUser.id);
+  const checklistKey = `adgrid_getting_started_hidden:adv:${authUser?.id}`;
+  const [hasCard, setHasCard] = useState(null);
+  useEffect(() => {
+    if (!isOwnAccount) return;
+    try { if (localStorage.getItem(checklistKey) === '1') return; } catch { /* storage blocked */ }
+    let cancelled = false;
+    // Non-critical: any failure leaves hasCard null and the step shown.
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/stripe-billing`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (!res.ok) return;
+        const body = await res.json();
+        if (!cancelled) setHasCard((body.paymentMethods ?? []).length > 0);
+      } catch { /* leave unknown */ }
+    })();
+    return () => { cancelled = true; };
+  }, [isOwnAccount, checklistKey]);
+
   const [myCampaigns, setMyCampaigns] = useState([]);
   const [campaignsLoaded, setCampaignsLoaded] = useState(false);
   const [campaignsError, setCampaignsError] = useState(false);
@@ -249,6 +278,19 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
         subtitle="Your campaign performance at a glance"
         actions={<Btn onClick={() => setAdvNav('adv-create')}>+ New Campaign</Btn>}
       />
+
+      {isOwnAccount && campaignsLoaded && (
+        <GettingStartedCard
+          title="Get your first campaign running"
+          steps={advertiserSteps({
+            isVerified: profile?.is_verified_advertiser,
+            hasCard,
+            hasCampaign: myCampaigns.length > 0 || Number(lifetimeTotals.total_budget) > 0,
+          })}
+          storageKey={checklistKey}
+          onGo={step => setAdvNav(step.nav)}
+        />
+      )}
 
       <DraftsCard drafts={drafts} onResume={resumeDraft} onDelete={removeDraft} />
 
