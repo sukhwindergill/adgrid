@@ -24,7 +24,7 @@ export function PrivacyPolicy() {
       <div style={inner}>
         <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Privacy Policy' }]} />
         <h1 style={h1}>Privacy Policy</h1>
-        <p style={{ ...p, color: 'rgba(255,255,255,0.5)' }}>Last updated: September 7, 2026</p>
+        <p style={{ ...p, color: 'rgba(255,255,255,0.5)' }}>Last updated: September 24, 2026</p>
 
         <h2 style={h2}>Who we are</h2>
         <p style={p}>
@@ -83,6 +83,19 @@ export function PrivacyPolicy() {
           pages visited) retained for up to 90 days for security and debugging purposes.
         </p>
         <p style={p}>
+          <strong>Product analytics (only if you opt in):</strong> if you choose "Accept"
+          in our cookie banner, we record how the site and app are used so we can see where
+          people get stuck and improve them. This covers pages viewed, the browser and
+          device type, approximate location derived from your IP address, and a small set
+          of product events: joining the waitlist, submitting the sign-up form, using the
+          earnings calculator, and moving through or submitting the campaign builder. Once
+          you are signed in, these events are linked to your AdGrid account ID, never your
+          name or email. We do not record your screen, keystrokes, or what you type into
+          forms. If you choose "Essential only", or never answer, none of this is collected.
+          You can change your choice at any time on our{' '}
+          <Link to="/cookies" style={{ color: '#a78bfa' }}>Cookie Policy</Link> page.
+        </p>
+        <p style={p}>
           <strong>Marketplace messages:</strong> when an advertiser and a screen operator
           message each other about an exclusive placement listing through AdGrid's
           marketplace, we store the message content, sender, and timestamp so both parties
@@ -91,9 +104,9 @@ export function PrivacyPolicy() {
         </p>
 
         <p style={p}>
-          <strong>Waitlist and contact forms:</strong> if you join our operator waitlist or
-          contact us, we collect the name, email, company, city, and other details you
-          submit, so we can respond to your inquiry and follow up about onboarding. We do
+          <strong>Waitlist and contact forms:</strong> if you join our waitlist (as a screen
+          operator or an advertiser) or contact us, we collect the name, email, company,
+          city, and other details you submit, so we can respond to your inquiry and follow up about onboarding. We do
           not share this information with third parties and use it only for that purpose.
         </p>
 
@@ -101,8 +114,9 @@ export function PrivacyPolicy() {
         <p style={p}>
           We use account data to provide the AdGrid service, process payments, send
           transactional emails (campaign approvals, payment receipts, payout notifications),
-          and respond to support requests. We do not sell personal data to third parties or
-          use it for behavioural advertising.
+          and respond to support requests. If you opt in to product analytics, we use that
+          data only to understand and improve AdGrid's own website and app. We do not sell
+          personal data to third parties or use it for behavioural advertising.
         </p>
 
         <h2 style={h2}>Data retention</h2>
@@ -113,7 +127,8 @@ export function PrivacyPolicy() {
           heartbeat records, and aggregate audience-measurement statistics are retained for
           12 months, then automatically deleted. QR scan events and conversion records
           (from our conversion pixel or server postback) are retained for 24 months
-          to support campaign analytics, then automatically deleted. Stripe retains payment
+          to support campaign analytics, then automatically deleted. Product analytics data
+          (if you opted in) is retained for 12 months, then deleted. Stripe retains payment
           records independently per their own privacy policy.
         </p>
 
@@ -136,16 +151,26 @@ export function PrivacyPolicy() {
         <h2 style={h2}>Cookies and similar technologies</h2>
         <p style={p}>
           AdGrid does not set any cookies. Your signed-in session is kept in your browser's
-          local storage, used only to keep you logged in. It is never shared with third
-          parties. We do not use third-party analytics, advertising cookies, or trackers of
-          any kind.
+          local storage, used only to keep you logged in, and is never shared with third
+          parties. If you opt in to product analytics, our analytics provider also keeps a
+          random identifier in your browser's local storage so it can tell visits apart.
+          We do not use advertising cookies or cross-site trackers. Details are in our{' '}
+          <Link to="/cookies" style={{ color: '#a78bfa' }}>Cookie Policy</Link>.
         </p>
 
         <h2 style={h2}>Third-party services</h2>
         <p style={p}>
           We use Stripe for payment processing, Supabase for database and authentication,
-          and Resend for transactional email. Each service operates under its own privacy
-          policy and data processing agreement.
+          and Resend for transactional email. If you opt in to product analytics, that data
+          is processed by PostHog, Inc. Each service operates under its own privacy policy
+          and data processing agreement.
+        </p>
+        <p style={p}>
+          <strong>Storage outside Canada:</strong> some of these providers, including
+          PostHog, store data on servers in the United States. Information stored there is
+          subject to the laws of that country and may be accessible to its authorities. We
+          require each provider to protect your information to a standard comparable to
+          PIPEDA.
         </p>
 
         <h2 style={h2}>Changes to this policy</h2>

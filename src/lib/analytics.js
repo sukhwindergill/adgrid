@@ -5,8 +5,9 @@
 //   2. the visitor chose "Accept" in the cookie banner.
 // Until then every export is a no-op, so call sites never need to check.
 //
-// Before setting VITE_POSTHOG_KEY in production, update the Privacy and
-// Cookie policies: they currently state AdGrid uses no third-party analytics.
+// The Privacy and Cookie policies describe exactly this setup (opt-in,
+// PostHog, US-hosted, browser storage only, no recordings). If you change
+// the host region, persistence or what's collected, update both pages.
 //
 // posthog-js is imported dynamically so visitors who decline (or builds
 // without a key) never download it.
@@ -46,6 +47,8 @@ export function initAnalytics() {
         capture_pageview: 'history_change', // SPA route changes
         // Events and pageviews only: no screen recordings.
         disable_session_recording: true,
+        // Browser storage only, no cookies (the policies say AdGrid sets none).
+        persistence: 'localStorage',
       });
       client = posthog;
       return posthog;
