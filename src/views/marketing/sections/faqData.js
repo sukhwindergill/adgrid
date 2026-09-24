@@ -8,7 +8,7 @@ export const FAQS = [
   ['Do I have to sign a contract or pay anything upfront?',
     'No. Listing your screens is free with no long-term contract, pause or remove your inventory anytime.'],
   ['What control do I have over what plays on my screen?',
-    "Full control. Approve or reject every ad before it airs, block entire categories or specific competitors, and set blackout hours when you don't want any ads running at all."],
+    "Full control. Approve or reject every ad before it airs, and set operating hours so ads only run while your venue is open. If you choose, ads from verified advertisers can be approved automatically."],
   ['Is there a minimum ad spend for advertisers?',
     'No minimums and no long-term contracts. You see the exact price per slot before you book, and you pay only for time that actually plays.'],
   ['How do I know my campaign actually ran?',

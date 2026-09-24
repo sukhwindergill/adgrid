@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
+import { isFreeEmailDomain } from "../_shared/freeEmailDomains.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -50,7 +51,14 @@ Deno.serve(async (req: Request) => {
   // rewrite profiles.email to an arbitrary domain and get instantly
   // auto-verified for a business they don't control.
   const accountDomain = extractDomain(user.email ?? "");
-  const isDomainMatch = normalizedInputDomain.length > 0 && normalizedInputDomain === accountDomain;
+  // A gmail.com account typing "gmail.com" as its business domain is a
+  // "match" that proves nothing -- anyone can hold a free mailbox. Without
+  // this, every consumer-email signup could self-verify instantly, and
+  // operators with auto_approve_verified_advertisers on would then skip
+  // reviewing their ads entirely. Free-provider matches go to manual review.
+  const isDomainMatch = normalizedInputDomain.length > 0 &&
+    normalizedInputDomain === accountDomain &&
+    !isFreeEmailDomain(accountDomain);
 
   // Providing a document always routes to manual review, even on a domain
   // match -- a doc submission is explicitly the higher-trust tier per the

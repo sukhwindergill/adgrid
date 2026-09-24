@@ -5,7 +5,7 @@ const TRACKS = [
     label: 'For screen operators',
     steps: [
       ['Connect your screen', 'Pair any display in minutes. No proprietary hardware to buy.'],
-      ['Set your rules', 'Floor price, allowed ad categories, blackout hours. You approve every ad before it plays.'],
+      ['Set your rules', 'Floor price and operating hours. You approve every ad before it plays, or auto-approve advertisers you trust.'],
       ['Get paid', 'Automatic payouts for every second of ad time sold. Track earnings per screen.'],
     ],
   },

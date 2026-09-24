@@ -464,6 +464,10 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
         billed_to_profile_id:  canChooseBilling && billedTo === 'agency' ? user.id : null,
         status:                'pending_review',
         payment_status:        'unpaid',
+        // Demo screens only accept demo campaigns (enforce_demo_screen_isolation
+        // trigger); a campaign built entirely on demo inventory is tagged so the
+        // platform owner's demo flow keeps working and is never charged.
+        is_demo:               selectedScreens.length > 0 && selectedScreens.every(s => s.is_demo),
         impressions:           0,
         spent:                 0,
         scans:                 0,
