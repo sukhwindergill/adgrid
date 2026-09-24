@@ -150,7 +150,7 @@ export function AdvertiserVerificationView() {
             <input type="text" placeholder="acme.com" value={businessDomain} onChange={e => setBusinessDomain(e.target.value)}
               style={{ width: '100%', padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.sans, fontSize: 13 }} />
             <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 4 }}>
-              Matches your account email domain? You're verified instantly.
+              Matches your company email domain? You're verified instantly. Free email addresses (Gmail, Outlook, etc.) go to manual review.
             </div>
           </div>
 

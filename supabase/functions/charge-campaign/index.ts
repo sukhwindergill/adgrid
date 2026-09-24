@@ -228,7 +228,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
-    .select("id, status, budget, currency, advertiser_id, advertiser_name, screen_name, payment_status")
+    .select("id, status, budget, currency, advertiser_id, advertiser_name, screen_name, payment_status, is_demo")
     .eq("id", campaign_id)
     .single();
 
@@ -284,8 +284,24 @@ Deno.serve(async (req: Request) => {
 
   const { data: screenLinks } = await supabase
     .from("campaign_screens")
-    .select("status")
+    .select("status, screens(is_demo)")
     .eq("campaign_id", campaign_id);
+
+  // Demo inventory (screens.is_demo) is seeded fake screens used to make the
+  // product demoable. It's still status='live', so before this guard a real
+  // advertiser who flipped on demo mode could book one and be charged real
+  // money for a screen that doesn't exist -- production had exactly such a
+  // booking, auto_approved and marked paid. Demo campaigns are never charged.
+  // (The enforce_demo_screen_isolation trigger also stops real campaigns
+  // from targeting demo screens at all; this is the last line before Stripe.)
+  const touchesDemo = booking.is_demo ||
+    (screenLinks ?? []).some((r) => (r.screens as { is_demo?: boolean } | null)?.is_demo);
+  if (touchesDemo) {
+    return new Response(
+      JSON.stringify({ error: "Demo campaigns and demo screens can't be charged." }),
+      { status: 400, headers: CORS },
+    );
+  }
 
   if (screenLinks && screenLinks.length > 0 && screenLinks.every((r) => r.status === "rejected")) {
     return new Response(

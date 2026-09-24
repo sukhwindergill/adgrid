@@ -118,10 +118,16 @@ function AppInner() {
   // localStorage was per-origin-per-browser, which meant toggling it on in
   // one tab (e.g. localhost while testing) did nothing for prod in a fresh
   // tab, and vice versa; easy to trip over and land back on "no screens".
+  //
+  // Platform owner only. Demo screens are status='live' and were bookable --
+  // and chargeable -- by any account that flipped this on from the header
+  // menu. The server now refuses that (enforce_demo_screen_isolation trigger,
+  // charge-campaign), and the toggle is hidden from everyone else.
+  const canUseDemoMode = !!profile?.is_platform_owner;
   const [demoMode, setDemoModeLocal] = useState(false);
   useEffect(() => {
-    setDemoModeLocal(!!profile?.demo_mode);
-  }, [profile?.demo_mode]);
+    setDemoModeLocal(canUseDemoMode && !!profile?.demo_mode);
+  }, [canUseDemoMode, profile?.demo_mode]);
   const toggleDemoMode = useCallback(async () => {
     const next = !demoMode;
     setDemoModeLocal(next); // optimistic -- don't wait on the round trip to flip the switch
@@ -628,7 +634,7 @@ function AppInner() {
           user={displayUser}
           onSignOut={signOut}
           demoMode={demoMode}
-          onToggleDemoMode={toggleDemoMode}
+          onToggleDemoMode={canUseDemoMode ? toggleDemoMode : undefined}
         />
       }
     >
