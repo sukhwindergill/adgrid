@@ -8,7 +8,7 @@ const CARDS = [
   [IconClock, 'Live in days', 'Upload creative, get approved, go live. No agencies, no RFPs.'],
 ];
 
-export function AdvertisersSection() {
+export function AdvertisersSection({ onAdvertiserSignup }) {
   const [ref, on] = useReveal();
   return (
     <section className="sec light" id="advertisers" ref={ref}>
@@ -23,6 +23,9 @@ export function AdvertisersSection() {
                 const [Icon, h, p] = card;
                 return <div className="f-card" key={h}><Icon /><h3>{h}</h3><p>{p}</p></div>;
               })}
+            </div>
+            <div style={{ marginTop: 32 }}>
+              <button className="btn-p" onClick={onAdvertiserSignup}>Book a campaign</button>
             </div>
           </div>
           <div className="sticky-col">

@@ -48,6 +48,41 @@ describe('CtaBand', () => {
     expect(navigateMock).not.toHaveBeenCalled();
   });
 
+  it('records the operator role and screen count by default', async () => {
+    render(<MemoryRouter><CtaBand /></MemoryRouter>);
+
+    fireEvent.change(screen.getByLabelText('Full name'), { target: { value: 'Jane Smith' } });
+    fireEvent.change(screen.getByLabelText('Work email'), { target: { value: 'jane@example.com' } });
+    fireEvent.change(screen.getByLabelText('Number of screens'), { target: { value: '1-5' } });
+    fireEvent.click(screen.getByRole('button', { name: /join the operator waitlist/i }));
+
+    await waitFor(() => expect(insertMock).toHaveBeenCalled());
+    expect(insertMock.mock.calls[0][0]).toMatchObject({ role: 'operator', screens: '1-5' });
+  });
+
+  it('switches to advertiser: hides screen count and records the advertiser role', async () => {
+    const onRoleChange = vi.fn();
+    render(<MemoryRouter><CtaBand onRoleChange={onRoleChange} /></MemoryRouter>);
+
+    fireEvent.click(screen.getByRole('radio', { name: /i want to advertise/i }));
+    expect(onRoleChange).toHaveBeenCalledWith('advertiser');
+    expect(screen.queryByLabelText('Number of screens')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Business name')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Full name'), { target: { value: 'Sam Lee' } });
+    fireEvent.change(screen.getByLabelText('Work email'), { target: { value: 'sam@cafe.ca' } });
+    fireEvent.click(screen.getByRole('button', { name: /join the advertiser waitlist/i }));
+
+    await waitFor(() => expect(insertMock).toHaveBeenCalled());
+    expect(insertMock.mock.calls[0][0]).toMatchObject({ role: 'advertiser', screens: null });
+  });
+
+  it('follows a role pre-selected by the page', () => {
+    render(<MemoryRouter><CtaBand role="advertiser" /></MemoryRouter>);
+    expect(screen.getByRole('radio', { name: /i want to advertise/i })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByText('Early advertiser access')).toBeInTheDocument();
+  });
+
   describe('UTM pre-fill', () => {
     beforeEach(() => {
       sessionStorage.clear();
