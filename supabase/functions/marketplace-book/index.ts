@@ -1,6 +1,7 @@
 import Stripe from "https://esm.sh/stripe@14?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
+import { DEFAULT_OWNER_REVENUE_SHARE } from "../_shared/payoutSharing.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
   apiVersion: "2023-10-16",
@@ -36,23 +37,25 @@ async function notify(userId: string, type: string, data: Record<string, unknown
   }
 }
 
-// Pays the operator their full listed price (platform_fee_cents is what the
-// advertiser paid *on top* -- see MarketplaceListingDetail's "total ${price
-// + fee}" copy -- not a cut taken out of the operator's share, unlike
-// charge-campaign's revenue-share split). Mirrors charge-campaign's
+// Pays the operator their owner_revenue_share (default 70%) of the listed
+// price the advertiser paid; the platform keeps the rest -- the same split
+// charge-campaign applies to campaign bookings. Mirrors charge-campaign's
 // distributeOperatorCuts in shape (idempotency key, transfer-then-log,
 // failure notification) but for exactly one operator, since marketplace
 // bookings are same-operator-only.
 async function transferOperatorPayout(
   bookingId: string,
   operatorId: string,
-  priceCents: number,
+  listingPriceCents: number,
 ): Promise<void> {
   const { data: profile } = await supabase
     .from("profiles")
-    .select("stripe_connect_account_id, connect_status")
+    .select("stripe_connect_account_id, connect_status, owner_revenue_share")
     .eq("id", operatorId)
     .maybeSingle();
+
+  const revenueShare = profile?.owner_revenue_share ?? DEFAULT_OWNER_REVENUE_SHARE;
+  const payoutCents = Math.round(listingPriceCents * revenueShare);
 
   if (!profile?.stripe_connect_account_id || profile.connect_status !== "active") {
     console.warn(`[marketplace-book] operator ${operatorId} has no active Connect account — skipping transfer for booking ${bookingId}`);
@@ -66,7 +69,7 @@ async function transferOperatorPayout(
       {
         booking_id: bookingId,
         operator_id: operatorId,
-        amount: priceCents / 100,
+        amount: payoutCents / 100,
         currency: MARKETPLACE_CURRENCY,
         stripe_transfer_id: null,
         status: "pending_connect",
@@ -74,7 +77,7 @@ async function transferOperatorPayout(
       { onConflict: "booking_id" },
     );
     await notify(operatorId, "payout_transfer_failed", {
-      amount: (priceCents / 100).toFixed(2),
+      amount: (payoutCents / 100).toFixed(2),
       currency: MARKETPLACE_CURRENCY,
       appUrl: Deno.env.get("PUBLIC_APP_URL") ?? "",
     });
@@ -86,7 +89,7 @@ async function transferOperatorPayout(
   try {
     const transfer = await stripe.transfers.create(
       {
-        amount: priceCents,
+        amount: payoutCents,
         currency: MARKETPLACE_CURRENCY,
         destination: profile.stripe_connect_account_id,
         metadata: { marketplace_booking_id: bookingId, operator_id: operatorId },
@@ -98,7 +101,7 @@ async function transferOperatorPayout(
       {
         booking_id: bookingId,
         operator_id: operatorId,
-        amount: priceCents / 100,
+        amount: payoutCents / 100,
         currency: MARKETPLACE_CURRENCY,
         stripe_transfer_id: transfer.id,
         status: "transferred",
@@ -111,7 +114,7 @@ async function transferOperatorPayout(
       {
         booking_id: bookingId,
         operator_id: operatorId,
-        amount: priceCents / 100,
+        amount: payoutCents / 100,
         currency: MARKETPLACE_CURRENCY,
         stripe_transfer_id: null,
         status: "failed",
@@ -119,7 +122,7 @@ async function transferOperatorPayout(
       { onConflict: "booking_id" },
     );
     await notify(operatorId, "payout_transfer_failed", {
-      amount: (priceCents / 100).toFixed(2),
+      amount: (payoutCents / 100).toFixed(2),
       currency: MARKETPLACE_CURRENCY,
       appUrl: Deno.env.get("PUBLIC_APP_URL") ?? "",
     });
@@ -155,14 +158,12 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "listing not available" }), { status: 409, headers: CORS });
   }
 
-  const { data: feeConfig } = await supabase
-    .from("platform_config").select("value").eq("key", "marketplace_fee_pct").maybeSingle();
-  const feePct = Number(feeConfig?.value ?? 5);
-  const feeCents = Math.round(listing.price_cents * (feePct / 100));
-  // Advertiser pays price + fee on top (matches MarketplaceListingDetail's
-  // displayed total); the operator later gets the full listing price,
-  // unreduced by the fee -- see transferOperatorPayout above.
-  const totalCents = listing.price_cents + feeCents;
+  // Advertiser pays exactly the listed price -- no fee on top. The platform's
+  // cut comes out of the operator's side instead (see transferOperatorPayout).
+  // platform_fee_cents on the booking row records what was charged *on top*
+  // of the price, so it's 0 from here on.
+  const feeCents = 0;
+  const totalCents = listing.price_cents;
 
   const { data: advertiser } = await supabase
     .from("profiles")

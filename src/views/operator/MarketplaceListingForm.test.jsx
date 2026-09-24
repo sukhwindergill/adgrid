@@ -26,6 +26,12 @@ describe('MarketplaceListingForm', () => {
     await waitFor(() => expect(screen.getByText(/projected shared-rotation/i)).toBeInTheDocument());
   });
 
+  it('shows the operator their 70% share of the entered price', async () => {
+    render(<MarketplaceListingForm screenId="s1" onCreated={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText(/price/i), { target: { value: '500' } });
+    expect(screen.getByText(/You receive \$350 \(70% of the price\)/)).toBeInTheDocument();
+  });
+
   it('submits with entered price and dates', async () => {
     const onCreated = vi.fn();
     render(<MarketplaceListingForm screenId="s1" onCreated={onCreated} onCancel={vi.fn()} />);
