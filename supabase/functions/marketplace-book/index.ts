@@ -39,7 +39,7 @@ async function notify(userId: string, type: string, data: Record<string, unknown
 // Pays the operator their full listed price (platform_fee_cents is what the
 // advertiser paid *on top* -- see MarketplaceListingDetail's "total ${price
 // + fee}" copy -- not a cut taken out of the operator's share, unlike
-// charge-campaign's PLATFORM_FEE_RATE). Mirrors charge-campaign's
+// charge-campaign's revenue-share split). Mirrors charge-campaign's
 // distributeOperatorCuts in shape (idempotency key, transfer-then-log,
 // failure notification) but for exactly one operator, since marketplace
 // bookings are same-operator-only.

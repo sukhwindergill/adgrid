@@ -42,7 +42,7 @@ export function MoneySummaryCard({ balance, connectStatus, totalSpent, ownerReve
           <div>
             <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 4 }}>Earned to date</div>
             <div style={{ fontSize: 22, fontWeight: 700, color: C.text, fontFamily: F.mono, fontVariantNumeric: 'tabular-nums' }}>${earnedToDate.toLocaleString()}</div>
-            <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{Math.round(share * 100)}% of network spend, after platform fee</div>
+            <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{Math.round(share * 100)}% of advertiser spend</div>
           </div>
         </div>
       )}

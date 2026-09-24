@@ -1,8 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireCronSecret } from "../_shared/cronGuard.ts";
-import { countServingScreensByCampaign, operatorSharePct } from "../_shared/payoutSharing.ts";
+import { countServingScreensByCampaign, DEFAULT_OWNER_REVENUE_SHARE, operatorSharePct } from "../_shared/payoutSharing.ts";
 
-const PLATFORM_FEE_RATE = 0.12;
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -305,13 +304,10 @@ Deno.serve(async (req: Request) => {
       .eq("role", "operator");
 
     // Matches distributeOperatorCuts' (charge-campaign) own math: the
-    // platform fee comes off the top before the operator's revenue share
-    // is applied, and a null owner_revenue_share falls back to the same
-    // 40% default charge-campaign uses -- not a bare 0.4 of gross budget.
-    // Product-audit finding: this weekly_revenue estimate previously used
-    // budget * 0.4 unconditionally, both skipping the 12% platform fee
-    // (overstating revenue by ~14%) and ignoring any operator's actual,
-    // possibly-customized owner_revenue_share.
+    // operator's revenue share applies to the gross budget, and a null
+    // owner_revenue_share falls back to the same DEFAULT_OWNER_REVENUE_SHARE
+    // charge-campaign uses -- never a hardcoded rate that ignores an
+    // operator's actual, possibly-customized owner_revenue_share.
 
     for (const op of operators ?? []) {
       const { data: opScreens } = await supabase
@@ -321,7 +317,7 @@ Deno.serve(async (req: Request) => {
 
       const screenIds = (opScreens ?? []).map((s: { id: string }) => s.id);
       let revenue = 0;
-      const revenueShare = (op as { owner_revenue_share: number | null }).owner_revenue_share ?? 0.40;
+      const revenueShare = (op as { owner_revenue_share: number | null }).owner_revenue_share ?? DEFAULT_OWNER_REVENUE_SHARE;
 
       if (screenIds.length > 0) {
         const { data: csRows } = await supabase
@@ -337,7 +333,7 @@ Deno.serve(async (req: Request) => {
           // Same "never claim revenue for a screen that isn't actually
           // serving" and "split by screen share across every operator on
           // the campaign" reasoning as distributeOperatorCuts/trigger-payout
-          // (charge-campaign) -- summing raw budgets at a flat 0.4 both
+          // (charge-campaign) -- summing raw budgets at a flat rate both
           // ignored this operator's real owner_revenue_share and, on any
           // multi-operator campaign, overstated their share of the payout
           // by counting the full campaign budget instead of their fraction
@@ -359,8 +355,7 @@ Deno.serve(async (req: Request) => {
             const totalScreens = totalScreenCountByCampaign.get(c.id) ?? 0;
             const ownScreens = ownScreenCountByCampaign.get(c.id) ?? 0;
             const share = operatorSharePct(ownScreens, totalScreens);
-            const netBudget = (c.budget ?? 0) * (1 - PLATFORM_FEE_RATE);
-            return s + netBudget * revenueShare * share;
+            return s + (c.budget ?? 0) * revenueShare * share;
           }, 0);
         }
       }

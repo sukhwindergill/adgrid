@@ -694,7 +694,7 @@ function PayoutsTab({ profile }) {
       </Card>
 
       <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>
-        Payouts are sent to your connected bank account. Platform takes 12%; you receive 40% of net ad spend per screen.
+        Payouts are sent to your connected bank account. You receive 70% of what advertisers pay per screen; AdGrid keeps 30%.
         View detailed payout history in the Billing section.
       </div>
     </div>

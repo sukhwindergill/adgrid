@@ -4,7 +4,7 @@ export const FAQS = [
   ['What screens qualify as an AdGrid display?',
     'Any landscape digital screen with an internet connection: a commercial display, a spare TV, or existing digital signage. Connect it in minutes with our lightweight display player; no proprietary hardware to buy.'],
   ['How much does AdGrid take, and how do payouts work?',
-    'AdGrid takes a 12% platform fee; you keep 40% of net ad spend on every screen you list. Payouts are automatic via Stripe Connect on a schedule shown in your dashboard, no invoicing, no chasing payment.'],
+    'You keep 70% of what advertisers pay for every screen you list; AdGrid keeps 30%. Payouts are automatic via Stripe Connect on a schedule shown in your dashboard, no invoicing, no chasing payment.'],
   ['Do I have to sign a contract or pay anything upfront?',
     'No. Listing your screens is free with no long-term contract, pause or remove your inventory anytime.'],
   ['What control do I have over what plays on my screen?',

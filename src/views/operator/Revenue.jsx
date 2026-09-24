@@ -16,13 +16,13 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { SkeletonRow, SkeletonTable } from '../../components/ui/Skeleton.jsx';
-import { IconDollar, IconBank, IconRecycle, IconScreen } from '../../components/icons.jsx';
+import { IconDollar, IconBank, IconScreen } from '../../components/icons.jsx';
 
 function revenueToCsv(rows, ownerRevenueShare) {
-  const header = ['Campaign', 'Screen', 'City', 'Gross', 'Platform', 'Owner', 'Network', 'Status'];
+  const header = ['Campaign', 'Screen', 'City', 'Gross', 'Platform', 'Owner', 'Status'];
   const lines = rows.map(c => {
     const split = computeRevenueSplit(c.budget, ownerRevenueShare);
-    return [c.advertiser, c.screen, c.city, c.budget, split.platform, split.owner, split.pool, c.status];
+    return [c.advertiser, c.screen, c.city, c.budget, split.platform, split.owner, c.status];
   });
   return [header, ...lines].map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
 }
@@ -154,7 +154,7 @@ export function Revenue({ operatorScreenIds = [] }) {
     );
   }
   const total    = filteredCampaigns.filter(c => !c.is_house_ad).reduce((a, c) => a + c.budget, 0);
-  const { platform, owner: owners, pool: network } = computeRevenueSplit(total, ownerRevenueShare);
+  const { platform, owner: owners } = computeRevenueSplit(total, ownerRevenueShare);
 
   // Opportunity cost: what house-ad play time would have earned at this
   // operator's screens' normal CPM floor, had it been sold instead of
@@ -185,7 +185,7 @@ export function Revenue({ operatorScreenIds = [] }) {
 
   return (
     <div>
-      <PageHeader title="Revenue" subtitle="Platform earnings, owner payouts, and network splits"
+      <PageHeader title="Revenue" subtitle="Platform earnings and owner payouts"
         actions={
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {[[30, '30d'], [90, '90d'], [365, '365d'], [null, 'All']].map(([d, label]) => (
@@ -218,9 +218,8 @@ export function Revenue({ operatorScreenIds = [] }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(5,1fr)', gap: 14, marginBottom: 24 }}>
         <KPI label="Total Ad Spend"   value={`$${total.toLocaleString()}`}    sub="from advertisers" trend={spendTrend} trendLabel="vs prior 30 days" icon={<IconDollar size={16} />} />
-        <KPI label="Platform Revenue" value={`$${platform.toLocaleString()}`} sub="12% fee" color={C.blue} icon={<IconDollar size={16} />} />
-        <KPI label="Owner Payouts"    value={`$${owners.toLocaleString()}`}   sub={`${ownerPct}% of net`} color={C.green} icon={<IconBank size={16} />} />
-        <KPI label="Network Pool"     value={`$${network.toLocaleString()}`}  sub="reinvestment" icon={<IconRecycle size={16} />} />
+        <KPI label="Platform Revenue" value={`$${platform.toLocaleString()}`} sub={`${100 - ownerPct}% of spend`} color={C.blue} icon={<IconDollar size={16} />} />
+        <KPI label="Owner Payouts"    value={`$${owners.toLocaleString()}`}   sub={`${ownerPct}% of spend`} color={C.green} icon={<IconBank size={16} />} />
         <KPI label="Given Up to House Ads" value={`$${houseAdOpportunityCost.toLocaleString()}`} sub="estimated, at CPM floor" color={C.textSub} icon={<IconScreen size={16} />} />
         {programmaticFills.length > 0 && (
           <KPI label="Programmatic Revenue" value={`$${programmaticRevenue.toLocaleString()}`} sub={`${programmaticFills.length} fill${programmaticFills.length !== 1 ? 's' : ''} played`} color={C.green} icon={<IconDollar size={16} />} />
@@ -230,9 +229,9 @@ export function Revenue({ operatorScreenIds = [] }) {
         <Card>
           <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Revenue Split</div>
           <div style={{ height: 8, borderRadius: 4, overflow: 'hidden', display: 'flex', marginBottom: 16 }}>
-            <div style={{ width: '12%', background: C.blue }} /><div style={{ width: `${ownerPct}%`, background: C.green }} /><div style={{ flex: 1, background: C.surfaceAlt }} />
+            <div style={{ width: `${ownerPct}%`, background: C.green }} /><div style={{ flex: 1, background: C.blue }} />
           </div>
-          {[['Platform Fee (12%)', `$${platform.toLocaleString()}`, C.blue], [`Screen Owners (${ownerPct}%)`, `$${owners.toLocaleString()}`, C.green], ['Network Pool', `$${network.toLocaleString()}`, C.textSub]].map(([l, v, c]) => (
+          {[[`Screen Owners (${ownerPct}%)`, `$${owners.toLocaleString()}`, C.green], [`Platform (${100 - ownerPct}%)`, `$${platform.toLocaleString()}`, C.blue]].map(([l, v, c]) => (
             <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '11px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
               <span style={{ fontSize: 13, color: C.textMid }}>{l}</span>
               <span style={{ fontSize: 14, fontWeight: 700, color: c }}>{v}</span>
@@ -260,9 +259,8 @@ export function Revenue({ operatorScreenIds = [] }) {
           { key: 'advertiser', label: 'Campaign', render: (v, r) => <div><div style={{ fontWeight: 500, color: C.text, fontFamily: F.sans }}>{v}</div><div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{r.city}</div></div> },
           { key: 'screen',   label: 'Screen' },
           { key: 'budget',   label: 'Gross',        render: v => <span style={{ fontWeight: 600, fontFamily: F.mono }}>${v.toLocaleString()}</span> },
-          { key: 'budget',   label: 'Platform (12%)', render: v => <span style={{ color: C.blue, fontFamily: F.mono }}>${computeRevenueSplit(v, ownerRevenueShare).platform.toLocaleString()}</span> },
+          { key: 'budget',   label: `Platform (${100 - ownerPct}%)`, render: v => <span style={{ color: C.blue, fontFamily: F.mono }}>${computeRevenueSplit(v, ownerRevenueShare).platform.toLocaleString()}</span> },
           { key: 'budget',   label: `Owner (${ownerPct}%)`,  render: v => <span style={{ color: C.green, fontFamily: F.mono }}>${computeRevenueSplit(v, ownerRevenueShare).owner.toLocaleString()}</span> },
-          { key: 'budget',   label: 'Network',      render: v => <span style={{ fontFamily: F.mono }}>${computeRevenueSplit(v, ownerRevenueShare).pool.toLocaleString()}</span> },
           { key: 'status',   label: 'Status',       render: v => <Badge status={v} /> },
         ]}
         rows={filteredCampaigns}

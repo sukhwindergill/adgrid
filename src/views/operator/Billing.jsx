@@ -133,10 +133,10 @@ export function Billing() {
   const connectStatus = data?.connectStatus;
 
   // Real per-operator share (profiles.owner_revenue_share), not a hardcoded
-  // 40% — an operator on a custom rate previously saw a wrong number here.
+  // default — an operator on a custom rate previously saw a wrong number here.
   const ownerRevenueShare = profile?.owner_revenue_share ?? DEFAULT_OWNER_REVENUE_SHARE;
   const totalCharged  = charges.reduce((a, c) => a + c.amount, 0);
-  const { platform: platformNet, owner: ownerShare, pool: networkPool } = computeRevenueSplit(totalCharged, ownerRevenueShare);
+  const { platform: platformNet, owner: ownerShare } = computeRevenueSplit(totalCharged, ownerRevenueShare);
   const ownerPct = Math.round(ownerRevenueShare * 100);
   const availableOut  = balance?.available ?? 0;
   const pendingIn     = balance?.pending ?? 0;
@@ -250,7 +250,7 @@ export function Billing() {
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
         <KPI label="Total Ad Spend"   value={`$${totalCharged.toLocaleString()}`}  sub="charged campaigns" trend={chargedTrend} trendLabel="vs prior 30 days" icon={<IconDollar size={16} />} />
-        <KPI label="Platform Net"     value={`$${platformNet.toLocaleString()}`}   sub="12% platform fee"  color={C.blue} icon={<IconDollar size={16} />} />
+        <KPI label="Platform Net"     value={`$${platformNet.toLocaleString()}`}   sub={`${100 - ownerPct}% platform share`}  color={C.blue} icon={<IconDollar size={16} />} />
         <KPI label="Available Balance" value={balance ? `$${availableOut.toLocaleString()}` : '—'} sub={connectStatus === 'active' ? 'ready to pay out' : 'connect Stripe'} color={C.green} icon="✓" />
         <KPI label="Pending Balance"  value={balance ? `$${pendingIn.toLocaleString()}` : '—'} sub="in transit" color={C.amber} icon={<IconClock size={16} />} />
       </div>
@@ -262,14 +262,12 @@ export function Billing() {
           <Card>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Revenue Split</div>
             <div style={{ height: 8, borderRadius: 4, overflow: 'hidden', display: 'flex', marginBottom: 14 }}>
-              <div style={{ width: '12%', background: C.blue }} />
               <div style={{ width: `${ownerPct}%`, background: C.green }} />
-              <div style={{ flex: 1, background: C.surfaceAlt }} />
+              <div style={{ flex: 1, background: C.blue }} />
             </div>
             {[
-              ['Platform (12%)', `$${platformNet.toLocaleString()}`, C.blue],
               [`Screen Owners (${ownerPct}%)`, `$${ownerShare.toLocaleString()}`, C.green],
-              ['Network Pool', `$${networkPool.toLocaleString()}`, C.textSub],
+              [`Platform (${100 - ownerPct}%)`, `$${platformNet.toLocaleString()}`, C.blue],
             ].map(([l, v, c]) => (
               <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
                 <span style={{ fontSize: 13, color: C.textMid }}>{l}</span>
