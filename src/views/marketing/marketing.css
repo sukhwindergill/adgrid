@@ -387,3 +387,25 @@ select.fi { appearance: none; cursor: pointer; }
      the sticky bar's primary button; the bar already covers navigation here. */
   body:has(.sticky-mobile-cta) .scroll-top-btn { display: none !important; }
 }
+
+/* ── Earnings calculator ── */
+.calc { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 56px; align-items: center; }
+.calc-field { margin-top: 28px; border: none; }
+.calc-field label, .calc-field legend { display: flex; justify-content: space-between; gap: 12px; font: 500 15px/1.4 var(--inter); color: var(--ltext); margin-bottom: 10px; width: 100%; }
+.calc-field strong { font-weight: 700; color: var(--purple-dark); }
+.calc-field input[type="range"] { width: 100%; accent-color: var(--purple); height: 24px; cursor: pointer; }
+.calc-seg { display: flex; gap: 8px; flex-wrap: wrap; }
+.calc-seg button {
+  flex: 1; min-width: 90px; padding: 11px 14px; border-radius: var(--r-btn); cursor: pointer;
+  font: 500 14px/1 var(--inter); color: var(--lsub); background: var(--lcard); border: 1px solid var(--lborder);
+  transition: border-color .15s, color .15s;
+}
+.calc-seg button:hover { border-color: var(--lmuted); }
+.calc-seg button.on { border-color: var(--purple); color: var(--purple-dark); background: rgba(123,47,255,0.06); }
+.calc-seg button:focus-visible, .calc-field input:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+.calc-result { background: var(--bg); color: #fff; border-radius: 16px; padding: 36px 32px; }
+.calc-result-lbl { font: 600 12px/1 var(--inter); letter-spacing: 0.08em; text-transform: uppercase; color: var(--purple-light); }
+.calc-result-num { font: 700 clamp(44px, 6vw, 60px)/1.05 var(--inter); letter-spacing: -0.02em; margin-top: 14px; font-variant-numeric: tabular-nums; }
+.calc-result-sub { font-size: 15px; color: var(--sec); margin: 6px 0 28px; }
+.calc-note { font-size: 12px; line-height: 1.6; color: var(--muted); margin-top: 20px; }
+@media (max-width: 900px) { .calc { grid-template-columns: 1fr; gap: 36px; } .calc-result { padding: 28px 22px; } }

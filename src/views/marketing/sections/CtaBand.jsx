@@ -66,7 +66,7 @@ export function CtaBand({ role: roleProp, onRoleChange }) {
       setSubmitErr('Something went wrong. Please try again.');
       return;
     }
-    navigate('/thank-you');
+    navigate(`/thank-you?role=${role}`);
   };
 
   return (
