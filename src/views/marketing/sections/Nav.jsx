@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { SiteSearch } from './SiteSearch.jsx';
 
 export function Nav({ onScrollTo, onLogin }) {
@@ -15,6 +16,7 @@ export function Nav({ onScrollTo, onLogin }) {
           <button className="nl" onClick={() => go('advertisers')}>For advertisers</button>
           <button className="nl" onClick={() => go('how')}>How it works</button>
           <button className="nl" onClick={() => go('faq')}>FAQ</button>
+          <Link className="nl" to="/screens" style={{ textDecoration: 'none' }}>Screens</Link>
         </div>
         <div className="nav-search-wrap">
           <SiteSearch onScrollTo={go} />
@@ -40,6 +42,7 @@ export function Nav({ onScrollTo, onLogin }) {
           <button className="nl" onClick={() => go('operators')}>For operators</button>
           <button className="nl" onClick={() => go('advertisers')}>For advertisers</button>
           <button className="nl" onClick={() => go('how')}>How it works</button>
+          <Link className="nl" to="/screens" style={{ textDecoration: 'none' }}>Screens</Link>
           <hr className="nav-divider" />
           <button className="nl" onClick={() => { setMenuOpen(false); onLogin(); }}>Sign in</button>
           <button className="btn-p" style={{ margin: '8px 12px 12px' }} onClick={() => go('waitlist-form')}>Join the waitlist</button>

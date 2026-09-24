@@ -33,7 +33,7 @@ describe('CtaBand', () => {
     fireEvent.change(screen.getByLabelText('Work email'), { target: { value: 'jane@example.com' } });
     fireEvent.click(screen.getByRole('button', { name: /join the operator waitlist/i }));
 
-    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/thank-you'));
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/thank-you?role=operator'));
   });
 
   it('does not navigate when the submit fails', async () => {

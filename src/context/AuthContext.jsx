@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { identify, resetIdentity } from '../lib/analytics.js'
 import { SUPABASE_FUNCTIONS_URL } from '../lib/constants.js'
 
 const AuthContext = createContext({})
@@ -140,6 +141,9 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') { setPasswordRecovery(true); return; }
       setUser(session?.user ?? null)
+      // Analytics keys people by opaque user id only (no email/name).
+      if (session?.user) identify(session.user.id)
+      else if (event === 'SIGNED_OUT') resetIdentity()
       if (session?.user) {
         fetchProfile(session.user.id)
         fetchGrants(session.user.id)

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import './marketing.css';
 import { usePageMeta } from '../../lib/usePageMeta.js';
 import { Nav } from './sections/Nav.jsx';
@@ -8,6 +8,7 @@ import { ProofStrip } from './sections/ProofStrip.jsx';
 import { ProductShowcase } from './sections/ProductShowcase.jsx';
 import { HowItWorks } from './sections/HowItWorks.jsx';
 import { OperatorsSection } from './sections/OperatorsSection.jsx';
+import { EarningsCalculator } from './sections/EarningsCalculator.jsx';
 import { AdvertisersSection } from './sections/AdvertisersSection.jsx';
 import { MarketBand } from './sections/MarketBand.jsx';
 import { Faq } from './sections/Faq.jsx';
@@ -26,7 +27,9 @@ export function MarketingHome({ onLogin: onLoginProp }) {
   const onLogin = onLoginProp ?? (() => navigate('/login'));
   // Pre-launch: every CTA lands on the waitlist form with the visitor's side
   // of the marketplace pre-selected, instead of the open sign-up page.
-  const [waitlistRole, setWaitlistRole] = useState('operator');
+  // ?role=advertiser (e.g. from /screens) pre-selects the advertiser side.
+  const [searchParams] = useSearchParams();
+  const [waitlistRole, setWaitlistRole] = useState(() => (searchParams.get('role') === 'advertiser' ? 'advertiser' : 'operator'));
 
   const scrollTo = id => {
     const el = document.getElementById(id);
@@ -39,6 +42,16 @@ export function MarketingHome({ onLogin: onLoginProp }) {
     scrollTo('waitlist-form');
   };
   const onOperatorSignup = () => joinWaitlist('operator');
+
+  // Deep links like /#earnings (from the thank-you page): the SPA router
+  // doesn't scroll to hashes on its own. Sections render synchronously, so
+  // one frame is enough for the target to exist.
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (!hash) return;
+    const id = requestAnimationFrame(() => scrollTo(hash.slice(1)));
+    return () => cancelAnimationFrame(id);
+  }, [hash]);
   const onAdvertiserSignup = () => joinWaitlist('advertiser');
 
   return (
@@ -49,6 +62,7 @@ export function MarketingHome({ onLogin: onLoginProp }) {
       <ProductShowcase />
       <HowItWorks />
       <OperatorsSection onOperatorSignup={onOperatorSignup} />
+      <EarningsCalculator onOperatorSignup={onOperatorSignup} />
       <AdvertisersSection onAdvertiserSignup={onAdvertiserSignup} />
       <MarketBand />
       <Faq />

@@ -16,6 +16,7 @@ import { buildPreviewCampaign } from '../../lib/buildPreviewCampaign.js';
 import { sanitizeText } from '../../lib/sanitizeText.js';
 import { makeBlankCreative, reconcileAssignments } from '../../lib/creativeAssignment.js';
 import { mostRecentDraft, getDraft, saveDraft, deleteDraft } from '../../lib/campaignDrafts.js';
+import { track } from '../../lib/analytics.js';
 import { Stepper } from './createCampaign/Stepper.jsx';
 import { StepTargeting } from './createCampaign/StepTargeting.jsx';
 import { StepCreative } from './createCampaign/StepCreative.jsx';
@@ -287,6 +288,11 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
     : form.area_type === 'radius' && !form.radius_center_lat
     ? 'Enter a center location to see matching screens'
     : 'No screens match — try widening your area or removing filters';
+
+  // Funnel: which wizard step people reach, and how many submit.
+  useEffect(() => {
+    if (step < STEP_LABELS.length) track('campaign_wizard_step', { step, label: STEP_LABELS[step] });
+  }, [step]);
 
   const next = () => setStep(s => Math.min(s + 1, STEP_LABELS.length - 1));
   const back = () => setStep(s => Math.max(s - 1, 0));
@@ -644,6 +650,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
         spent: 0, impressions: 0, scans: 0,
         status: 'pending_review',
       });
+      track('campaign_submitted');
       setStep(3);
     } catch (e) {
       setSubmitErr(e.message || 'Failed to submit campaign');

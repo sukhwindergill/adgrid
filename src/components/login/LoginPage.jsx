@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { F } from '../../design/tokens.js';
+import { track } from '../../lib/analytics.js';
 import { IconEye, IconEyeOff } from '../../components/icons.jsx';
 
 const loginCSS = `
@@ -119,7 +120,7 @@ export function LoginPage() {
       localStorage.setItem('adgrid_signup_intent', intent);
       const { error } = await signUp(email, pass, name, new Date().toISOString());
       if (error) { localStorage.removeItem('adgrid_signup_intent'); localStorage.removeItem('adgrid_screen_invite_token'); setErr(error.message); }
-      else setErr('Check your email to confirm your account.');
+      else { track('signup_submitted', { intent }); setErr('Check your email to confirm your account.'); }
     }
     setLoading(false);
   };

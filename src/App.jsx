@@ -78,6 +78,7 @@ const TermsOfService = lazy(() => import('./views/legal/TermsOfService.jsx').the
 const CookiePolicy   = lazy(() => import('./views/legal/CookiePolicy.jsx').then(m => ({ default: m.CookiePolicy })));
 const RefundPolicy   = lazy(() => import('./views/legal/RefundPolicy.jsx').then(m => ({ default: m.RefundPolicy })));
 const ThankYou       = lazy(() => import('./views/legal/ThankYou.jsx').then(m => ({ default: m.ThankYou })));
+const PublicScreens  = lazy(() => import('./views/public/PublicScreens.jsx').then(m => ({ default: m.PublicScreens })));
 
 import { C, F } from './design/tokens.js';
 import { Skeleton } from './components/ui/Skeleton.jsx';
@@ -684,6 +685,7 @@ export default function App() {
         <Route path="/cookies" element={<CookiePolicy />} />
         <Route path="/refunds" element={<RefundPolicy />} />
         <Route path="/thank-you" element={<ThankYou />} />
+        <Route path="/screens" element={<PublicScreens />} />
         <Route path="/display/:token" element={<DisplayPlayerRoute />} />
         <Route path="/report/:token" element={<CampaignReport />} />
         <Route path="/invite/screen/:token" element={<ScreenInvitePage />} />

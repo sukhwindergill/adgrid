@@ -18,6 +18,8 @@ import { DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
 import { useOperatorCampaignIds } from '../../hooks/useOperatorCampaignIds.js';
 import { normalizeBooking } from '../../lib/normalizeBooking.js';
 import { summarizeInviteFunnel } from '../../lib/inviteFunnel.js';
+import { operatorSteps } from '../../lib/gettingStarted.js';
+import { GettingStartedCard } from '../../components/shared/GettingStartedCard.jsx';
 import { IconDollar, IconClipboard, IconQr, IconWarning, IconScreen } from '../../components/icons.jsx';
 
 // B14 fix: nothing previously told an operator their payouts weren't set
@@ -194,6 +196,15 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
         title="Dashboard"
         subtitle={new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
       />
+
+      {profile?.id && (
+        <GettingStartedCard
+          title="Get your first screen live"
+          steps={operatorSteps({ screens: dbScreens, connectStatus: profile.connect_status })}
+          storageKey={`adgrid_getting_started_hidden:op:${profile.id}`}
+          onGo={step => setNav?.(step.nav)}
+        />
+      )}
 
       {dbScreens.length > 0 && profile?.connect_status !== 'active' && (
         <PayoutsWarningBanner onFix={() => setNav?.('op-settings')} />
