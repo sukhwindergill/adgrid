@@ -60,6 +60,12 @@ function DarkInp({ label, type, placeholder, value, onChange, onKeyDown, togglea
   );
 }
 
+// Text-style links that are real buttons, so they're reachable by keyboard.
+const linkBtn = color => ({
+  background: 'none', border: 'none', padding: 0, color, cursor: 'pointer',
+  fontSize: 12, fontFamily: F.sans,
+});
+
 export function LoginPage() {
   const { signIn, signUp, signInWithOAuth, passwordRecovery, resetPasswordForEmail, updatePassword } = useAuth();
   const params = new URLSearchParams(window.location.search);
@@ -164,15 +170,15 @@ export function LoginPage() {
 
       <div style={{ width: '100%', maxWidth: 380, padding: '0 20px', position: 'relative', zIndex: 1 }}>
         {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32, justifyContent: 'center' }}>
+        <a href="/" aria-label="AdGrid home" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32, justifyContent: 'center', textDecoration: 'none' }}>
           <div style={{
             width: 36, height: 36, borderRadius: 9,
             background: 'linear-gradient(135deg, #B79CFF, #7B2FFF)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontWeight: 800, fontSize: 16, color: '#fff',
           }}>A</div>
-          <span style={{ fontSize: 20, fontWeight: 700, color: '#fff', fontFamily: F.display }}>ADGRID</span>
-        </div>
+          <span style={{ fontSize: 20, fontWeight: 700, color: '#fff', fontFamily: F.display }}>AdGrid</span>
+        </a>
 
         {/* Card */}
         <div style={{
@@ -180,10 +186,13 @@ export function LoginPage() {
           borderRadius: 16, padding: 28,
         }}>
           <h1 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4, fontFamily: F.display }}>
-            {activeMode === 'forgot' ? 'Reset your password' : activeMode === 'reset' ? 'Set new password' : activeMode === 'signin' ? 'Sign in to ADGRID' : 'Create your account'}
+            {activeMode === 'forgot' ? 'Reset your password' : activeMode === 'reset' ? 'Set new password' : activeMode === 'signin' ? 'Sign in to AdGrid' : 'Create your account'}
           </h1>
           <p style={{ fontSize: 13, color: '#8A8A9A', marginBottom: 20, fontFamily: F.sans }}>
-            {activeMode === 'forgot' ? "Enter your email and we'll send a reset link." : activeMode === 'reset' ? 'Choose a new password for your account.' : 'Access your network dashboard'}
+            {activeMode === 'forgot' ? "Enter your email and we'll send a reset link." : activeMode === 'reset' ? 'Choose a new password for your account.'
+              : activeMode === 'signin' ? 'Welcome back. Pick up where you left off.'
+              : intent === 'operator' ? 'List your screens and start earning from idle ad time.'
+              : 'Put your business on screens in the neighbourhoods you serve.'}
           </p>
 
           {/* OAuth — only show on signin/signup */}
@@ -290,6 +299,34 @@ export function LoginPage() {
             )}
           </div>
 
+          {activeMode === 'signin' && (
+            <div style={{ marginTop: -6, marginBottom: 16, textAlign: 'right' }}>
+              <button type="button" onClick={() => { setMode('forgot'); setErr(''); }} style={linkBtn('#8A8A9A')}>
+                Forgot password?
+              </button>
+            </div>
+          )}
+
+          {activeMode === 'signup' && (
+            <label style={{
+              display: 'flex', alignItems: 'flex-start', gap: 10,
+              marginBottom: 16, cursor: 'pointer',
+            }}>
+              <input
+                type="checkbox"
+                checked={tosChecked}
+                onChange={e => setTosChecked(e.target.checked)}
+                style={{ marginTop: 2, accentColor: '#7B2FFF', flexShrink: 0 }}
+              />
+              <span style={{ fontSize: 12, color: '#8A8A9A', fontFamily: F.sans, lineHeight: 1.5 }}>
+                I agree to the{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#7B2FFF' }}>Terms of Service</a>
+                {' '}and{' '}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#7B2FFF' }}>Privacy Policy</a>
+              </span>
+            </label>
+          )}
+
           <button
             onClick={handle}
             disabled={loading}
@@ -324,54 +361,24 @@ export function LoginPage() {
             </button>
           )}
 
-          {activeMode === 'signup' && (
-            <label style={{
-              display: 'flex', alignItems: 'flex-start', gap: 10,
-              marginTop: 12, cursor: 'pointer',
-            }}>
-              <input
-                type="checkbox"
-                checked={tosChecked}
-                onChange={e => setTosChecked(e.target.checked)}
-                style={{ marginTop: 2, accentColor: '#7B2FFF', flexShrink: 0 }}
-              />
-              <span style={{ fontSize: 12, color: '#8A8A9A', fontFamily: F.sans, lineHeight: 1.5 }}>
-                I agree to the{' '}
-                <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#7B2FFF' }}>Terms of Service</a>
-                {' '}and{' '}
-                <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#7B2FFF' }}>Privacy Policy</a>
-              </span>
-            </label>
-          )}
-
           {(activeMode === 'signin' || activeMode === 'signup') && (
             <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12, color: '#8A8A9A', fontFamily: F.sans }}>
               {activeMode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
-              <span
+              <button
+                type="button"
                 onClick={() => { setMode(activeMode === 'signin' ? 'signup' : 'signin'); setErr(''); setTosChecked(false); }}
-                style={{ color: '#7B2FFF', cursor: 'pointer', fontWeight: 500 }}
+                style={{ ...linkBtn('#7B2FFF'), fontWeight: 500 }}
               >
                 {activeMode === 'signin' ? 'Sign up' : 'Sign in'}
-              </span>
-            </div>
-          )}
-
-          {activeMode === 'signin' && (
-            <div style={{ marginTop: 8, textAlign: 'center', fontSize: 12, fontFamily: F.sans }}>
-              <span
-                onClick={() => { setMode('forgot'); setErr(''); }}
-                style={{ color: '#8A8A9A', cursor: 'pointer' }}
-              >
-                Forgot password?
-              </span>
+              </button>
             </div>
           )}
 
           {activeMode === 'forgot' && (
             <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12, color: '#8A8A9A', fontFamily: F.sans }}>
-              <span onClick={() => { setMode('signin'); setErr(''); }} style={{ color: '#7B2FFF', cursor: 'pointer', fontWeight: 500 }}>
+              <button type="button" onClick={() => { setMode('signin'); setErr(''); }} style={{ ...linkBtn('#7B2FFF'), fontWeight: 500 }}>
                 Back to sign in
-              </span>
+              </button>
             </div>
           )}
         </div>

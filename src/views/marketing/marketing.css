@@ -28,7 +28,7 @@
 .btn-p {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   background: var(--purple); color: #fff; padding: 13px 26px; border-radius: var(--r-btn);
-  font: 600 15px/1 var(--inter); border: none; cursor: pointer; letter-spacing: -0.01em;
+  font: 600 15px/1 var(--inter); border: none; cursor: pointer;
   white-space: nowrap; text-decoration: none; transition: background .15s ease;
 }
 .btn-p:hover { background: var(--purple-dark); }
@@ -274,6 +274,11 @@
 .fi:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(123,47,255,0.15); }
 .fi::placeholder { color: var(--muted); }
 select.fi { appearance: none; cursor: pointer; }
+.role-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; margin-bottom: 24px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; }
+.role-opt { padding: 11px 12px; border: none; border-radius: 7px; background: transparent; color: var(--sec); font: 500 14px/1.2 var(--inter); cursor: pointer; transition: background .15s ease, color .15s ease; }
+.role-opt:hover { color: #fff; }
+.role-opt.on { background: var(--purple); color: #fff; font-weight: 600; }
+.role-opt:focus-visible { outline: 2px solid var(--purple-light); outline-offset: 2px; }
 .form-card { max-width: 620px; margin: 44px auto 0; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: clamp(28px, 5vw, 44px); text-align: left; }
 .form-label { display: block; font: 500 13.5px/1 var(--inter); color: #fff; margin-bottom: 8px; }
 .form-field { margin-bottom: 18px; }
@@ -377,5 +382,8 @@ select.fi { appearance: none; cursor: pointer; }
   /* Leave room at the very bottom of the page so the bar never covers the
      footer's own links on small screens. */
   .mfooter { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
-  .cookie-banner { bottom: calc(64px + env(safe-area-inset-bottom)); }
+  .cookie-banner { bottom: calc(64px + env(safe-area-inset-bottom)); padding: 10px 16px; gap: 10px; flex-wrap: nowrap; justify-content: space-between; text-align: left; }
+  /* The global scroll-to-top circle sits in the same bottom-right corner as
+     the sticky bar's primary button; the bar already covers navigation here. */
+  body:has(.sticky-mobile-cta) .scroll-top-btn { display: none !important; }
 }

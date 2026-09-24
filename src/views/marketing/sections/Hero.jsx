@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParallax } from './useParallax.js';
 
-export function Hero({ onScrollTo, onOperatorSignup }) {
+// Below this, a live-screen count reads as "barely anyone is here" rather
+// than social proof, so the stat is hidden until the network is bigger.
+const MIN_LIVE_COUNT_TO_SHOW = 25;
+
+export function Hero({ onOperatorSignup, onAdvertiserSignup }) {
   const [liveCount, setLiveCount] = useState(null);
   const [mounted, setMounted] = useState(false);
   const parallaxRef = useParallax(0.15);
@@ -29,10 +33,10 @@ export function Hero({ onScrollTo, onOperatorSignup }) {
           </p>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
             <button className="btn-p" onClick={onOperatorSignup}>List your screens</button>
-            <button className="btn-s" onClick={() => onScrollTo('advertisers')}>Book a campaign</button>
+            <button className="btn-s" onClick={onAdvertiserSignup}>Book a campaign</button>
           </div>
           <div className="hero-stats">
-            {typeof liveCount === 'number' && liveCount >= 1 && (
+            {typeof liveCount === 'number' && liveCount >= MIN_LIVE_COUNT_TO_SHOW && (
               <div className="hero-stat">
                 <div className="num">{liveCount}</div>
                 <div className="lbl">Screens live now</div>
