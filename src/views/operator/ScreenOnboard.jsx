@@ -13,6 +13,8 @@ import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS, STATE_
 import { ScreenLocationPicker } from '../../components/ScreenLocationPicker.jsx';
 import { checkAndGoLive } from '../../lib/screenGoLive.js';
 import { ScreenPhotoManager } from '../../components/screens/ScreenPhotoManager.jsx';
+import { OperatingHoursFields } from '../../components/screens/OperatingHoursFields.jsx';
+import { hoursFormFromScreen, hoursUpdates, hoursError } from '../../lib/operatingHours.js';
 import { DemandSignal } from '../../components/shared/DemandSignal.jsx';
 import { IconBolt, IconDollar, IconScreen, IconCheckCircle, IconCard, IconWarning, IconSignal } from '../../components/icons.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
@@ -514,12 +516,15 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
     lat: screen.lat ?? '',
     lng: screen.lon ?? '',
   });
+  const [hours, setHours] = useState(() => hoursFormFromScreen(screen));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
 
   const set = (key, val) => setForm(s => ({ ...s, [key]: val }));
 
   const handleSave = async () => {
+    const hErr = hoursError(hours);
+    if (hErr) { setErr(hErr); return; }
     setSaving(true);
     setErr(null);
     const updates = {
@@ -530,6 +535,7 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
       monthly_traffic_estimate:  form.monthly_traffic_estimate ? parseInt(form.monthly_traffic_estimate, 10) : null,
       lat: form.lat !== '' ? parseFloat(form.lat) : null,
       lon: form.lng !== '' ? parseFloat(form.lng) : null,
+      ...hoursUpdates(hours),
     };
     // No .select() -- same screen_token column-grant reason EditScreenModal's
     // save() documents; merge the known update locally instead.
@@ -595,6 +601,8 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
           <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: -10 }}>
             Rough headcount past this screen per month. Drives the reach estimate advertisers see.
           </div>
+
+          <OperatingHoursFields value={hours} onChange={setHours} />
         </div>
 
         <ErrorBanner message={err} onDismiss={() => setErr(null)} />

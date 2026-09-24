@@ -4,6 +4,8 @@ import { C, F } from '../../design/tokens.js';
 import { Btn } from '../primitives/Btn.jsx';
 import { Inp } from '../primitives/Inp.jsx';
 import { SelInput } from '../primitives/SelInput.jsx';
+import { OperatingHoursFields } from './OperatingHoursFields.jsx';
+import { hoursFormFromScreen, hoursUpdates, hoursError } from '../../lib/operatingHours.js';
 
 const FORMAT_OPTIONS = ['jpg', 'png', 'gif', 'webp', 'mp4', 'webm', 'mov'];
 
@@ -43,11 +45,14 @@ export function EditScreenModal({ screen, onClose, onSaved }) {
     accepted_formats:  screen.accepted_formats || [],
     max_file_mb:       screen.max_file_mb || '',
   });
+  const [hours, setHours] = useState(() => hoursFormFromScreen(screen));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
 
   const save = async () => {
     if (!form.name.trim()) return;
+    const hErr = hoursError(hours);
+    if (hErr) { setErr(hErr); return; }
     setSaving(true);
     setErr(null);
     const updates = {
@@ -64,6 +69,7 @@ export function EditScreenModal({ screen, onClose, onSaved }) {
       resolution_h:      Number(form.resolution_h) > 0 ? parseInt(form.resolution_h, 10) : null,
       accepted_formats:  form.accepted_formats.length > 0 ? form.accepted_formats : null,
       max_file_mb:       Number(form.max_file_mb) > 0 ? parseInt(form.max_file_mb, 10) : null,
+      ...hoursUpdates(hours),
     };
     // No .select() on the update: screens' SELECT grant is column-scoped
     // (screen_token is deliberately excluded), and .select() defaults to
@@ -101,6 +107,7 @@ export function EditScreenModal({ screen, onClose, onSaved }) {
             <Inp label="Monthly Footfall (thousands)" type="number" value={form.monthly_traffic_estimate} onChange={e => setForm(f => ({ ...f, monthly_traffic_estimate: e.target.value }))} />
             <Inp label="CPM Floor (£)" type="number" step="0.50" value={form.cpm_floor} onChange={e => setForm(f => ({ ...f, cpm_floor: e.target.value }))} />
           </div>
+          <OperatingHoursFields value={hours} onChange={setHours} />
           <div style={{ marginTop: 4 }}>
             <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 4 }}>
               Creative spec <span style={{ color: C.textMuted, fontWeight: 400 }}>(optional)</span>
