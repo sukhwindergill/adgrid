@@ -417,3 +417,16 @@ select.fi { appearance: none; cursor: pointer; }
 @media (max-width: 768px) {
   .cookie-banner:has(.secondary) { flex-wrap: wrap; }
 }
+
+/* ── Public screens page (/screens) ── */
+.pscreens-stats { display: flex; gap: 40px; flex-wrap: wrap; margin: 40px 0 20px; }
+.pscreens-stats div { display: flex; flex-direction: column; gap: 4px; }
+.pscreens-stats strong { font: 700 26px/1.1 var(--inter); color: #fff; font-variant-numeric: tabular-nums; }
+.pscreens-stats span { font-size: 13px; color: var(--sec); }
+.pscreens-map { height: min(520px, 70vh); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; background: var(--surface); }
+.pscreens-note { font-size: 13px; color: var(--sec); margin-top: 14px; }
+.pscreens-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.pscreens-soon { margin-top: 40px; padding: 28px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); max-width: 720px; }
+.pscreens-soon h2 { font: 700 22px/1.2 var(--inter); color: #fff; }
+.pscreens-soon p { font-size: 15px; line-height: 1.65; color: var(--sec); margin-top: 10px; }
+.dark .venue-chip { background: var(--surf-el); border-color: var(--border); color: var(--sec); }

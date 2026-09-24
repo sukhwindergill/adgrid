@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import './marketing.css';
 import { usePageMeta } from '../../lib/usePageMeta.js';
 import { Nav } from './sections/Nav.jsx';
@@ -27,7 +27,9 @@ export function MarketingHome({ onLogin: onLoginProp }) {
   const onLogin = onLoginProp ?? (() => navigate('/login'));
   // Pre-launch: every CTA lands on the waitlist form with the visitor's side
   // of the marketplace pre-selected, instead of the open sign-up page.
-  const [waitlistRole, setWaitlistRole] = useState('operator');
+  // ?role=advertiser (e.g. from /screens) pre-selects the advertiser side.
+  const [searchParams] = useSearchParams();
+  const [waitlistRole, setWaitlistRole] = useState(() => (searchParams.get('role') === 'advertiser' ? 'advertiser' : 'operator'));
 
   const scrollTo = id => {
     const el = document.getElementById(id);

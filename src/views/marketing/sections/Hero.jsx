@@ -13,8 +13,10 @@ export function Hero({ onOperatorSignup, onAdvertiserSignup }) {
   useEffect(() => {
     const id = requestAnimationFrame(() => setMounted(true));
     import('../../../lib/supabase.js').then(({ supabase }) => {
-      supabase.from('screens').select('id', { count: 'exact', head: true }).eq('status', 'live')
-        .then(({ count }) => { if (count != null) setLiveCount(count); });
+      // Anon can't read screens (RLS only exposes invited ones), so the
+      // count comes from a narrow RPC that also excludes demo screens.
+      supabase.rpc('live_screen_count')
+        .then(({ data }) => { if (typeof data === 'number') setLiveCount(data); });
     }).catch(() => {});
     return () => cancelAnimationFrame(id);
   }, []);
