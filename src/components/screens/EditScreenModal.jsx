@@ -105,7 +105,7 @@ export function EditScreenModal({ screen, onClose, onSaved }) {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Inp label="Monthly Footfall (thousands)" type="number" value={form.monthly_traffic_estimate} onChange={e => setForm(f => ({ ...f, monthly_traffic_estimate: e.target.value }))} />
-            <Inp label="CPM Floor (£)" type="number" step="0.50" value={form.cpm_floor} onChange={e => setForm(f => ({ ...f, cpm_floor: e.target.value }))} />
+            <Inp label="CPM Floor ($)" type="number" step="0.50" value={form.cpm_floor} onChange={e => setForm(f => ({ ...f, cpm_floor: e.target.value }))} />
           </div>
           <OperatingHoursFields value={hours} onChange={setHours} />
           <div style={{ marginTop: 4 }}>
