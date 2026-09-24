@@ -4,6 +4,8 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 import { supabase } from '../../lib/supabase.js';
 import { createListing, createBundleListing } from '../../lib/marketplace.js';
 import { useToast } from '../../components/primitives/Toast.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
 
 // Simple heuristic: avg daily impressions over the window * $ per impression
 // floor, shown next to the op's own price input so they price with real
@@ -23,6 +25,8 @@ export function MarketplaceListingForm({ screenId, bundleScreens, onCreated, onC
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
   const toast = useToast();
+  const ownerRevenueShare = useAuth()?.profile?.owner_revenue_share ?? DEFAULT_OWNER_REVENUE_SHARE;
+  const priceDollars = Number(priceCents);
 
   useEffect(() => {
     if (isBundle) return; // Per-screen projection isn't meaningful summed naively across a bundle -- omitted rather than shown misleadingly.
@@ -74,6 +78,11 @@ export function MarketplaceListingForm({ screenId, bundleScreens, onCreated, onC
           style={{ display: 'block', width: '100%', marginTop: 4, padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8, outline: 'none', transition: 'border-color 0.15s', boxSizing: 'border-box' }}
           onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
           onBlur={e => { e.currentTarget.style.borderColor = C.border; }} />
+        {priceDollars > 0 && (
+          <span style={{ display: 'block', marginTop: 4, color: C.textMuted }}>
+            You receive ${computeRevenueSplit(priceDollars, ownerRevenueShare).owner.toLocaleString()} ({Math.round(ownerRevenueShare * 100)}% of the price)
+          </span>
+        )}
       </label>
       <label style={{ fontFamily: F.sans, fontSize: 12, color: C.textSub }}>
         Start date

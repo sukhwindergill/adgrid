@@ -52,15 +52,15 @@ describe('marketplace browse-to-book flow', () => {
     await waitFor(() => expect(bookListing).toHaveBeenCalledWith('l1', false));
   });
 
-  it('shows the platform fee and passes the auto-renew choice through to bookListing', async () => {
+  it('shows the listed price as the total and passes the auto-renew choice through to bookListing', async () => {
     render(<Flow />);
     await waitFor(() => screen.getByText(/\$500/));
     fireEvent.click(screen.getByText(/\$500/));
     await waitFor(() => screen.getByText(/book this placement/i));
 
-    // Platform fee (5% of $500 = $25) and total ($525) shown before booking.
-    await waitFor(() => expect(screen.getByText(/\$25\.00/)).toBeInTheDocument());
-    expect(screen.getByText(/\$525\.00/)).toBeInTheDocument();
+    // No fee on top: the advertiser pays exactly the listed price.
+    await waitFor(() => expect(screen.getByText(/Total \$500\.00/)).toBeInTheDocument());
+    expect(screen.queryByText(/platform fee/i)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByLabelText(/auto-renew/i));
     fireEvent.click(screen.getByText(/book this placement/i));

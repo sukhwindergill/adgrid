@@ -8,14 +8,12 @@ import { fetchListing, bookListing, fetchListingScreens } from '../../lib/market
 import { useToast } from '../../components/primitives/Toast.jsx';
 import { supabase } from '../../lib/supabase.js';
 
-const DEFAULT_FEE_PCT = 5;
 
 export function MarketplaceListingDetail({ listingId, onBack }) {
   const [listing, setListing] = useState(null);
   const [bundleScreenNames, setBundleScreenNames] = useState(null); // null until loaded, [] if not a bundle
   const [booking, setBooking] = useState(false);
   const [autoRenew, setAutoRenew] = useState(false);
-  const [feePct, setFeePct] = useState(null);
   const [loadError, setLoadError] = useState(false);
   const toast = useToast();
 
@@ -33,15 +31,6 @@ export function MarketplaceListingDetail({ listingId, onBack }) {
       .then(ids => supabase.from('advertiser_screens').select('id, name').in('id', ids))
       .then(({ data }) => setBundleScreenNames((data ?? []).map(s => s.name)));
   }, [listing?.is_bundle, listingId]);
-
-  useEffect(() => {
-    supabase
-      .from('platform_config')
-      .select('value')
-      .eq('key', 'marketplace_fee_pct')
-      .maybeSingle()
-      .then(({ data }) => setFeePct(Number(data?.value ?? DEFAULT_FEE_PCT)));
-  }, []);
 
   const handleBook = async () => {
     setBooking(true);
@@ -86,12 +75,9 @@ export function MarketplaceListingDetail({ listingId, onBack }) {
       )}
 
       <div style={{ marginTop: 20, fontFamily: F.sans, fontSize: 13, color: C.textSub }}>
-        {feePct !== null && (
-          <div>
-            Platform fee ({feePct}%): ${((listing.price_cents * (feePct / 100)) / 100).toFixed(2)} —{' '}
-            total ${((listing.price_cents * (1 + feePct / 100)) / 100).toFixed(2)}
-          </div>
-        )}
+        <div>
+          Total ${(listing.price_cents / 100).toFixed(2)} — no added fees
+        </div>
       </div>
 
       <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, fontFamily: F.sans, fontSize: 12, color: C.textSub }}>
