@@ -1,0 +1,71 @@
+name: PM bot - Research
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # 12:00 UTC daily
+  workflow_dispatch:
+    inputs:
+      focus:
+        description: 'Override focus (competitors, advertiser-demand, operator-supply, pricing-benchmarks, trends-regulation, product-gaps)'
+        required: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure labels exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for l in "pm-bot:5319e7" "approved:0e8a16" "priority:high:b60205" "priority:med:fbca04" "priority:low:c5def5" \
+                   "research:1d76db" "ux:d4c5f9" "pricing:fef2c0" "growth:bfdadc"; do
+            name="${l%:*}"; color="${l##*:}"
+            gh label create "$name" --color "$color" --force
+          done
+
+      - name: Pick daily focus
+        id: focus
+        run: |
+          if [ -n "${{ inputs.focus }}" ]; then f="${{ inputs.focus }}"; else
+            case "$(date -u +%u)" in
+              1) f=competitors;; 2) f=advertiser-demand;; 3) f=operator-supply;;
+              4) f=pricing-benchmarks;; 5) f=trends-regulation;; *) f=product-gaps;;
+            esac
+          fi
+          echo "focus=$f" >> "$GITHUB_OUTPUT"
+
+      - name: Run research
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            Follow .github/pm-bot/research-prompt.md exactly.
+            Today's focus: ${{ steps.focus.outputs.focus }}
+          claude_args: >-
+            --max-turns 40
+            --allowedTools "WebSearch,WebFetch,Read,Grep,Glob,Bash(gh issue list:*),Bash(gh issue create:*),Bash(date:*)"
+
+      - name: Notify Telegram
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          n=$(gh issue list --label pm-bot --state open --search "created:>=$(date -u -d '2 hours ago' +%Y-%m-%dT%H:%M:%SZ)" --json number --jq 'length')
+          if [ "${{ job.status }}" = "success" ]; then
+            msg="PM research (${{ steps.focus.outputs.focus }}): $n new proposal(s). Review and add the approved label."
+          else
+            msg="PM research FAILED (${{ steps.focus.outputs.focus }}). Check the run."
+          fi
+          node scripts/pm-bot/notify.mjs "$msg" --buttons "[[{\"text\":\"Proposals\",\"url\":\"https://github.com/${{ github.repository }}/issues?q=is%3Aopen+label%3Apm-bot\"},{\"text\":\"Run\",\"url\":\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}]]"
