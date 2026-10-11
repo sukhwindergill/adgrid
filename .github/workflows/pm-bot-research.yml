@@ -70,3 +70,13 @@ jobs:
             msg="PM research FAILED (${{ steps.focus.outputs.focus }}). Check the run."
           fi
           node scripts/pm-bot/notify.mjs "$msg" --buttons "[[{\"text\":\"Proposals\",\"url\":\"https://github.com/${{ github.repository }}/issues?q=is%3Aopen+label%3Apm-bot\"},{\"text\":\"Run\",\"url\":\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}]]"
+
+      - name: Send proposals with Approve/Reject buttons
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SINCE_HOURS: '2'
+        run: node scripts/pm-bot/notify-proposals.mjs

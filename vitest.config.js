@@ -9,7 +9,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.js'],
-    include: ['src/**/*.test.{js,jsx}', 'supabase/functions/**/*.test.js'],
+    include: ['src/**/*.test.{js,jsx}', 'supabase/functions/**/*.test.js', 'api/**/*.test.js'],
     globals: true,
   },
 });
