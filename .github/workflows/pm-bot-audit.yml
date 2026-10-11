@@ -1,0 +1,70 @@
+name: PM bot - UI audit
+
+on:
+  schedule:
+    - cron: '0 10 * * *' # 10:00 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save --no-package-lock playwright
+          npx playwright install --with-deps chromium
+
+      - name: Capture screens
+        env:
+          AUDIT_BASE_URL: ${{ secrets.AUDIT_BASE_URL }}
+          AUDIT_EMAIL: ${{ secrets.AUDIT_EMAIL }}
+          AUDIT_PASSWORD: ${{ secrets.AUDIT_PASSWORD }}
+        run: node scripts/pm-bot/audit.mjs
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audit-out
+          path: audit-out
+          retention-days: 7
+
+      - name: Ensure labels exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for l in "pm-bot:5319e7" "priority:high:b60205" "priority:med:fbca04" "priority:low:c5def5" "ux:d4c5f9" "bug:d73a4a"; do
+            gh label create "${l%:*}" --color "${l##*:}" --force
+          done
+
+      - name: Analyze and file issues
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: Follow .github/pm-bot/audit-prompt.md exactly.
+          claude_args: >-
+            --max-turns 50
+            --allowedTools "Read,Grep,Glob,Bash(gh issue list:*),Bash(gh issue create:*),Bash(date:*)"
+
+      - name: Notify Telegram
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          n=$(gh issue list --label pm-bot --state open --search "created:>=$(date -u -d '2 hours ago' +%Y-%m-%dT%H:%M:%SZ)" --json number --jq 'length')
+          if [ "${{ job.status }}" = "success" ]; then msg="PM UI audit: $n new proposal(s)."; else msg="PM UI audit FAILED. Check the run."; fi
+          node scripts/pm-bot/notify.mjs "$msg" --buttons "[[{\"text\":\"Proposals\",\"url\":\"https://github.com/${{ github.repository }}/issues?q=is%3Aopen+label%3Apm-bot\"},{\"text\":\"Run\",\"url\":\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}]]"
