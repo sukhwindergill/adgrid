@@ -2,7 +2,7 @@ name: PM bot - UI audit
 
 on:
   schedule:
-    - cron: '0 10 * * *' # 10:00 UTC daily
+    - cron: '0 10 * * 2,4' # 10:00 UTC Tue/Thu
   workflow_dispatch:
 
 permissions:
@@ -51,11 +51,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: Follow .github/pm-bot/audit-prompt.md exactly.
           claude_args: >-
-            --max-turns 50
+            --model claude-haiku-5-5
+            --max-turns 30
             --allowedTools "Read,Grep,Glob,Bash(gh issue list:*),Bash(gh issue create:*),Bash(date:*)"
 
       - name: Notify Telegram

@@ -2,7 +2,7 @@ name: PM bot - Research
 
 on:
   schedule:
-    - cron: '0 12 * * *' # 12:00 UTC daily
+    - cron: '0 12 * * 1,3,5' # 12:00 UTC Mon/Wed/Fri
   workflow_dispatch:
     inputs:
       focus:
@@ -34,9 +34,9 @@ jobs:
         id: focus
         run: |
           if [ -n "${{ inputs.focus }}" ]; then f="${{ inputs.focus }}"; else
-            case "$(date -u +%u)" in
-              1) f=competitors;; 2) f=advertiser-demand;; 3) f=operator-supply;;
-              4) f=pricing-benchmarks;; 5) f=trends-regulation;; *) f=product-gaps;;
+            case "$(( 10#$(date -u +%j) % 6 ))" in
+              0) f=competitors;; 1) f=advertiser-demand;; 2) f=operator-supply;;
+              3) f=pricing-benchmarks;; 4) f=trends-regulation;; *) f=product-gaps;;
             esac
           fi
           echo "focus=$f" >> "$GITHUB_OUTPUT"
@@ -46,13 +46,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
             Follow .github/pm-bot/research-prompt.md exactly.
             Today's focus: ${{ steps.focus.outputs.focus }}
           claude_args: >-
-            --max-turns 40
+            --model claude-sonnet-5-5
+            --max-turns 25
             --allowedTools "WebSearch,WebFetch,Read,Grep,Glob,Bash(gh issue list:*),Bash(gh issue create:*),Bash(date:*)"
 
       - name: Notify Telegram
