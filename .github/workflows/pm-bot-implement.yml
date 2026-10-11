@@ -1,0 +1,93 @@
+name: PM bot - Implement approved proposal
+
+# Runs when the repo owner adds the `approved` label to a `pm-bot` issue (via GitHub or the
+# Telegram Approve button). Claude Code implements it on a branch and opens a DRAFT PR.
+# It never merges, never pushes to main, and a human reviews every PR.
+
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: 'Issue number to implement (must have pm-bot + approved labels)'
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: pm-bot-implement-${{ github.event.issue.number || inputs.issue }}
+  cancel-in-progress: false
+
+jobs:
+  implement:
+    # Only the repo owner's label action counts as approval.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.label.name == 'approved' &&
+       github.event.sender.login == github.repository_owner &&
+       contains(github.event.issue.labels.*.name, 'pm-bot'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ISSUE: ${{ github.event.issue.number || inputs.issue }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Verify issue is an approved pm-bot proposal
+        run: |
+          state=$(gh issue view "$ISSUE" --repo "$GITHUB_REPOSITORY" --json state --jq .state)
+          names=",$(gh issue view "$ISSUE" --repo "$GITHUB_REPOSITORY" --json labels --jq '[.labels[].name] | join(",")'),"
+          [ "$state" = "OPEN" ] || { echo "Issue #$ISSUE is not open"; exit 1; }
+          case "$names" in *,pm-bot,*) ;; *) echo "Missing pm-bot label"; exit 1;; esac
+          case "$names" in *,approved,*) ;; *) echo "Missing approved label"; exit 1;; esac
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Configure git identity
+        run: |
+          git config user.name "adgrid-pm-bot"
+          git config user.email "pm-bot@users.noreply.github.com"
+
+      - name: Implement
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            Follow .github/pm-bot/implement-prompt.md exactly.
+            The approved issue is #${{ env.ISSUE }} in ${{ github.repository }}.
+          claude_args: >-
+            --model claude-sonnet-5-5
+            --max-turns 40
+            --allowedTools "Read,Edit,Write,Grep,Glob,Bash(git checkout:*),Bash(git add:*),Bash(git commit:*),Bash(git push origin pm-bot/*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(pnpm test:*),Bash(pnpm lint:*),Bash(pnpm build:*),Bash(pnpm vitest:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh pr create --draft:*),Bash(gh pr list:*)"
+
+      - name: Notify Telegram
+        if: always()
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "pm-bot/issue-$ISSUE" --json url --jq '.[0].url // empty')
+          if [ "$JOB_STATUS" = "success" ] && [ -n "$pr" ]; then
+            node scripts/pm-bot/notify.mjs "Draft PR ready for #$ISSUE. Review it." --buttons "[[{\"text\":\"Open PR\",\"url\":\"$pr\"}]]"
+          elif [ "$JOB_STATUS" = "success" ]; then
+            node scripts/pm-bot/notify.mjs "#$ISSUE: Claude made no PR (see issue comment for why)." --buttons "[[{\"text\":\"Open issue\",\"url\":\"https://github.com/$GITHUB_REPOSITORY/issues/$ISSUE\"}]]"
+          else
+            node scripts/pm-bot/notify.mjs "Implementation of #$ISSUE FAILED." --buttons "[[{\"text\":\"Run\",\"url\":\"https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID\"}]]"
+          fi
