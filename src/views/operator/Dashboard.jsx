@@ -15,7 +15,7 @@ import { healthSignal } from '../../lib/screenHealth.js';
 import { useOperatorBilling } from '../../hooks/useOperatorBilling.js';
 import { MoneySummaryCard } from '../../components/shared/MoneySummaryCard.jsx';
 import { DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
-import { useOperatorCampaignIds } from '../../hooks/useOperatorCampaignIds.js';
+import { scopedBookings } from '../../lib/bookingsQuery.js';
 import { normalizeBooking } from '../../lib/normalizeBooking.js';
 import { summarizeInviteFunnel } from '../../lib/inviteFunnel.js';
 import { operatorSteps } from '../../lib/gettingStarted.js';
@@ -109,8 +109,6 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
   // booking ever made; they're relabeled below to say "active" rather than
   // silently showing a smaller number under the same old label.
   const myScreenIds = dbScreens.map(s => s.id);
-  const operatorCampaignIds = useOperatorCampaignIds(myScreenIds);
-  const operatorIdsKey = [...operatorCampaignIds].sort().join(',');
   const [currentCampaigns, setCurrentCampaigns] = useState([]);
   const [activeLoading, setActiveLoading] = useState(true);
   const [activeLoadError, setActiveLoadError] = useState(false);
@@ -129,10 +127,11 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
   }, [myScreenIdsKey]);
 
   useEffect(() => {
-    if (operatorCampaignIds.size === 0) { setCurrentCampaigns([]); setActiveLoading(false); return; }
+    if (myScreenIds.length === 0) { setCurrentCampaigns([]); setActiveLoading(false); return; }
     setActiveLoading(true);
-    supabase.from('bookings').select('*')
-      .in('id', [...operatorCampaignIds])
+    // Scoped server-side via the operator_bookings RPC (campaign_screens
+    // joined in SQL) rather than a client-built booking-id list.
+    scopedBookings({ operatorScreenIds: myScreenIds })
       .in('status', ['active', 'scheduled'])
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
@@ -144,7 +143,7 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
         setCurrentCampaigns((data || []).map(normalizeBooking));
         setActiveLoading(false);
       });
-  }, [operatorIdsKey]);
+  }, [myScreenIdsKey]);
 
   useEffect(() => {
     const today = new Date();

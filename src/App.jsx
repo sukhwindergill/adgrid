@@ -5,8 +5,8 @@ import { supabase } from './lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from './lib/constants.js';
 import { useToast } from './components/primitives/Toast.jsx';
 import { usePendingApprovalCount } from './hooks/usePendingApprovalCount.js';
-import { useOperatorCampaignIds } from './hooks/useOperatorCampaignIds.js';
 import { normalizeBooking } from './lib/normalizeBooking.js';
+import { BOOKING_LIST_COLUMNS } from './lib/bookingsQuery.js';
 
 import { LoginPage } from './components/login/LoginPage.jsx';
 import { GlobalHeader } from './components/layout/GlobalHeader.jsx';
@@ -98,6 +98,10 @@ async function callNotification(userId, type, data = {}) {
   }).catch(e => console.error('Notification error:', e));
 }
 
+// How many of the advertiser's most recent bookings the shell keeps (for
+// CreateCampaign's "previous campaigns" picker). Lists page server-side.
+const RECENT_ADVERTISER_BOOKINGS = 50;
+
 // ─── AppInner (auth-gated shell) ─────────────────────────────────────────────
 
 function AppInner() {
@@ -157,31 +161,21 @@ function AppInner() {
   const bumpApprovalRefresh = useCallback(() => setApprovalRefreshKey(k => k + 1), []);
   const pendingCount = usePendingApprovalCount(myScreens.map(s => s.id), approvalRefreshKey);
 
-  // B27: `campaigns` is the whole RLS-visible set of bookings -- for a
-  // dual-role account that's the union of "I'm the advertiser" and "I'm
-  // the operator of a targeted screen" (two separate, both-legitimate RLS
-  // policies). Every mode-specific view needs its own scoped slice of
-  // that, not the raw union, or a dual-role account's own advertiser
-  // spend shows up as operator revenue (and vice versa -- someone else's
-  // booking on a screen this account operates showing up in "My
-  // Campaigns"). advertiserCampaigns mirrors AdvDashboard's existing
-  // internal filter; operatorCampaigns is the operator-side equivalent,
-  // resolved against campaign_screens rather than trusted from the
-  // booking row itself.
+  // `campaigns` is a small, server-scoped slice: the current advertiser's
+  // most recent bookings (RECENT_ADVERTISER_BOOKINGS), used by
+  // CreateCampaign's "previous campaigns" picker and as local state for
+  // in-place updates. Every list/dashboard view owns its own scoped,
+  // paginated query (Campaigns, Dashboard, AdvDashboard, ApprovalQueue,
+  // ...) -- nothing here holds the account's full booking history any more.
+  // B27: scoping on advertiser_id server-side also keeps a dual-role
+  // account's operator-side bookings (someone else's booking on a screen
+  // this account operates) out of the advertiser slice.
   const currentAdvertiserId = impersonating?.id ?? user?.id;
+  // Delegates acting for another account see that account's bookings.
+  const bookingsAdvertiserId = activeAccount && !activeAccount.isOwn ? activeAccount.id : currentAdvertiserId;
   // Same is_demo gate as visibleDbScreens/visibleMyScreens above -- fake
-  // bookings only show once demo mode is switched on, from either side.
-  const visibleCampaigns = useMemo(() => demoMode ? campaigns : campaigns.filter(c => !c.is_demo), [campaigns, demoMode]);
-  const advertiserCampaigns = useMemo(
-    () => visibleCampaigns.filter(c => c.advertiser_id === currentAdvertiserId),
-    [visibleCampaigns, currentAdvertiserId]
-  );
-  const myScreenIds = useMemo(() => myScreens.map(s => s.id), [myScreens]);
-  const operatorCampaignIds = useOperatorCampaignIds(myScreenIds);
-  const operatorCampaigns = useMemo(
-    () => visibleCampaigns.filter(c => operatorCampaignIds.has(c.id)),
-    [visibleCampaigns, operatorCampaignIds]
-  );
+  // bookings only show once demo mode is switched on.
+  const advertiserCampaigns = useMemo(() => demoMode ? campaigns : campaigns.filter(c => !c.is_demo), [campaigns, demoMode]);
 
   // Derive active from current URL path
   const active = location.pathname.replace(/^\/app\/?/, '') || 'overview';
@@ -245,13 +239,10 @@ function AppInner() {
 
     const bookingsQuery = supabase
       .from('bookings')
-      .select('*')
+      .select(BOOKING_LIST_COLUMNS)
+      .eq('advertiser_id', bookingsAdvertiserId)
       .order('created_at', { ascending: false })
-
-    // When acting as delegate, scope bookings to that account's data
-    if (activeAccount && !activeAccount.isOwn) {
-      bookingsQuery.eq('advertiser_id', activeAccount.id)
-    }
+      .limit(RECENT_ADVERTISER_BOOKINGS)
 
     const [bookingsRes, screensRes, myScreensRes] = await Promise.all([
       bookingsQuery,
@@ -308,9 +299,9 @@ function AppInner() {
       setMyScreens([])
     }
     setDataLoading(false)
-  }, [activeAccount, user])
+  }, [bookingsAdvertiserId, user])
 
-  // Load data when user or activeAccount changes
+  // Load data when user, activeAccount or impersonation target changes
   useEffect(() => {
     if (user) loadData()
   }, [user, activeAccount, loadData])
@@ -428,7 +419,10 @@ function AppInner() {
 
   // ── Mutation helpers ───────────────────────────────────────────────────────
   const updateCampaign = async updated => {
-    const prevCampaign = campaigns.find(c => c.id === updated.id);
+    // `campaigns` only holds a recent slice, so fall back to the campaign
+    // open in the detail view -- without a previous status, becomingActive
+    // below would treat an already-active campaign as newly activated.
+    const prevCampaign = campaigns.find(c => c.id === updated.id) ?? (detail?.id === updated.id ? detail : undefined);
     // manage-campaign-status already resolved and wrote the real status
     // server-side (Pause/Resume/Cancel in CampaignDetail's Danger Zone) --
     // this call is here purely to sync local state. Without this flag,

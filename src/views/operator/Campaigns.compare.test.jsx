@@ -18,9 +18,10 @@ const bookingRows = [
 // `campaigns` prop -- see PR "server-side pagination for Campaigns.jsx".
 function makeQuery(state, resolve) {
   const builder = {
-    select: (cols, opts) => { state.selectCols = cols; state.selectOpts = opts; return builder; },
+    select: (cols, opts) => { state.selectCols = cols; state.selectOpts = opts ?? state.selectOpts; return builder; },
     in: (col, vals) => { state.filters[col] = { op: 'in', vals }; return builder; },
     eq: (col, val) => { state.filters[col] = { op: 'eq', val }; return builder; },
+    or: (expr) => { state.or = expr; return builder; },
     order: () => builder,
     range: () => builder,
     then: (onFulfilled, onRejected) => Promise.resolve(resolve(state)).then(onFulfilled, onRejected),
@@ -31,8 +32,8 @@ function makeQuery(state, resolve) {
 function respond(state) {
   const { table, selectOpts } = state;
   if (table === 'campaign_screens') {
-    // useOperatorCampaignIds hook + per-row screen data -- both empty is fine for this test.
-    return { data: [{ campaign_id: 'c1' }, { campaign_id: 'c2' }], error: null };
+    // per-row screen data -- empty is fine for this test.
+    return { data: [], error: null };
   }
   if (table === 'campaigns') return { data: [], error: null };
   if (table === 'bookings') {
@@ -42,13 +43,21 @@ function respond(state) {
   return { data: [], error: null };
 }
 
+// Operator-side bookings come from the operator_bookings RPC (scoped in
+// SQL via campaign_screens), answered like a `bookings` read.
+const rpcMock = vi.fn((fn, args, opts) => {
+  const state = { table: 'bookings', rpc: fn, rpcArgs: args, filters: {}, selectCols: null, selectOpts: opts };
+  return makeQuery(state, respond);
+});
+
 const fromMock = vi.fn((table) => {
   const state = { table, filters: {}, selectCols: null, selectOpts: null };
   return makeQuery(state, respond);
 });
 
 vi.mock('../../lib/supabase.js', () => ({
-  supabase: { from: (...args) => fromMock(...args) },
+  supabase: { from: (...args) => fromMock(...args),
+    rpc: (...args) => rpcMock(...args) },
 }));
 
 import { Campaigns } from './Campaigns.jsx';

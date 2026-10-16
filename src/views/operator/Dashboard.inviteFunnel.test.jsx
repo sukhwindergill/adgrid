@@ -27,6 +27,7 @@ vi.mock('../../lib/supabase.js', () => ({
       if (table === 'screen_invites') return chain({ data: invites, error: null });
       return chain({ data: [] });
     }),
+    rpc: vi.fn(() => chain({ data: [] })),
     auth: { getSession: vi.fn(() => Promise.resolve({ data: { session: { access_token: 'tok' } } })) },
   },
 }));

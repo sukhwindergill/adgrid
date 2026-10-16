@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { C, F } from '../../design/tokens.js';
 import { SkeletonRow, SkeletonCard } from '../../components/ui/Skeleton.jsx';
@@ -6,7 +6,7 @@ import { KPI } from '../../components/primitives/KPI.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
-import { useOperatorCampaignIds } from '../../hooks/useOperatorCampaignIds.js';
+import { scopedBookings, applyBookingSearch } from '../../lib/bookingsQuery.js';
 import { normalizeBooking } from '../../lib/normalizeBooking.js';
 import { groupByCampaignId, rollupGroup } from '../../lib/campaignRollup.js';
 import { CampaignRow } from './CampaignRow.jsx';
@@ -35,13 +35,23 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
   const [screenData, setScreenData] = useState({});
   const { isMobile } = useBreakpoint();
 
-  // Only populated in operator mode (advertiserId is null then). RLS
-  // already scopes `bookings` reads to what the caller may see, but the
-  // operator side still needs this id set to know *which* rows among
-  // everything RLS would allow are theirs -- same pattern ApprovalQueue
-  // uses, not a new one.
-  const operatorCampaignIds = useOperatorCampaignIds(advertiserId ? [] : (operatorScreenIds || []));
-  const operatorIdsKey = [...operatorCampaignIds].sort().join(',');
+  // Scope is resolved on the server: advertiser_id for the advertiser side,
+  // the operator_bookings RPC (campaign_screens joined in SQL) for the
+  // operator side. No client-side id list, so nothing here grows with the
+  // account's booking history.
+  const operatorIdsKey = advertiserId ? '' : [...(operatorScreenIds || [])].sort().join(',');
+  const scope = advertiserId
+    ? { advertiserId }
+    : { operatorScreenIds: operatorIdsKey ? operatorIdsKey.split(',') : [] };
+  const emptyScope = !advertiserId && !operatorIdsKey;
+
+  // Search box is debounced into `search`, which is what the query uses.
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput.trim()), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   const [compareMode, setCompareMode] = useState(false);
   const [compareIds, setCompareIds] = useState(new Set());
@@ -54,49 +64,58 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
 
   const [rows, setRows] = useState([]);
   const [rowsLoading, setRowsLoading] = useState(true);
+  // Full-page skeleton only on the first load -- later refetches (tab,
+  // search) keep the toolbar mounted so the search box doesn't lose focus.
+  const [loadedOnce, setLoadedOnce] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  function scopedQuery(builder) {
-    return advertiserId ? builder.eq('advertiser_id', advertiserId) : builder.in('id', [...operatorCampaignIds]);
+  function pageQuery(from) {
+    let query = scopedBookings(scope, { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
+    if (filter !== 'all') query = query.eq('status', filter);
+    return applyBookingSearch(query, search);
   }
 
-  // Resets to page 1 whenever the status tab or scope changes -- a stale
-  // "load more" cursor from a different tab/account would silently mix
-  // pages together.
+  // Resets to page 1 whenever the status tab, search or scope changes -- a
+  // stale "load more" offset from a different tab/account would silently
+  // mix pages together. requestSeq drops responses that arrive after a
+  // newer request (fast typing in the search box).
+  const requestSeq = useRef(0);
   useEffect(() => {
-    if (!advertiserId && operatorCampaignIds.size === 0) { setRows([]); setTotalCount(0); setRowsLoading(false); return; }
+    const seq = ++requestSeq.current;
+    if (emptyScope) { setRows([]); setTotalCount(0); setHasMore(false); setRowsLoading(false); setLoadedOnce(true); return; }
     setRowsLoading(true);
-    let query = scopedQuery(supabase.from('bookings').select('*', { count: 'exact' }))
-      .order('created_at', { ascending: false })
-      .range(0, PAGE_SIZE - 1);
-    if (filter !== 'all') query = query.eq('status', filter);
-    query.then(({ data, count }) => {
+    pageQuery(0).then(({ data, count, error }) => {
+      if (seq !== requestSeq.current) return;
+      if (error) console.error('Failed to load campaigns:', error.message);
       setRows((data || []).map(normalizeBooking));
       setTotalCount(count ?? 0);
       setHasMore((count ?? 0) > (data || []).length);
       setRowsLoading(false);
+      setLoadedOnce(true);
     });
-  }, [filter, advertiserId, operatorIdsKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, search, advertiserId, operatorIdsKey]);
 
-  // Active-Now count is independent of the selected status tab (same as
-  // the old "Active Now" tile always showing the real active count
-  // regardless of which filter button was pressed).
+  // Active-Now count is independent of the selected status tab and search
+  // (same as the old "Active Now" tile always showing the real active
+  // count regardless of which filter button was pressed). COUNT only.
   useEffect(() => {
-    if (!advertiserId && operatorCampaignIds.size === 0) { setActiveCount(0); return; }
-    scopedQuery(supabase.from('bookings').select('id', { count: 'exact', head: true })).eq('status', 'active')
+    if (emptyScope) { setActiveCount(0); return; }
+    scopedBookings(scope, { columns: 'id', count: 'exact', head: true }).eq('status', 'active')
       .then(({ count }) => setActiveCount(count ?? 0));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [advertiserId, operatorIdsKey]);
 
   const loadMore = () => {
     setLoadingMore(true);
-    let query = scopedQuery(supabase.from('bookings').select('*', { count: 'exact' }))
-      .order('created_at', { ascending: false })
-      .range(rows.length, rows.length + PAGE_SIZE - 1);
-    if (filter !== 'all') query = query.eq('status', filter);
-    query.then(({ data, count }) => {
+    const seq = requestSeq.current;
+    pageQuery(rows.length).then(({ data, count }) => {
+      if (seq !== requestSeq.current) return;
       setRows(prev => [...prev, ...(data || []).map(normalizeBooking)]);
       setTotalCount(count ?? 0);
       setHasMore((count ?? 0) > rows.length + (data || []).length);
@@ -177,7 +196,7 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
     return next;
   });
 
-  if (loading || rowsLoading) {
+  if (loading || (rowsLoading && !loadedOnce)) {
     return (
       <div>
         <div style={{ marginBottom: 24 }}><SkeletonRow cols={4} /></div>
@@ -295,7 +314,15 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
             >{l}</button>
           ))}
         </div>
-        <div style={{ marginLeft: 'auto' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input
+            type="search"
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
+            placeholder="Search campaigns…"
+            aria-label="Search campaigns"
+            style={{ padding: '6px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: F.sans, color: C.text, background: C.surface, outline: 'none', minWidth: isMobile ? 0 : 200, opacity: rowsLoading ? 0.7 : 1 }}
+          />
           <select value={city} onChange={e => setCity(e.target.value)} style={{ padding: '6px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: F.sans, color: C.textMid, background: C.surface, outline: 'none' }}>
             {cities.map(c => <option key={c}>{c}</option>)}
           </select>
@@ -305,7 +332,7 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
       {shown.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '56px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'center', color: C.textMuted, marginBottom: 12 }}><IconClipboard size={40} /></div>
-          {totalCount === 0 && filter === 'all' ? (
+          {totalCount === 0 && filter === 'all' && !search ? (
             <>
               <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>
                 No campaigns yet
@@ -323,7 +350,7 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
                 No campaigns match these filters
               </div>
               <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>
-                Try adjusting the status filter or city selector.
+                Try adjusting the search, status filter or city selector.
               </div>
             </>
           )}
