@@ -4,6 +4,7 @@ import { C, F, T } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { downloadCsv } from '../../lib/csv.js';
 import { DeliveryCheckPanel } from '../../components/shared/DeliveryCheckPanel.jsx';
+import { Btn } from '../../components/primitives/Btn.jsx';
 import './CampaignReport.css';
 import { useT } from '../../i18n/useT.js';
 import { t as tNow } from '../../i18n/core.js';
@@ -53,11 +54,10 @@ export function CampaignReport() {
   return (
     <div className="report-page">
       <div className="report-actions">
-        <button onClick={() => window.print()} style={btnStyle}
-          onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
-          onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
-        >{t('public.report.print')}</button>
-        <button
+        <Btn variant="secondary" size="sm" onClick={() => window.print()} style={btnStyle}>{t('public.report.print')}</Btn>
+        <Btn
+          variant="secondary"
+          size="sm"
           onClick={() => downloadCsv(`${campaign.name}-delivery.csv`, [
             { key: 'day', label: t('public.report.day') },
             { key: 'plays', label: t('public.report.plays') },
@@ -66,9 +66,7 @@ export function CampaignReport() {
             { key: 'basis', label: t('public.report.basis') },
           ], daily)}
           style={btnStyle}
-          onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
-          onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
-        >{t('public.report.exportCsv')}</button>
+        >{t('public.report.exportCsv')}</Btn>
       </div>
 
       <div style={{ ...TX.caption, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>
@@ -134,11 +132,7 @@ export function CampaignReport() {
 }
 
 const cell = { padding: '8px 6px' };
-const btnStyle = {
-  padding: '7px 14px', borderRadius: 8, border: `1px solid ${C.border}`,
-  background: C.surface, color: C.textSub, fontFamily: F.sans, fontSize: T.sm, cursor: 'pointer',
-  transition: 'background 0.15s',
-};
+const btnStyle = { padding: '7px 14px', color: C.textSub, fontWeight: 400, boxShadow: 'none' };
 
 function Stat({ label, value, sub }) {
   return (

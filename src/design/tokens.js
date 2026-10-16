@@ -66,6 +66,22 @@ const READABLE = {
 };
 export const readable = color => READABLE[color] ?? color;
 
+// Dark surfaces: public legal/thank-you/invite pages and the on-screen
+// player and pairing kiosk. Text alphas are white-on-dark; 0.5 is the
+// lowest that clears 4.5:1 on these backgrounds, so smaller text never
+// goes below D.textFaint.
+export const D = {
+  bg: '#0b0d12',
+  card: 'rgba(17,17,24,0.9)',
+  border: '#1E1E2E',
+  text: 'rgba(255,255,255,0.85)',
+  textSub: '#8A8A9A',
+  textFaint: 'rgba(255,255,255,0.5)',
+  hairline: 'rgba(255,255,255,0.1)',
+  link: '#B79CFF',
+  success: '#4ade80',
+};
+
 // Third-party brand colours (logos, "Connect with X" buttons). Not for UI chrome.
 export const BRAND = {
   stripe: '#635bff', stripeHover: '#5147e6',
@@ -121,6 +137,8 @@ export const F = {
   // Headings, KPI numbers, display text only.
   display: "'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif",
   mono: "'JetBrains Mono', 'SF Mono', 'Fira Code', monospace",
+  // Creative headline fallback on the screen player.
+  serif: 'Georgia, serif',
 };
 
 // Opaque surface (design system bans blur/backdrop-filter — no glassmorphism).
