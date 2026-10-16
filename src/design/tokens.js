@@ -52,6 +52,7 @@ export const C = {
   // Dark "screen" surfaces used to mimic a DOOH display in previews.
   screen:     '#050a10',
   screenMid:  '#0d1520',
+  screenIdle: '#0d1a2e', // idle-slide gradient end
   terminalText: '#a3e635',
 
   // Backdrop behind modals, drawers and sheets.

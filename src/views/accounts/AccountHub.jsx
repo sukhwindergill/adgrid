@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { supabase } from '../../lib/supabase.js'
 import { summarizeAccountBookings } from '../../lib/accountRollup.js'
-import { C, F, T } from '../../design/tokens.js';
+import { C, F, T, alpha } from '../../design/tokens.js';
+import { Hover } from '../../components/primitives/Hover.jsx';
 import { TX } from '../../design/text.js';
 import { useT } from '../../i18n/useT.js'
 
@@ -26,7 +27,7 @@ function AccountCard({ account, isCurrent, onClick, rollup }) {
   const { t, formatCurrency, formatNumber } = useT()
   const initials = (account.name || account.company_name || '?').slice(0, 2).toUpperCase()
   return (
-    <div
+    <Hover
       onClick={onClick}
       style={{
         background: C.surface,
@@ -35,13 +36,13 @@ function AccountCard({ account, isCurrent, onClick, rollup }) {
         padding: '24px 20px',
         cursor: 'pointer',
         transition: 'border-color 0.15s, box-shadow 0.15s',
-        boxShadow: isCurrent ? `0 0 0 3px rgba(123,47,255,0.12)` : 'none',
+        boxShadow: isCurrent ? `0 0 0 3px ${alpha(C.purple, 0.12)}` : 'none',
         display: 'flex',
         flexDirection: 'column',
         gap: 12,
       }}
-      onMouseEnter={e => { if (!isCurrent) e.currentTarget.style.borderColor = C.textMuted }}
-      onMouseLeave={e => { if (!isCurrent) e.currentTarget.style.borderColor = C.border }}
+      hoverStyle={{ border: `2px solid ${C.textMuted}` }}
+      disabled={isCurrent}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {account.logo_url ? (
@@ -83,7 +84,7 @@ function AccountCard({ account, isCurrent, onClick, rollup }) {
           </div>
         </div>
       )}
-    </div>
+    </Hover>
   )
 }
 

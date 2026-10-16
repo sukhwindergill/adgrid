@@ -6,6 +6,7 @@ import { TX } from '../../design/text.js';
 import { GrantAccessModal } from './GrantAccessModal.jsx'
 import { describeActivity } from '../../lib/accountActivityLog.js'
 import { useT } from '../../i18n/useT.js'
+import { Btn } from '../../components/primitives/Btn.jsx';
 
 const ROLE_COLORS = {
   admin:   { bg: C.purpleSoft, color: C.purple },
@@ -67,14 +68,9 @@ export function AccessSettingsView() {
         <h3 style={{ fontSize: T.lg, fontWeight: 600, color: C.text, fontFamily: F.display, margin: 0 }}>
           {t('accounts.access.heading')}
         </h3>
-        <button
-          onClick={() => setShowModal(true)}
-          style={{ padding: '8px 16px', borderRadius: 8, background: C.purple, color: C.white, border: 'none', fontFamily: F.sans, fontSize: T.base, fontWeight: 500, cursor: 'pointer', transition: 'opacity 0.15s' }}
-          onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
-          onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-        >
+        <Btn onClick={() => setShowModal(true)} style={{ padding: '8px 16px', borderRadius: 8, fontSize: T.base, fontWeight: 500 }}>
           {t('accounts.access.grant')}
-        </button>
+        </Btn>
       </div>
 
       {loadError ? (
@@ -99,14 +95,9 @@ export function AccessSettingsView() {
               </div>
               <span style={{ padding: '2px 9px', borderRadius: 10, fontSize: T.xs, fontWeight: 600, background: rc.bg, color: rc.color }}>{t(`accounts.roles.${g.role}`)}</span>
               <span style={{ fontSize: T.xs, color: statusColor[g.status] ?? C.textMuted, fontFamily: F.sans, fontWeight: 500 }}>{t(`accounts.grantStatus.${g.status}`)}</span>
-              <button
-                onClick={() => revoke(g.id)}
-                style={{ ...TX.error, padding: '4px 10px', borderRadius: 6, background: 'transparent', border: `1px solid ${C.border}`, cursor: 'pointer', transition: 'background 0.15s' }}
-                onMouseEnter={e => { e.currentTarget.style.background = C.redSoft; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-              >
+              <Btn variant="secondary" onClick={() => revoke(g.id)} style={{ ...TX.error, padding: '4px 10px', borderRadius: 6, background: 'transparent', transition: 'background 0.15s', boxShadow: 'none', fontWeight: 400 }} hoverStyle={{ background: C.redSoft }}>
                 {t('accounts.access.revoke')}
-              </button>
+              </Btn>
             </div>
           )
         })

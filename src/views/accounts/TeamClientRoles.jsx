@@ -5,6 +5,8 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import { useT } from '../../i18n/useT.js'
 import { T, C, F } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
+import { Btn } from '../../components/primitives/Btn.jsx';
+import { SelInput } from '../../components/primitives/SelInput.jsx';
 
 export function TeamClientRoles() {
   const { user } = useAuth()
@@ -81,21 +83,10 @@ export function TeamClientRoles() {
         <div style={{ ...TX.helperMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>{t('accounts.team.team')}</div>
         {members.length === 0 && <p style={TX.bodySub}>{t('accounts.team.noMembers')}</p>}
         {members.map(m => (
-          <button
-            key={m.id}
-            onClick={() => selectMember(m)}
-            style={{
-              display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px',
-              borderRadius: 8, border: `1px solid ${selected?.id === m.id ? C.purple : C.border}`,
-              background: selected?.id === m.id ? C.purpleSoft : 'transparent',
-              marginBottom: 6, cursor: 'pointer', fontFamily: F.sans, transition: 'background 0.15s',
-            }}
-            onMouseEnter={e => { if (selected?.id !== m.id) e.currentTarget.style.background = C.surfaceAlt; }}
-            onMouseLeave={e => { if (selected?.id !== m.id) e.currentTarget.style.background = 'transparent'; }}
-          >
+          <Btn variant="unstyled" key={m.id} onClick={() => selectMember(m)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', borderRadius: 8, border: `1px solid ${selected?.id === m.id ? C.purple : C.border}`, background: selected?.id === m.id ? C.purpleSoft : 'transparent', marginBottom: 6, fontFamily: F.sans, transition: 'background 0.15s' }} hoverStyle={selected?.id !== m.id ? { background: C.surfaceAlt } : undefined}>
             <div style={{ fontSize: T.base, fontWeight: 500, color: C.text }}>{m.user_profile?.name || m.user_profile?.email}</div>
             <div style={{ fontSize: T.xs, color: C.textMuted }}>{t(`accounts.roles.${m.role}`)}</div>
-          </button>
+          </Btn>
         ))}
       </div>
 
@@ -122,19 +113,12 @@ export function TeamClientRoles() {
                       {t('accounts.team.orgGrant', { role: t(`accounts.roles.${g.role}`) })}
                     </div>
                   </div>
-                  <select
-                    value={current?.role ?? 'none'}
-                    onChange={e => setRole(g.account_id, e.target.value)}
-                    disabled={saving}
-                    style={{ padding: '5px 8px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.sans, fontSize: T.sm, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
-                    onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-                    onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-                  >
+                  <SelInput value={current?.role ?? 'none'} onChange={e => setRole(g.account_id, e.target.value)} disabled={saving} style={{ padding: '5px 8px', borderRadius: 6, fontFamily: F.sans, fontSize: T.sm, color: C.text, background: C.surface, transition: 'border-color 0.15s' }}>
                     <option value="none">{t('accounts.team.noAccess')}</option>
                     <option value="viewer">{t('accounts.roles.viewer')}</option>
                     <option value="manager">{t('accounts.roles.manager')}</option>
                     <option value="admin">{t('accounts.roles.admin')}</option>
-                  </select>
+                  </SelInput>
                 </div>
               )
             })}

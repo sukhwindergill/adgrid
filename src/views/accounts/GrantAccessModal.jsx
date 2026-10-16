@@ -5,6 +5,10 @@ import { C, F, T } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js'
 import { useT } from '../../i18n/useT.js'
+import { Btn } from '../../components/primitives/Btn.jsx';
+import { Modal } from '../../components/primitives/Modal.jsx';
+import { Inp } from '../../components/primitives/Inp.jsx';
+import { SelInput } from '../../components/primitives/SelInput.jsx';
 
 export function GrantAccessModal({ onClose, onGranted }) {
   const { user, profile } = useAuth()
@@ -82,16 +86,8 @@ export function GrantAccessModal({ onClose, onGranted }) {
   }
 
   return (
-    <>
-      <div
-        onClick={onClose}
-        style={{ position: 'fixed', inset: 0, background: C.overlay, zIndex: 299 }}
-      />
-      <div style={{
-        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-        background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20,
-        padding: '32px 28px', width: 420, zIndex: 300,
-      }}>
+    <Modal onBackdropClick={onClose} label={t('accounts.grantModal.title')} maxWidth={420} padding="32px 28px" zIndex={300}
+      panelStyle={{ borderRadius: 20, border: `1px solid ${C.border}` }}>
         <h3 style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 20px' }}>
           {t('accounts.grantModal.title')}
         </h3>
@@ -101,12 +97,9 @@ export function GrantAccessModal({ onClose, onGranted }) {
             <p style={{ fontSize: T.md, color: C.greenText, fontFamily: F.sans, margin: '0 0 20px' }}>
               {t('accounts.grantModal.sent', { email })}
             </p>
-            <button onClick={() => { onClose(); onGranted?.() }} style={{ padding: '9px 22px', borderRadius: 8, background: C.purple, color: C.white, border: 'none', fontFamily: F.sans, fontSize: T.base, cursor: 'pointer', transition: 'opacity 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-            >
+            <Btn onClick={() => { onClose(); onGranted?.() }} style={{ padding: '9px 22px', borderRadius: 8, fontSize: T.base }}>
               {t('accounts.grantModal.done')}
-            </button>
+            </Btn>
           </>
         ) : (
           <>
@@ -114,53 +107,32 @@ export function GrantAccessModal({ onClose, onGranted }) {
               <label style={{ ...TX.body, display: 'block', fontWeight: 500, marginBottom: 6 }}>
                 {t('accounts.grantModal.email')}
               </label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder={t('accounts.grantModal.emailPlaceholder')}
-                style={{ ...TX.body, width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.15s' }}
-                onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-                onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-              />
+              <Inp type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('accounts.grantModal.emailPlaceholder')} style={{ ...TX.body, width: '100%', padding: '9px 12px', borderRadius: 8, boxSizing: 'border-box', transition: 'border-color 0.15s' }} />
             </div>
 
             <div style={{ marginBottom: 20 }}>
               <label style={{ ...TX.body, display: 'block', fontWeight: 500, marginBottom: 6 }}>
                 {t('accounts.grantModal.role')}
               </label>
-              <select
-                value={role}
-                onChange={e => setRole(e.target.value)}
-                style={{ ...TX.body, width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
-                onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-                onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-              >
+              <SelInput value={role} onChange={e => setRole(e.target.value)} style={{ ...TX.body, width: '100%', padding: '9px 12px', borderRadius: 8, background: C.surface, transition: 'border-color 0.15s' }}>
                 <option value="viewer">{t('accounts.grantModal.roleViewer')}</option>
                 <option value="manager">{t('accounts.grantModal.roleManager')}</option>
                 <option value="admin">{t('accounts.grantModal.roleAdmin')}</option>
-              </select>
+              </SelInput>
             </div>
 
             {error && <p style={{ fontSize: T.base, color: C.redText, fontFamily: F.sans, margin: '0 0 12px' }}>{error}</p>}
 
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={onClose} style={{ ...TX.bodySub, flex: 1, padding: '9px', borderRadius: 8, background: 'transparent', border: `1px solid ${C.border}`, cursor: 'pointer', transition: 'background 0.15s' }}
-                onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-              >
+              <Btn variant="secondary" onClick={onClose} style={{ ...TX.bodySub, flex: 1, padding: '9px', borderRadius: 8, background: 'transparent', transition: 'background 0.15s', boxShadow: 'none', fontWeight: 400, justifyContent: 'center' }}>
                 {t('common.cancel')}
-              </button>
-              <button onClick={submit} disabled={saving} style={{ flex: 1, padding: '9px', borderRadius: 8, background: C.purple, color: C.white, border: 'none', fontFamily: F.sans, fontSize: T.base, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, transition: 'opacity 0.15s' }}
-                onMouseEnter={e => { if (!saving) e.currentTarget.style.opacity = '0.9'; }}
-                onMouseLeave={e => { if (!saving) e.currentTarget.style.opacity = '1'; }}
-              >
+              </Btn>
+              <Btn onClick={submit} disabled={saving} style={{ flex: 1, padding: '9px', borderRadius: 8, fontSize: T.base, fontWeight: 600, justifyContent: 'center' }}>
                 {saving ? t('accounts.grantModal.sending') : t('accounts.grantModal.send')}
-              </button>
+              </Btn>
             </div>
           </>
         )}
-      </div>
-    </>
+    </Modal>
   )
 }
