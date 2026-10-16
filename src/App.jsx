@@ -7,13 +7,14 @@ import { useToast } from './components/primitives/Toast.jsx';
 import { usePendingApprovalCount } from './hooks/usePendingApprovalCount.js';
 import { useOperatorCampaignIds } from './hooks/useOperatorCampaignIds.js';
 import { normalizeBooking } from './lib/normalizeBooking.js';
+import { parseAppPath } from './lib/appPath.js';
 
 import { LoginPage } from './components/login/LoginPage.jsx';
 import { GlobalHeader } from './components/layout/GlobalHeader.jsx';
 import { AppShell } from './components/layout/AppShell.jsx';
 import { Sidebar } from './components/layout/Sidebar.jsx';
 import { ErrorBoundary } from './components/primitives/ErrorBoundary.jsx';
-import { RequireAuth } from './components/auth/RequireAuth.jsx';
+import { RequireAuth, peekReturnTo } from './components/auth/RequireAuth.jsx';
 
 import { RequirePlatformOwner } from './components/auth/RequirePlatformOwner.jsx';
 import { SkipLink } from './components/chrome/SkipLink.jsx';
@@ -147,8 +148,6 @@ function AppInner() {
   const [duplicatingCampaign, setDuplicatingCampaign] = useState(null); // campaign object | null
   const [dataLoading,      setDataLoading]   = useState(false);
   const [loadError,        setLoadError]     = useState(null);
-  const [selectedScreenId, setSelectedScreenId] = useState(null);
-  const [selectedListingId, setSelectedListingId] = useState(null);
   const [presetScreenIds, setPresetScreenIds] = useState(() => {
     const id = sessionStorage.getItem('adgrid_preset_screen_id')
     return id ? [id] : null
@@ -183,8 +182,14 @@ function AppInner() {
     [visibleCampaigns, operatorCampaignIds]
   );
 
-  // Derive active from current URL path
-  const active = location.pathname.replace(/^\/app\/?/, '') || 'overview';
+  // Derive the view from the URL: /app/<view>[/<id>]. The optional id makes
+  // detail views (a campaign, a screen, a marketplace listing) real
+  // addresses -- they survive refresh, work with Back, and can be linked
+  // from emails and notifications.
+  const {
+    active, hasView,
+    screenId: selectedScreenId, listingId: selectedListingId, campaignId: detailId,
+  } = parseAppPath(location.pathname);
 
   // Badge fallback: also refetch on navigation into the approval route, in
   // case a screen was approved/rejected in another tab or session --
@@ -195,20 +200,25 @@ function AppInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
-  // 'adv-marketplace' covers both the browse list and the listing detail
-  // (toggled by local selectedListingId state, no separate route). Sidebar
-  // nav clicks go through react-router's navigate() directly (not navTo),
-  // which changes location.pathname; the internal onSelectListing/onBack
-  // callbacks only flip selectedListingId and never touch the path. So a
-  // pathname-keyed effect fires exactly on real nav-ins (including
-  // clicking "Marketplace" again after leaving) and not on the internal
-  // browse<->detail toggle -- same class of fix as selectedScreenId/
-  // 'screens' vs 'screen-detail' below, but here we don't have a second
-  // route id to fall back on, so we reset explicitly instead.
+  // Campaign detail follows the URL: open the booking named by the path
+  // (fetching it when we arrived by link or refresh), and drop it when the
+  // path no longer names one (Back, sidebar nav).
   useEffect(() => {
-    if (active === 'adv-marketplace') setSelectedListingId(null);
+    if (!detailId) { setDetail(null); return; }
+    if (detail?.id === detailId) return;
+    let cancelled = false;
+    supabase.from('bookings').select('*').eq('id', detailId).maybeSingle().then(({ data, error }) => {
+      if (cancelled) return;
+      if (error || !data) {
+        toast.error("That campaign couldn't be found, or you don't have access to it.");
+        navigate('/app/' + active, { replace: true });
+        return;
+      }
+      setDetail(normalizeBooking(data));
+    });
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
+  }, [detailId]);
 
   // ── Impersonation audit trail ─────────────────────────────────────────────
   useEffect(() => {
@@ -322,11 +332,18 @@ function AppInner() {
   // re-run this navigate-away on every background token refresh, silently
   // kicking anyone out of a mid-flow screen (e.g. the campaign wizard) back
   // to the overview and discarding their in-progress form state.
+  //
+  // On the first run (page load or sign-in) a specific /app/... path is
+  // left alone so deep links and refreshes land where they point; only a
+  // bare /app goes to the mode's home. Later runs are real mode switches.
+  const modeInitialized = useRef(false);
   useEffect(() => {
     if (user && activeMode) {
+      const firstRun = !modeInitialized.current;
+      modeInitialized.current = true;
       if (presetScreenIds && activeMode === 'advertiser') {
         navTo('adv-create');
-      } else {
+      } else if (!firstRun || !hasView) {
         navTo(activeMode === 'advertiser' ? 'adv-overview' : 'overview');
       }
     }
@@ -423,8 +440,8 @@ function AppInner() {
     if (!keepAddingToCampaign) setAddingToCampaign(null);
     if (!keepDuplicatingCampaign) setDuplicatingCampaign(null);
     navigate('/app/' + v);
-    setDetail(null);
   };
+  const openDetail = c => { setDetail(c); navigate(`/app/${active}/${c.id}`); };
 
   // ── Mutation helpers ───────────────────────────────────────────────────────
   const updateCampaign = async updated => {
@@ -466,7 +483,7 @@ function AppInner() {
     if (becomingActive && updated.advertiser_id) {
       callNotification(updated.advertiser_id, 'campaign_approved', {
         campaignName: updated.advertiser_name ?? updated.advertiser ?? '',
-        appUrl: '',
+        appUrl: `${window.location.origin}/app/adv-campaigns/${updated.id}`,
       });
     }
   };
@@ -485,7 +502,7 @@ function AppInner() {
       return (
         <CampaignDetail
           campaign={detail}
-          onBack={() => setDetail(null)}
+          onBack={() => navigate('/app/' + active)}
           onUpdate={updateCampaign}
           canReview={canReview}
           setCampaigns={setCampaigns}
@@ -544,12 +561,12 @@ function AppInner() {
           }}
         />
       );
-      if (active === 'adv-campaigns')    return <Campaigns advertiserId={currentAdvertiserId} dbScreens={visibleDbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} allowCancel />;
+      if (active === 'adv-campaigns')    return <Campaigns advertiserId={currentAdvertiserId} dbScreens={visibleDbScreens} setCampaigns={setCampaigns} setDetail={openDetail} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} allowCancel />;
       if (active === 'adv-marketplace') {
         if (selectedListingId) {
-          return <MarketplaceListingDetail listingId={selectedListingId} onBack={() => setSelectedListingId(null)} />;
+          return <MarketplaceListingDetail listingId={selectedListingId} onBack={() => navTo('adv-marketplace')} />;
         }
-        return <MarketplaceView onSelectListing={id => setSelectedListingId(id)} />;
+        return <MarketplaceView onSelectListing={id => navTo(`adv-marketplace/${id}`)} />;
       }
       if (active === 'adv-analytics')    return <Analytics advertiserId={currentAdvertiserId} />;
       if (active === 'adv-audience')     return <ScansView impersonatingId={impersonating?.id ?? null} />;
@@ -574,9 +591,8 @@ function AppInner() {
             campaigns: 0,
             status: 'pending',
           }]);
-          setSelectedScreenId(newScreen.id);
           setActiveMode('operator');
-          navTo('screen-detail');
+          navTo(`screen-detail/${newScreen.id}`);
         }}
         onCancel={() => navTo('screens')}
       />
@@ -586,17 +602,17 @@ function AppInner() {
         dbScreens={myScreens}
         setDbScreens={setMyScreens}
         loading={dataLoading}
-        onSelectScreen={id => { setSelectedScreenId(id); navTo('screen-detail'); }}
+        onSelectScreen={id => navTo(`screen-detail/${id}`)}
         onStartOnboard={() => navTo('screen-onboard')}
       />
     );
-    if (active === 'approval')      return <ApprovalQueue setCampaigns={setCampaigns} setDetail={c => setDetail(c)} dbScreens={visibleMyScreens} onApprovalChange={bumpApprovalRefresh} />;
+    if (active === 'approval')      return <ApprovalQueue setCampaigns={setCampaigns} setDetail={openDetail} dbScreens={visibleMyScreens} onApprovalChange={bumpApprovalRefresh} />;
     if (active === 'screen-detail') {
       if (!selectedScreenId) { navTo('screens'); return null; }
       return <ScreenDetailView screenId={selectedScreenId} onBack={() => navTo('screens')} profile={profile} onScreenUpdated={updated => setMyScreens(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s))} />;
     }
     if (active === 'notif-prefs')   return <OperatorSettingsView setNav={navTo} initialTab="notifications" />;
-    if (active === 'campaigns')    return <Campaigns operatorScreenIds={visibleMyScreens.map(s => s.id)} dbScreens={visibleMyScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} canReview={canReview} onApprovalChange={bumpApprovalRefresh} />;
+    if (active === 'campaigns')    return <Campaigns operatorScreenIds={visibleMyScreens.map(s => s.id)} dbScreens={visibleMyScreens} setCampaigns={setCampaigns} setDetail={openDetail} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} canReview={canReview} onApprovalChange={bumpApprovalRefresh} />;
     if (active === 'marketplace-listings') {
       return <MarketplaceListingsView operatorId={impersonating?.id ?? user.id} myScreens={myScreens} />;
     }
@@ -669,7 +685,8 @@ function AppInner() {
 function PublicOnlyRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
-  if (user) return <Navigate to="/app" replace />;
+  // Signed in: back to the page that sent them to sign in, if any.
+  if (user) return <Navigate to={peekReturnTo() ?? '/app'} replace />;
   return children;
 }
 

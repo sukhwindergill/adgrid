@@ -34,7 +34,7 @@ async function notifyCampaignApproved(advertiserId, campaignName, campaignId) {
       userId: advertiserId,
       type: 'campaign_approved',
       campaignId,
-      data: { campaignName, appUrl: window.location.origin },
+      data: { campaignName, appUrl: `${window.location.origin}/app/adv-campaigns/${campaignId}` },
     }),
   }).catch(() => {});
 }

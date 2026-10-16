@@ -89,7 +89,7 @@ Deno.serve(async (req: Request) => {
   // manual review "we'll email you once it's reviewed" -- nothing ever
   // did. Fire-and-forget so a notification hiccup never fails the review
   // action itself; the decision is already saved above either way.
-  const appUrl = `${Deno.env.get("PUBLIC_APP_URL") ?? ""}/app/settings`;
+  const appUrl = `${Deno.env.get("PUBLIC_APP_URL") ?? ""}/app/op-settings`;
   if (decision === "approved") {
     await sendNotification(operatorId, "identity_verification_approved", { appUrl });
   } else {

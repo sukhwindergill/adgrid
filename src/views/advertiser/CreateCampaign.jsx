@@ -603,7 +603,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
             body: JSON.stringify({
               userId: operatorId,
               type: 'campaign_submitted',
-              data: { advertiserName, appUrl: window.location.origin },
+              data: { advertiserName, appUrl: `${window.location.origin}/app/approval` },
             }),
           }).catch(() => {});
         });

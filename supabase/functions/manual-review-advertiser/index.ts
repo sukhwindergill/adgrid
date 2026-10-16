@@ -103,7 +103,7 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: profileError.message }), { status: 500, headers: CORS });
   }
 
-  const appUrl = `${Deno.env.get("PUBLIC_APP_URL") ?? ""}/app/settings`;
+  const appUrl = `${Deno.env.get("PUBLIC_APP_URL") ?? ""}/app/verification`;
   if (decision === "approved") {
     await sendNotification(verification.profile_id, "advertiser_verification_approved", { appUrl });
   } else {

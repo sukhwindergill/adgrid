@@ -162,7 +162,7 @@ async function distributeOperatorCuts(
       await notifyAdvertiser(profile.id, "payout_transfer_failed", {
         amount: (amountCents / 100).toFixed(2),
         currency,
-        appUrl: Deno.env.get("PUBLIC_APP_URL") ?? "",
+        appUrl: `${Deno.env.get("PUBLIC_APP_URL") ?? ""}/app/op-settings`,
       });
     }
   }
@@ -401,7 +401,7 @@ Deno.serve(async (req: Request) => {
     await notifyAdvertiser(booking.advertiser_id, "payment_failed", {
       amount: booking.budget.toFixed(2),
       currency,
-      appUrl: Deno.env.get("PUBLIC_APP_URL") ?? "",
+      appUrl: `${Deno.env.get("PUBLIC_APP_URL") ?? ""}/app/adv-billing`,
     });
     return new Response(JSON.stringify({ error: msg }), {
       status: 400,
@@ -418,7 +418,7 @@ Deno.serve(async (req: Request) => {
     await notifyAdvertiser(booking.advertiser_id, "payment_authentication_required", {
       amount: booking.budget.toFixed(2),
       currency,
-      appUrl: Deno.env.get("PUBLIC_APP_URL") ?? "",
+      appUrl: `${Deno.env.get("PUBLIC_APP_URL") ?? ""}/app/adv-billing`,
     });
     return new Response(
       JSON.stringify({
