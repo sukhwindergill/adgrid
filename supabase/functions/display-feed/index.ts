@@ -332,7 +332,7 @@ Deno.serve(async (req: Request) => {
       .limit(1)
       .maybeSingle();
 
-    if (shouldServeProgrammaticFill(screen, feedCampaigns.length, fill)) {
+    if (fill && shouldServeProgrammaticFill(screen, feedCampaigns.length, fill)) {
       feedCampaigns = [{
         id: fill.id,
         is_programmatic: true,

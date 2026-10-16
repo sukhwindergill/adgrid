@@ -159,7 +159,8 @@ Deno.serve(async (_req: Request) => {
 
     await notify(campaign.advertiser_id as string, "campaign_approved", {
       campaignName: (campaign.campaign_name ?? campaign.advertiser_name ?? campaign.id) as string,
-      appUrl: APP_URL,
+      campaignId: campaignId as string,
+      appUrl: `${APP_URL}/app/adv-campaigns/${campaignId}`,
     });
 
     await fetch(`${FUNCTIONS_URL}/charge-campaign`, {

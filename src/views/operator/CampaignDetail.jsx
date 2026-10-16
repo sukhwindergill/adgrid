@@ -18,6 +18,7 @@ import { PacingCard } from '../../components/shared/PacingCard.jsx';
 import { IconEdit, IconClock } from '../../components/icons.jsx';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { isAwaitingPayment } from '../../lib/unpaidCampaigns.js';
+import { notifyCampaignRejected } from '../../lib/campaignNotifications.js';
 
 export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onDuplicate, canReview = false, setCampaigns, onApprovalChange, isAdvertiserView = false }) {
   const toast = useToast();
@@ -126,6 +127,12 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
       .eq('campaign_id', c.id);
     setRejectLoading(false);
     if (error) { setRejectErr(error.message); return; }
+    notifyCampaignRejected({
+      advertiserId: c.advertiser_id,
+      campaignId: c.id,
+      campaignName: c.campaign_name || c.advertiser,
+      reason,
+    });
     toast.success('Campaign rejected.');
     onBack();
     onApprovalChange?.();

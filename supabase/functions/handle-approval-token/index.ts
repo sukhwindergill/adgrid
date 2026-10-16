@@ -87,6 +87,7 @@ serve(async (req) => {
     .eq('screen_id', screen_id)
 
   let outcome = action === 'approve' ? pendingOutcome() : rejectedOutcome()
+  let cleared = false
 
   if (action === 'approve') {
     const { data: booking } = await supabase
@@ -96,6 +97,7 @@ serve(async (req) => {
     const allClear = booking?.start_when === 'partial' || !remaining || remaining.length === 0
 
     if (allClear) {
+      cleared = true
       // Every other approval path (ApprovalQueue.jsx, mobile's
       // useApprovals.js, campaignActions.jsx's ApproveBtn, sweep-approvals)
       // charges the advertiser via charge-campaign the moment a campaign
@@ -126,6 +128,29 @@ serve(async (req) => {
           await supabase.from('bookings').update({ status: 'scheduled' }).eq('id', campaign_id)
         }
       }
+    }
+  }
+
+  // Tell the advertiser (email, in-app, phone push), same as the dashboard
+  // and mobile approval paths. Approval only once the campaign has cleared.
+  const notifyType = action === 'approve'
+    ? (cleared ? 'campaign_approved' : null)
+    : 'campaign_rejected'
+  if (notifyType) {
+    const { data: b } = await supabase
+      .from('bookings').select('advertiser_id, campaign_name, advertiser_name, screen_name').eq('id', campaign_id).single()
+    if (b?.advertiser_id) {
+      const appUrl = `${Deno.env.get('PUBLIC_APP_URL') ?? ''}/app/adv-campaigns/${campaign_id}`
+      await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-notification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-internal-secret': Deno.env.get('INTERNAL_NOTIFICATION_SECRET') ?? '' },
+        body: JSON.stringify({
+          userId: b.advertiser_id,
+          type: notifyType,
+          campaignId: campaign_id,
+          data: { campaignName: b.campaign_name || b.advertiser_name || campaign_id, screenName: b.screen_name ?? '', appUrl },
+        }),
+      }).catch(() => {})
     }
   }
 

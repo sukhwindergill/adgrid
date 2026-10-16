@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
+import { notifyCampaignApproved, notifyCampaignRejected } from '../../lib/campaignNotifications.js';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
@@ -24,21 +25,6 @@ const REJECT_REASONS = [
   'Not relevant to my venue',
   'Other',
 ];
-
-async function notifyCampaignApproved(advertiserId, campaignName, campaignId) {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return;
-  fetch(`${SUPABASE_FUNCTIONS_URL}/send-notification`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-    body: JSON.stringify({
-      userId: advertiserId,
-      type: 'campaign_approved',
-      campaignId,
-      data: { campaignName, appUrl: `${window.location.origin}/app/adv-campaigns/${campaignId}` },
-    }),
-  }).catch(() => {});
-}
 
 function timeAgo(isoString) {
   if (!isoString) return '';
@@ -184,7 +170,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
       .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
     const allClear = campaign.start_when === 'partial' || !remaining || remaining.length === 0;
     if (allClear) {
-      notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser, campaign.id);
+      notifyCampaignApproved({ advertiserId: campaign.advertiser_id, campaignName: campaign.advertiser_name || campaign.advertiser, campaignId: campaign.id });
       await attemptCharge();
     }
     setActing(false);
@@ -224,7 +210,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
       .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
     const allClear = campaign.start_when === 'partial' || !remaining || remaining.length === 0;
     if (allClear) {
-      notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser, campaign.id);
+      notifyCampaignApproved({ advertiserId: campaign.advertiser_id, campaignName: campaign.advertiser_name || campaign.advertiser, campaignId: campaign.id });
       await attemptCharge();
     }
     setActing(false);
@@ -242,6 +228,13 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
       setActing(false);
       return;
     }
+    notifyCampaignRejected({
+      advertiserId: campaign.advertiser_id,
+      campaignId: campaign.id,
+      campaignName: campaign.campaign_name || campaign.advertiser_name || campaign.advertiser,
+      screenName: myScreens.find(s => s.id === rejectScreenId)?.name,
+      reason: rejectReason,
+    });
     setRejectScreenId(null);
     setActing(false);
     onRejected(campaign.id, rejectScreenId);
@@ -716,7 +709,7 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
         .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
       const allClear = campaign.start_when === 'partial' || !remaining || remaining.length === 0;
       if (allClear) {
-        notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser, campaign.id);
+        notifyCampaignApproved({ advertiserId: campaign.advertiser_id, campaignName: campaign.advertiser_name || campaign.advertiser, campaignId: campaign.id });
         if (session) {
           try {
             const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/charge-campaign`, {
