@@ -432,10 +432,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
               const deliveryFlag = campaignDeliveryFlag(healthByCampaign[c.id]);
 
               return (
-              <Card key={c.id} style={{ padding: '16px 20px', transition: 'transform 0.2s, box-shadow 0.2s' }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = SH.lift; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-              >
+              <Card key={c.id} lift style={{ padding: '16px 20px', transition: 'transform 0.2s, box-shadow 0.2s' }}>
                 {isMobile ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {/* Row 1: Name + Status Badge */}
@@ -450,9 +447,9 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
                             <IconWarning size={11} /> {deliveryFlag.label}
                           </div>
                         )}
-                        <button onClick={() => setDisputeCampaignId(c.id)} style={{ ...TX.caption, background: 'none', border: 'none', padding: 0, marginTop: 4, cursor: 'pointer', textDecoration: 'underline' }}>
+                        <Btn variant="unstyled" onClick={() => setDisputeCampaignId(c.id)} style={{ ...TX.caption, marginTop: 4, textDecoration: 'underline' }}>
                           {t('dash.reportProblem')}
-                        </button>
+                        </Btn>
                       </div>
                       <Badge status={displayStatus} />
                     </div>
@@ -496,9 +493,9 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
                           <IconWarning size={11} /> {deliveryFlag.label}
                         </div>
                       )}
-                      <button onClick={() => setDisputeCampaignId(c.id)} style={{ ...TX.caption, background: 'none', border: 'none', padding: 0, marginTop: 4, cursor: 'pointer', textDecoration: 'underline' }}>
+                      <Btn variant="unstyled" onClick={() => setDisputeCampaignId(c.id)} style={{ ...TX.caption, marginTop: 4, textDecoration: 'underline' }}>
                         {t('dash.reportProblem')}
-                      </button>
+                      </Btn>
                     </div>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
@@ -526,12 +523,9 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
 
                 {screenCount >= 2 && (
                   <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
-                    <button
-                      onClick={() => setCompareCampaignId(id => id === c.id ? null : c.id)}
-                      style={{ background: 'none', border: 'none', padding: 0, fontSize: T.sm, color: C.purple, fontFamily: F.sans, cursor: 'pointer', fontWeight: 500 }}
-                    >
+                    <Btn variant="unstyled" onClick={() => setCompareCampaignId(id => id === c.id ? null : c.id)} style={{ fontSize: T.sm, color: C.purple, fontFamily: F.sans, fontWeight: 500 }}>
                       {compareCampaignId === c.id ? t('dash.hideBreakdown') : t('dash.compareScreens')}
-                    </button>
+                    </Btn>
                     {compareCampaignId === c.id && (
                       <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {perScreenBreakdown(delivery, c.id, screenNames).map(s => (

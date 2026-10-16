@@ -10,6 +10,8 @@ import { Btn } from "../../components/primitives/Btn.jsx";
 import { useT } from "../../i18n/useT.js";
 import { T, C, F } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
+import { Inp } from '../../components/primitives/Inp.jsx';
+import { SelInput } from '../../components/primitives/SelInput.jsx';
 
 // Header labels are translated; cell values (yes/no, ISO timestamps) stay
 // machine-readable for remarketing tools.
@@ -187,33 +189,15 @@ export default function ScansView({ impersonatingId }) {
       </Card>
 
       <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
-        <select
-          value={filterCampaign}
-          onChange={(e) => setFilterCampaign(e.target.value)}
-          style={{
-            border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 12px",
-            fontFamily: F.sans, fontSize: T.base, color: C.text, background: C.surface,
-            outline: 'none', transition: 'border-color 0.15s',
-          }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-        >
+        <SelInput value={filterCampaign} onChange={(e) => setFilterCampaign(e.target.value)} style={{ borderRadius: 8, padding: "6px 12px", fontFamily: F.sans, fontSize: T.base, color: C.text, background: C.surface, transition: 'border-color 0.15s' }}>
           <option value="all">{t('scans.allCampaigns')}</option>
           {campaigns.map((c) => (
             <option key={c.id} value={c.id}>{c.advertiser_name}</option>
           ))}
-        </select>
-        <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-          style={{ ...TX.body, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 10px", outline: 'none', transition: 'border-color 0.15s' }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-        />
+        </SelInput>
+        <Inp type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} style={{ ...TX.body, borderRadius: 8, padding: "6px 10px", transition: 'border-color 0.15s' }} />
         <span style={{ color: C.textSub, fontSize: T.base }}>{t('scans.to')}</span>
-        <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-          style={{ ...TX.body, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 10px", outline: 'none', transition: 'border-color 0.15s' }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-        />
+        <Inp type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={{ ...TX.body, borderRadius: 8, padding: "6px 10px", transition: 'border-color 0.15s' }} />
         <div style={{ marginLeft: "auto" }}>
           <Btn onClick={() => exportCSV(filtered, t)}>{t('scans.exportCsv')}</Btn>
         </div>

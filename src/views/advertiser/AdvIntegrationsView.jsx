@@ -5,12 +5,13 @@ import { useBreakpoint } from "../../lib/useBreakpoint.js";
 import { BrandIcon } from "../../components/shared/BrandIcon.jsx";
 import { PageHeader } from "../../components/primitives/PageHeader.jsx";
 import { Btn } from "../../components/primitives/Btn.jsx";
+import { Modal } from "../../components/primitives/Modal.jsx";
 import { Inp } from "../../components/primitives/Inp.jsx";
 import { CopyButton } from "../../components/primitives/CopyButton.jsx";
 import { generatePostbackKey, hashPostbackKey } from "../../lib/postbackKey.js";
 import { generateApiKey, hashApiKey, apiKeyPrefix } from "../../lib/apiKey.js";
 import { useT } from "../../i18n/useT.js";
-import { T, C, F } from '../../design/tokens.js';
+import { T, C, F, SH } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 
 // ─── Platform definitions ───────────────────────────────────────────────────
@@ -142,14 +143,8 @@ function ConnectModal({ platform, existing, onClose, onSaved }) {
   }
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000,
-      display: "flex", alignItems: "center", justifyContent: "center",
-    }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{
-        background: C.surface, borderRadius: 16, padding: 32, width: 480,
-        boxShadow: "0 20px 60px rgba(0,0,0,0.15)", maxHeight: "90vh", overflowY: "auto",
-      }}>
+    <Modal onBackdropClick={onClose} label={t('integ.connectTitle', { name: platform.name })} maxWidth={480} padding={32} zIndex={1000}
+      panelStyle={{ borderRadius: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
           <BrandIcon id={platform.id} size={16} />
           <div>
@@ -167,20 +162,7 @@ function ConnectModal({ platform, existing, onClose, onSaved }) {
             <label style={{ display: "block", fontSize: T.sm, fontWeight: 600, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>
               {t(`integ.fields.${f.key}`)}
             </label>
-            <input
-              type={f.type}
-              value={fields[f.key]}
-              onChange={e => setFields(prev => ({ ...prev, [f.key]: e.target.value }))}
-              placeholder={f.placeholder}
-              style={{
-                width: "100%", boxSizing: "border-box", padding: "9px 12px",
-                border: `1px solid ${C.border}`, borderRadius: 8, fontSize: T.base,
-                fontFamily: F.sans, color: C.text, outline: "none",
-                background: C.surface, transition: "border-color 0.15s",
-              }}
-              onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-              onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-            />
+            <Inp type={f.type} value={fields[f.key]} onChange={e => setFields(prev => ({ ...prev, [f.key]: e.target.value }))} placeholder={f.placeholder} style={{ boxSizing: "border-box", padding: "9px 12px", borderRadius: 8, fontSize: T.base, fontFamily: F.sans, color: C.text, background: C.surface, transition: "border-color 0.15s" }} wrapperStyle={{ width: "100%" }} />
           </div>
         ))}
 
@@ -213,8 +195,7 @@ function ConnectModal({ platform, existing, onClose, onSaved }) {
         }}>
           {t('integ.viewDocs', { name: platform.name })}
         </a>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -401,18 +382,10 @@ function PlatformSetupGuide() {
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
         {SETUP_GUIDES.map(p => (
-          <button key={p.id} type="button" onClick={() => setPlatformId(p.id)}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              padding: "6px 12px", borderRadius: 20, cursor: "pointer",
-              border: `1px solid ${platformId === p.id ? C.purple : C.border}`,
-              background: platformId === p.id ? C.purpleSoft : C.surface,
-              color: platformId === p.id ? C.purple : C.textSub,
-              fontSize: T.sm, fontWeight: 500, fontFamily: F.sans,
-            }}>
+          <Btn variant="unstyled" key={p.id} type="button" onClick={() => setPlatformId(p.id)} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 20, border: `1px solid ${platformId === p.id ? C.purple : C.border}`, background: platformId === p.id ? C.purpleSoft : C.surface, color: platformId === p.id ? C.purple : C.textSub, fontSize: T.sm, fontWeight: 500, fontFamily: F.sans }}>
             <BrandIcon id={p.id === "ga4" ? "google" : p.id} size={12} />
             {p.name}
-          </button>
+          </Btn>
         ))}
       </div>
       <ol style={{ ...TX.bodySub, margin: "0 0 12px", paddingLeft: 20, lineHeight: 1.9 }}>
@@ -701,11 +674,11 @@ export default function AdvIntegrationsView() {
   events.forEach(e => { eventCountMap[e.platform] = (eventCountMap[e.platform] ?? 0) + 1; });
 
   const TAB_STYLE = (active) => ({
-    padding: "8px 18px", borderRadius: 8, border: "none", cursor: "pointer",
+    padding: "8px 18px", borderRadius: 8,
     fontFamily: F.sans, fontSize: T.base, fontWeight: 600,
     background: active ? C.surface : "transparent",
     color: active ? C.text : C.textSub,
-    boxShadow: active ? `0 1px 4px rgba(0,0,0,0.08)` : "none",
+    boxShadow: active ? SH.sm : "none",
     transition: "background 0.15s",
   });
 
@@ -718,34 +691,30 @@ export default function AdvIntegrationsView() {
       <PageHeader title={t('integ.title')} subtitle={t('integ.subtitle')} />
 
       {/* Tabs */}
-      <div style={{
+      <div role="tablist" style={{
         display: "inline-flex", gap: 4, background: C.surfaceAlt,
         padding: 4, borderRadius: 10, marginBottom: 28,
       }}>
-        <button style={TAB_STYLE(tab === "platforms")} onClick={() => setTab("platforms")}
-          onMouseEnter={e => { if (tab !== "platforms") e.currentTarget.style.background = C.surface; }}
-          onMouseLeave={e => { if (tab !== "platforms") e.currentTarget.style.background = "transparent"; }}
+        <Btn variant="unstyled" role="tab" aria-selected={tab === "platforms"} style={TAB_STYLE(tab === "platforms")} onClick={() => setTab("platforms")}
+          hoverStyle={tab === "platforms" ? undefined : { background: C.surface }}
         >
           {t('integ.tabPlatforms')}
-        </button>
-        <button style={TAB_STYLE(tab === "events")} onClick={() => setTab("events")}
-          onMouseEnter={e => { if (tab !== "events") e.currentTarget.style.background = C.surface; }}
-          onMouseLeave={e => { if (tab !== "events") e.currentTarget.style.background = "transparent"; }}
+        </Btn>
+        <Btn variant="unstyled" role="tab" aria-selected={tab === "events"} style={TAB_STYLE(tab === "events")} onClick={() => setTab("events")}
+          hoverStyle={tab === "events" ? undefined : { background: C.surface }}
         >
           {t('integ.tabEvents')} {events.length > 0 && <span style={{ marginLeft: 6, padding: "1px 7px", background: C.purpleSoft, color: C.purple, borderRadius: 10, fontSize: T.xs }}>{events.length}</span>}
-        </button>
-        <button style={TAB_STYLE(tab === "conversions")} onClick={() => setTab("conversions")}
-          onMouseEnter={e => { if (tab !== "conversions") e.currentTarget.style.background = C.surface; }}
-          onMouseLeave={e => { if (tab !== "conversions") e.currentTarget.style.background = "transparent"; }}
+        </Btn>
+        <Btn variant="unstyled" role="tab" aria-selected={tab === "conversions"} style={TAB_STYLE(tab === "conversions")} onClick={() => setTab("conversions")}
+          hoverStyle={tab === "conversions" ? undefined : { background: C.surface }}
         >
           {t('integ.tabConversions')}
-        </button>
-        <button style={TAB_STYLE(tab === "api-keys")} onClick={() => setTab("api-keys")}
-          onMouseEnter={e => { if (tab !== "api-keys") e.currentTarget.style.background = C.surface; }}
-          onMouseLeave={e => { if (tab !== "api-keys") e.currentTarget.style.background = "transparent"; }}
+        </Btn>
+        <Btn variant="unstyled" role="tab" aria-selected={tab === "api-keys"} style={TAB_STYLE(tab === "api-keys")} onClick={() => setTab("api-keys")}
+          hoverStyle={tab === "api-keys" ? undefined : { background: C.surface }}
         >
           {t('integ.tabApi')}
-        </button>
+        </Btn>
       </div>
 
       {/* Platforms tab */}

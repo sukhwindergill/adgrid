@@ -742,10 +742,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
           <span style={{ fontSize: T.base, color: C.amberText, fontFamily: F.sans }}>
             {t('create.wizard.noBilling')}
           </span>
-          <button type="button" onClick={() => navigate('/app/adv-billing')} style={{
-            fontSize: T.sm, fontWeight: 600, color: C.amberText, fontFamily: F.sans, background: 'none', border: 'none', cursor: 'pointer',
-            textDecoration: 'underline', whiteSpace: 'nowrap', padding: 0,
-          }}>{t('create.wizard.setUpBilling')}</button>
+          <Btn variant="unstyled" type="button" onClick={() => navigate('/app/adv-billing')} style={{ fontSize: T.sm, fontWeight: 600, color: C.amberText, fontFamily: F.sans, textDecoration: 'underline', whiteSpace: 'nowrap' }}>{t('create.wizard.setUpBilling')}</Btn>
         </div>
       )}
       {step < 3 && resumedDraft && (
@@ -758,10 +755,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
           <span style={{ fontSize: T.sm, color: C.text, fontFamily: F.sans }}>
             {tx('create.wizard.continuingDraft', { b: chunk => <strong>{chunk}</strong>, name: resumedDraft.name })}
           </span>
-          <button onClick={startFresh} style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: T.sm, fontWeight: 600, color: C.purple, fontFamily: F.sans, textDecoration: 'underline',
-          }}>{t('create.wizard.startFresh')}</button>
+          <Btn variant="unstyled" onClick={startFresh} style={{ fontSize: T.sm, fontWeight: 600, color: C.purple, fontFamily: F.sans, textDecoration: 'underline' }}>{t('create.wizard.startFresh')}</Btn>
         </div>
       )}
       {step < 3 && <Stepper step={step} labels={STEP_KEYS.map(k => t(`create.steps.${k}`))} onCancel={onCancel} />}
@@ -775,13 +769,10 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {campaigns.map(c => (
-                  <button key={c.id} onClick={() => loadDuplicate(c)} style={{
-                    background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8,
-                    padding: '12px 16px', cursor: 'pointer', textAlign: 'left',
-                  }}>
+                  <Btn variant="unstyled" key={c.id} onClick={() => loadDuplicate(c)} style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: '12px 16px', textAlign: 'left' }}>
                     <div style={TX.strong}>{c.headline || c.advertiser}</div>
                     <div style={{ ...TX.caption, marginTop: 2 }}>{c.city} · {formatMoney(c.budget, c.currency)}</div>
-                  </button>
+                  </Btn>
                 ))}
               </div>
             )}

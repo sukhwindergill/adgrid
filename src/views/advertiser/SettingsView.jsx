@@ -5,11 +5,14 @@ import { supabase } from "../../lib/supabase.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { PageHeader } from "../../components/primitives/PageHeader.jsx";
 import { Btn } from "../../components/primitives/Btn.jsx";
+import { Toggle } from "../../components/primitives/Switch.jsx";
 import { EVENTS, normalizeChannelPrefs } from '../../lib/notificationPrefs.js';
 import { useT } from "../../i18n/useT.js";
 import { LOCALES } from "../../i18n/core.js";
 import { T, C, F } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
+import { Inp } from '../../components/primitives/Inp.jsx';
+import { SelInput } from '../../components/primitives/SelInput.jsx';
 
 const TIMEZONES = [
   "UTC", "America/New_York", "America/Chicago", "America/Denver",
@@ -19,16 +22,7 @@ const TIMEZONES = [
 
 function TabBtn({ label, active, onClick }) {
   return (
-    <button onClick={onClick} style={{
-      padding: "8px 18px", borderRadius: 8, border: "none", cursor: "pointer",
-      fontFamily: F.sans, fontSize: T.base, fontWeight: 500,
-      background: active ? C.purple : "transparent",
-      color: active ? C.white : C.textSub,
-      transition: "all 0.15s",
-    }}
-      onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
-      onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
-    >{label}</button>
+    <Btn variant="unstyled" onClick={onClick} style={{ padding: "8px 18px", borderRadius: 8, border: "none", fontFamily: F.sans, fontSize: T.base, fontWeight: 500, background: active ? C.purple : "transparent", color: active ? C.white : C.textSub, transition: "all 0.15s" }} hoverStyle={!active ? { background: C.surfaceAlt } : undefined}>{label}</Btn>
   );
 }
 
@@ -45,50 +39,13 @@ function Field({ label, children }) {
 
 function SettingsInput({ value, onChange, type = "text", readOnly, placeholder }) {
   return (
-    <input
-      type={type}
-      value={value}
-      onChange={onChange}
-      readOnly={readOnly}
-      placeholder={placeholder}
-      style={{
-        width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`,
-        borderRadius: 8, fontFamily: F.sans, fontSize: T.base, color: C.text,
-        background: readOnly ? C.bg : C.surface, boxSizing: "border-box",
-        outline: 'none', transition: 'border-color 0.15s',
-      }}
-      onFocus={e => { if (!readOnly) e.currentTarget.style.borderColor = C.purple; }}
-      onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-    />
+    <Inp type={type} value={value} onChange={onChange} readOnly={readOnly} placeholder={placeholder} style={{ padding: "9px 12px", borderRadius: 8, fontFamily: F.sans, fontSize: T.base, color: C.text, background: readOnly ? C.bg : C.surface, boxSizing: "border-box", transition: 'border-color 0.15s' }} wrapperStyle={{ width: "100%" }} />
   );
 }
 
 function SaveBtn({ onClick, saving, label }) {
   const { t } = useT();
   return <Btn onClick={onClick} loading={saving}>{label ?? t('settings.saveChanges')}</Btn>;
-}
-
-// Accessible toggle switch -- real button with role="switch" and keyboard
-// support, not a styled div's onClick (unreachable/unoperable by keyboard).
-function Toggle({ checked, onChange }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={onChange}
-      style={{
-        width: 44, height: 24, borderRadius: 12, flexShrink: 0, border: 'none', padding: 0, cursor: 'pointer',
-        background: checked ? C.purple : C.border, position: 'relative', transition: 'background 0.2s',
-      }}
-    >
-      <span style={{
-        position: 'absolute', top: 3, left: checked ? 23 : 3,
-        width: 18, height: 18, borderRadius: '50%', background: C.white,
-        transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-      }} />
-    </button>
-  );
 }
 
 export function ProfileTab({ profile, onSaved }) {
@@ -135,44 +92,26 @@ export function ProfileTab({ profile, onSaved }) {
         <SettingsInput value={companyWebsite} onChange={(e) => setCompanyWebsite(e.target.value)} placeholder={t('settings.websitePlaceholder')} />
       </Field>
       <Field label={t('settings.language')}>
-        <select
-          value={locale}
-          onChange={(e) => setLocale(e.target.value)}
-          style={{ ...TX.body, width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-        >
+        <SelInput value={locale} onChange={(e) => setLocale(e.target.value)} style={{ ...TX.body, padding: "9px 12px", borderRadius: 8, background: C.surface, transition: 'border-color 0.15s', width: '100%' }} wrapperStyle={{ width: "100%" }}>
           {LOCALES.map((l) => <option key={l} value={l}>{t(`common.language.${l}`)}</option>)}
-        </select>
+        </SelInput>
         <div style={{ fontSize: T.xs, color: C.textMuted, marginTop: 4 }}>
           {t('settings.languageHint')}
         </div>
       </Field>
       <Field label={t('settings.timezone')}>
-        <select
-          value={timezone}
-          onChange={(e) => setTimezone(e.target.value)}
-          style={{ ...TX.body, width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-        >
+        <SelInput value={timezone} onChange={(e) => setTimezone(e.target.value)} style={{ ...TX.body, padding: "9px 12px", borderRadius: 8, background: C.surface, transition: 'border-color 0.15s', width: '100%' }} wrapperStyle={{ width: "100%" }}>
           {TIMEZONES.map((tz) => <option key={tz}>{tz}</option>)}
-        </select>
+        </SelInput>
       </Field>
       <div>
         <div style={{ ...TX.label, marginBottom: 6 }}>
           {t('settings.currency')}
         </div>
-        <select
-          value={currency}
-          onChange={(e) => setCurrency(e.target.value)}
-          style={{ ...TX.body, width: '100%', padding: '8px 10px', borderRadius: 8, border: `1px solid ${C.border}`, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-        >
+        <SelInput value={currency} onChange={(e) => setCurrency(e.target.value)} style={{ ...TX.body, width: '100%', padding: '8px 10px', borderRadius: 8, background: C.surface, transition: 'border-color 0.15s' }}>
           <option value="cad">{t('settings.cad')}</option>
           <option value="usd">{t('settings.usd')}</option>
-        </select>
+        </SelInput>
         <div style={{ ...TX.caption, marginTop: 4 }}>
           {t('settings.currencyHint')}
         </div>
@@ -224,17 +163,11 @@ function BrandKitTab({ profile, onSaved }) {
         </div>
       </Field>
       <Field label={t('settings.font')}>
-        <select
-          value={brandFont}
-          onChange={(e) => setBrandFont(e.target.value)}
-          style={{ ...TX.body, width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-        >
+        <SelInput value={brandFont} onChange={(e) => setBrandFont(e.target.value)} style={{ ...TX.body, padding: "9px 12px", borderRadius: 8, background: C.surface, transition: 'border-color 0.15s', width: '100%' }} wrapperStyle={{ width: "100%" }}>
           <option value="sans">{t('settings.fontSans')}</option>
           <option value="serif">{t('settings.fontSerif')}</option>
           <option value="mono">{t('settings.fontMono')}</option>
-        </select>
+        </SelInput>
       </Field>
       <div style={{ ...TX.caption, marginTop: -8, marginBottom: 20 }}>
         {t('settings.brandHint')}
@@ -460,34 +393,12 @@ function TeamTab({ profile }) {
       <div style={{ borderTop: members.length > 0 ? `1px solid ${C.border}` : "none", paddingTop: members.length > 0 ? 20 : 0 }}>
         <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 12 }}>{t('settings.inviteTeammate')}</div>
         <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-          <input
-            type="email"
-            placeholder={t('settings.invitePlaceholder')}
-            value={inviteEmail}
-            onChange={(e) => setInviteEmail(e.target.value)}
-            style={{
-              flex: 1, padding: "9px 12px", border: `1px solid ${C.border}`,
-              borderRadius: 8, fontFamily: F.sans, fontSize: T.base, color: C.text,
-              outline: 'none', transition: 'border-color 0.15s',
-            }}
-            onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-            onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-          />
-          <select
-            value={inviteRole}
-            onChange={(e) => setInviteRole(e.target.value)}
-            style={{
-              padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8,
-              fontFamily: F.sans, fontSize: T.base, color: C.text, background: C.surface,
-              outline: 'none', transition: 'border-color 0.15s',
-            }}
-            onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-            onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-          >
+          <Inp type="email" placeholder={t('settings.invitePlaceholder')} value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} style={{ padding: "9px 12px", borderRadius: 8, fontFamily: F.sans, fontSize: T.base, color: C.text, transition: 'border-color 0.15s' }} wrapperStyle={{ flex: 1 }} />
+          <SelInput value={inviteRole} onChange={(e) => setInviteRole(e.target.value)} style={{ padding: "9px 12px", borderRadius: 8, fontFamily: F.sans, fontSize: T.base, color: C.text, background: C.surface, transition: 'border-color 0.15s' }}>
             <option value="viewer">{t('accounts.grantModal.roleViewer')}</option>
             <option value="manager">{t('accounts.grantModal.roleManager')}</option>
             <option value="admin">{t('accounts.grantModal.roleAdmin')}</option>
-          </select>
+          </SelInput>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Btn onClick={invite}>{t('settings.sendInvite')}</Btn>
