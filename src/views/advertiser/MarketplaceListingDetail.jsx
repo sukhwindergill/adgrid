@@ -7,6 +7,7 @@ import { MarketplaceThread } from '../../components/marketplace/MarketplaceThrea
 import { fetchListing, bookListing, fetchListingScreens } from '../../lib/marketplace.js';
 import { useToast } from '../../components/primitives/Toast.jsx';
 import { supabase } from '../../lib/supabase.js';
+import { useT } from '../../i18n/useT.js';
 
 
 export function MarketplaceListingDetail({ listingId, onBack }) {
@@ -16,6 +17,7 @@ export function MarketplaceListingDetail({ listingId, onBack }) {
   const [autoRenew, setAutoRenew] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const toast = useToast();
+  const { t, formatCurrency, formatDate } = useT();
 
   useEffect(() => {
     // fetchListing throws on a Supabase error rather than resolving with
@@ -36,10 +38,10 @@ export function MarketplaceListingDetail({ listingId, onBack }) {
     setBooking(true);
     try {
       await bookListing(listingId, autoRenew);
-      toast.success('Booking confirmed');
+      toast.success(t('market.detail.confirmed'));
       onBack();
     } catch (e) {
-      toast.error(e.message || 'Booking failed');
+      toast.error(e.message || t('market.detail.failed'));
     } finally {
       setBooking(false);
     }
@@ -47,54 +49,59 @@ export function MarketplaceListingDetail({ listingId, onBack }) {
 
   if (loadError) return (
     <div style={{ padding: 24 }}>
-      <Btn variant="ghost" onClick={onBack}>← Back to Marketplace</Btn>
-      <div style={{ fontFamily: F.sans, color: C.red, marginTop: 12 }}>Couldn't load this listing — check your connection and try again.</div>
+      <Btn variant="ghost" onClick={onBack}>{t('market.detail.backToMarketplace')}</Btn>
+      <div style={{ fontFamily: F.sans, color: C.red, marginTop: 12 }}>{t('market.detail.loadError')}</div>
     </div>
   );
-  if (!listing) return <div style={{ fontFamily: F.sans, color: C.textMuted, padding: 24 }}>Loading…</div>;
+  if (!listing) return <div style={{ fontFamily: F.sans, color: C.textMuted, padding: 24 }}>{t('common.loading')}</div>;
 
   return (
     <div style={{ maxWidth: 720 }}>
       <PageHeader
-        title={`${listing.is_bundle ? 'Bundle placement' : 'Exclusive placement'} — $${(listing.price_cents / 100).toFixed(0)}`}
-        subtitle={`${listing.start_date} – ${listing.end_date}`}
-        back="Marketplace" onBack={onBack}
+        title={t('market.detail.titlePrice', {
+          kind: listing.is_bundle ? t('market.detail.bundlePlacement') : t('market.detail.exclusivePlacement'),
+          price: formatCurrency(listing.price_cents / 100, { decimals: 0 }),
+        })}
+        subtitle={`${formatDate(listing.start_date)} – ${formatDate(listing.end_date)}`}
+        back={t('market.title')} onBack={onBack}
       />
 
       {listing.is_bundle && (
         <div style={{ fontFamily: F.sans, fontSize: 13, color: C.text, background: C.purpleSoft, borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>
-          {bundleScreenNames === null ? 'Loading screens…' : `${bundleScreenNames.length} screens included: ${bundleScreenNames.join(', ')}`}
+          {bundleScreenNames === null
+            ? t('market.detail.loadingScreens')
+            : t('market.detail.screensIncluded', { count: bundleScreenNames.length, names: bundleScreenNames.join(', ') })}
         </div>
       )}
 
       <ScreenAnalyticsPanel screenId={listing.screen_id} />
       {listing.is_bundle && bundleScreenNames && bundleScreenNames.length > 1 && (
         <div style={{ fontFamily: F.sans, fontSize: 12, color: C.textMuted, marginTop: 6 }}>
-          Analytics shown above are for the primary screen in this bundle.
+          {t('market.detail.primaryOnly')}
         </div>
       )}
 
       <div style={{ marginTop: 20, fontFamily: F.sans, fontSize: 13, color: C.textSub }}>
         <div>
-          Total ${(listing.price_cents / 100).toFixed(2)} — no added fees
+          {t('market.detail.total', { amount: formatCurrency(listing.price_cents / 100) })}
         </div>
       </div>
 
       <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, fontFamily: F.sans, fontSize: 12, color: C.textSub }}>
         <input type="checkbox" checked={autoRenew} onChange={e => setAutoRenew(e.target.checked)} />
-        Auto-renew this booking when it expires
+        {t('market.detail.autoRenew')}
       </label>
 
       <div style={{ marginTop: 12 }}>
-        <Btn variant="primary" onClick={handleBook} loading={booking}>Book this placement</Btn>
+        <Btn variant="primary" onClick={handleBook} loading={booking}>{t('market.detail.book')}</Btn>
         <div style={{ marginTop: 6, fontFamily: F.sans, fontSize: 12, color: C.textSub }}>
-          You'll be charged the total above using your saved payment method.
+          {t('market.detail.chargeNote')}
         </div>
       </div>
 
       <div style={{ marginTop: 24 }}>
         <div style={{ fontFamily: F.sans, fontWeight: 600, fontSize: 13, color: C.text, marginBottom: 8 }}>
-          Questions before you book?
+          {t('market.detail.questions')}
         </div>
         <MarketplaceThread listingId={listing.id} operatorId={listing.operator_id} />
       </div>

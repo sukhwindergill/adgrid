@@ -4,6 +4,7 @@ import { createPlayBuffer, FLUSH_INTERVAL_MS } from '../../lib/playBuffer.js';
 import { getCreativeRenderPlan } from '../../lib/getCreativeRenderPlan.js';
 import { getSlideDurationMs } from '../../lib/getSlideDuration.js';
 import { loadPairedToken, savePairedToken } from '../../lib/screenPairing.js';
+import { useT } from '../../i18n/useT.js';
 
 const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
@@ -30,6 +31,7 @@ function buildQrUrl(destinationUrl, screenId, campaignId, creativeId) {
 }
 
 function CreativeSlide({ campaign, screenId }) {
+  const { t } = useT();
   const plan = getCreativeRenderPlan(campaign);
   const { mediaUrl, isVideo, showTextOverlay, bg, headline, cta, category } = plan;
   const qrUrl = buildQrUrl(plan.destination, screenId, campaign.id, campaign.creative_id);
@@ -94,7 +96,7 @@ function CreativeSlide({ campaign, screenId }) {
           <div style={{
             fontSize: 'clamp(8px, 0.8vw, 12px)', color: '#555', textAlign: 'center',
             marginTop: 6, fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", fontWeight: 500,
-          }}>Scan to learn more</div>
+          }}>{t('display.scanToLearn')}</div>
         </div>
       )}
 
@@ -137,6 +139,7 @@ function CreativeSlide({ campaign, screenId }) {
 }
 
 function IdleSlide() {
+  const { t } = useT();
   return (
     <div style={{
       position: 'absolute', inset: 0,
@@ -155,7 +158,7 @@ function IdleSlide() {
         fontSize: 'clamp(12px, 1.5vw, 18px)', color: 'rgba(255,255,255,0.2)',
         fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
       }}>
-        No active campaigns scheduled
+        {t('display.noCampaigns')}
       </div>
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: 'rgba(124,58,237,0.3)' }} />
     </div>
@@ -166,6 +169,7 @@ function IdleSlide() {
 // means the screen was deleted or re-keyed. Nobody is standing at a kiosk to
 // fix the URL, so forget it and go back to /pair to show a fresh code.
 function InvalidTokenScreen({ screenToken }) {
+  const { t: tr } = useT();
   const fromPairing = (() => {
     try { return loadPairedToken(window.localStorage) === screenToken; } catch { return false; }
   })();
@@ -179,19 +183,20 @@ function InvalidTokenScreen({ screenToken }) {
   }, [fromPairing]);
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#050a10', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
-      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: 1 }}>
-        SCREEN TOKEN NOT RECOGNISED
+      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: 1, textTransform: 'uppercase' }}>
+        {tr('display.tokenNotRecognised')}
       </div>
       <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif" }}>
         {fromPairing
-          ? 'This screen was disconnected. Showing a new pairing code…'
-          : 'Check the URL and reconnect from your AdGrid dashboard.'}
+          ? tr('display.disconnected')
+          : tr('display.checkUrl')}
       </div>
     </div>
   );
 }
 
 export function DisplayPlayer({ screenToken }) {
+  const { t } = useT();
   const [campaigns, setCampaigns]   = useState([]);
   const [screenId, setScreenId]     = useState(null);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -388,8 +393,8 @@ export function DisplayPlayer({ screenToken }) {
   if (status === 'loading') {
     return (
       <div style={{ position: 'fixed', inset: 0, background: '#050a10', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: 2 }}>
-          CONNECTING…
+        <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: 2, textTransform: 'uppercase' }}>
+          {t('display.connecting')}
         </div>
       </div>
     );
@@ -446,10 +451,10 @@ export function DisplayPlayer({ screenToken }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
       }}>
         <span style={{ fontSize: 'clamp(9px, 0.9vw, 12px)', color: 'rgba(255,255,255,0.35)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif" }}>
-          AdGrid advertising display. QR code scans are recorded anonymously.
+          {t('display.privacyNotice')}
         </span>
         <a href="/privacy" style={{ fontSize: 'clamp(9px, 0.9vw, 12px)', color: 'rgba(255,255,255,0.25)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", textDecoration: 'underline' }}>
-          Privacy Policy ↗
+          {t('display.privacyLink')}
         </a>
       </div>
     </div>

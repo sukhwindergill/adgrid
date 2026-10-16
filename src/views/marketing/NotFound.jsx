@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
 import './marketing.css';
 import { usePageMeta } from '../../lib/usePageMeta.js';
+import { useT } from '../../i18n/useT.js';
 
 export function NotFound() {
+  const { t } = useT();
   usePageMeta({
-    title: 'Page Not Found | AdGrid',
-    description: "The page you're looking for doesn't exist or has moved.",
+    title: t('marketing.notFound.metaTitle'),
+    description: t('marketing.notFound.metaDescription'),
   });
 
   return (
@@ -13,13 +15,13 @@ export function NotFound() {
       <section className="sec dark" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
         <div className="inner" style={{ textAlign: 'center', maxWidth: 560 }}>
           <div className="eyebrow">404</div>
-          <h1 className="sec-h">Page not found</h1>
+          <h1 className="sec-h">{t('marketing.notFound.heading')}</h1>
           <p className="sec-sub" style={{ margin: '14px auto 32px' }}>
-            The page you're looking for doesn't exist or has moved. Let's get you back on track.
+            {t('marketing.notFound.body')}
           </p>
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/" className="btn-p">Back to home</Link>
-            <Link to="/#faq" className="btn-s">Read the FAQ</Link>
+            <Link to="/" className="btn-p">{t('marketing.notFound.home')}</Link>
+            <Link to="/#faq" className="btn-s">{t('marketing.notFound.faq')}</Link>
           </div>
         </div>
       </section>

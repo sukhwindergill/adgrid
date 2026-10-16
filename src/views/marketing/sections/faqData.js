@@ -1,18 +1,11 @@
-export const FAQS = [
-  ['Which cities is AdGrid available in?',
-    "We're launching in Toronto and Vancouver, with more Canadian cities planned as we onboard operators. Join the waitlist below if you're elsewhere, we'll reach out as we expand."],
-  ['What screens qualify as an AdGrid display?',
-    'Any landscape digital screen with an internet connection: a commercial display, a spare TV, or existing digital signage. Connect it in minutes with our lightweight display player; no proprietary hardware to buy.'],
-  ['How much does AdGrid take, and how do payouts work?',
-    'You keep 70% of what advertisers pay for every screen you list; AdGrid keeps 30%. Payouts are automatic via Stripe Connect on a schedule shown in your dashboard, no invoicing, no chasing payment.'],
-  ['Do I have to sign a contract or pay anything upfront?',
-    'No. Listing your screens is free with no long-term contract, pause or remove your inventory anytime.'],
-  ['What control do I have over what plays on my screen?',
-    "Full control. Approve or reject every ad before it airs, and set operating hours so ads only run while your venue is open. If you choose, ads from verified advertisers can be approved automatically."],
-  ['Is there a minimum ad spend for advertisers?',
-    'No minimums and no long-term contracts. You see the exact price per slot before you book, and you pay only for time that actually plays.'],
-  ['How do I know my campaign actually ran?',
-    'Every campaign includes playback logs proving when and where your ad ran, plus a unique QR code so you can track scans by screen and by hour.'],
-  ['What happens if I cancel a campaign?',
-    'Cancel before any impressions are served and you get a full refund within 5-10 business days. Once impressions start, charges are final.'],
-];
+import { t } from '../../../i18n/core.js';
+
+// Catalog keys under marketing.faq.items, in display order. Faq.jsx and
+// SiteSearch.jsx both index into this list, so anchors (`faq-<i>`) stay
+// stable across languages.
+export const FAQ_KEYS = ['cities', 'screens', 'payouts', 'contract', 'control', 'minimum', 'proof', 'cancel'];
+
+// [question, answer] pairs in the current (or given) locale.
+export function getFaqs(locale) {
+  return FAQ_KEYS.map(k => [t(`marketing.faq.items.${k}.q`, null, locale), t(`marketing.faq.items.${k}.a`, null, locale)]);
+}

@@ -6,6 +6,8 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { PageHeader } from "../../components/primitives/PageHeader.jsx";
 import { Btn } from "../../components/primitives/Btn.jsx";
 import { EVENTS, normalizeChannelPrefs } from '../../lib/notificationPrefs.js';
+import { useT } from "../../i18n/useT.js";
+import { LOCALES } from "../../i18n/core.js";
 
 const TIMEZONES = [
   "UTC", "America/New_York", "America/Chicago", "America/Denver",
@@ -59,8 +61,9 @@ function SettingsInput({ value, onChange, type = "text", readOnly, placeholder }
   );
 }
 
-function SaveBtn({ onClick, saving, label = "Save Changes" }) {
-  return <Btn onClick={onClick} loading={saving}>{label}</Btn>;
+function SaveBtn({ onClick, saving, label }) {
+  const { t } = useT();
+  return <Btn onClick={onClick} loading={saving}>{label ?? t('settings.saveChanges')}</Btn>;
 }
 
 // Accessible toggle switch -- real button with role="switch" and keyboard
@@ -88,6 +91,7 @@ function Toggle({ checked, onChange }) {
 
 export function ProfileTab({ profile, onSaved }) {
   const { refreshProfile } = useAuth();
+  const { t, locale, setLocale } = useT();
   const [name, setName] = useState(profile?.name ?? "");
   const [companyName, setCompanyName] = useState(profile?.company_name ?? "");
   const [companyWebsite, setCompanyWebsite] = useState(profile?.company_website ?? "");
@@ -103,7 +107,7 @@ export function ProfileTab({ profile, onSaved }) {
       .update({ name, company_name: companyName, company_website: companyWebsite, timezone, preferred_currency: currency })
       .eq("id", profile.id);
     setSaving(false);
-    setMsg(error ? "Error saving." : "Saved.");
+    setMsg(error ? { text: t('settings.errorSaving'), ok: false } : { text: t('settings.saved'), ok: true });
     if (!error) {
       onSaved({ name, company_name: companyName, company_website: companyWebsite, timezone, preferred_currency: currency });
       refreshProfile();
@@ -113,22 +117,36 @@ export function ProfileTab({ profile, onSaved }) {
 
   return (
     <div style={{ maxWidth: 480 }}>
-      <Field label="Full Name">
+      <Field label={t('settings.fullName')}>
         <SettingsInput value={name} onChange={(e) => setName(e.target.value)} />
       </Field>
-      <Field label="Email">
+      <Field label={t('settings.email')}>
         <SettingsInput value={profile?.email ?? ""} readOnly />
         <div style={{ fontSize: 11, color: C.textMuted, marginTop: 4 }}>
-          Change email in the Security tab.
+          {t('settings.changeEmailHint')}
         </div>
       </Field>
-      <Field label="Company Name">
-        <SettingsInput value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Acme Inc." />
+      <Field label={t('settings.companyName')}>
+        <SettingsInput value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder={t('settings.companyPlaceholder')} />
       </Field>
-      <Field label="Company Website">
-        <SettingsInput value={companyWebsite} onChange={(e) => setCompanyWebsite(e.target.value)} placeholder="https://acme.com" />
+      <Field label={t('settings.companyWebsite')}>
+        <SettingsInput value={companyWebsite} onChange={(e) => setCompanyWebsite(e.target.value)} placeholder={t('settings.websitePlaceholder')} />
       </Field>
-      <Field label="Timezone">
+      <Field label={t('settings.language')}>
+        <select
+          value={locale}
+          onChange={(e) => setLocale(e.target.value)}
+          style={{ width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
+          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
+          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
+        >
+          {LOCALES.map((l) => <option key={l} value={l}>{t(`common.language.${l}`)}</option>)}
+        </select>
+        <div style={{ fontSize: 11, color: C.textMuted, marginTop: 4 }}>
+          {t('settings.languageHint')}
+        </div>
+      </Field>
+      <Field label={t('settings.timezone')}>
         <select
           value={timezone}
           onChange={(e) => setTimezone(e.target.value)}
@@ -141,7 +159,7 @@ export function ProfileTab({ profile, onSaved }) {
       </Field>
       <div>
         <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>
-          Billing Currency
+          {t('settings.currency')}
         </div>
         <select
           value={currency}
@@ -150,16 +168,16 @@ export function ProfileTab({ profile, onSaved }) {
           onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
           onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
         >
-          <option value="cad">CAD — Canadian Dollar</option>
-          <option value="usd">USD — US Dollar</option>
+          <option value="cad">{t('settings.cad')}</option>
+          <option value="usd">{t('settings.usd')}</option>
         </select>
         <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 4 }}>
-          Applies to new campaigns only. Existing bookings are not affected.
+          {t('settings.currencyHint')}
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <SaveBtn onClick={save} saving={saving} />
-        {msg && <span style={{ fontSize: 13, color: msg === "Saved." ? C.green : C.red }}>{msg}</span>}
+        {msg && <span style={{ fontSize: 13, color: msg.ok ? C.green : C.red }}>{msg.text}</span>}
       </div>
     </div>
   );
@@ -167,6 +185,7 @@ export function ProfileTab({ profile, onSaved }) {
 
 function BrandKitTab({ profile, onSaved }) {
   const { refreshProfile } = useAuth();
+  const { t } = useT();
   const [brandColor1, setBrandColor1] = useState(profile?.brand_color_1 ?? "#7c3aed");
   const [brandColor2, setBrandColor2] = useState(profile?.brand_color_2 ?? "#0d1520");
   const [brandFont, setBrandFont] = useState(profile?.brand_font ?? "sans");
@@ -180,7 +199,7 @@ function BrandKitTab({ profile, onSaved }) {
       .update({ brand_color_1: brandColor1, brand_color_2: brandColor2, brand_font: brandFont })
       .eq("id", profile.id);
     setSaving(false);
-    setMsg(error ? "Error saving." : "Saved.");
+    setMsg(error ? { text: t('settings.errorSaving'), ok: false } : { text: t('settings.saved'), ok: true });
     if (!error) onSaved({ brand_color_1: brandColor1, brand_color_2: brandColor2, brand_font: brandFont });
     if (!error) refreshProfile();
     setTimeout(() => setMsg(null), 3000);
@@ -188,21 +207,21 @@ function BrandKitTab({ profile, onSaved }) {
 
   return (
     <div style={{ maxWidth: 480 }}>
-      <Field label="Primary Colour">
+      <Field label={t('settings.primaryColour')}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <input type="color" value={brandColor1} onChange={(e) => setBrandColor1(e.target.value)}
             style={{ width: 40, height: 36, border: `1px solid ${C.border}`, borderRadius: 6, cursor: "pointer", padding: 2 }} />
           <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.mono }}>{brandColor1}</span>
         </div>
       </Field>
-      <Field label="Secondary Colour">
+      <Field label={t('settings.secondaryColour')}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <input type="color" value={brandColor2} onChange={(e) => setBrandColor2(e.target.value)}
             style={{ width: 40, height: 36, border: `1px solid ${C.border}`, borderRadius: 6, cursor: "pointer", padding: 2 }} />
           <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.mono }}>{brandColor2}</span>
         </div>
       </Field>
-      <Field label="Font">
+      <Field label={t('settings.font')}>
         <select
           value={brandFont}
           onChange={(e) => setBrandFont(e.target.value)}
@@ -210,17 +229,17 @@ function BrandKitTab({ profile, onSaved }) {
           onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
           onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
         >
-          <option value="sans">Sans</option>
-          <option value="serif">Serif</option>
-          <option value="mono">Mono</option>
+          <option value="sans">{t('settings.fontSans')}</option>
+          <option value="serif">{t('settings.fontSerif')}</option>
+          <option value="mono">{t('settings.fontMono')}</option>
         </select>
       </Field>
       <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: -8, marginBottom: 20 }}>
-        Seeds the colors on new campaign drafts in the wizard. Doesn't change campaigns you've already created.
+        {t('settings.brandHint')}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <SaveBtn onClick={save} saving={saving} />
-        {msg && <span style={{ fontSize: 13, color: msg === "Saved." ? C.green : C.red }}>{msg}</span>}
+        {msg && <span style={{ fontSize: 13, color: msg.ok ? C.green : C.red }}>{msg.text}</span>}
       </div>
     </div>
   );
@@ -228,6 +247,7 @@ function BrandKitTab({ profile, onSaved }) {
 
 export function SecurityTab() {
   const { updatePassword } = useAuth();
+  const { t } = useT();
   const [newEmail, setNewEmail] = useState("");
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
@@ -241,9 +261,9 @@ export function SecurityTab() {
     const { error } = await supabase.auth.updateUser({ email: newEmail });
     setEmailSaving(false);
     if (error) {
-      setMsg(error.message);
+      setMsg({ text: error.message, ok: false });
     } else {
-      setMsg("Confirmation email sent. Check your inbox.");
+      setMsg({ text: t('settings.emailSent'), ok: true });
       setNewEmail("");
     }
     setTimeout(() => setMsg(null), 5000);
@@ -256,13 +276,13 @@ export function SecurityTab() {
   // page does. It signs the current session out too once that's done, so
   // this intentionally ends on the login screen rather than staying here.
   async function changePassword() {
-    if (newPw !== confirmPw) { setMsg("Passwords do not match."); return; }
-    if (newPw.length < 8) { setMsg("Password must be at least 8 characters."); return; }
+    if (newPw !== confirmPw) { setMsg({ text: t('settings.pwMismatch'), ok: false }); return; }
+    if (newPw.length < 8) { setMsg({ text: t('settings.pwTooShort'), ok: false }); return; }
     setPwSaving(true);
     const { error } = await updatePassword(newPw);
     if (error) {
       setPwSaving(false);
-      setMsg(error.message);
+      setMsg({ text: error.message, ok: false });
     }
     // On success the session is gone and this component is about to
     // unmount (App.jsx renders the login screen once user goes null) --
@@ -271,25 +291,25 @@ export function SecurityTab() {
 
   return (
     <div style={{ maxWidth: 480 }}>
-      <div style={{ fontSize: 15, fontWeight: 600, color: C.text, marginBottom: 16 }}>Change Email</div>
-      <Field label="New Email">
-        <SettingsInput type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="new@email.com" />
+      <div style={{ fontSize: 15, fontWeight: 600, color: C.text, marginBottom: 16 }}>{t('settings.changeEmail')}</div>
+      <Field label={t('settings.newEmail')}>
+        <SettingsInput type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder={t('settings.newEmailPlaceholder')} />
       </Field>
       <div style={{ marginBottom: 32 }}>
-        <SaveBtn onClick={changeEmail} saving={emailSaving} label="Update Email" />
+        <SaveBtn onClick={changeEmail} saving={emailSaving} label={t('settings.updateEmail')} />
       </div>
 
       <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 24 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: C.text, marginBottom: 16 }}>Change Password</div>
-        <Field label="New Password">
+        <div style={{ fontSize: 15, fontWeight: 600, color: C.text, marginBottom: 16 }}>{t('settings.changePassword')}</div>
+        <Field label={t('settings.newPassword')}>
           <SettingsInput type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
         </Field>
-        <Field label="Confirm Password">
+        <Field label={t('settings.confirmPassword')}>
           <SettingsInput type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
         </Field>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <SaveBtn onClick={changePassword} saving={pwSaving} label="Update Password" />
-          {msg && <span style={{ fontSize: 13, color: msg.includes("updated") || msg.includes("sent") ? C.green : C.red }}>{msg}</span>}
+          <SaveBtn onClick={changePassword} saving={pwSaving} label={t('settings.updatePassword')} />
+          {msg && <span style={{ fontSize: 13, color: msg.ok ? C.green : C.red }}>{msg.text}</span>}
         </div>
       </div>
     </div>
@@ -297,6 +317,7 @@ export function SecurityTab() {
 }
 
 export function NotificationsTab({ profile }) {
+  const { t, tOr } = useT();
   const [prefs, setPrefs] = useState(() => normalizeChannelPrefs(profile?.notification_prefs));
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -312,7 +333,7 @@ export function NotificationsTab({ profile }) {
       .update({ notification_prefs: prefs })
       .eq("id", profile.id);
     setSaving(false);
-    setMsg(error ? "Error saving." : "Saved.");
+    setMsg(error ? { text: t('settings.errorSaving'), ok: false } : { text: t('settings.saved'), ok: true });
     setTimeout(() => setMsg(null), 3000);
   }
 
@@ -326,8 +347,8 @@ export function NotificationsTab({ profile }) {
     <div style={{ maxWidth: 560 }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 70px 70px", padding: "0 0 8px", borderBottom: `1px solid ${C.border}` }}>
         <span />
-        <span style={{ fontSize: 11, fontWeight: 600, color: C.textSub, textAlign: "center" }}>In-app</span>
-        <span style={{ fontSize: 11, fontWeight: 600, color: C.textSub, textAlign: "center" }}>Email</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: C.textSub, textAlign: "center" }}>{t('settings.inApp')}</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: C.textSub, textAlign: "center" }}>{t('settings.emailChannel')}</span>
       </div>
       {items.map((item) => (
         <div key={item.key} style={{
@@ -335,8 +356,8 @@ export function NotificationsTab({ profile }) {
           padding: "16px 0", borderBottom: `1px solid ${C.border}`,
         }}>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 500, color: C.text }}>{item.label}</div>
-            <div style={{ fontSize: 12, color: C.textSub, marginTop: 2 }}>{item.desc}</div>
+            <div style={{ fontSize: 14, fontWeight: 500, color: C.text }}>{tOr(`notif.${item.key}.label`, item.label)}</div>
+            <div style={{ fontSize: 12, color: C.textSub, marginTop: 2 }}>{tOr(`notif.${item.key}.desc`, item.desc)}</div>
           </div>
           <div style={{ display: "flex", justifyContent: "center" }}>
             <Toggle checked={prefs[item.key].inApp} onChange={() => toggle(item.key, "inApp")} />
@@ -348,13 +369,14 @@ export function NotificationsTab({ profile }) {
       ))}
       <div style={{ marginTop: 20, display: "flex", gap: 12, alignItems: "center" }}>
         <SaveBtn onClick={save} saving={saving} />
-        {msg && <span style={{ fontSize: 13, color: msg === "Saved." ? C.green : C.red }}>{msg}</span>}
+        {msg && <span style={{ fontSize: 13, color: msg.ok ? C.green : C.red }}>{msg.text}</span>}
       </div>
     </div>
   );
 }
 
 function TeamTab({ profile }) {
+  const { t } = useT();
   const [members, setMembers] = useState([]);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("viewer");
@@ -380,7 +402,7 @@ function TeamTab({ profile }) {
   async function invite() {
     if (!inviteEmail) return;
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setMsg("Session expired. Please log in again."); return; }
+    if (!session) { setMsg({ text: t('settings.sessionExpired'), ok: false }); return; }
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/invite-team-member`, {
       method: "POST",
       headers: {
@@ -391,28 +413,28 @@ function TeamTab({ profile }) {
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setMsg(body?.error || "Error sending invite.");
+      setMsg({ text: body?.error || t('settings.inviteError'), ok: false });
       return;
     }
-    setMsg("Invite sent to " + inviteEmail);
+    setMsg({ text: t('settings.inviteSent', { email: inviteEmail }), ok: true });
     setInviteEmail("");
     setTimeout(() => setMsg(null), 4000);
   }
 
   async function removeMember(id) {
     const { error } = await supabase.from("team_members").delete().eq("id", id);
-    if (error) { setMsg("Error removing member."); return; }
+    if (error) { setMsg({ text: t('settings.removeError'), ok: false }); return; }
     setMembers((m) => m.filter((x) => x.id !== id));
   }
 
-  if (loading) return <div style={{ color: C.textSub, fontSize: 13 }}>Loading team…</div>;
-  if (loadError) return <div style={{ color: C.red, fontSize: 13 }}>Couldn't load your team — check your connection and try again.</div>;
+  if (loading) return <div style={{ color: C.textSub, fontSize: 13 }}>{t('settings.loadingTeam')}</div>;
+  if (loadError) return <div style={{ color: C.red, fontSize: 13 }}>{t('settings.teamError')}</div>;
 
   return (
     <div style={{ maxWidth: 560 }}>
       {members.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 12 }}>Team Members</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 12 }}>{t('settings.teamMembers')}</div>
           {members.map((m) => (
             <div key={m.id} style={{
               display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
@@ -426,20 +448,19 @@ function TeamTab({ profile }) {
                 padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600,
                 background: m.role === "admin" ? C.purpleLight : C.bg,
                 color: m.role === "admin" ? C.purple : C.textSub,
-                textTransform: "capitalize",
-              }}>{m.role}</span>
-              <Btn variant="ghost" size="sm" onClick={() => removeMember(m.id)} style={{ color: C.red }}>Remove</Btn>
+              }}>{['admin', 'manager', 'viewer'].includes(m.role) ? t(`accounts.roles.${m.role}`) : m.role}</span>
+              <Btn variant="ghost" size="sm" onClick={() => removeMember(m.id)} style={{ color: C.red }}>{t('common.remove')}</Btn>
             </div>
           ))}
         </div>
       )}
 
       <div style={{ borderTop: members.length > 0 ? `1px solid ${C.border}` : "none", paddingTop: members.length > 0 ? 20 : 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 12 }}>Invite Teammate</div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 12 }}>{t('settings.inviteTeammate')}</div>
         <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
           <input
             type="email"
-            placeholder="colleague@company.com"
+            placeholder={t('settings.invitePlaceholder')}
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}
             style={{
@@ -461,14 +482,14 @@ function TeamTab({ profile }) {
             onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
             onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
           >
-            <option value="viewer">Viewer — read only</option>
-            <option value="manager">Manager — create &amp; edit campaigns</option>
-            <option value="admin">Admin — full access</option>
+            <option value="viewer">{t('accounts.grantModal.roleViewer')}</option>
+            <option value="manager">{t('accounts.grantModal.roleManager')}</option>
+            <option value="admin">{t('accounts.grantModal.roleAdmin')}</option>
           </select>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Btn onClick={invite}>Send Invite</Btn>
-          {msg && <span style={{ fontSize: 13, color: msg.startsWith("Error") ? C.red : C.green }}>{msg}</span>}
+          <Btn onClick={invite}>{t('settings.sendInvite')}</Btn>
+          {msg && <span style={{ fontSize: 13, color: msg.ok ? C.green : C.red }}>{msg.text}</span>}
         </div>
       </div>
     </div>
@@ -477,31 +498,25 @@ function TeamTab({ profile }) {
 
 export default function SettingsView({ initialTab } = {}) {
   const { profile: authProfile } = useAuth();
+  const { t } = useT();
   const [profile, setProfile] = useState(authProfile);
   const [tab, setTab] = useState(initialTab ?? "profile");
 
   useEffect(() => { if (authProfile) setProfile(authProfile); }, [authProfile]);
 
-  if (!profile) return <div style={{ padding: 40, fontFamily: F.sans, color: C.textSub }}>Loading…</div>;
+  if (!profile) return <div style={{ padding: 40, fontFamily: F.sans, color: C.textSub }}>{t('common.loading')}</div>;
 
   return (
     <div style={{ maxWidth: 900 }}>
-      <PageHeader title="Settings" subtitle="Manage your advertiser account" />
+      <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} />
 
       <div style={{ overflowX: "auto", maxWidth: "100%", marginBottom: 32 }}>
         <div style={{
           display: "flex", gap: 4, background: C.bg, padding: 4, borderRadius: 10,
           border: `1px solid ${C.border}`, width: "fit-content",
         }}>
-          {[
-            { id: "profile", label: "Profile" },
-            { id: "branding", label: "Brand Kit" },
-            { id: "security", label: "Security" },
-            { id: "notifications", label: "Notifications" },
-            { id: "team", label: "Team" },
-            { id: "access", label: "Access" },
-          ].map((t) => (
-            <TabBtn key={t.id} label={t.label} active={tab === t.id} onClick={() => setTab(t.id)} />
+          {["profile", "branding", "security", "notifications", "team", "access"].map((id) => (
+            <TabBtn key={id} label={t(`settings.tabs.${id}`)} active={tab === id} onClick={() => setTab(id)} />
           ))}
         </div>
       </div>

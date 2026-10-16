@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { useT } from '../../../i18n/useT.js';
 
 const INTERVAL_MS = 4000;
 
 export function Carousel({ slides }) {
+  const { t } = useT();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const reducedMotion = useRef(
@@ -28,15 +30,15 @@ export function Carousel({ slides }) {
             <img src={slide.src} alt={slide.alt} loading="lazy" width={slide.width} height={slide.height} />
           </div>
         ))}
-        <button className="gallery-arrow prev" onClick={() => goTo(index - 1)} aria-label="Previous slide">‹</button>
-        <button className="gallery-arrow next" onClick={() => goTo(index + 1)} aria-label="Next slide">›</button>
+        <button className="gallery-arrow prev" onClick={() => goTo(index - 1)} aria-label={t('marketing.carousel.prev')}>‹</button>
+        <button className="gallery-arrow next" onClick={() => goTo(index + 1)} aria-label={t('marketing.carousel.next')}>›</button>
       </div>
       <div className="gallery-caption-bar">
         <span className="gallery-caption">{slides[index].caption}</span>
         <div className="gallery-dots">
           {slides.map((slide, i) => (
             <button key={slide.src} className={`gallery-dot ${i === index ? 'on' : ''}`}
-              onClick={() => goTo(i)} aria-label={`Go to slide ${i + 1}`} />
+              onClick={() => goTo(i)} aria-label={t('marketing.carousel.goTo', { n: i + 1 })} />
           ))}
         </div>
       </div>

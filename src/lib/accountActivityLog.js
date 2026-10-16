@@ -1,3 +1,4 @@
+import { t } from '../i18n/core.js';
 // src/lib/accountActivityLog.js
 // Story Map (Agency epic): "I want an audit log of what a delegated team
 // member or agency changed on my account, so I can trust granting access
@@ -7,20 +8,16 @@
 //
 // Pure, so it's testable without touching Supabase or React.
 
-export function describeActivity(entry) {
-  const who = entry.grantee?.company_name || entry.grantee?.name || entry.grantee?.email || 'Someone';
-  const role = entry.role ?? 'viewer';
+const KNOWN_ACTIONS = ['grant_created', 'access_accepted', 'access_revoked', 'role_changed'];
 
-  switch (entry.action) {
-    case 'grant_created':
-      return `${who} was invited as ${role}`;
-    case 'access_accepted':
-      return `${who} accepted access as ${role}`;
-    case 'access_revoked':
-      return `${who}'s access was revoked (was ${role})`;
-    case 'role_changed':
-      return `${who}'s role was changed to ${role}`;
-    default:
-      return `${who} — ${entry.action}`;
-  }
+// Text comes from the locale catalogs (accounts.activity.*) in the current
+// language; pass a locale to pin one.
+export function describeActivity(entry, locale) {
+  const who = entry.grantee?.company_name || entry.grantee?.name || entry.grantee?.email || t('accounts.activity.someone', null, locale);
+  const roleKey = entry.role ?? 'viewer';
+  const role = t(`accounts.roleLower.${roleKey}`, null, locale);
+  const vars = { who, role: role.startsWith('accounts.') ? roleKey : role, action: entry.action };
+
+  if (KNOWN_ACTIONS.includes(entry.action)) return t(`accounts.activity.${entry.action}`, vars, locale);
+  return t('accounts.activity.other', vars, locale);
 }

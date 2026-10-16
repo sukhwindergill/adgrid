@@ -9,7 +9,6 @@ import { ErrorBanner } from '../../components/primitives/ErrorBanner.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
-import { formatCurrency } from '../../lib/formatCurrency.js';
 import { haversineKm } from '../../lib/geo.js';
 import { isValidDestinationUrl, normalizeDestinationUrl } from '../../lib/destinationUrl.js';
 import { buildPreviewCampaign } from '../../lib/buildPreviewCampaign.js';
@@ -22,10 +21,14 @@ import { Stepper } from './createCampaign/Stepper.jsx';
 import { StepTargeting } from './createCampaign/StepTargeting.jsx';
 import { StepCreative } from './createCampaign/StepCreative.jsx';
 import { StepBudgetReview } from './createCampaign/StepBudgetReview.jsx';
+import { useT } from '../../i18n/useT.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
+// English labels feed analytics (campaign_wizard_step); the Stepper shows
+// the translated ones.
 const STEP_LABELS = ['Targeting', 'Creative', 'Budget & Schedule'];
+const STEP_KEYS = ['targeting', 'creative', 'budget'];
 
 // Shared by the initial useState and by "Start fresh" (discarding a resumed
 // draft) -- a plain function, not inlined in useState, so both call sites
@@ -74,12 +77,14 @@ function hasDraftContent(form) {
 }
 
 function StepPay({ campaign, onPay, onSkip, paying, err, requiresAction, onGoToBilling }) {
+  const { t, formatMoney } = useT();
+  const amount = formatMoney(campaign.budget, campaign.currency);
   return (
     <div style={{ maxWidth: 580, margin: '0 auto' }}>
       <Card style={{ padding: 32 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>Pay for your campaign</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>{t('create.wizard.payTitle')}</h2>
         <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>
-          Charge {formatCurrency(campaign.budget, campaign.currency)} to your card on file. Screens won't go live until payment is captured.
+          {t('create.wizard.payBody', { amount })}
         </p>
 
         {requiresAction ? (
@@ -88,13 +93,13 @@ function StepPay({ campaign, onPay, onSkip, paying, err, requiresAction, onGoToB
             background: C.amberSoft, border: `1px solid ${C.amberBorder}`,
           }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: C.amber, fontFamily: F.sans, marginBottom: 4 }}>
-              Card authentication required
+              {t('create.wizard.authRequired')}
             </div>
             <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>
-              Your card requires additional verification. Update your payment method and try again.
+              {t('create.wizard.authBody')}
             </div>
             <Btn onClick={onGoToBilling} style={{ fontSize: 13, padding: '8px 16px' }}>
-              Go to Billing →
+              {t('create.wizard.goToBilling')}
             </Btn>
           </div>
         ) : (
@@ -102,10 +107,10 @@ function StepPay({ campaign, onPay, onSkip, paying, err, requiresAction, onGoToB
         )}
 
         <Btn onClick={onPay} disabled={paying || requiresAction} style={{ width: '100%', fontSize: 15, padding: '14px 24px', marginBottom: 10 }}>
-          {paying ? 'Charging…' : `Pay now — ${formatCurrency(campaign.budget, campaign.currency)}`}
+          {paying ? t('create.wizard.charging') : t('create.wizard.payNow', { amount })}
         </Btn>
         <Btn variant="secondary" onClick={onSkip} disabled={paying} style={{ width: '100%' }}>
-          Pay later
+          {t('create.wizard.payLater')}
         </Btn>
       </Card>
     </div>
@@ -116,6 +121,7 @@ function StepPay({ campaign, onPay, onSkip, paying, err, requiresAction, onGoToB
 
 export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoading = false, campaigns = [], existingCampaign = null, presetScreenIds = null, duplicateFrom = null, resumeDraftId = null, houseAdMode = false }) {
   const { user, profile, activeAccount } = useAuth();
+  const { t, tx, formatMoney, formatCurrency, formatNumber } = useT();
   const navigate = useNavigate();
   const isDelegate = activeAccount && !activeAccount.isOwn;
   const canChooseBilling = isDelegate && ['admin', 'manager'].includes(activeAccount?.role);
@@ -295,10 +301,13 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
   const presetScreenUnavailable = !!(presetScreenIds && presetScreenIds.length > 0 && areaMatchedScreens.length === 0);
 
   const reachSummary = matchedScreens.length > 0
-    ? `~${matchedScreens.length} screen${matchedScreens.length !== 1 ? 's' : ''} · ~${(totalImpressions / 1000).toFixed(0)}K impressions/mo estimated`
+    ? t('create.wizard.reach', {
+      screens: t('create.wizard.reachScreens', { count: matchedScreens.length }),
+      k: formatNumber(Math.round(totalImpressions / 1000)),
+    })
     : form.area_type === 'radius' && !form.radius_center_lat
-    ? 'Enter a center location to see matching screens'
-    : 'No screens match — try widening your area or removing filters';
+    ? t('create.wizard.needCenter')
+    : t('create.wizard.noMatch');
 
   // Funnel: which wizard step people reach, and how many submit.
   useEffect(() => {
@@ -358,11 +367,11 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
     if (!houseAdMode) {
       const budgetValue = parseFloat(form.budget);
       if (!form.budget || budgetValue <= 0) {
-        setSubmitErr('Enter a budget greater than 0 before submitting.');
+        setSubmitErr(t('create.wizard.budgetZero'));
         return;
       }
       if (budgetValue > 1000000) {
-        setSubmitErr('Budget cannot exceed $1,000,000.');
+        setSubmitErr(t('create.wizard.budgetMax', { max: formatCurrency(1000000, { decimals: 0 }) }));
         return;
       }
     }
@@ -376,7 +385,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
     // submit a campaign the screen will never play.
     const blockedSelected = categoryBlockedScreens.filter(s => form.selected_screen_ids.includes(s.id));
     if (blockedSelected.length > 0) {
-      setSubmitErr(`${blockedSelected.map(s => s.name).join(', ')} ${blockedSelected.length === 1 ? "doesn't" : "don't"} accept ${campaignCategory} ads. Choose a different category or screen.`);
+      setSubmitErr(t('create.wizard.categoryBlocked', { count: blockedSelected.length, names: blockedSelected.map(s => s.name).join(', '), category: campaignCategory }));
       return;
     }
     setSubmitting(true);
@@ -431,7 +440,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || 'Failed to create house ad');
+          throw new Error(body.error || t('create.wizard.houseAdFailed'));
         }
         const { campaign_id } = await res.json();
         setSubmitting(false);
@@ -680,7 +689,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
       track('campaign_submitted');
       setStep(3);
     } catch (e) {
-      setSubmitErr(e.message || 'Failed to submit campaign');
+      setSubmitErr(e.message || t('create.wizard.submitFailed'));
       setSubmitting(false);
     }
   };
@@ -702,12 +711,12 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         if (body.requires_action) setRequiresAction(true);
-        throw new Error(body.error || 'Charge failed');
+        throw new Error(body.error || t('create.wizard.chargeFailed'));
       }
       setPaying(false);
       onSave({ ...created, status: 'scheduled' });
     } catch (e) {
-      setPayErr(e.message || 'Charge failed');
+      setPayErr(e.message || t('create.wizard.chargeFailed'));
       setPaying(false);
     }
   };
@@ -721,7 +730,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
 
   return (
     <div>
-      <PageHeader title="New Campaign" back="Overview" onBack={onCancel} />
+      <PageHeader title={t('create.wizard.title')} back={t('create.wizard.backLabel')} onBack={onCancel} />
       {noBilling && (
         <div style={{
           maxWidth: 620, margin: '0 auto 16px',
@@ -730,12 +739,12 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
         }}>
           <span style={{ fontSize: 13, color: C.amber, fontFamily: F.sans }}>
-            Add a payment method before submitting — your campaign won't go live without one.
+            {t('create.wizard.noBilling')}
           </span>
           <button type="button" onClick={() => navigate('/app/adv-billing')} style={{
             fontSize: 12, fontWeight: 600, color: C.amber, fontFamily: F.sans, background: 'none', border: 'none', cursor: 'pointer',
             textDecoration: 'underline', whiteSpace: 'nowrap', padding: 0,
-          }}>Set up billing →</button>
+          }}>{t('create.wizard.setUpBilling')}</button>
         </div>
       )}
       {step < 3 && resumedDraft && (
@@ -746,22 +755,22 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
         }}>
           <span style={{ fontSize: 12, color: C.text, fontFamily: F.sans }}>
-            Continuing draft: <strong>{resumedDraft.name}</strong>
+            {tx('create.wizard.continuingDraft', { b: chunk => <strong>{chunk}</strong>, name: resumedDraft.name })}
           </span>
           <button onClick={startFresh} style={{
             background: 'none', border: 'none', cursor: 'pointer',
             fontSize: 12, fontWeight: 600, color: C.purple, fontFamily: F.sans, textDecoration: 'underline',
-          }}>Start fresh</button>
+          }}>{t('create.wizard.startFresh')}</button>
         </div>
       )}
-      {step < 3 && <Stepper step={step} labels={STEP_LABELS} onCancel={onCancel} />}
+      {step < 3 && <Stepper step={step} labels={STEP_KEYS.map(k => t(`create.steps.${k}`))} onCancel={onCancel} />}
 
       {showDupModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
           <Card style={{ padding: 28, width: '100%', maxWidth: 480, maxHeight: '80vh', overflowY: 'auto' }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Start from a previous campaign</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>{t('create.wizard.dupTitle')}</div>
             {campaigns.length === 0 ? (
-              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>No previous campaigns found.</div>
+              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>{t('create.wizard.dupEmpty')}</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {campaigns.map(c => (
@@ -770,12 +779,12 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
                     padding: '12px 16px', cursor: 'pointer', textAlign: 'left',
                   }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans }}>{c.headline || c.advertiser}</div>
-                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{c.city} · {formatCurrency(c.budget, c.currency)}</div>
+                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{c.city} · {formatMoney(c.budget, c.currency)}</div>
                   </button>
                 ))}
               </div>
             )}
-            <Btn variant="secondary" onClick={() => setShowDupModal(false)} style={{ width: '100%', marginTop: 16 }}>Cancel</Btn>
+            <Btn variant="secondary" onClick={() => setShowDupModal(false)} style={{ width: '100%', marginTop: 16 }}>{t('common.cancel')}</Btn>
           </Card>
         </div>
       )}
@@ -787,7 +796,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
 
       {step < 3 && (
         <div style={{ maxWidth: 620, margin: '20px auto 0', display: 'flex', gap: 10 }}>
-          {step > 0 && <Btn variant="secondary" onClick={back} disabled={submitting} style={{ flex: 1 }}>← Back</Btn>}
+          {step > 0 && <Btn variant="secondary" onClick={back} disabled={submitting} style={{ flex: 1 }}>{t('create.wizard.back')}</Btn>}
           {step < 2 && (
             <Btn onClick={next} style={{ flex: 1 }}
               disabled={
@@ -815,7 +824,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
                 ))
               }
             >
-              Next →
+              {t('create.wizard.next')}
             </Btn>
           )}
         </div>

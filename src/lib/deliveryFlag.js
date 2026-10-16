@@ -1,3 +1,4 @@
+import { t } from '../i18n/core.js';
 // src/lib/deliveryFlag.js
 // Spec #1 (proof-of-play & screen alerting), the remaining v1 slice: the
 // operator alert (screen-health-cron's "screen_offline" notification) and
@@ -24,13 +25,13 @@ export function campaignDeliveryFlag(healthRow) {
   if (offlineDays > 0) {
     return {
       severity: 'warning',
-      label: `Screen offline ${offlineDays} ${offlineDays === 1 ? 'day' : 'days'} during flight`,
+      label: t('dash.flagOffline', { count: offlineDays }),
     };
   }
   if (hasPct && Number(pct) < DELIVERY_FLAG_PCT_THRESHOLD) {
     return {
       severity: 'warning',
-      label: `Delivery at ${Number(pct).toFixed(0)}% of scheduled plays`,
+      label: t('dash.flagUnder', { pct: Number(pct).toFixed(0) }),
     };
   }
   return null;

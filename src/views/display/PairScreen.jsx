@@ -9,6 +9,7 @@ import {
   savePairedToken,
   savePendingPairing,
 } from '../../lib/screenPairing.js';
+import { useT } from '../../i18n/useT.js';
 
 const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
@@ -46,6 +47,7 @@ function initialState() {
 //
 // ?reset=1 forgets a previously paired screen (re-pair a device).
 export function PairScreen({ navigate = replaceLocation, pollIntervalMs = PAIR_POLL_INTERVAL_MS }) {
+  const { t, tx } = useT();
   const [initial] = useState(initialState);
   const [pairing, setPairing] = useState(initial.pairing);
   const [phase, setPhase] = useState(initial.phase); // 'loading' | 'code' | 'paired' | 'offline'
@@ -130,11 +132,11 @@ export function PairScreen({ navigate = replaceLocation, pollIntervalMs = PAIR_P
       {phase === 'code' && pairing && (
         <>
           <div style={{ fontSize: 'clamp(18px, 2.4vw, 34px)', color: 'rgba(255,255,255,0.75)', marginBottom: '3vh' }}>
-            Enter this code in your AdGrid dashboard to connect this screen
+            {t('display.pair.instruction')}
           </div>
           <div
             data-testid="pair-code"
-            aria-label={`Pairing code ${pairing.code.split('').join(' ')}`}
+            aria-label={t('display.pair.codeLabel', { code: pairing.code.split('').join(' ') })}
             style={{
               fontFamily: "'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace",
               fontSize: 'clamp(64px, 13vw, 220px)', fontWeight: 700, letterSpacing: '0.12em',
@@ -146,28 +148,27 @@ export function PairScreen({ navigate = replaceLocation, pollIntervalMs = PAIR_P
             {formatPairingCode(pairing.code)}
           </div>
           <div style={{ fontSize: 'clamp(14px, 1.6vw, 24px)', color: 'rgba(255,255,255,0.55)', marginTop: '4vh', lineHeight: 1.6, maxWidth: 1100 }}>
-            On your phone or computer, sign in at <strong style={{ color: '#fff' }}>{host}</strong>, open your screen's
-            {' '}<strong style={{ color: '#fff' }}>Setup Guide</strong> and choose <strong style={{ color: '#fff' }}>Enter pairing code</strong>.
+            {tx('display.pair.howTo', { b: chunk => <strong style={{ color: '#fff' }}>{chunk}</strong>, host })}
           </div>
           <div style={{ fontSize: 'clamp(12px, 1.2vw, 18px)', color: 'rgba(255,255,255,0.35)', marginTop: '2vh' }}>
-            New code in {formatCountdown(pairing.expires_at, now)} · this page updates by itself
+            {t('display.pair.newCodeIn', { time: formatCountdown(pairing.expires_at, now) })}
           </div>
         </>
       )}
 
       {phase === 'loading' && (
-        <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)', letterSpacing: 2 }}>GETTING A PAIRING CODE…</div>
+        <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, textTransform: 'uppercase' }}>{t('display.pair.gettingCode')}</div>
       )}
 
       {phase === 'offline' && (
         <div style={{ fontSize: 'clamp(16px, 2vw, 28px)', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
-          Can't reach AdGrid right now.<br />
-          <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.8em' }}>Check this screen's internet connection — it will keep retrying.</span>
+          {t('display.pair.offline')}<br />
+          <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.8em' }}>{t('display.pair.offlineHint')}</span>
         </div>
       )}
 
       {phase === 'paired' && (
-        <div style={{ fontSize: 'clamp(18px, 2.4vw, 34px)', color: '#4ade80' }}>Paired — starting your screen…</div>
+        <div style={{ fontSize: 'clamp(18px, 2.4vw, 34px)', color: '#4ade80' }}>{t('display.pair.paired')}</div>
       )}
     </div>
   );

@@ -17,11 +17,13 @@ import { Footer } from './sections/Footer.jsx';
 import { StickyMobileCta } from './sections/StickyMobileCta.jsx';
 import { FloatingContactButton } from '../../components/chrome/FloatingContactButton.jsx';
 import { CookieBanner } from '../../components/chrome/CookieBanner.jsx';
+import { useT } from '../../i18n/useT.js';
 
 export function MarketingHome({ onLogin: onLoginProp }) {
+  const { t } = useT();
   usePageMeta({
-    title: "AdGrid | Canada's OOH Marketplace",
-    description: "AdGrid is the self-serve marketplace connecting Canadian digital screen operators with local advertisers. Real-time pricing, full control on both sides.",
+    title: t('marketing.meta.title'),
+    description: t('marketing.meta.description'),
   });
   const navigate = useNavigate();
   const onLogin = onLoginProp ?? (() => navigate('/login'));

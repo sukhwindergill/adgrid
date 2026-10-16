@@ -4,9 +4,11 @@ import { supabase } from '../../../lib/supabase.js';
 import { C, F } from '../../../design/tokens.js';
 import { getMediaDimensions } from '../../../lib/mediaDimensions.js';
 import { useAuth } from '../../../context/AuthContext.jsx';
+import { useT } from '../../../i18n/useT.js';
 
 export function MediaUpload({ form, setForm }) {
   const { user } = useAuth();
+  const { t } = useT();
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState(null);
 
@@ -14,9 +16,9 @@ export function MediaUpload({ form, setForm }) {
     if (!file) return;
     const ALLOWED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime'];
     const isVid = file.type.startsWith('video/');
-    if (!ALLOWED.includes(file.type)) { setErr('Use JPG, PNG, GIF, WEBP, or MP4/WEBM/MOV video.'); return; }
+    if (!ALLOWED.includes(file.type)) { setErr(t('create.media.badType')); return; }
     const maxMB = isVid ? 100 : 15;
-    if (file.size > maxMB * 1024 * 1024) { setErr(`File too large — max ${maxMB} MB for ${isVid ? 'video' : 'images'}.`); return; }
+    if (file.size > maxMB * 1024 * 1024) { setErr(t(isVid ? 'create.media.tooLargeVideo' : 'create.media.tooLargeImage', { max: maxMB })); return; }
     setErr(null); setUploading(true);
     const ext = (file.name.split('.').pop() || (isVid ? 'mp4' : 'jpg')).toLowerCase();
     const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
@@ -42,10 +44,10 @@ export function MediaUpload({ form, setForm }) {
   return (
     <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: `1px solid ${C.border}` }}>
       <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 4 }}>
-        Ad creative <span style={{ color: C.textMuted, fontWeight: 400 }}>(required)</span>
+        {t('create.media.label')} <span style={{ color: C.textMuted, fontWeight: 400 }}>{t('common.required')}</span>
       </div>
       <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 10, lineHeight: 1.5 }}>
-        Upload your own designed ad — image or video, landscape 16:9 works best.
+        {t('create.media.hint')}
       </div>
       {form.media_url ? (
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -55,11 +57,11 @@ export function MediaUpload({ form, setForm }) {
               : <img src={form.media_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
           </div>
           <div>
-            <div style={{ fontSize: 12, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>{form.media_type === 'video' ? 'Video' : 'Image'} uploaded ✓</div>
+            <div style={{ fontSize: 12, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>{form.media_type === 'video' ? t('create.media.videoUploaded') : t('create.media.imageUploaded')}</div>
             <button type="button" onClick={clear} style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, padding: '4px 12px', fontSize: 12, color: C.textSub, cursor: 'pointer', fontFamily: F.sans, transition: 'background 0.15s' }}
               onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
-            >Remove</button>
+            >{t('common.remove')}</button>
           </div>
         </div>
       ) : (
@@ -74,7 +76,7 @@ export function MediaUpload({ form, setForm }) {
         >
           <input type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime" style={{ display: 'none' }} disabled={uploading}
             onChange={e => handleFile(e.target.files?.[0])} />
-          {uploading ? 'Uploading…' : '+ Upload image or video'}
+          {uploading ? t('common.uploading') : t('create.media.upload')}
         </label>
       )}
       {err && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginTop: 8 }}>{err}</div>}

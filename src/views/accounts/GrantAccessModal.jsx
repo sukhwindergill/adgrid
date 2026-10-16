@@ -3,9 +3,11 @@ import { supabase } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { C, F } from '../../design/tokens.js'
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js'
+import { useT } from '../../i18n/useT.js'
 
 export function GrantAccessModal({ onClose, onGranted }) {
   const { user, profile } = useAuth()
+  const { t } = useT()
   const [email, setEmail]     = useState('')
   const [role, setRole]       = useState('viewer')
   const [saving, setSaving]   = useState(false)
@@ -13,7 +15,7 @@ export function GrantAccessModal({ onClose, onGranted }) {
   const [success, setSuccess] = useState(false)
 
   async function submit() {
-    if (!email.trim()) { setError('Enter an email address.'); return }
+    if (!email.trim()) { setError(t('accounts.grantModal.enterEmail')); return }
     setSaving(true)
     setError(null)
 
@@ -24,8 +26,8 @@ export function GrantAccessModal({ onClose, onGranted }) {
 
     if (lookupErr) { setError(lookupErr.message); setSaving(false); return }
     const grantee = granteeRows?.[0]
-    if (!grantee) { setError('No AdGrid account found with that email.'); setSaving(false); return }
-    if (grantee.id === user.id) { setError("You can't grant access to yourself."); setSaving(false); return }
+    if (!grantee) { setError(t('accounts.grantModal.noAccount')); setSaving(false); return }
+    if (grantee.id === user.id) { setError(t('accounts.grantModal.self')); setSaving(false); return }
 
     // Create the grant
     const appUrl = window.location.origin
@@ -46,7 +48,7 @@ export function GrantAccessModal({ onClose, onGranted }) {
 
     if (insertErr) {
       setError(insertErr.code === '23505'
-        ? 'This account already has a grant for that user.'
+        ? t('accounts.grantModal.duplicate')
         : insertErr.message)
       setSaving(false)
       return
@@ -90,32 +92,32 @@ export function GrantAccessModal({ onClose, onGranted }) {
         padding: '32px 28px', width: 420, zIndex: 300,
       }}>
         <h3 style={{ fontSize: 17, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 20px' }}>
-          Grant Account Access
+          {t('accounts.grantModal.title')}
         </h3>
 
         {success ? (
           <>
             <p style={{ fontSize: 14, color: C.green, fontFamily: F.sans, margin: '0 0 20px' }}>
-              ✓ Invite sent to {email}
+              {t('accounts.grantModal.sent', { email })}
             </p>
             <button onClick={() => { onClose(); onGranted?.() }} style={{ padding: '9px 22px', borderRadius: 8, background: C.purple, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 13, cursor: 'pointer', transition: 'opacity 0.15s' }}
               onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
               onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
             >
-              Done
+              {t('accounts.grantModal.done')}
             </button>
           </>
         ) : (
           <>
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: C.text, marginBottom: 6, fontFamily: F.sans }}>
-                Email address
+                {t('accounts.grantModal.email')}
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="agency@example.com"
+                placeholder={t('accounts.grantModal.emailPlaceholder')}
                 style={{ width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.15s' }}
                 onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
                 onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
@@ -124,7 +126,7 @@ export function GrantAccessModal({ onClose, onGranted }) {
 
             <div style={{ marginBottom: 20 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: C.text, marginBottom: 6, fontFamily: F.sans }}>
-                Role
+                {t('accounts.grantModal.role')}
               </label>
               <select
                 value={role}
@@ -133,9 +135,9 @@ export function GrantAccessModal({ onClose, onGranted }) {
                 onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
                 onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
               >
-                <option value="viewer">Viewer — read only</option>
-                <option value="manager">Manager — create &amp; edit campaigns</option>
-                <option value="admin">Admin — full access</option>
+                <option value="viewer">{t('accounts.grantModal.roleViewer')}</option>
+                <option value="manager">{t('accounts.grantModal.roleManager')}</option>
+                <option value="admin">{t('accounts.grantModal.roleAdmin')}</option>
               </select>
             </div>
 
@@ -146,13 +148,13 @@ export function GrantAccessModal({ onClose, onGranted }) {
                 onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button onClick={submit} disabled={saving} style={{ flex: 1, padding: '9px', borderRadius: 8, background: C.purple, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, transition: 'opacity 0.15s' }}
                 onMouseEnter={e => { if (!saving) e.currentTarget.style.opacity = '0.9'; }}
                 onMouseLeave={e => { if (!saving) e.currentTarget.style.opacity = '1'; }}
               >
-                {saving ? 'Sending…' : 'Send Invite'}
+                {saving ? t('accounts.grantModal.sending') : t('accounts.grantModal.send')}
               </button>
             </div>
           </>

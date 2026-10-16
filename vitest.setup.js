@@ -1,4 +1,10 @@
 import '@testing-library/jest-dom/vitest';
+import { beforeEach } from 'vitest';
+import { setLocale } from './src/i18n/core.js';
+
+// Component tests assert English copy. Pin every test to English so neither
+// the machine's language nor a previous test's language switch leaks in.
+beforeEach(() => { setLocale('en', { persist: false }); });
 
 // Newer Node versions (25+) ship an experimental global `localStorage` that
 // shadows jsdom's window.localStorage, and in this jsdom/vitest setup (no

@@ -1,33 +1,36 @@
 import { useReveal } from './useReveal.js';
 import { Carousel } from './Carousel.jsx';
 import { IconDumbbell, IconCoffee, IconScissors, IconCross, IconBus, IconBag, IconBed, IconCap } from './icons.jsx';
+import { useT } from '../../../i18n/useT.js';
 
 const VENUES = [
-  ['Gyms', IconDumbbell], ['Cafés', IconCoffee], ['Salons & barbershops', IconScissors],
-  ['Clinics', IconCross], ['Transit', IconBus], ['Retail', IconBag],
-  ['Hotels', IconBed], ['Campuses', IconCap],
+  ['gyms', IconDumbbell], ['cafes', IconCoffee], ['salons', IconScissors],
+  ['clinics', IconCross], ['transit', IconBus], ['retail', IconBag],
+  ['hotels', IconBed], ['campuses', IconCap],
 ];
 
-const SLIDES = [
-  { src: '/marketing/venue-retail.jpg', alt: 'Digital ad screen in a retail store', caption: 'Retail: in-store display', width: 1600, height: 1073 },
-  { src: '/marketing/venue-transit.jpg', alt: 'Digital ad screen at a transit shelter', caption: 'Transit: shelter display', width: 1600, height: 1073 },
-  { src: '/marketing/venue-clinic.jpg', alt: 'Digital ad screen in a clinic waiting room', caption: 'Clinics: waiting room display', width: 1600, height: 1073 },
-  { src: '/marketing/venue-hotel.jpg', alt: 'Digital ad screen in a hotel lobby', caption: 'Hotels: lobby display', width: 1600, height: 1073 },
-  { src: '/marketing/venue-campus.jpg', alt: 'Digital ad screen in a university campus hallway', caption: 'Campuses: common area display', width: 1600, height: 1073 },
-];
+const SLIDE_KEYS = ['retail', 'transit', 'clinic', 'hotel', 'campus'];
 
 export function ProofStrip() {
+  const { t } = useT();
   const [ref, on] = useReveal();
+  const slides = SLIDE_KEYS.map(k => ({
+    src: `/marketing/venue-${k}.jpg`,
+    alt: t(`marketing.proof.slides.${k}.alt`),
+    caption: t(`marketing.proof.slides.${k}.caption`),
+    width: 1600,
+    height: 1073,
+  }));
   return (
     <section className="sec light" ref={ref} style={{ padding: '56px 24px', textAlign: 'center' }}>
       <div className={`inner rv ${on ? 'on' : ''}`}>
-        <h2 className="sec-h" style={{ fontSize: 24 }}>Screens where people actually spend time</h2>
-        <Carousel slides={SLIDES} />
+        <h2 className="sec-h" style={{ fontSize: 24 }}>{t('marketing.proof.heading')}</h2>
+        <Carousel slides={slides} />
         <div className="marquee">
           <div className="marquee-track">
             {[...VENUES, ...VENUES].map((v, i) => {
-              const [label, Icon] = v;
-              return <span className="venue-chip" key={`${label}-${i}`}><Icon size={17} /> {label}</span>;
+              const [key, Icon] = v;
+              return <span className="venue-chip" key={`${key}-${i}`}><Icon size={17} /> {t(`marketing.proof.venues.${key}`)}</span>;
             })}
           </div>
         </div>
