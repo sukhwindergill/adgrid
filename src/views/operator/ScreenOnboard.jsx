@@ -4,7 +4,6 @@ import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
-import { CopyButton } from '../../components/primitives/CopyButton.jsx';
 import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { ErrorBanner } from '../../components/primitives/ErrorBanner.jsx';
@@ -18,6 +17,8 @@ import { hoursFormFromScreen, hoursUpdates, hoursError } from '../../lib/operati
 import { DemandSignal } from '../../components/shared/DemandSignal.jsx';
 import { IconBolt, IconDollar, IconScreen, IconCheckCircle, IconCard, IconWarning, IconSignal } from '../../components/icons.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { HardwareInstructions } from '../../components/screens/ScreenPairing.jsx';
+import { HARDWARE_OPTIONS } from '../../lib/screenPairing.js';
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
@@ -319,111 +320,6 @@ function StepRegister({ onBack, onScreenCreated }) {
   );
 }
 
-const HARDWARE_OPTIONS = ['Browser Kiosk', 'Raspberry Pi 5', 'Mini PC', 'Android TV'];
-
-function CopyBox({ label, value }) {
-  return (
-    <div style={{ marginBottom: 16 }}>
-      {label && (
-        <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-          {label}
-        </div>
-      )}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-        <div style={{
-          flex: 1, background: C.surfaceAlt, border: `1px solid ${C.border}`,
-          borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: 12,
-          color: C.text, wordBreak: 'break-all', lineHeight: 1.5,
-        }}>
-          {value}
-        </div>
-        <CopyButton value={value} copiedLabel="✓ Copied" style={{ flexShrink: 0, minWidth: 64 }} />
-      </div>
-    </div>
-  );
-}
-
-function CodeBox({ label, value }) {
-  return (
-    <div style={{ marginBottom: 16 }}>
-      {label && (
-        <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-          {label}
-        </div>
-      )}
-      <div style={{ position: 'relative' }}>
-        <pre style={{
-          background: '#0a0a0a', borderRadius: 8, padding: '14px 16px',
-          fontFamily: F.mono, fontSize: 11, color: '#a3e635',
-          whiteSpace: 'pre', overflowX: 'auto', margin: 0,
-        }}>{value}</pre>
-        <CopyButton
-          value={value}
-          label="Copy"
-          copiedLabel="✓"
-          variant="ghost"
-          style={{
-            position: 'absolute', top: 8, right: 8,
-            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: 4, color: '#fff', fontSize: 11, padding: '3px 10px',
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function HardwareInstructions({ hardware, screen }) {
-  const playerUrl = `${window.location.origin}/display/${screen.screen_token}`;
-  const kioskCommand = `chromium-browser --no-sandbox --noerrdialogs --kiosk \\
-  --disable-infobars --disable-restore-session-state \\
-  --disable-session-crashed-bubble \\
-  "${playerUrl}"`;
-  const autostartSnippet = `# /etc/xdg/lxsession/LXDE-pi/autostart
-@xset s off
-@xset -dpms
-@xset s noblank
-@chromium-browser --no-sandbox --noerrdialogs --kiosk --disable-infobars \\
-  --disable-restore-session-state "${playerUrl}"`;
-
-  if (hardware === 'Browser Kiosk') return (
-    <div>
-      <CopyBox label="Player URL" value={playerUrl} />
-      <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.7 }}>
-        Open this URL fullscreen on your display.<br />
-        On Chrome: press <kbd style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>F11</kbd> for fullscreen.<br />
-        The screen will automatically show ads when campaigns are running.
-      </div>
-    </div>
-  );
-
-  if (hardware === 'Raspberry Pi 5' || hardware === 'Mini PC') return (
-    <div>
-      <CopyBox label="Player URL" value={playerUrl} />
-      <CodeBox label="Run once (test)" value={kioskCommand} />
-      <CodeBox label="Autostart on boot (Raspberry Pi OS)" value={autostartSnippet} />
-      <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.8 }}>
-        1. Install Chromium: <code style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>sudo apt install chromium-browser</code><br />
-        2. Test with the "Run once" command above.<br />
-        3. For autostart on boot, add the autostart snippet to your LXDE config.<br />
-        4. Disable screen blanking via <code style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>xset s off</code>.<br />
-        5. <strong>Recommended:</strong> the snippet above doesn't restart Chromium if it crashes. For unattended production screens, use the <code style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>screen-agent/display/</code> systemd service in the AdGrid repo instead — it auto-restarts on crash and survives reboots.
-      </div>
-    </div>
-  );
-
-  // Android TV — no native app yet; use a kiosk browser app from the Play Store
-  return (
-    <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.8 }}>
-      <CopyBox label="Player URL" value={playerUrl} />
-      1. Install <strong>Fully Kiosk Browser</strong> from the Google Play Store on your Android TV.<br />
-      2. Open it, go to Settings → Web Content → Start URL, and paste the Player URL above.<br />
-      3. Enable Settings → Other → Kiosk Mode and "Start on boot" so it auto-launches.<br />
-      4. Restart the device to confirm it boots straight into the display.
-    </div>
-  );
-}
-
 function StepSetup({ screen, onNext, onBack, onSkip }) {
   const [hardware, setHardware] = useState('Browser Kiosk');
 
@@ -443,7 +339,7 @@ function StepSetup({ screen, onNext, onBack, onSkip }) {
           Set up your display
         </h2>
         <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>
-          Choose your hardware and follow the instructions below.
+          Choose your hardware, open the pairing page on the screen, and type in the code it shows.
         </p>
 
         {/* Hardware selector */}
@@ -461,14 +357,6 @@ function StepSetup({ screen, onNext, onBack, onSkip }) {
               onMouseLeave={e => { if (hardware !== hw) e.currentTarget.style.background = C.surface; }}
             >{hw}</button>
           ))}
-        </div>
-
-        {/* Token (always visible) */}
-        <div style={{ background: C.surfaceAlt, borderRadius: 10, padding: '14px 16px', marginBottom: 24 }}>
-          <CopyBox label="Your Screen Token" value={screen.screen_token} />
-          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>
-            Keep this private — it authenticates your display.
-          </div>
         </div>
 
         {/* Hardware-specific instructions */}

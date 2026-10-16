@@ -21,13 +21,15 @@ Both are required. Set up the display first, then the screen agent below.
 
 ## Quick Start (Bootstrap Script)
 
-On a fresh Raspberry Pi 5 / Debian mini PC, `bootstrap.sh` does everything below in one shot: installs Docker + Chromium, disables screen blanking, configures and starts the screen-agent Docker stack, and installs + starts the kiosk display service.
+On a fresh Raspberry Pi 5 (Raspberry Pi OS Bookworm) / Debian mini PC, `bootstrap.sh` does everything below in one shot: installs Chromium, disables screen blanking, and installs + starts the kiosk display service. With a screen token it also installs Docker and starts the screen-agent camera stack.
 
 ```bash
 sudo ./screen-agent/bootstrap.sh
 ```
 
-It'll prompt for `SCREEN_TOKEN` and `SUPABASE_ANON_KEY` (from the Setup Guide tab), or accept them non-interactively:
+Press Enter at the token prompt to skip it: the screen boots to `https://app.adgrid.io/pair`, shows a 6-character code, and you type that code into the **Setup Guide** tab in the dashboard. The display remembers its screen across reboots.
+
+For the camera stack too, give it `SCREEN_TOKEN` and `SUPABASE_ANON_KEY` (from the Setup Guide tab), interactively or non-interactively:
 
 ```bash
 sudo SCREEN_TOKEN=xxx SUPABASE_ANON_KEY=yyy KIOSK_USER=pi ./screen-agent/bootstrap.sh
@@ -39,45 +41,48 @@ Prefer to do it by hand, or provisioning a non-Debian system? Manual steps below
 
 ## Display Setup (Kiosk Browser)
 
-The display player is a web page served from the AdGrid platform at:
+The display is a web page served from the AdGrid platform. Point the kiosk browser at the pairing page:
 
 ```
-https://app.adgrid.io/display/<YOUR_SCREEN_TOKEN>
+https://app.adgrid.io/pair
 ```
 
-Get your `SCREEN_TOKEN` from the **Setup Guide** tab on your screen's detail page in the AdGrid dashboard.
+It shows a 6-character code. Enter it on the **Setup Guide** tab of your screen's detail page in the AdGrid dashboard; the page then switches itself to that screen's player and remembers it across reboots (open `/pair?reset=1` to pair the device to a different screen).
 
-### Raspberry Pi / Debian Linux
+Advanced: `https://app.adgrid.io/display/<YOUR_SCREEN_TOKEN>` skips pairing. The token is on the same Setup Guide tab; treat that URL like a password.
+
+### Raspberry Pi OS Bookworm / Debian Linux
+
+Bookworm runs Wayland (labwc compositor) by default, the Chromium package is `chromium` (not `chromium-browser`), and the old `/etc/xdg/lxsession/LXDE-pi/autostart` + `xset` approach no longer applies.
 
 **1. Install Chromium (if not already installed):**
 ```bash
-sudo apt-get install -y chromium-browser
+sudo apt-get install -y chromium
 ```
 
-**2. Disable screen blanking** — add these lines to `/etc/xdg/lxsession/LXDE-pi/autostart`:
+**2. Disable screen blanking:**
+```bash
+sudo raspi-config nonint do_blanking 1
 ```
-@xset s off
-@xset -dpms
-@xset s noblank
-```
+(Pre-Bookworm X11 images: add `@xset s off`, `@xset -dpms`, `@xset s noblank` to `/etc/xdg/lxsession/LXDE-pi/autostart` instead. Non-Pi desktops: turn off blanking/sleep in the desktop's power settings.)
 
 **3. Install the systemd service:**
 ```bash
 # Copy the service and env files from this directory
 sudo cp display/adgrid-display.service /etc/systemd/system/
 
-> **Note:** The service file defaults to `User=pi`. If your username is different, edit the file after copying:
+> **Note:** The service file defaults to `User=pi` with `XDG_RUNTIME_DIR=/run/user/1000`. If your username is different, edit the file after copying:
 > ```bash
 > sudo nano /etc/systemd/system/adgrid-display.service
 > # Change: User=pi  →  User=your-username
+> # Change: XDG_RUNTIME_DIR=/run/user/1000  →  /run/user/$(id -u your-username)
 > ```
 
 sudo cp display/adgrid-display.env.example /etc/adgrid-display.env
 
-# Fill in your screen token
+# Defaults to the pairing page; edit only to use the advanced player URL
 sudo nano /etc/adgrid-display.env
-# Set: DISPLAY_URL=https://app.adgrid.io/display/YOUR_SCREEN_TOKEN
-# Secure the token file
+# Secure the file (it holds the token if you use the player URL)
 sudo chmod 600 /etc/adgrid-display.env
 
 # Enable and start

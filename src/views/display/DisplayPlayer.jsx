@@ -3,6 +3,7 @@ import QRCode from 'react-qr-code';
 import { createPlayBuffer, FLUSH_INTERVAL_MS } from '../../lib/playBuffer.js';
 import { getCreativeRenderPlan } from '../../lib/getCreativeRenderPlan.js';
 import { getSlideDurationMs } from '../../lib/getSlideDuration.js';
+import { loadPairedToken, savePairedToken } from '../../lib/screenPairing.js';
 
 const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
@@ -157,6 +158,35 @@ function IdleSlide() {
         No active campaigns scheduled
       </div>
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: 'rgba(124,58,237,0.3)' }} />
+    </div>
+  );
+}
+
+// A token that came from /pair (saved in this browser) and is now rejected
+// means the screen was deleted or re-keyed. Nobody is standing at a kiosk to
+// fix the URL, so forget it and go back to /pair to show a fresh code.
+function InvalidTokenScreen({ screenToken }) {
+  const fromPairing = (() => {
+    try { return loadPairedToken(window.localStorage) === screenToken; } catch { return false; }
+  })();
+  useEffect(() => {
+    if (!fromPairing) return undefined;
+    const t = setTimeout(() => {
+      try { savePairedToken(window.localStorage, null); } catch { /* storage unavailable */ }
+      window.location.replace('/pair');
+    }, 5000);
+    return () => clearTimeout(t);
+  }, [fromPairing]);
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: '#050a10', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
+      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: 1 }}>
+        SCREEN TOKEN NOT RECOGNISED
+      </div>
+      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif" }}>
+        {fromPairing
+          ? 'This screen was disconnected. Showing a new pairing code…'
+          : 'Check the URL and reconnect from your AdGrid dashboard.'}
+      </div>
     </div>
   );
 }
@@ -367,14 +397,7 @@ export function DisplayPlayer({ screenToken }) {
 
   if (status === 'invalid') {
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#050a10', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: 1 }}>
-          SCREEN TOKEN NOT RECOGNISED
-        </div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif" }}>
-          Check the URL and reconnect from your AdGrid dashboard.
-        </div>
-      </div>
+      <InvalidTokenScreen screenToken={screenToken} />
     );
   }
 
