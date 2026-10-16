@@ -6,6 +6,9 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { Inp } from '../../components/primitives/Inp.jsx';
+import { SelInput } from '../../components/primitives/SelInput.jsx';
+import { Toggle } from '../../components/primitives/Switch.jsx';
 import { TeamClientRoles } from '../accounts/TeamClientRoles.jsx';
 import { EVENTS, normalizeChannelPrefs } from '../../lib/notificationPrefs.js';
 import { T, C, F } from '../../design/tokens.js';
@@ -19,16 +22,15 @@ const TIMEZONES = [
 
 function TabBtn({ label, active, onClick }) {
   return (
-    <button onClick={onClick} style={{
-      padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer',
+    <Btn variant="unstyled" aria-pressed={active} onClick={onClick} style={{
+      padding: '8px 18px', borderRadius: 8,
       fontFamily: F.sans, fontSize: T.base, fontWeight: 500,
       background: active ? C.purple : 'transparent',
       color: active ? C.white : C.textSub,
       transition: 'all 0.15s',
     }}
-      onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
-      onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
-    >{label}</button>
+      hoverStyle={active ? undefined : { background: C.surfaceAlt }}
+    >{label}</Btn>
   );
 }
 
@@ -45,20 +47,15 @@ function Field({ label, children }) {
 
 function SettingsInput({ value, onChange, type = 'text', readOnly, placeholder }) {
   return (
-    <input
+    <Inp
       type={type}
       value={value}
       onChange={onChange}
       readOnly={readOnly}
       placeholder={placeholder}
       style={{
-        width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`,
-        borderRadius: 8, fontFamily: F.sans, fontSize: T.base, color: C.text,
-        background: readOnly ? C.bg : C.surface, boxSizing: 'border-box',
-        outline: 'none', transition: 'border-color 0.15s',
+        background: readOnly ? C.bg : C.surface, boxSizing: 'border-box', transition: 'border-color 0.15s',
       }}
-      onFocus={e => { if (!readOnly) e.currentTarget.style.borderColor = C.purple; }}
-      onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
     />
   );
 }
@@ -66,30 +63,6 @@ function SettingsInput({ value, onChange, type = 'text', readOnly, placeholder }
 function SaveBtn({ onClick, saving, label = 'Save Changes' }) {
   return (
     <Btn onClick={onClick} loading={saving}>{label}</Btn>
-  );
-}
-
-// Accessible toggle switch — real button with role="switch" and keyboard
-// support, not just a styled div's onClick (which a keyboard user can't
-// reach or operate).
-function Toggle({ checked, onChange }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={onChange}
-      style={{
-        width: 44, height: 24, borderRadius: 12, flexShrink: 0, border: 'none', padding: 0, cursor: 'pointer',
-        background: checked ? C.purple : C.border, position: 'relative', transition: 'background 0.2s',
-      }}
-    >
-      <span style={{
-        position: 'absolute', top: 3, left: checked ? 23 : 3,
-        width: 18, height: 18, borderRadius: '50%', background: C.white,
-        transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-      }} />
-    </button>
   );
 }
 
@@ -133,15 +106,14 @@ export function ProfileTab({ profile, onSaved }) {
         <SettingsInput value={companyWebsite} onChange={e => setCompanyWebsite(e.target.value)} placeholder="https://acme.com" />
       </Field>
       <Field label="Timezone">
-        <select
+        <SelInput
+          aria-label="Timezone"
           value={timezone}
           onChange={e => setTimezone(e.target.value)}
-          style={{ ...TX.body, width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
+          style={{ ...TX.body, width: '100%', transition: 'border-color 0.15s' }}
         >
           {TIMEZONES.map(tz => <option key={tz}>{tz}</option>)}
-        </select>
+        </SelInput>
       </Field>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <SaveBtn onClick={save} saving={saving} />
@@ -318,14 +290,9 @@ export function ReviewTab({ profile, setNav }) {
             This is auto-approval for <strong>campaigns</strong>. For budget pacing, cost-per-scan, or
             offline-screen alerts, that's a separate page.
           </div>
-          <button onClick={() => setNav('rules')} style={{
-            padding: '6px 14px', borderRadius: 6, border: `1px solid ${C.purple}`,
-            background: 'transparent', color: C.purple, fontSize: T.sm, fontWeight: 600,
-            cursor: 'pointer', whiteSpace: 'nowrap', transition: 'background 0.15s',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = C.purpleSoft; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-          >Open Alerts & Rules →</button>
+          <Btn variant="outline" size="sm" onClick={() => setNav('rules')} style={{ padding: '6px 14px', borderRadius: 6, fontWeight: 600 }}>
+            Open Alerts & Rules →
+          </Btn>
         </div>
       )}
 
@@ -365,16 +332,15 @@ export function ReviewTab({ profile, setNav }) {
               {categories.map(cat => {
                 const active = policy.auto_approve_categories.includes(cat);
                 return (
-                  <button key={cat} type="button" onClick={() => toggleCategory(cat)} style={{
-                    padding: '6px 12px', borderRadius: 20, cursor: 'pointer',
+                  <Btn variant="unstyled" key={cat} type="button" aria-pressed={active} onClick={() => toggleCategory(cat)} style={{
+                    padding: '6px 12px', borderRadius: 20,
                     border: `1px solid ${active ? C.purple : C.border}`,
                     background: active ? C.purple : 'transparent',
                     color: active ? C.white : C.textSub,
                     fontSize: T.sm, fontFamily: F.sans, transition: 'background 0.15s',
                   }}
-                    onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
-                    onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
-                  >{cat}</button>
+                    hoverStyle={active ? undefined : { background: C.surfaceAlt }}
+                  >{cat}</Btn>
                 );
               })}
             </div>
@@ -529,26 +495,25 @@ function TeamTab({ profile }) {
       <div style={{ borderTop: members.length > 0 ? `1px solid ${C.border}` : 'none', paddingTop: members.length > 0 ? 20 : 0 }}>
         <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 12 }}>Invite Teammate</div>
         <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-          <input
+          <Inp
             type="email"
             placeholder="colleague@company.com"
+            aria-label="Teammate email"
             value={inviteEmail}
             onChange={e => setInviteEmail(e.target.value)}
-            style={{ ...TX.body, flex: 1, padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, outline: 'none', transition: 'border-color 0.15s' }}
-            onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-            onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
+            wrapperStyle={{ flex: 1 }}
+            style={{ ...TX.body, transition: 'border-color 0.15s' }}
           />
-          <select
+          <SelInput
+            aria-label="Teammate role"
             value={inviteRole}
             onChange={e => setInviteRole(e.target.value)}
-            style={{ ...TX.body, padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
-            onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-            onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
+            style={{ ...TX.body, transition: 'border-color 0.15s' }}
           >
             <option value="viewer">Viewer — read only</option>
             <option value="manager">Manager — create &amp; edit campaigns</option>
             <option value="admin">Admin — full access</option>
-          </select>
+          </SelInput>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Btn onClick={invite}>Send Invite</Btn>

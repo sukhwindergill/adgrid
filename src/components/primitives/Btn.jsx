@@ -34,6 +34,9 @@ const VARIANTS = {
   // Inline text action ("Edit", "View all →"). No box, no padding.
   link:        { base: { background: 'none', color: C.purple, border: 'none', padding: 0 },
                  hover: { textDecoration: 'underline' } },
+  // Quiet text action (Cancel, Skip, Back): muted until hovered.
+  subtle:      { base: { background: 'none', color: C.textMuted, border: 'none', padding: 0, fontWeight: 400, transition: 'color 0.15s' },
+                 hover: { color: C.text } },
   // Square icon-only button (close ×, kebab, chevrons). Pass aria-label.
   icon:        { base: { background: 'transparent', color: C.textSub, border: 'none', padding: 6, justifyContent: 'center' },
                  hover: { background: C.surfaceAlt, color: C.text } },

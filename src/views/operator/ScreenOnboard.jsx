@@ -5,6 +5,7 @@ import { C, F, T } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { Chip } from '../../components/primitives/Chip.jsx';
 import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { ErrorBanner } from '../../components/primitives/ErrorBanner.jsx';
@@ -21,6 +22,8 @@ import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { HardwareInstructions } from '../../components/screens/ScreenPairing.jsx';
 import { HARDWARE_OPTIONS } from '../../lib/screenPairing.js';
 
+const pillChip = { padding: '7px 16px', borderRadius: 20, fontWeight: 500, transition: 'all 0.15s' };
+
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
 function WizardProgress({ step, total, onCancel }) {
@@ -31,14 +34,9 @@ function WizardProgress({ step, total, onCancel }) {
         <div style={TX.helperMuted}>
           Step {step} of {total}
         </div>
-        <button
-          onClick={onCancel}
-          style={{ ...TX.helperMuted, background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.15s' }}
-          onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-          onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-        >
+        <Btn variant="subtle" size="sm" onClick={onCancel}>
           Cancel
-        </button>
+        </Btn>
       </div>
       <div style={{ height: 4, background: C.border, borderRadius: 2 }}>
         <div style={{
@@ -111,21 +109,7 @@ function PillGroup({ options, value, onChange }) {
         const l = typeof opt === 'string' ? opt : opt.label;
         const active = value === v;
         return (
-          <button
-            key={v}
-            type="button"
-            onClick={() => onChange(v)}
-            style={{
-              padding: '7px 16px', borderRadius: 20, cursor: 'pointer',
-              border: `1px solid ${active ? C.purple : C.border}`,
-              background: active ? C.purpleSoft : C.surface,
-              color: active ? C.purple : C.textSub,
-              fontSize: T.sm, fontWeight: 500, fontFamily: F.sans,
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
-            onMouseLeave={e => { if (!active) e.currentTarget.style.background = C.surface; }}
-          >{l}</button>
+          <Chip key={v} selected={active} onClick={() => onChange(v)} style={pillChip}>{l}</Chip>
         );
       })}
     </div>
@@ -346,17 +330,7 @@ function StepSetup({ screen, onNext, onBack, onSkip }) {
         {/* Hardware selector */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
           {HARDWARE_OPTIONS.map(hw => (
-            <button key={hw} onClick={() => setHardware(hw)} style={{
-              padding: '7px 16px', borderRadius: 20, cursor: 'pointer',
-              border: `1px solid ${hardware === hw ? C.purple : C.border}`,
-              background: hardware === hw ? C.purpleSoft : C.surface,
-              color: hardware === hw ? C.purple : C.textSub,
-              fontSize: T.sm, fontWeight: 500, fontFamily: F.sans,
-              transition: 'all 0.15s',
-            }}
-              onMouseEnter={e => { if (hardware !== hw) e.currentTarget.style.background = C.surfaceAlt; }}
-              onMouseLeave={e => { if (hardware !== hw) e.currentTarget.style.background = C.surface; }}
-            >{hw}</button>
+            <Chip key={hw} selected={hardware === hw} onClick={() => setHardware(hw)} style={pillChip}>{hw}</Chip>
           ))}
         </div>
 
@@ -370,13 +344,7 @@ function StepSetup({ screen, onNext, onBack, onSkip }) {
           <Btn onClick={onNext} style={{ flex: 1 }}>I've completed setup →</Btn>
         </div>
         <div style={{ textAlign: 'center', marginTop: 12 }}>
-          <button onClick={onSkip} style={{
-            background: 'none', border: 'none', fontSize: T.sm, color: C.textMuted,
-            cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-            onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-          >Do this later →</button>
+          <Btn variant="subtle" size="sm" onClick={onSkip}>Do this later →</Btn>
         </div>
       </Card>
     </div>
@@ -503,13 +471,7 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
           </Btn>
         </div>
         <div style={{ textAlign: 'center', marginTop: 12 }}>
-          <button onClick={onSkip} style={{
-            background: 'none', border: 'none', fontSize: T.sm, color: C.textMuted,
-            cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-            onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-          >Do this later →</button>
+          <Btn variant="subtle" size="sm" onClick={onSkip}>Do this later →</Btn>
         </div>
       </Card>
     </div>
@@ -584,24 +546,12 @@ function StepConnect({ screen, onDone, onSkip, onBack }) {
           </Btn>
         )}
 
-        <button onClick={onSkip} style={{
-          background: 'none', border: 'none', fontSize: T.sm,
-          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-          onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-        >
+        <Btn variant="subtle" size="sm" onClick={onSkip}>
           Skip for now →
-        </button>
+        </Btn>
       </Card>
       <div style={{ textAlign: 'center', marginTop: 12 }}>
-        <button onClick={onBack} style={{
-          background: 'none', border: 'none', fontSize: T.sm,
-          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-          onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-        >← Back to setup guide</button>
+        <Btn variant="subtle" size="sm" onClick={onBack}>← Back to setup guide</Btn>
       </div>
     </div>
   );
@@ -671,24 +621,12 @@ function StepPayouts({ onDone, onSkip, onBack }) {
         <Btn onClick={startConnect} disabled={connecting} style={{ width: '100%', marginBottom: 12 }}>
           {connecting ? 'Redirecting to Stripe…' : 'Connect with Stripe'}
         </Btn>
-        <button onClick={onSkip} style={{
-          background: 'none', border: 'none', fontSize: T.sm,
-          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-          onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-        >
+        <Btn variant="subtle" size="sm" onClick={onSkip}>
           Skip for now →
-        </button>
+        </Btn>
       </Card>
       <div style={{ textAlign: 'center', marginTop: 12 }}>
-        <button onClick={onBack} style={{
-          background: 'none', border: 'none', fontSize: T.sm,
-          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-          onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-        >← Back</button>
+        <Btn variant="subtle" size="sm" onClick={onBack}>← Back</Btn>
       </div>
     </div>
   );

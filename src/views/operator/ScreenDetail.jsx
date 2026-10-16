@@ -8,6 +8,7 @@ import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { Chip } from '../../components/primitives/Chip.jsx';
 import { CopyButton } from '../../components/primitives/CopyButton.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
@@ -29,6 +30,9 @@ import { CATEGORIES } from '../../lib/data.js';
 import { SENSITIVE_CATEGORIES, isCategoryBlocked, toggleBlockedCategory } from '../../lib/adGuardrails.js';
 import { T, C, F } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
+
+// Rounded filter/option pill used by the option pickers on this page.
+const pillChip = { padding: '7px 16px', borderRadius: 20, fontWeight: 500, transition: 'all 0.15s' };
 
 async function startStripeConnect(setConnecting) {
   setConnecting(true);
@@ -62,16 +66,7 @@ function PillGroup({ options, value, onChange }) {
         const l = typeof opt === 'string' ? opt : opt.label;
         const active = value === v;
         return (
-          <button key={v} type="button" onClick={() => onChange(v)} style={{
-            padding: '7px 16px', borderRadius: 20, cursor: 'pointer',
-            border: `1px solid ${active ? C.purple : C.border}`,
-            background: active ? C.purpleSoft : C.surface,
-            color: active ? C.purple : C.textSub,
-            fontSize: T.sm, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
-          }}
-            onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
-            onMouseLeave={e => { if (!active) e.currentTarget.style.background = C.surface; }}
-          >{l}</button>
+          <Chip key={v} selected={active} onClick={() => onChange(v)} style={pillChip}>{l}</Chip>
         );
       })}
     </div>
@@ -210,16 +205,14 @@ function DetailsTab({ screen, onSaved }) {
               {blockableCategories.map(cat => {
                 const active = isCategoryBlocked(cat, fields.content_categories_blocked);
                 return (
-                  <button key={cat} type="button" aria-pressed={active}
+                  <Chip key={cat} selected={active}
                     onClick={() => set('content_categories_blocked', toggleBlockedCategory(fields.content_categories_blocked, cat))}
                     style={{
-                      padding: '7px 14px', borderRadius: 20, cursor: 'pointer',
-                      border: `1px solid ${active ? C.red : C.border}`,
-                      background: active ? C.redSoft : C.surface,
-                      color: active ? C.redText : C.textSub,
-                      fontSize: T.sm, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
+                      ...pillChip, padding: '7px 14px',
+                      // blocked = red, not the purple "selected" look
+                      ...(active ? { border: `1px solid ${C.red}`, background: C.redSoft, color: C.redText } : null),
                     }}
-                  >{active ? '⊘ ' : ''}{cat}</button>
+                  >{active ? '⊘ ' : ''}{cat}</Chip>
                 );
               })}
             </div>
@@ -579,19 +572,21 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
           { key: 'cv',       label: 'CV Insights' },
           { key: 'setup',    label: 'Setup Guide' },
         ].map(t => (
-          <button
+          <Btn
+            variant="unstyled"
             key={t.key}
+            role="tab"
+            aria-selected={tab === t.key}
             onClick={() => setTab(t.key)}
+            hoverStyle={tab === t.key ? undefined : { color: C.text }}
             style={{
-              padding: '9px 18px', border: 'none', background: 'none', cursor: 'pointer',
+              padding: '9px 18px',
               fontFamily: F.sans, fontSize: T.base, fontWeight: tab === t.key ? 600 : 400,
               color: tab === t.key ? C.purple : C.textSub,
               borderBottom: `2px solid ${tab === t.key ? C.purple : 'transparent'}`,
               marginBottom: -1, transition: 'all 0.15s',
             }}
-            onMouseEnter={e => { if (tab !== t.key) e.currentTarget.style.color = C.text; }}
-            onMouseLeave={e => { if (tab !== t.key) e.currentTarget.style.color = C.textSub; }}
-          >{t.label}</button>
+          >{t.label}</Btn>
         ))}
       </div>
 
@@ -735,12 +730,13 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
                         size="sm"
                         style={{ fontSize: T.xs, color: C.textSub, padding: 0, border: 'none', background: 'none' }}
                       />
-                      <button
+                      <Btn
+                        variant="link"
                         onClick={() => setQrInviteId(id => id === inv.id ? null : inv.id)}
-                        style={{ fontSize: T.xs, color: C.purple, padding: 0, border: 'none', background: 'none', cursor: 'pointer', fontFamily: F.sans }}
+                        style={{ fontSize: T.xs, fontWeight: 400 }}
                       >
                         {qrInviteId === inv.id ? 'Hide QR' : 'Show QR'}
-                      </button>
+                      </Btn>
                       <CopyButton
                         value={inviteUrl}
                         label="Copy link"
@@ -922,16 +918,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       {/* Hardware selector */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
         {HARDWARE_OPTIONS.map(hw => (
-          <button key={hw} onClick={() => setHwType(hw)} style={{
-            padding: '7px 16px', borderRadius: 20, cursor: 'pointer',
-            border: `1px solid ${hwType === hw ? C.purple : C.border}`,
-            background: hwType === hw ? C.purpleSoft : C.surface,
-            color: hwType === hw ? C.purple : C.textSub,
-            fontSize: T.sm, fontWeight: 500, fontFamily: F.sans, transition: 'background 0.15s',
-          }}
-            onMouseEnter={e => { if (hwType !== hw) e.currentTarget.style.background = C.surfaceAlt; }}
-            onMouseLeave={e => { if (hwType !== hw) e.currentTarget.style.background = C.surface; }}
-          >{hw}</button>
+          <Chip key={hw} selected={hwType === hw} onClick={() => setHwType(hw)} style={pillChip}>{hw}</Chip>
         ))}
       </div>
       <HardwareInstructions hardware={hwType} screen={{ ...screen, screen_token: screenToken }} />

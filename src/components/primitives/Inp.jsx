@@ -16,7 +16,7 @@ export const Inp = ({ label, hint, error, style = {}, wrapperStyle, id, onFocus,
         aria-invalid={error ? true : undefined}
         style={{
           ...fieldStyle, width: '100%', ...(error ? { border: `1px solid ${C.red}` } : null), ...style,
-          ...(focused ? fieldFocusStyle : null),
+          ...(focused && !p.readOnly ? fieldFocusStyle : null),
         }}
         {...focusProps}
       />
