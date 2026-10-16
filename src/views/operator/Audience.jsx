@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
+import { EmptyState } from '../../components/primitives/EmptyState.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
@@ -89,26 +91,26 @@ export function Audience() {
       </div>
 
       <Card style={{ marginBottom: 16, padding: '12px 20px' }}>
-        <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, lineHeight: 1.7 }}>
+        <div style={{ ...TX.helper, lineHeight: 1.7 }}>
           <strong style={{ color: C.text }}>How it works:</strong> Every QR code scan is logged anonymously. If the user consents on the landing page, their email is captured for remarketing.
         </div>
       </Card>
 
       {scans.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, marginBottom: 16 }}>
-          <div style={{ color: loadError ? C.red : C.textMuted, marginBottom: 10, display: 'flex', justifyContent: 'center' }}><IconQr size={32} /></div>
+        <EmptyState style={{ marginBottom: 16 }}>
+          <div style={{ color: loadError ? C.redText : C.textMuted, marginBottom: 10, display: 'flex', justifyContent: 'center' }}><IconQr size={32} /></div>
           {loadError ? (
             <>
-              <div style={{ fontSize: 15, fontWeight: 600, color: C.red, fontFamily: F.sans, marginBottom: 6 }}>Couldn't load scans</div>
-              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Check your connection and try again.</div>
+              <div style={{ fontSize: T.lg, fontWeight: 600, color: C.redText, fontFamily: F.sans, marginBottom: 6 }}>Couldn't load scans</div>
+              <div style={TX.bodySub}>Check your connection and try again.</div>
             </>
           ) : (
             <>
-              <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No scans yet</div>
-              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>QR code scans will appear here once a campaign is live</div>
+              <div style={{ ...TX.titleLg, marginBottom: 6 }}>No scans yet</div>
+              <div style={TX.bodySub}>QR code scans will appear here once a campaign is live</div>
             </>
           )}
-        </div>
+        </EmptyState>
       )}
 
       {scans.length > 0 && (
@@ -118,11 +120,11 @@ export function Audience() {
           {tab === 'scans' && (
             <Table
               columns={[
-                { key: 'ts',      label: 'Time',    render: v => <span style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub }}>{new Date(v).toLocaleString('en-GB')}</span> },
+                { key: 'ts',      label: 'Time',    render: v => <span style={TX.mono}>{new Date(v).toLocaleString('en-GB')}</span> },
                 { key: 'city',    label: 'City' },
                 { key: 'device',  label: 'Device' },
                 { key: 'consent', label: 'Consent', render: v => <Badge status={v ? 'active' : 'paused'}>{v ? '✓ Given' : '✕ Declined'}</Badge> },
-                { key: 'email',   label: 'Email',   render: v => v ? <span style={{ fontFamily: F.mono, fontSize: 11, color: C.purple }}>{v}</span> : <span style={{ color: C.textMuted, fontSize: 11 }}>Anonymous</span> },
+                { key: 'email',   label: 'Email',   render: v => v ? <span style={{ fontFamily: F.mono, fontSize: T.xs, color: C.purple }}>{v}</span> : <span style={{ color: C.textMuted, fontSize: T.xs }}>Anonymous</span> },
               ]}
               rows={scans} />
           )}
@@ -131,20 +133,20 @@ export function Audience() {
             <div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
                 <Card style={{ padding: '14px 18px', background: C.blueSoft, border: `1px solid ${C.blueBorder}` }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: C.blue, fontFamily: F.sans, marginBottom: 4 }}>Google Ads Customer Match</div>
-                  <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6 }}>Upload the CSV to Google Ads → Audience Manager → Customer Match.</div>
+                  <div style={{ fontSize: T.base, fontWeight: 600, color: C.blueText, fontFamily: F.sans, marginBottom: 4 }}>Google Ads Customer Match</div>
+                  <div style={{ ...TX.helper, lineHeight: 1.6 }}>Upload the CSV to Google Ads → Audience Manager → Customer Match.</div>
                 </Card>
                 <Card style={{ padding: '14px 18px', background: C.purpleSoft, border: `1px solid ${C.purpleBorder}` }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: C.purple, fontFamily: F.sans, marginBottom: 4 }}>Meta Custom Audiences</div>
-                  <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6 }}>Upload to Meta Business Manager → Custom Audience → Customer List.</div>
+                  <div style={{ fontSize: T.base, fontWeight: 600, color: C.purple, fontFamily: F.sans, marginBottom: 4 }}>Meta Custom Audiences</div>
+                  <div style={{ ...TX.helper, lineHeight: 1.6 }}>Upload to Meta Business Manager → Custom Audience → Customer List.</div>
                 </Card>
               </div>
               <Table
                 columns={[
-                  { key: 'email',  label: 'Email',    render: v => <span style={{ fontFamily: F.mono, fontSize: 12, color: C.purple }}>{v}</span> },
+                  { key: 'email',  label: 'Email',    render: v => <span style={{ fontFamily: F.mono, fontSize: T.sm, color: C.purple }}>{v}</span> },
                   { key: 'city',   label: 'City' },
                   { key: 'device', label: 'Device' },
-                  { key: 'ts',     label: 'Scanned',  render: v => <span style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub }}>{new Date(v).toLocaleDateString('en-GB')}</span> },
+                  { key: 'ts',     label: 'Scanned',  render: v => <span style={TX.mono}>{new Date(v).toLocaleDateString('en-GB')}</span> },
                 ]}
                 rows={consented.filter(s => s.email)}
                 emptyTitle="No consented scan data yet" />

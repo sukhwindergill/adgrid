@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
@@ -59,7 +60,7 @@ function OperatorBookings({ operatorId }) {
 
   if (loadError) {
     return (
-      <div style={{ fontFamily: F.sans, fontSize: 13, color: C.red, padding: '24px 0' }}>
+      <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.redText, padding: '24px 0' }}>
         Couldn't load your bookings — check your connection and try again.
       </div>
     );
@@ -67,7 +68,7 @@ function OperatorBookings({ operatorId }) {
 
   if (bookings.length === 0) {
     return (
-      <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMuted, padding: '24px 0' }}>
+      <div style={{ ...TX.bodyMuted, padding: '24px 0' }}>
         None of your listings have been booked yet.
       </div>
     );
@@ -79,15 +80,15 @@ function OperatorBookings({ operatorId }) {
         const payout = PAYOUT_STATUS[b.payout_status ?? 'null'] ?? { label: b.payout_status, color: 'amber' };
         return (
           <Card key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, padding: 12 }}>
-            <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMid }}>
+            <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.textMid }}>
               {b.listing?.is_bundle && <span style={{ color: C.purple, fontWeight: 600 }}>Bundle · </span>}
               ${(b.price_cents / 100).toFixed(0)} · {b.listing ? `${b.listing.start_date} – ${b.listing.end_date}` : 'listing removed'}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: F.sans, fontSize: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: F.sans, fontSize: T.sm }}>
               <span style={{ color: C[payout.color] }}>{payout.label}</span>
               <span style={{
                 padding: '2px 8px', borderRadius: 999, fontWeight: 600,
-                color: b.status === 'cancelled' ? C.red : C.purple,
+                color: b.status === 'cancelled' ? C.redText : C.purple,
                 background: b.status === 'cancelled' ? C.redSoft : C.purpleSoft,
               }}>
                 {BOOKING_STATUS_LABEL[b.status] ?? b.status}
@@ -175,11 +176,11 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
         <>
           {!bundling && (
             <>
-              <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 10 }}>
+              <div style={{ ...TX.strong, marginBottom: 10 }}>
                 Available to list
               </div>
               {availableScreens.length === 0 ? (
-                <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMuted, marginBottom: 24 }}>
+                <div style={{ ...TX.bodyMuted, marginBottom: 24 }}>
                   Every screen you own already has a live listing.
                 </div>
               ) : (
@@ -187,8 +188,8 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
                   {availableScreens.map(s => (
                     <Card key={s.id} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
                       <div>
-                        <div style={{ fontFamily: F.sans, fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 2 }}>{s.name}</div>
-                        <div style={{ fontFamily: F.sans, fontSize: 12, color: C.textMuted }}>
+                        <div style={{ ...TX.title, marginBottom: 2 }}>{s.name}</div>
+                        <div style={TX.helperMuted}>
                           {[s.neighbourhood, s.city].filter(Boolean).join(', ') || 'No location set'}
                         </div>
                       </div>
@@ -206,7 +207,7 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
             <div style={{ marginBottom: 20 }}>
               {bundling ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
-                  <div style={{ fontFamily: F.sans, fontSize: 12, fontWeight: 600, color: C.text }}>
+                  <div style={{ fontFamily: F.sans, fontSize: T.sm, fontWeight: 600, color: C.text }}>
                     Select screens for this bundle
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -214,7 +215,7 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
                       const checked = bundleSelection.includes(s.id);
                       return (
                         <label key={s.id} style={{
-                          display: 'flex', alignItems: 'center', gap: 6, fontFamily: F.sans, fontSize: 12, color: C.textMid,
+                          display: 'flex', alignItems: 'center', gap: 6, fontFamily: F.sans, fontSize: T.sm, color: C.textMid,
                           padding: '6px 10px', borderRadius: 8, border: `1px solid ${checked ? C.purple : C.border}`,
                           background: checked ? C.purpleSoft : 'transparent', cursor: 'pointer',
                         }}>
@@ -238,15 +239,15 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
               )}
             </div>
           )}
-          <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 10 }}>
+          <div style={{ ...TX.strong, marginBottom: 10 }}>
             Your listings
           </div>
           {listingsError ? (
-            <div style={{ fontFamily: F.sans, fontSize: 13, color: C.red }}>
+            <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.redText }}>
               Couldn't load your listings — check your connection and try again.
             </div>
           ) : listings.length === 0 ? (
-            <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMuted }}>
+            <div style={TX.bodyMuted}>
               No listings yet — list a screen above to sell it as an exclusive placement.
             </div>
           ) : (
@@ -255,7 +256,7 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
               const st = LISTING_STATUS[l.status] ?? { label: l.status, color: 'textMuted', bg: 'surfaceAlt' };
               return (
               <Card key={l.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, padding: 12 }}>
-                <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMid }}>
+                <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.textMid }}>
                   {l.is_bundle && <span style={{ color: C.purple, fontWeight: 600 }}>Bundle · </span>}
                   <span style={{ fontWeight: 600, color: C.text }}>
                     {l.is_bundle
@@ -266,7 +267,7 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{
-                    fontFamily: F.sans, fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 999,
+                    fontFamily: F.sans, fontSize: T.xs, fontWeight: 600, padding: '3px 9px', borderRadius: 999,
                     color: C[st.color], background: C[st.bg],
                   }}>
                     {st.label}

@@ -1,9 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { SkeletonRow, SkeletonCard } from '../../components/primitives/Skeleton.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { EmptyState } from '../../components/primitives/EmptyState.jsx';
+import { Chip } from '../../components/primitives/Chip.jsx';
+import { Inp } from '../../components/primitives/Inp.jsx';
+import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { scopedBookings, applyBookingSearch } from '../../lib/bookingsQuery.js';
@@ -269,7 +274,7 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
     <div>
 
       {loadError && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: C.red, fontSize: 14, fontFamily: F.sans }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: C.redText, fontSize: T.md, fontFamily: F.sans }}>
           <IconWarning size={16} /> {loadError}
         </div>
       )}
@@ -288,7 +293,7 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
         compareCampaigns.length > 0
           ? <CampaignComparisonTable campaigns={compareCampaigns} onRemove={toggleCompare} />
           : (
-            <div style={{ padding: '14px 20px', marginBottom: 20, background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 13, color: C.textSub, fontFamily: F.sans }}>
+            <div style={{ ...TX.bodySub, padding: '14px 20px', marginBottom: 20, background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8 }}>
               Select two or more campaigns below to compare spend, CPM, and cost per scan side by side.
             </div>
           )
@@ -302,42 +307,34 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ display: 'flex', gap: 4 }}>
           {STATUS_TABS.map(([v, l]) => (
-            <button key={v} onClick={() => setFilter(v)} style={{
-              padding: '6px 14px', borderRadius: 20,
-              border: `1px solid ${filter === v ? C.purple : C.border}`,
-              background: filter === v ? C.purpleSoft : C.surface,
-              color: filter === v ? C.purple : C.textSub,
-              fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: F.sans, transition: 'all 0.15s',
-            }}
-              onMouseEnter={e => { if (filter !== v) e.currentTarget.style.background = C.surfaceAlt; }}
-              onMouseLeave={e => { if (filter !== v) e.currentTarget.style.background = C.surface; }}
-            >{l}</button>
+            <Chip key={v} selected={filter === v} onClick={() => setFilter(v)} style={{
+              padding: '6px 14px', borderRadius: 20, fontWeight: 500, transition: 'all 0.15s',
+            }}>{l}</Chip>
           ))}
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input
+          <Inp
             type="search"
             value={searchInput}
             onChange={e => setSearchInput(e.target.value)}
             placeholder="Search campaigns…"
             aria-label="Search campaigns"
-            style={{ padding: '6px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: F.sans, color: C.text, background: C.surface, outline: 'none', minWidth: isMobile ? 0 : 200, opacity: rowsLoading ? 0.7 : 1 }}
+            style={{ padding: '6px 12px', fontSize: T.sm, minWidth: isMobile ? 0 : 200, opacity: rowsLoading ? 0.7 : 1 }}
           />
-          <select value={city} onChange={e => setCity(e.target.value)} style={{ padding: '6px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: F.sans, color: C.textMid, background: C.surface, outline: 'none' }}>
+          <SelInput aria-label="Filter by city" value={city} onChange={e => setCity(e.target.value)} style={{ padding: '6px 12px', fontSize: T.sm, color: C.textMid }}>
             {cities.map(c => <option key={c}>{c}</option>)}
-          </select>
+          </SelInput>
         </div>
       </div>
 
       {shown.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '56px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
-          <div style={{ display: 'flex', justifyContent: 'center', color: C.textMuted, marginBottom: 12 }}><IconClipboard size={40} /></div>
+        <EmptyState size="lg" padding="56px 24px" icon={<IconClipboard size={40} />}>
           {totalCount === 0 && filter === 'all' && !search ? (
             <>
-              <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>
+              <div style={{ ...TX.heading, marginBottom: 6 }}>
                 No campaigns yet
               </div>
-              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, maxWidth: 320, margin: '0 auto 20px' }}>
+              <div style={{ ...TX.bodySub, maxWidth: 320, margin: '0 auto 20px' }}>
                 Create your first campaign to start reaching customers on your screens.
               </div>
               <Btn onClick={onNewCampaign}>
@@ -346,15 +343,15 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
             </>
           ) : (
             <>
-              <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>
+              <div style={{ ...TX.titleLg, marginBottom: 6 }}>
                 No campaigns match these filters
               </div>
-              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>
+              <div style={TX.bodySub}>
                 Try adjusting the search, status filter or city selector.
               </div>
             </>
           )}
-        </div>
+        </EmptyState>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {Array.from(groupByCampaignId(shown).entries()).map(([groupId, groupBookings]) => {
@@ -393,18 +390,18 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
                 >
                   <div>
                     <div style={{ fontWeight: 700, color: C.text, fontFamily: F.sans }}>{expanded ? '▾' : '▸'} {parentName}</div>
-                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+                    <div style={{ ...TX.caption, marginTop: 2 }}>
                       {withBadge.length} {pluralize(withBadge.length, 'targeting group')} · {totalScreens} {pluralize(totalScreens, 'screen')} · ${rollup.spent.toLocaleString()} of ${rollup.budget.toLocaleString()}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 20 }}>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontFamily: F.mono, fontSize: 13, fontWeight: 600, color: C.text }}>{(rollup.impressions / 1000).toFixed(1)}K</div>
-                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>impressions</div>
+                      <div style={{ fontFamily: F.mono, fontSize: T.base, fontWeight: 600, color: C.text }}>{(rollup.impressions / 1000).toFixed(1)}K</div>
+                      <div style={TX.caption}>impressions</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontFamily: F.mono, fontSize: 13, fontWeight: 600, color: C.purple }}>{rollup.scans}</div>
-                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>scans</div>
+                      <div style={{ fontFamily: F.mono, fontSize: T.base, fontWeight: 600, color: C.purple }}>{rollup.scans}</div>
+                      <div style={TX.caption}>scans</div>
                     </div>
                   </div>
                 </div>

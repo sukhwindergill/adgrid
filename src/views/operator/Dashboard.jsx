@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T, SH } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { Hover } from '../../components/primitives/Hover.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { SkeletonKPI } from '../../components/primitives/Skeleton.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
@@ -30,15 +32,15 @@ function PayoutsWarningBanner({ onFix }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px',
-      background: '#fef3c7', border: '1px solid #fbbf24', borderRadius: 10,
+      background: C.amberWash, border: '1px solid #fbbf24', borderRadius: 10,
       marginBottom: 20, fontFamily: F.sans,
     }}>
-      <span style={{ color: '#92400e', flexShrink: 0 }}><IconWarning size={18} /></span>
-      <div style={{ flex: 1, fontSize: 13, color: '#92400e' }}>
+      <span style={{ color: C.amberText, flexShrink: 0 }}><IconWarning size={18} /></span>
+      <div style={{ flex: 1, fontSize: T.base, color: C.amberText }}>
         <strong>Payouts aren't set up.</strong> Advertisers are being charged for campaigns on your
         screens, but you won't receive any money until you connect a payout account.
       </div>
-      <Btn onClick={onFix} style={{ padding: '7px 16px', fontSize: 12, whiteSpace: 'nowrap' }}>
+      <Btn onClick={onFix} style={{ padding: '7px 16px', fontSize: T.sm, whiteSpace: 'nowrap' }}>
         Set up payouts
       </Btn>
     </div>
@@ -67,7 +69,7 @@ function LiveCounter({ base }) {
   }, [base]);
 
   return (
-    <div style={{ fontFamily: F.mono, fontSize: 52, fontWeight: 600, color: C.text, lineHeight: 1 }}>
+    <div style={{ fontFamily: F.mono, fontSize: T.jumbo, fontWeight: 600, color: C.text, lineHeight: 1 }}>
       {val.toLocaleString()}
     </div>
   );
@@ -78,14 +80,13 @@ function HourlyChart({ data }) {
   return (
     <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end', height: 64 }}>
       {data.map((v, i) => (
-        <div key={i} style={{
+        <Hover key={i} style={{
           flex: 1, height: `${Math.max(4, (v / max) * 100)}%`,
           background: C.purple, borderRadius: '2px 2px 0 0',
           opacity: 0.25, transition: 'opacity 0.15s', cursor: 'default',
         }}
           title={`${String(i).padStart(2, '0')}:00`}
-          onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-          onMouseLeave={e => e.currentTarget.style.opacity = '0.25'}
+          hoverStyle={{ opacity: 1 }}
         />
       ))}
     </div>
@@ -218,8 +219,8 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
       />
 
       {/* Hero: live counter */}
-      <Card style={{ marginBottom: 24, padding: 28, background: 'linear-gradient(135deg, #f5f3ff, #eff6ff)' }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: C.purple, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: F.sans, marginBottom: 8 }}>
+      <Card style={{ marginBottom: 24, padding: 28, background: C.gradWash }}>
+        <div style={{ fontSize: T.sm, fontWeight: 600, color: C.purple, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: F.sans, marginBottom: 8 }}>
           Live Impressions
         </div>
         <LiveCounter base={totalImpr} />
@@ -231,16 +232,16 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
             ['Total Scans', totalScans.toLocaleString()],
           ].map(([l, v]) => (
             <div key={l}>
-              <div style={{ fontFamily: F.mono, fontSize: 20, fontWeight: 600, color: C.textMid }}>{v}</div>
-              <div style={{ fontFamily: F.sans, fontSize: 11, color: C.textMuted, marginTop: 2 }}>{l}</div>
+              <div style={{ fontFamily: F.mono, fontSize: T.xl, fontWeight: 600, color: C.textMid }}>{v}</div>
+              <div style={{ ...TX.caption, marginTop: 2 }}>{l}</div>
             </div>
           ))}
         </div>
 
         <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 6 }}>Impressions by hour (today)</div>
+          <div style={{ ...TX.caption, marginBottom: 6 }}>Impressions by hour (today)</div>
           <HourlyChart data={hourlyData} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.textMuted, fontFamily: F.mono, marginTop: 4 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: T.xs, color: C.textMuted, fontFamily: F.mono, marginTop: 4 }}>
             {['00:00', '06:00', '12:00', '18:00', '23:00'].map(t => <span key={t}>{t}</span>)}
           </div>
         </div>
@@ -257,15 +258,15 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
       {/* Budget strip */}
       <Card style={{ marginBottom: 24, padding: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans }}>Network Budget Utilisation</div>
-          <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>${totalSpent.toLocaleString()} spent of ${totalSpend.toLocaleString()}</div>
+          <div style={TX.title}>Network Budget Utilisation</div>
+          <div style={TX.bodySub}>${totalSpent.toLocaleString()} spent of ${totalSpend.toLocaleString()}</div>
         </div>
         <ProgressBar value={totalSpent} max={totalSpend} height={8} />
       </Card>
 
       {inviteFunnel && inviteFunnel.sent > 0 && (
         <Card style={{ marginBottom: 24, padding: 20 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
+          <div style={{ ...TX.title, marginBottom: 12 }}>
             Screen Invite Performance
           </div>
           <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap' }}>
@@ -276,8 +277,8 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
               ['Booked', inviteFunnel.booked],
             ].map(([l, v]) => (
               <div key={l}>
-                <div style={{ fontFamily: F.mono, fontSize: 20, fontWeight: 600, color: C.textMid }}>{v}</div>
-                <div style={{ fontFamily: F.sans, fontSize: 11, color: C.textMuted, marginTop: 2 }}>{l}</div>
+                <div style={{ fontFamily: F.mono, fontSize: T.xl, fontWeight: 600, color: C.textMid }}>{v}</div>
+                <div style={{ ...TX.caption, marginTop: 2 }}>{l}</div>
               </div>
             ))}
           </div>
@@ -292,48 +293,45 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
             {active.slice(0, 5).map(c => {
               const pct = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
               return (
-                <Card key={c.id} style={{ padding: '16px 20px', transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'pointer' }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.1)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-                >
+                <Card key={c.id} lift style={{ padding: '16px 20px', transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'pointer' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                     <div>
-                      <div style={{ fontWeight: 600, color: C.text, fontFamily: F.sans, fontSize: 14 }}>{c.advertiser}</div>
-                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{c.screen} · {c.city}</div>
+                      <div style={TX.title}>{c.advertiser}</div>
+                      <div style={{ ...TX.caption, marginTop: 2 }}>{c.screen} · {c.city}</div>
                     </div>
                     <Badge status={c.status} />
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 10 }}>
                     {[['Budget', `$${c.budget.toLocaleString()}`], ['Spent', `$${c.spent.toLocaleString()}`], ['Impressions', `${(c.impressions / 1000).toFixed(1)}K`], ['Scans', c.scans]].map(([l, v]) => (
                       <div key={l}>
-                        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{l}</div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.mono, marginTop: 2 }}>{v}</div>
+                        <div style={TX.caption}>{l}</div>
+                        <div style={{ fontSize: T.base, fontWeight: 600, color: C.text, fontFamily: F.mono, marginTop: 2 }}>{v}</div>
                       </div>
                     ))}
                   </div>
                   <ProgressBar value={c.spent} max={c.budget} height={4} />
-                  <div style={{ fontSize: 11, color: pct > 90 ? C.red : pct > 70 ? C.amber : C.textMuted, fontFamily: F.sans, marginTop: 3 }}>{pct}% used</div>
+                  <div style={{ fontSize: T.xs, color: pct > 90 ? C.redText : pct > 70 ? C.amberText : C.textMuted, fontFamily: F.sans, marginTop: 3 }}>{pct}% used</div>
                 </Card>
               );
             })}
             {active.length === 0 && (
               activeLoadError ? (
                 <Card style={{ textAlign: 'center', padding: 32 }}>
-                  <div style={{ fontSize: 14, color: C.red, fontFamily: F.sans }}>Couldn't load your active campaigns — check your connection and try again.</div>
+                  <div style={{ fontSize: T.md, color: C.redText, fontFamily: F.sans }}>Couldn't load your active campaigns — check your connection and try again.</div>
                 </Card>
               ) : dbScreens.length === 0 ? (
                 <Card style={{
                   padding: '32px 28px',
-                  background: 'linear-gradient(135deg, #f5f3ff, #eff6ff)',
+                  background: C.gradWash,
                   border: `1px solid ${C.purpleBorder}`,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
                     <div style={{ color: C.purple }}><IconScreen size={40} /></div>
                     <div style={{ flex: 1, minWidth: 200 }}>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>
+                      <div style={{ ...TX.heading, marginBottom: 4 }}>
                         No screens yet
                       </div>
-                      <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5 }}>
+                      <div style={{ ...TX.bodySub, lineHeight: 1.5 }}>
                         Register your first screen to start receiving campaign bookings.
                       </div>
                     </div>
@@ -345,7 +343,7 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
               ) : (
                 <Card style={{ textAlign: 'center', padding: 32 }}>
                   <div style={{ color: C.textMuted, marginBottom: 8 }}><IconScreen size={28} /></div>
-                  <div style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans }}>No active campaigns</div>
+                  <div style={{ fontSize: T.md, color: C.textSub, fontFamily: F.sans }}>No active campaigns</div>
                 </Card>
               )
             )}
@@ -367,15 +365,15 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
                         display: 'inline-block', width: 7, height: 7, borderRadius: '50%',
                         background: hs.dot, flexShrink: 0,
                       }} />
-                      <div style={{ fontSize: 13, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{s.name}</div>
+                      <div style={{ ...TX.body, fontWeight: 500 }}>{s.name}</div>
                     </div>
-                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{s.city}</div>
+                    <div style={{ ...TX.caption, marginTop: 2 }}>{s.city}</div>
                   </div>
                   {/* N7: this list is already filtered to status==='live' screens,
                       so the badge reflects real connectivity, not approval status. */}
                   <span style={{
                     display: 'inline-flex', alignItems: 'center', gap: 5,
-                    padding: '3px 9px', borderRadius: 20, fontSize: 11, fontWeight: 500,
+                    padding: '3px 9px', borderRadius: 20, fontSize: T.xs, fontWeight: 500,
                     fontFamily: F.sans, background: `${hs.dot}1a`, color: hs.dot, border: `1px solid ${hs.dot}55`,
                   }}>
                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: hs.dot }} />
@@ -385,8 +383,8 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
                 <div style={{ display: 'flex', gap: 16 }}>
                   {[['Revenue', `$${(s.revenue ?? 0).toLocaleString()}`], ['Impr.', `${((s.impressions ?? 0) / 1000).toFixed(0)}K`], ['Campaigns', s.campaigns]].map(([l, v]) => (
                     <div key={l}>
-                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{l}</div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.mono }}>{v}</div>
+                      <div style={TX.caption}>{l}</div>
+                      <div style={{ fontSize: T.sm, fontWeight: 600, color: C.text, fontFamily: F.mono }}>{v}</div>
                     </div>
                   ))}
                 </div>

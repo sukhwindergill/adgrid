@@ -1,13 +1,18 @@
 // src/views/operator/OperatorSettingsView.jsx
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { SUPABASE_FUNCTIONS_URL, C, F } from '../../lib/constants.js';
+import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { Inp } from '../../components/primitives/Inp.jsx';
+import { SelInput } from '../../components/primitives/SelInput.jsx';
+import { Toggle } from '../../components/primitives/Switch.jsx';
 import { TeamClientRoles } from '../accounts/TeamClientRoles.jsx';
 import { EVENTS, normalizeChannelPrefs } from '../../lib/notificationPrefs.js';
+import { T, C, F } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 
 const TIMEZONES = [
   'UTC', 'America/New_York', 'America/Chicago', 'America/Denver',
@@ -17,23 +22,22 @@ const TIMEZONES = [
 
 function TabBtn({ label, active, onClick }) {
   return (
-    <button onClick={onClick} style={{
-      padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer',
-      fontFamily: F.sans, fontSize: 13, fontWeight: 500,
+    <Btn variant="unstyled" aria-pressed={active} onClick={onClick} style={{
+      padding: '8px 18px', borderRadius: 8,
+      fontFamily: F.sans, fontSize: T.base, fontWeight: 500,
       background: active ? C.purple : 'transparent',
-      color: active ? '#fff' : C.textSub,
+      color: active ? C.white : C.textSub,
       transition: 'all 0.15s',
     }}
-      onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
-      onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
-    >{label}</button>
+      hoverStyle={active ? undefined : { background: C.surfaceAlt }}
+    >{label}</Btn>
   );
 }
 
 function Field({ label, children }) {
   return (
     <div style={{ marginBottom: 20 }}>
-      <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: C.text, marginBottom: 6 }}>
+      <label style={{ display: 'block', fontSize: T.base, fontWeight: 500, color: C.text, marginBottom: 6 }}>
         {label}
       </label>
       {children}
@@ -43,20 +47,15 @@ function Field({ label, children }) {
 
 function SettingsInput({ value, onChange, type = 'text', readOnly, placeholder }) {
   return (
-    <input
+    <Inp
       type={type}
       value={value}
       onChange={onChange}
       readOnly={readOnly}
       placeholder={placeholder}
       style={{
-        width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`,
-        borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text,
-        background: readOnly ? C.bg : C.surface, boxSizing: 'border-box',
-        outline: 'none', transition: 'border-color 0.15s',
+        background: readOnly ? C.bg : C.surface, boxSizing: 'border-box', transition: 'border-color 0.15s',
       }}
-      onFocus={e => { if (!readOnly) e.currentTarget.style.borderColor = C.purple; }}
-      onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
     />
   );
 }
@@ -64,30 +63,6 @@ function SettingsInput({ value, onChange, type = 'text', readOnly, placeholder }
 function SaveBtn({ onClick, saving, label = 'Save Changes' }) {
   return (
     <Btn onClick={onClick} loading={saving}>{label}</Btn>
-  );
-}
-
-// Accessible toggle switch — real button with role="switch" and keyboard
-// support, not just a styled div's onClick (which a keyboard user can't
-// reach or operate).
-function Toggle({ checked, onChange }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={onChange}
-      style={{
-        width: 44, height: 24, borderRadius: 12, flexShrink: 0, border: 'none', padding: 0, cursor: 'pointer',
-        background: checked ? C.purple : C.border, position: 'relative', transition: 'background 0.2s',
-      }}
-    >
-      <span style={{
-        position: 'absolute', top: 3, left: checked ? 23 : 3,
-        width: 18, height: 18, borderRadius: '50%', background: '#fff',
-        transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-      }} />
-    </button>
   );
 }
 
@@ -122,7 +97,7 @@ export function ProfileTab({ profile, onSaved }) {
       </Field>
       <Field label="Email">
         <SettingsInput value={profile?.email ?? ''} readOnly />
-        <div style={{ fontSize: 11, color: C.textMuted, marginTop: 4 }}>Change email in Security tab.</div>
+        <div style={{ fontSize: T.xs, color: C.textMuted, marginTop: 4 }}>Change email in Security tab.</div>
       </Field>
       <Field label="Company Name">
         <SettingsInput value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Acme Inc." />
@@ -131,19 +106,18 @@ export function ProfileTab({ profile, onSaved }) {
         <SettingsInput value={companyWebsite} onChange={e => setCompanyWebsite(e.target.value)} placeholder="https://acme.com" />
       </Field>
       <Field label="Timezone">
-        <select
+        <SelInput
+          aria-label="Timezone"
           value={timezone}
           onChange={e => setTimezone(e.target.value)}
-          style={{ width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
+          style={{ ...TX.body, width: '100%', transition: 'border-color 0.15s' }}
         >
           {TIMEZONES.map(tz => <option key={tz}>{tz}</option>)}
-        </select>
+        </SelInput>
       </Field>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <SaveBtn onClick={save} saving={saving} />
-        {msg && <span style={{ fontSize: 13, color: msg === 'Saved.' ? C.green : C.red }}>{msg}</span>}
+        {msg && <span style={{ fontSize: T.base, color: msg === 'Saved.' ? C.greenText : C.redText }}>{msg}</span>}
       </div>
     </div>
   );
@@ -193,20 +167,20 @@ export function SecurityTab() {
 
   return (
     <div style={{ maxWidth: 480 }}>
-      <div style={{ fontSize: 15, fontWeight: 600, color: C.text, marginBottom: 16 }}>Change Email</div>
+      <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, marginBottom: 16 }}>Change Email</div>
       <Field label="New Email">
         <SettingsInput type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="new@email.com" />
       </Field>
       <div style={{ marginBottom: 32 }}>
         <SaveBtn onClick={changeEmail} saving={emailSaving} label="Update Email" />
         {emailMsg && (
-          <div style={{ fontSize: 13, color: emailMsg.ok ? C.green : C.red, fontFamily: F.sans, marginTop: 8 }}>
+          <div style={{ fontSize: T.base, color: emailMsg.ok ? C.greenText : C.redText, fontFamily: F.sans, marginTop: 8 }}>
             {emailMsg.text}
           </div>
         )}
       </div>
       <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 24 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: C.text, marginBottom: 16 }}>Change Password</div>
+        <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, marginBottom: 16 }}>Change Password</div>
         <Field label="New Password">
           <SettingsInput type="password" value={newPw} onChange={e => setNewPw(e.target.value)} />
         </Field>
@@ -215,7 +189,7 @@ export function SecurityTab() {
         </Field>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <SaveBtn onClick={changePassword} saving={pwSaving} label="Update Password" />
-          {pwMsg && <span style={{ fontSize: 13, color: pwMsg.ok ? C.green : C.red }}>{pwMsg.text}</span>}
+          {pwMsg && <span style={{ fontSize: T.base, color: pwMsg.ok ? C.greenText : C.redText }}>{pwMsg.text}</span>}
         </div>
       </div>
     </div>
@@ -301,7 +275,7 @@ export function ReviewTab({ profile, setNav }) {
 
   return (
     <div style={{ maxWidth: 520 }}>
-      <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20, lineHeight: 1.5 }}>
+      <div style={{ ...TX.bodySub, marginBottom: 20, lineHeight: 1.5 }}>
         How long you get to review a campaign before it is dropped from your screens.
         A dropped campaign is revenue you do not earn.
       </div>
@@ -312,18 +286,13 @@ export function ReviewTab({ profile, setNav }) {
           padding: '12px 16px', marginBottom: 24, background: C.surfaceAlt, border: `1px solid ${C.border}`,
           borderRadius: 8, fontFamily: F.sans,
         }}>
-          <div style={{ fontSize: 12, color: C.textSub, lineHeight: 1.5 }}>
+          <div style={{ fontSize: T.sm, color: C.textSub, lineHeight: 1.5 }}>
             This is auto-approval for <strong>campaigns</strong>. For budget pacing, cost-per-scan, or
             offline-screen alerts, that's a separate page.
           </div>
-          <button onClick={() => setNav('rules')} style={{
-            padding: '6px 14px', borderRadius: 6, border: `1px solid ${C.purple}`,
-            background: 'transparent', color: C.purple, fontSize: 12, fontWeight: 600,
-            cursor: 'pointer', whiteSpace: 'nowrap', transition: 'background 0.15s',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = C.purpleSoft; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-          >Open Alerts & Rules →</button>
+          <Btn variant="outline" size="sm" onClick={() => setNav('rules')} style={{ padding: '6px 14px', borderRadius: 6, fontWeight: 600 }}>
+            Open Alerts & Rules →
+          </Btn>
         </div>
       )}
 
@@ -333,16 +302,16 @@ export function ReviewTab({ profile, setNav }) {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderTop: `1px solid ${C.border}` }}>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 500, color: C.text }}>Auto-approve matching campaigns</div>
-          <div style={{ fontSize: 12, color: C.textSub, marginTop: 2 }}>Skip manual review for work you already trust</div>
+          <div style={{ fontSize: T.md, fontWeight: 500, color: C.text }}>Auto-approve matching campaigns</div>
+          <div style={{ fontSize: T.sm, color: C.textSub, marginTop: 2 }}>Skip manual review for work you already trust</div>
         </div>
         <Toggle checked={policy.enabled} onChange={() => setPolicy(p => ({ ...p, enabled: !p.enabled }))} />
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderTop: `1px solid ${C.border}` }}>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 500, color: C.text }}>Auto-approve verified advertisers</div>
-          <div style={{ fontSize: 12, color: C.textSub, marginTop: 2 }}>Skip review for advertisers with a verified business — independent of the category rule above</div>
+          <div style={{ fontSize: T.md, fontWeight: 500, color: C.text }}>Auto-approve verified advertisers</div>
+          <div style={{ fontSize: T.sm, color: C.textSub, marginTop: 2 }}>Skip review for advertisers with a verified business — independent of the category rule above</div>
         </div>
         <Toggle
           checked={policy.auto_approve_verified_advertisers}
@@ -353,26 +322,25 @@ export function ReviewTab({ profile, setNav }) {
       {policy.enabled && (
         <div style={{ paddingTop: 16 }}>
           <Field label="Categories to auto-approve">
-            <div style={{ fontSize: 12, color: C.textSub, marginBottom: 10 }}>
+            <div style={{ fontSize: T.sm, color: C.textSub, marginBottom: 10 }}>
               Nothing selected means nothing is auto-approved.
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {categories.length === 0 && (
-                <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans }}>No campaign categories yet.</span>
+                <span style={TX.helper}>No campaign categories yet.</span>
               )}
               {categories.map(cat => {
                 const active = policy.auto_approve_categories.includes(cat);
                 return (
-                  <button key={cat} type="button" onClick={() => toggleCategory(cat)} style={{
-                    padding: '6px 12px', borderRadius: 20, cursor: 'pointer',
+                  <Btn variant="unstyled" key={cat} type="button" aria-pressed={active} onClick={() => toggleCategory(cat)} style={{
+                    padding: '6px 12px', borderRadius: 20,
                     border: `1px solid ${active ? C.purple : C.border}`,
                     background: active ? C.purple : 'transparent',
-                    color: active ? '#fff' : C.textSub,
-                    fontSize: 12, fontFamily: F.sans, transition: 'background 0.15s',
+                    color: active ? C.white : C.textSub,
+                    fontSize: T.sm, fontFamily: F.sans, transition: 'background 0.15s',
                   }}
-                    onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
-                    onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
-                  >{cat}</button>
+                    hoverStyle={active ? undefined : { background: C.surfaceAlt }}
+                  >{cat}</Btn>
                 );
               })}
             </div>
@@ -390,7 +358,7 @@ export function ReviewTab({ profile, setNav }) {
 
       <div style={{ marginTop: 20, display: 'flex', gap: 12, alignItems: 'center' }}>
         <SaveBtn onClick={save} saving={saving} />
-        {msg && <span style={{ fontSize: 13, color: msg === 'Saved.' ? C.green : C.red }}>{msg}</span>}
+        {msg && <span style={{ fontSize: T.base, color: msg === 'Saved.' ? C.greenText : C.redText }}>{msg}</span>}
       </div>
     </div>
   );
@@ -421,8 +389,8 @@ export function NotificationsTab({ profile }) {
     <div style={{ maxWidth: 560 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 70px', padding: '0 0 8px', borderBottom: `1px solid ${C.border}` }}>
         <span />
-        <span style={{ fontSize: 11, fontWeight: 600, color: C.textSub, textAlign: 'center' }}>In-app</span>
-        <span style={{ fontSize: 11, fontWeight: 600, color: C.textSub, textAlign: 'center' }}>Email</span>
+        <span style={{ fontSize: T.xs, fontWeight: 600, color: C.textSub, textAlign: 'center' }}>In-app</span>
+        <span style={{ fontSize: T.xs, fontWeight: 600, color: C.textSub, textAlign: 'center' }}>Email</span>
       </div>
       {EVENTS.map(item => (
         <div key={item.key} style={{
@@ -430,8 +398,8 @@ export function NotificationsTab({ profile }) {
           padding: '16px 0', borderBottom: `1px solid ${C.border}`,
         }}>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 500, color: C.text }}>{item.label}</div>
-            <div style={{ fontSize: 12, color: C.textSub, marginTop: 2 }}>{item.desc}</div>
+            <div style={{ fontSize: T.md, fontWeight: 500, color: C.text }}>{item.label}</div>
+            <div style={{ fontSize: T.sm, color: C.textSub, marginTop: 2 }}>{item.desc}</div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <Toggle checked={prefs[item.key].inApp} onChange={() => toggle(item.key, 'inApp')} />
@@ -443,7 +411,7 @@ export function NotificationsTab({ profile }) {
       ))}
       <div style={{ marginTop: 20, display: 'flex', gap: 12, alignItems: 'center' }}>
         <SaveBtn onClick={save} saving={saving} />
-        {msg && <span style={{ fontSize: 13, color: msg === 'Saved.' ? C.green : C.red }}>{msg}</span>}
+        {msg && <span style={{ fontSize: T.base, color: msg === 'Saved.' ? C.greenText : C.redText }}>{msg}</span>}
       </div>
     </div>
   );
@@ -497,60 +465,59 @@ function TeamTab({ profile }) {
     setMembers(m => m.filter(x => x.id !== id));
   }
 
-  if (loading) return <div style={{ color: C.textSub, fontSize: 13 }}>Loading team…</div>;
-  if (loadError) return <div style={{ color: C.red, fontSize: 13 }}>Couldn't load your team — check your connection and try again.</div>;
+  if (loading) return <div style={{ color: C.textSub, fontSize: T.base }}>Loading team…</div>;
+  if (loadError) return <div style={{ color: C.redText, fontSize: T.base }}>Couldn't load your team — check your connection and try again.</div>;
 
   return (
     <div style={{ maxWidth: 560 }}>
       {members.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 12 }}>Team Members</div>
+          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 12 }}>Team Members</div>
           {members.map(m => (
             <div key={m.id} style={{
               display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
               background: C.bg, borderRadius: 8, border: `1px solid ${C.border}`, marginBottom: 8,
             }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{m.user_profile?.name ?? m.user_profile?.email}</div>
-                <div style={{ fontSize: 12, color: C.textSub }}>{m.user_profile?.email}</div>
+                <div style={{ fontSize: T.base, fontWeight: 500, color: C.text }}>{m.user_profile?.name ?? m.user_profile?.email}</div>
+                <div style={{ fontSize: T.sm, color: C.textSub }}>{m.user_profile?.email}</div>
               </div>
               <span style={{
-                padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 600,
+                padding: '2px 8px', borderRadius: 10, fontSize: T.xs, fontWeight: 600,
                 background: m.role === 'admin' ? C.purpleLight : C.bg,
                 color: m.role === 'admin' ? C.purple : C.textSub, textTransform: 'capitalize',
               }}>{m.role}</span>
-              <Btn variant="ghost" size="sm" onClick={() => removeMember(m.id)} style={{ color: C.red }}>Remove</Btn>
+              <Btn variant="ghost" size="sm" onClick={() => removeMember(m.id)} style={{ color: C.redText }}>Remove</Btn>
             </div>
           ))}
         </div>
       )}
       <div style={{ borderTop: members.length > 0 ? `1px solid ${C.border}` : 'none', paddingTop: members.length > 0 ? 20 : 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 12 }}>Invite Teammate</div>
+        <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 12 }}>Invite Teammate</div>
         <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-          <input
+          <Inp
             type="email"
             placeholder="colleague@company.com"
+            aria-label="Teammate email"
             value={inviteEmail}
             onChange={e => setInviteEmail(e.target.value)}
-            style={{ flex: 1, padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, outline: 'none', transition: 'border-color 0.15s' }}
-            onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-            onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
+            wrapperStyle={{ flex: 1 }}
+            style={{ ...TX.body, transition: 'border-color 0.15s' }}
           />
-          <select
+          <SelInput
+            aria-label="Teammate role"
             value={inviteRole}
             onChange={e => setInviteRole(e.target.value)}
-            style={{ padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
-            onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-            onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
+            style={{ ...TX.body, transition: 'border-color 0.15s' }}
           >
             <option value="viewer">Viewer — read only</option>
             <option value="manager">Manager — create &amp; edit campaigns</option>
             <option value="admin">Admin — full access</option>
-          </select>
+          </SelInput>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Btn onClick={invite}>Send Invite</Btn>
-          {msg && <span style={{ fontSize: 13, color: msg.startsWith('Error') ? C.red : C.green }}>{msg}</span>}
+          {msg && <span style={{ fontSize: T.base, color: msg.startsWith('Error') ? C.redText : C.greenText }}>{msg}</span>}
         </div>
       </div>
     </div>
@@ -655,8 +622,8 @@ function PayoutsTab({ profile }) {
 
   return (
     <div style={{ maxWidth: 480 }}>
-      <div style={{ fontSize: 15, fontWeight: 600, color: C.text, marginBottom: 8 }}>Stripe Connect</div>
-      <div style={{ fontSize: 13, color: C.textSub, marginBottom: 24, lineHeight: 1.6 }}>
+      <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, marginBottom: 8 }}>Stripe Connect</div>
+      <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 24, lineHeight: 1.6 }}>
         Connect your bank account to receive campaign payouts. Powered by Stripe.
       </div>
 
@@ -666,23 +633,23 @@ function PayoutsTab({ profile }) {
             width: 10, height: 10, borderRadius: '50%',
             background: connectStatus === 'active' ? C.green : connectStatus ? C.amber : C.border,
           }} />
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>
+          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text }}>
             {connectStatus === 'active' ? 'Connected' : connectStatus ? 'Pending verification' : 'Not connected'}
           </div>
         </div>
         {confirming ? (
-          <div style={{ fontSize: 13, color: C.textSub }}>Confirming your Stripe account…</div>
+          <div style={{ fontSize: T.base, color: C.textSub }}>Confirming your Stripe account…</div>
         ) : connectStatus === 'active' ? (
-          <div style={{ fontSize: 13, color: C.textSub }}>
+          <div style={{ fontSize: T.base, color: C.textSub }}>
             Your Stripe account is connected. Payouts are processed automatically when campaigns complete.
           </div>
         ) : connectStatus ? (
-          <div style={{ fontSize: 13, color: C.textSub }}>
+          <div style={{ fontSize: T.base, color: C.textSub }}>
             Your Stripe account is under review. You'll be notified once verified.
           </div>
         ) : (
           <>
-            <div style={{ fontSize: 13, color: C.textSub, marginBottom: 16 }}>
+            <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 16 }}>
               Connect your bank account to start receiving payouts from approved campaigns.
             </div>
             <Btn onClick={startConnect} disabled={connecting}>
@@ -690,10 +657,10 @@ function PayoutsTab({ profile }) {
             </Btn>
           </>
         )}
-        {msg && <div style={{ fontSize: 12, color: msg.ok ? C.green : C.red, marginTop: 8 }}>{msg.text}</div>}
+        {msg && <div style={{ fontSize: T.sm, color: msg.ok ? C.greenText : C.redText, marginTop: 8 }}>{msg.text}</div>}
       </Card>
 
-      <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>
+      <div style={{ fontSize: T.sm, color: C.textMuted, lineHeight: 1.5 }}>
         Payouts are sent to your connected bank account. You receive 70% of what advertisers pay per screen; AdGrid keeps 30%.
         View detailed payout history in the Billing section.
       </div>
@@ -703,10 +670,10 @@ function PayoutsTab({ profile }) {
 
 const VERIFICATION_META = {
   unverified:      { label: 'Not verified',      color: C.textMuted, dot: C.border },
-  pending_stripe:  { label: 'Verification in progress', color: C.amber, dot: C.amber },
-  pending_manual:  { label: 'Under manual review',      color: C.amber, dot: C.amber },
-  verified:        { label: 'Verified',          color: C.green, dot: C.green },
-  rejected:        { label: 'Verification rejected',    color: C.red,  dot: C.red },
+  pending_stripe:  { label: 'Verification in progress', color: C.amberText, dot: C.amber },
+  pending_manual:  { label: 'Under manual review',      color: C.amberText, dot: C.amber },
+  verified:        { label: 'Verified',          color: C.greenText, dot: C.green },
+  rejected:        { label: 'Verification rejected',    color: C.redText,  dot: C.red },
 };
 
 function VerificationTab({ profile }) {
@@ -749,8 +716,8 @@ function VerificationTab({ profile }) {
 
   return (
     <div style={{ maxWidth: 480 }}>
-      <div style={{ fontSize: 15, fontWeight: 600, color: C.text, marginBottom: 8 }}>Identity Verification</div>
-      <div style={{ fontSize: 13, color: C.textSub, marginBottom: 24, lineHeight: 1.6 }}>
+      <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, marginBottom: 8 }}>Identity Verification</div>
+      <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 24, lineHeight: 1.6 }}>
         Verifying your identity builds trust with advertisers and speeds up support requests.
         Powered by Stripe Identity — a government ID photo and a live selfie.
       </div>
@@ -758,17 +725,17 @@ function VerificationTab({ profile }) {
       <Card style={{ padding: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <div style={{ width: 10, height: 10, borderRadius: '50%', background: meta.dot }} />
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{meta.label}</div>
+          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text }}>{meta.label}</div>
         </div>
 
         {status === 'verified' && (
-          <div style={{ fontSize: 13, color: C.textSub }}>
+          <div style={{ fontSize: T.base, color: C.textSub }}>
             Your identity is verified{profile?.verified_at ? ` as of ${new Date(profile.verified_at).toLocaleDateString()}` : ''}.
           </div>
         )}
 
         {(status === 'pending_stripe' || status === 'pending_manual') && (
-          <div style={{ fontSize: 13, color: C.textSub }}>
+          <div style={{ fontSize: T.base, color: C.textSub }}>
             {status === 'pending_manual'
               ? "Your submission needs a closer look. We'll email you once it's reviewed."
               : "We're processing your verification. This usually takes a few minutes."}
@@ -777,11 +744,11 @@ function VerificationTab({ profile }) {
 
         {status === 'rejected' && (
           <>
-            <div style={{ fontSize: 13, color: C.textSub, marginBottom: profile?.verification_rejection_reason ? 8 : 16 }}>
+            <div style={{ fontSize: T.base, color: C.textSub, marginBottom: profile?.verification_rejection_reason ? 8 : 16 }}>
               Your last verification attempt was rejected.
             </div>
             {profile?.verification_rejection_reason && (
-              <div style={{ fontSize: 12, color: C.red, marginBottom: 16 }}>Reason: {profile.verification_rejection_reason}</div>
+              <div style={{ fontSize: T.sm, color: C.redText, marginBottom: 16 }}>Reason: {profile.verification_rejection_reason}</div>
             )}
             <Btn onClick={startVerification} disabled={starting}>
               {starting ? 'Redirecting…' : 'Try again'}
@@ -791,7 +758,7 @@ function VerificationTab({ profile }) {
 
         {status === 'unverified' && (
           <>
-            <div style={{ fontSize: 13, color: C.textSub, marginBottom: 16 }}>
+            <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 16 }}>
               Start verification — takes about 2 minutes.
             </div>
             <Btn onClick={startVerification} disabled={starting}>
@@ -801,11 +768,11 @@ function VerificationTab({ profile }) {
         )}
 
         {msg && (
-          <div style={{ fontSize: 12, color: msg.ok ? C.green : C.red, marginTop: 12 }}>{msg.text}</div>
+          <div style={{ fontSize: T.sm, color: msg.ok ? C.greenText : C.redText, marginTop: 12 }}>{msg.text}</div>
         )}
       </Card>
 
-      <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>
+      <div style={{ fontSize: T.sm, color: C.textMuted, lineHeight: 1.5 }}>
         Identity verification is separate from Stripe Connect payout onboarding. Both are optional
         but recommended for operators running screens at scale.
       </div>

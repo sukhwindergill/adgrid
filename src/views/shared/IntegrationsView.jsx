@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { supabase } from '../../lib/supabase.js';
 import { Card } from '../../components/primitives/Card.jsx';
@@ -119,30 +120,30 @@ function WebhookCard() {
     <Card style={{ padding: 20, marginBottom: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
         <BrandIcon id="webhook" size={16} />
-        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans }}>Custom Webhook</div>
+        <div style={TX.title}>Custom Webhook</div>
       </div>
-      <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.5 }}>
+      <div style={{ ...TX.helper, marginBottom: 12, lineHeight: 1.5 }}>
         Receive a signed <code>POST</code> for events on your own screens/campaigns/payouts as they happen -- campaign submitted, screen offline or dropped SLA, delivery shortfall credited, payout failed, dispute resolved. Connect it to Zapier, Make, or your own backend.
       </div>
-      <label style={{ display: 'block', fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 4 }}>Webhook URL</label>
+      <label style={{ ...TX.caption, display: 'block', marginBottom: 4 }}>Webhook URL</label>
       <input
         type="url"
         value={url}
         onChange={e => setUrl(e.target.value)}
         placeholder="https://example.com/adgrid-webhook"
-        style={{ width: '100%', padding: '8px 10px', fontSize: 13, fontFamily: F.sans, border: `1px solid ${C.border}`, borderRadius: 6, marginBottom: 10, boxSizing: 'border-box' }}
+        style={{ width: '100%', padding: '8px 10px', fontSize: T.base, fontFamily: F.sans, border: `1px solid ${C.border}`, borderRadius: 6, marginBottom: 10, boxSizing: 'border-box' }}
       />
-      <label style={{ display: 'block', fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 4 }}>Signing secret (optional)</label>
+      <label style={{ ...TX.caption, display: 'block', marginBottom: 4 }}>Signing secret (optional)</label>
       <input
         type="text"
         value={secret}
         onChange={e => setSecret(e.target.value)}
         placeholder="Used to sign each delivery as X-AdGrid-Signature"
-        style={{ width: '100%', padding: '8px 10px', fontSize: 13, fontFamily: F.sans, border: `1px solid ${C.border}`, borderRadius: 6, marginBottom: 12, boxSizing: 'border-box' }}
+        style={{ width: '100%', padding: '8px 10px', fontSize: T.base, fontFamily: F.sans, border: `1px solid ${C.border}`, borderRadius: 6, marginBottom: 12, boxSizing: 'border-box' }}
       />
-      {error && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginBottom: 8 }}>{error}</div>}
-      {testResult === 'ok' && <div style={{ fontSize: 12, color: C.green, fontFamily: F.sans, marginBottom: 8 }}>Test event delivered successfully.</div>}
-      {testResult === 'fail' && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginBottom: 8 }}>Test event delivery failed -- check the URL and that your endpoint is reachable.</div>}
+      {error && <div style={{ ...TX.error, marginBottom: 8 }}>{error}</div>}
+      {testResult === 'ok' && <div style={{ fontSize: T.sm, color: C.greenText, fontFamily: F.sans, marginBottom: 8 }}>Test event delivered successfully.</div>}
+      {testResult === 'fail' && <div style={{ ...TX.error, marginBottom: 8 }}>Test event delivery failed -- check the URL and that your endpoint is reachable.</div>}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <Btn variant="secondary" size="sm" onClick={handleSave} disabled={saving || !url}>
           {saving ? 'Saving…' : hasSaved ? 'Save changes' : 'Save webhook'}
@@ -171,10 +172,10 @@ export function IntegrationsView() {
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <span style={{ flexShrink: 0, marginTop: 2 }}><IconWarning size={16} /></span>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>
+            <div style={{ ...TX.strong, marginBottom: 4 }}>
               Operator-side integrations aren't available yet
             </div>
-            <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6 }}>
+            <div style={{ ...TX.bodySub, lineHeight: 1.6 }}>
               Custom Webhook below is real and working -- everything else on this page is a preview of what's planned. Advertisers can already connect Meta, Google Ads, and Shopify from their own Integrations page.
             </div>
           </div>
@@ -183,7 +184,7 @@ export function IntegrationsView() {
 
       <WebhookCard />
 
-      <div style={{ fontSize: 12, fontWeight: 600, color: C.textSub, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
+      <div style={{ ...TX.helper, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
         Planned
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
@@ -192,8 +193,8 @@ export function IntegrationsView() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <BrandIcon id={p.id} size={16} />
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans }}>{p.name}</div>
-                <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{p.category}</div>
+                <div style={TX.strong}>{p.name}</div>
+                <div style={TX.caption}>{p.category}</div>
               </div>
             </div>
           </Card>

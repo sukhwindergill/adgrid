@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { Inp } from '../../components/primitives/Inp.jsx';
+
+const listingField = { padding: '8px 12px', fontSize: T.base, transition: 'border-color 0.15s', boxSizing: 'border-box' };
 import { supabase } from '../../lib/supabase.js';
 import { createListing, createBundleListing } from '../../lib/marketplace.js';
 import { useToast } from '../../components/primitives/Toast.jsx';
@@ -63,46 +67,40 @@ export function MarketplaceListingForm({ screenId, bundleScreens, onCreated, onC
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 420 }}>
       {isBundle && (
-        <div style={{ fontFamily: F.sans, fontSize: 12, color: C.text, background: C.purpleSoft, borderRadius: 8, padding: 10 }}>
+        <div style={{ fontFamily: F.sans, fontSize: T.sm, color: C.text, background: C.purpleSoft, borderRadius: 8, padding: 10 }}>
           Bundle of {bundleScreens.length} screens: {bundleScreens.map(s => s.name).join(', ')}
         </div>
       )}
       {projected !== null && (
-        <div style={{ fontFamily: F.sans, fontSize: 12, color: C.textSub, background: C.surfaceAlt, borderRadius: 8, padding: 10 }}>
+        <div style={{ ...TX.helper, background: C.surfaceAlt, borderRadius: 8, padding: 10 }}>
           Projected shared-rotation earnings for a similar 30-day window: ~${projected}
         </div>
       )}
-      <label style={{ fontFamily: F.sans, fontSize: 12, color: C.textSub }}>
+      <label style={TX.helper}>
         Price ($){isBundle ? ' — for the whole bundle' : ''}
-        <input aria-label="price" type="number" value={priceCents} onChange={e => setPriceCents(e.target.value)}
-          style={{ display: 'block', width: '100%', marginTop: 4, padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8, outline: 'none', transition: 'border-color 0.15s', boxSizing: 'border-box' }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }} />
+        <Inp aria-label="price" type="number" value={priceCents} onChange={e => setPriceCents(e.target.value)}
+          wrapperStyle={{ marginTop: 4 }} style={listingField} />
         {priceDollars > 0 && (
           <span style={{ display: 'block', marginTop: 4, color: C.textMuted }}>
             You receive ${computeRevenueSplit(priceDollars, ownerRevenueShare).owner.toLocaleString()} ({Math.round(ownerRevenueShare * 100)}% of the price)
           </span>
         )}
       </label>
-      <label style={{ fontFamily: F.sans, fontSize: 12, color: C.textSub }}>
+      <label style={TX.helper}>
         Start date
-        <input aria-label="start date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-          style={{ display: 'block', width: '100%', marginTop: 4, padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8, outline: 'none', transition: 'border-color 0.15s', boxSizing: 'border-box' }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }} />
+        <Inp aria-label="start date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+          wrapperStyle={{ marginTop: 4 }} style={listingField} />
       </label>
-      <label style={{ fontFamily: F.sans, fontSize: 12, color: C.textSub }}>
+      <label style={TX.helper}>
         End date
-        <input aria-label="end date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-          style={{ display: 'block', width: '100%', marginTop: 4, padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8, outline: 'none', transition: 'border-color 0.15s', boxSizing: 'border-box' }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }} />
+        <Inp aria-label="end date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+          wrapperStyle={{ marginTop: 4 }} style={listingField} />
       </label>
-      <label style={{ fontFamily: F.sans, fontSize: 12, color: C.textSub, display: 'flex', alignItems: 'center', gap: 6 }}>
+      <label style={{ ...TX.helper, display: 'flex', alignItems: 'center', gap: 6 }}>
         <input type="checkbox" checked={autoRenew} onChange={e => setAutoRenew(e.target.checked)} />
         Allow auto-renewal
       </label>
-      {err && <div style={{ fontFamily: F.sans, fontSize: 12, color: C.red }}>{err}</div>}
+      {err && <div style={TX.error}>{err}</div>}
       <div style={{ display: 'flex', gap: 8 }}>
         <Btn variant="primary" onClick={handleSubmit} loading={saving} disabled={!priceCents || !startDate || !endDate}>
           {isBundle ? 'Create bundle listing' : 'Create listing'}

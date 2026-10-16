@@ -1,4 +1,5 @@
-import { C, F } from '../../design/tokens.js';
+import { C, F, T, alpha } from '../../design/tokens.js';
+import { Btn } from '../primitives/Btn.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
 export function AppShell({ sidebar, header, children, impersonating, onStopImpersonation }) {
@@ -16,31 +17,30 @@ export function AppShell({ sidebar, header, children, impersonating, onStopImper
           right: 0,
           zIndex: 9999,
           background: C.purple,
-          color: '#fff',
+          color: C.white,
           padding: '10px 20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           gap: 16,
           fontFamily: F.sans,
-          fontSize: 13,
+          fontSize: T.base,
           fontWeight: 500,
         }}>
           <span>👁 Viewing as {impersonating.name}</span>
-          <button
+          <Btn
+            variant="unstyled"
             onClick={onStopImpersonation}
             style={{
               padding: '4px 14px',
               borderRadius: 20,
-              border: '2px solid rgba(255,255,255,0.5)',
-              background: 'transparent',
-              color: '#fff',
-              cursor: 'pointer',
+              border: `2px solid ${alpha(C.white, 0.5)}`,
+              color: C.white,
               fontFamily: F.sans,
-              fontSize: 12,
+              fontSize: T.sm,
               fontWeight: 600,
             }}
-          >Exit</button>
+          >Exit</Btn>
         </div>
       )}
 

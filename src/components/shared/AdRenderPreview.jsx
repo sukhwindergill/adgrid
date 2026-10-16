@@ -1,6 +1,6 @@
 // src/components/shared/AdRenderPreview.jsx
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
 import { computeHomography, cssMatrix3dString, validateQuadOrientation } from '../../lib/quadWarp.js';
 
 // Composites an advertiser's creative onto an operator-uploaded photo of the
@@ -76,7 +76,7 @@ export function AdRenderPreview({ photoUrl, corners, mediaUrl, mediaType }) {
       {ready && creativeFailed && (
         <div style={{
           position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 12, color: C.textMuted, fontFamily: F.sans, textAlign: 'center', padding: '0 12px',
+          fontSize: T.sm, color: C.textMuted, fontFamily: F.sans, textAlign: 'center', padding: '0 12px',
         }}>
           Couldn't load creative preview
         </div>
@@ -84,7 +84,7 @@ export function AdRenderPreview({ photoUrl, corners, mediaUrl, mediaType }) {
       {!ready && (
         <div style={{
           position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 12, color: C.textMuted, fontFamily: F.sans,
+          fontSize: T.sm, color: C.textMuted, fontFamily: F.sans,
         }}>
           Loading preview…
         </div>

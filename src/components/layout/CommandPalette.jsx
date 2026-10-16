@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T, SH } from '../../design/tokens.js';
 import { scopedBookings, applyBookingSearch } from '../../lib/bookingsQuery.js';
 import { navItems } from './navConfig.js';
 import { rankMatches } from '../../lib/commandSearch.js';
@@ -64,10 +64,10 @@ export function CommandPalette({ onClose, activeMode, screens = [], advertiserId
   };
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.35)', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '12vh 16px 16px' }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: C.overlay, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '12vh 16px 16px' }}>
       <div role="dialog" aria-modal="true" aria-label="Search" onClick={e => e.stopPropagation()} style={{
         width: '100%', maxWidth: 560, background: C.surface, borderRadius: 12, border: `1px solid ${C.border}`,
-        boxShadow: '0 16px 48px rgba(0,0,0,0.18)', overflow: 'hidden', fontFamily: F.sans,
+        boxShadow: SH.modal, overflow: 'hidden', fontFamily: F.sans,
       }}>
         <input
           ref={inputRef}
@@ -80,11 +80,11 @@ export function CommandPalette({ onClose, activeMode, screens = [], advertiserId
           aria-expanded="true"
           aria-controls="cmdk-results"
           aria-activedescendant={results[cursor] ? `cmdk-${results[cursor].key}` : undefined}
-          style={{ width: '100%', boxSizing: 'border-box', padding: '16px 18px', border: 'none', borderBottom: `1px solid ${C.border}`, fontSize: 16, fontFamily: F.sans, outline: 'none', color: C.text }}
+          style={{ width: '100%', boxSizing: 'border-box', padding: '16px 18px', border: 'none', borderBottom: `1px solid ${C.border}`, fontSize: T.lg, fontFamily: F.sans, outline: 'none', color: C.text }}
         />
         <ul id="cmdk-results" role="listbox" style={{ listStyle: 'none', margin: 0, padding: 6, maxHeight: 360, overflowY: 'auto' }}>
           {results.length === 0 && (
-            <li style={{ padding: '14px 12px', fontSize: 14, color: C.textMuted }}>No matches.</li>
+            <li style={{ padding: '14px 12px', fontSize: T.md, color: C.textMuted }}>No matches.</li>
           )}
           {results.map((r, i) => (
             <li
@@ -99,13 +99,13 @@ export function CommandPalette({ onClose, activeMode, screens = [], advertiserId
                 background: i === cursor ? C.purpleSoft : 'transparent',
               }}
             >
-              <span style={{ fontSize: 11, fontWeight: 600, color: C.textMuted, width: 64, flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{r.kind}</span>
-              <span style={{ flex: 1, fontSize: 14, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</span>
-              {r.sub && <span style={{ fontSize: 12, color: C.textMuted }}>{r.sub}</span>}
+              <span style={{ fontSize: T.xs, fontWeight: 600, color: C.textMuted, width: 64, flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{r.kind}</span>
+              <span style={{ flex: 1, fontSize: T.md, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</span>
+              {r.sub && <span style={{ fontSize: T.sm, color: C.textMuted }}>{r.sub}</span>}
             </li>
           ))}
         </ul>
-        <div style={{ padding: '8px 14px', borderTop: `1px solid ${C.border}`, fontSize: 12, color: C.textMuted }}>
+        <div style={{ padding: '8px 14px', borderTop: `1px solid ${C.border}`, fontSize: T.sm, color: C.textMuted }}>
           ↑↓ to move · Enter to open · Esc to close
         </div>
       </div>

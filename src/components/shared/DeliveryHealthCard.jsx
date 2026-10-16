@@ -1,4 +1,5 @@
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../primitives/Card.jsx';
 import { ProgressBar } from '../primitives/ProgressBar.jsx';
 
@@ -9,8 +10,8 @@ export function DeliveryHealthCard({ health, currency = 'cad' }) {
   if (!health) {
     return (
       <Card style={{ padding: 20 }}>
-        <div style={{ fontSize: 12, fontWeight: 500, color: C.textSub, fontFamily: F.sans, marginBottom: 8 }}>Delivery health</div>
-        <div style={{ fontSize: 13, color: C.textMuted, fontFamily: F.sans }}>
+        <div style={{ ...TX.helper, fontWeight: 500, marginBottom: 8 }}>Delivery health</div>
+        <div style={TX.bodyMuted}>
           No completed days to reconcile yet.
         </div>
       </Card>
@@ -25,28 +26,28 @@ export function DeliveryHealthCard({ health, currency = 'cad' }) {
 
   return (
     <Card style={{ padding: 20 }}>
-      <div style={{ fontSize: 12, fontWeight: 500, color: C.textSub, fontFamily: F.sans, marginBottom: 8 }}>Delivery health</div>
+      <div style={{ ...TX.helper, fontWeight: 500, marginBottom: 8 }}>Delivery health</div>
 
       {hasPct && (
-        <div style={{ fontSize: 26, fontWeight: 700, color, lineHeight: 1, marginBottom: 6, fontFamily: F.mono }}>
+        <div style={{ fontSize: T.xxl, fontWeight: 700, color, lineHeight: 1, marginBottom: 6, fontFamily: F.mono }}>
           {Number(pct).toFixed(1)}%
         </div>
       )}
 
-      <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, marginBottom: 10 }}>
+      <div style={{ ...TX.helperMuted, marginBottom: 10 }}>
         {Number(health.delivered_plays).toLocaleString()} of {Number(health.expected_plays).toLocaleString()} scheduled plays confirmed
       </div>
 
       {hasPct && <ProgressBar value={Number(health.delivered_plays)} max={Number(health.expected_plays)} height={4} />}
 
       {credited > 0 && (
-        <div style={{ fontSize: 12, color: C.green, fontFamily: F.sans, marginTop: 10, fontWeight: 500 }}>
+        <div style={{ fontSize: T.sm, color: C.greenText, fontFamily: F.sans, marginTop: 10, fontWeight: 500 }}>
           ${credited.toFixed(2)} credited back{currency ? ` (${String(currency).toUpperCase()})` : ''}
         </div>
       )}
 
       {offlineDays > 0 && (
-        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 4 }}>
+        <div style={{ ...TX.caption, marginTop: 4 }}>
           {offlineDays} {offlineDays === 1 ? 'day a screen was' : 'days a screen was'} offline
         </div>
       )}

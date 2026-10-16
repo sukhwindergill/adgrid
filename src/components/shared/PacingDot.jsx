@@ -3,11 +3,12 @@
 // status logic as PacingCard, just a colored dot + tooltip instead of the
 // full breakdown (that lives on CampaignDetail).
 import { flightProgress, pacingRatio, pacingStatus } from '../../lib/pacing.js';
+import { C } from '../../design/tokens.js';
 
 const STATUS_COPY = {
-  behind: { color: '#f59e0b', label: 'Behind pace' },
-  on_pace: { color: '#10b981', label: 'On pace' },
-  ahead: { color: '#ef4444', label: 'Ahead of pace' },
+  behind: { color: C.amber, label: 'Behind pace' },
+  on_pace: { color: C.green, label: 'On pace' },
+  ahead: { color: C.red, label: 'Ahead of pace' },
 };
 
 export function PacingDot({ startDate, endDate, spent, budget }) {

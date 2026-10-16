@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase.js'
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js'
 import { useToast } from '../../components/primitives/Toast.jsx'
-import { C, F } from '../../design/tokens.js'
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx'
 import { Btn } from '../../components/primitives/Btn.jsx'
+import { Inp } from '../../components/primitives/Inp.jsx'
+import { compactField } from '../../components/primitives/field.js'
 import { Badge } from '../../components/primitives/Badge.jsx'
 
 // Product-audit finding: Stripe Identity flags a submission as needing a
@@ -82,24 +85,24 @@ export function OperatorVerificationQueue() {
       <Btn variant="ghost" onClick={() => navigate('/app')} style={{ marginBottom: 16, paddingLeft: 0 }}>
         ← Back
       </Btn>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, fontFamily: F.display, marginBottom: 20 }}>
+      <h1 style={{ ...TX.pageTitle, marginBottom: 20 }}>
         Identity Verification Queue
       </h1>
 
       {loading ? (
-        <div style={{ color: C.textSub, fontFamily: F.sans, fontSize: 13 }}>Loading…</div>
+        <div style={TX.bodySub}>Loading…</div>
       ) : error ? (
-        <div style={{ color: C.red, fontFamily: F.sans, fontSize: 13 }}>Couldn't load the queue — check your connection and try again.</div>
+        <div style={{ color: C.redText, fontFamily: F.sans, fontSize: T.base }}>Couldn't load the queue — check your connection and try again.</div>
       ) : pending.length === 0 ? (
-        <div style={{ color: C.textSub, fontFamily: F.sans, fontSize: 13, marginBottom: 32 }}>Nothing awaiting manual review.</div>
+        <div style={{ ...TX.bodySub, marginBottom: 32 }}>Nothing awaiting manual review.</div>
       ) : (
         <div style={{ marginBottom: 32 }}>
           {pending.map(op => (
             <Card key={op.id} style={{ marginBottom: 12, padding: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans }}>{op.name ?? 'Unnamed operator'}</div>
-                  <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{op.email}</div>
+                  <div style={TX.strong}>{op.name ?? 'Unnamed operator'}</div>
+                  <div style={{ ...TX.caption, marginTop: 2 }}>{op.email}</div>
                 </div>
                 <Badge status="pending">Needs review</Badge>
               </div>
@@ -108,11 +111,12 @@ export function OperatorVerificationQueue() {
                 <Btn variant="success" size="sm" disabled={busyId === op.id} onClick={() => review(op.id, 'approved')}>
                   {busyId === op.id ? '…' : 'Approve'}
                 </Btn>
-                <input
-                  type="text" placeholder="Rejection reason (optional)"
+                <Inp
+                  type="text" placeholder="Rejection reason (optional)" aria-label="Rejection reason"
                   value={reasons[op.id] ?? ''}
                   onChange={e => setReasons(r => ({ ...r, [op.id]: e.target.value }))}
-                  style={{ flex: 1, minWidth: 160, padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.sans, fontSize: 12 }}
+                  wrapperStyle={{ flex: 1, minWidth: 160 }}
+                  style={compactField}
                 />
                 <Btn variant="danger" size="sm" disabled={busyId === op.id} onClick={() => review(op.id, 'rejected')}>
                   {busyId === op.id ? '…' : 'Reject'}
@@ -125,14 +129,14 @@ export function OperatorVerificationQueue() {
 
       {reviewed.length > 0 && (
         <>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.display, marginBottom: 12 }}>
+          <h2 style={{ fontSize: T.lg, fontWeight: 600, color: C.text, fontFamily: F.display, marginBottom: 12 }}>
             Recently reviewed
           </h2>
           {reviewed.map(op => (
             <Card key={op.id} style={{ marginBottom: 8, padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
               <div>
-                <div style={{ fontSize: 13, color: C.text, fontFamily: F.sans }}>{op.name ?? 'Unnamed operator'}</div>
-                <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{op.email}</div>
+                <div style={TX.body}>{op.name ?? 'Unnamed operator'}</div>
+                <div style={{ ...TX.caption, marginTop: 2 }}>{op.email}</div>
               </div>
               <Badge status={op.verification_status === 'rejected' ? 'rejected' : 'approved'}>
                 {op.verification_status === 'rejected' ? 'Rejected' : 'Verified'}

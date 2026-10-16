@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
+import { C, F, T, alpha } from '../../design/tokens.js';
 
-const nav = { fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", fontSize: 13, marginBottom: 24 };
-const link = { color: 'rgba(255,255,255,0.5)', textDecoration: 'none' };
-const sep = { color: 'rgba(255,255,255,0.3)', margin: '0 8px' };
-const current = { color: 'rgba(255,255,255,0.85)' };
+// Sits on the dark public-page header, hence white at varying strength.
+const nav = { fontFamily: F.sans, fontSize: T.base, marginBottom: 24 };
+const link = { color: alpha(C.white, 0.5), textDecoration: 'none' };
+const sep = { color: alpha(C.white, 0.3), margin: '0 8px' };
+const current = { color: alpha(C.white, 0.85) };
 
 // items: [{ label, to? }]. The last item is rendered as plain text (it's
 // the current page — linking to yourself is a no-op at best, confusing at

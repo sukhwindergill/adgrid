@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
+import { Hover } from '../../components/primitives/Hover.jsx';
 import { useOperatorScreenCampaignRows } from '../../hooks/useOperatorScreenCampaignRows.js';
 import { IconChart, IconClock, IconScreen } from '../../components/icons.jsx';
 
@@ -23,7 +25,7 @@ function timeLabel(t) {
 
 function NowPlayingCard({ campaign }) {
   if (!campaign) return (
-    <div style={{ padding: '20px 0', textAlign: 'center', color: C.textMuted, fontFamily: F.sans, fontSize: 13 }}>
+    <div style={{ ...TX.bodyMuted, padding: '20px 0', textAlign: 'center' }}>
       No active campaigns right now
     </div>
   );
@@ -31,12 +33,12 @@ function NowPlayingCard({ campaign }) {
     <div style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${C.border}`, background: C.surface }}>
       <div style={{ height: 4, background: campaign.color || C.purple }} />
       <div style={{ padding: '14px 16px' }}>
-        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Now Playing</div>
-        <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{campaign.headline || campaign.advertiser || campaign.advertiser_name || ''}</div>
+        <div style={{ ...TX.caption, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Now Playing</div>
+        <div style={{ ...TX.heading, marginBottom: 2 }}>{campaign.headline || campaign.advertiser || campaign.advertiser_name || ''}</div>
         {/* When there's no headline, the title above already shows the advertiser name --
             repeating it here would read as "Nike / Nike · Fashion", so drop it from the subtitle. */}
-        <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 10 }}>{campaign.headline ? `${campaign.advertiser} · ${campaign.category}` : campaign.category}</div>
-        <div style={{ display: 'flex', gap: 16, fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>
+        <div style={{ ...TX.helper, marginBottom: 10 }}>{campaign.headline ? `${campaign.advertiser} · ${campaign.category}` : campaign.category}</div>
+        <div style={{ ...TX.caption, display: 'flex', gap: 16 }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconClock size={14} /> {timeLabel(campaign.timeStart)} – {timeLabel(campaign.timeEnd)}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconClock size={14} /> {campaign.duration}s slots</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconChart size={14} /> {campaign.slots}% share</span>
@@ -51,7 +53,7 @@ function TimelineBar({ campaigns }) {
   const nowPct = ((now.getHours() + now.getMinutes() / 60) / 24) * 100;
   return (
     <div>
-      <div style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 10 }}>Today's Schedule</div>
+      <div style={{ fontSize: T.sm, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 10 }}>Today's Schedule</div>
       <div style={{ position: 'relative', height: 40, background: C.surfaceAlt, borderRadius: 6, overflow: 'hidden', marginBottom: 6 }}>
         {campaigns.map(c => {
           const start = parseHour(c.timeStart);
@@ -74,7 +76,7 @@ function TimelineBar({ campaigns }) {
         })}
         <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${nowPct}%`, width: 2, background: C.red, opacity: 0.8 }} />
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.textMuted, fontFamily: F.mono }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: T.xs, color: C.textMuted, fontFamily: F.mono }}>
         {HOUR_LABELS.filter((_, i) => i % 6 === 0).map((l, i) => <span key={i}>{l}</span>)}
       </div>
     </div>
@@ -133,14 +135,14 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
       {screens.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '64px 24px', background: C.surface, borderRadius: 12, border: `1px solid ${C.border}` }}>
           <div style={{ color: C.textMuted, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconScreen size={36} /></div>
-          <div style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No screens with campaigns</div>
-          <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Create campaigns to see them here</div>
+          <div style={{ ...TX.titleLg, marginBottom: 6 }}>No screens with campaigns</div>
+          <div style={TX.bodySub}>Create campaigns to see them here</div>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 20, alignItems: 'start' }}>
           {/* Screen list */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Screens</div>
+            <div style={{ ...TX.caption, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Screens</div>
             {screens.map(s => {
               const isSelected = s.id === selectedId;
               const liveCount  = s.campaigns.filter(c => c.status === 'active').length;
@@ -148,7 +150,7 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
                 c.status === 'active' && nowH >= parseHour(c.timeStart) && nowH < parseHour(c.timeEnd)
               );
               return (
-                <div
+                <Hover
                   key={s.id}
                   onClick={() => setSelectedId(s.id)}
                   style={{
@@ -157,23 +159,23 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
                     background: isSelected ? C.purpleSoft : C.surface,
                     transition: 'all 0.15s',
                   }}
-                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = C.surfaceAlt; }}
-                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = C.surface; }}
+                  hoverStyle={{ background: C.surfaceAlt }}
+                  disabled={isSelected}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: isSelected ? C.purple : C.text, fontFamily: F.sans }}>{s.name}</div>
+                    <div style={{ fontSize: T.base, fontWeight: 600, color: isSelected ? C.purple : C.text, fontFamily: F.sans }}>{s.name}</div>
                     {liveCount > 0 && <div style={{ width: 7, height: 7, borderRadius: '50%', background: C.green, flexShrink: 0 }} />}
                   </div>
-                  <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: nowLive ? 6 : 0 }}>{s.city}</div>
+                  <div style={{ ...TX.caption, marginBottom: nowLive ? 6 : 0 }}>{s.city}</div>
                   {nowLive ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                       <div style={{ width: 10, height: 10, borderRadius: 2, background: nowLive.color || C.purple, flexShrink: 0 }} />
-                      <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nowLive.advertiser}</span>
+                      <span style={{ fontSize: T.xs, color: C.textSub, fontFamily: F.sans, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nowLive.advertiser}</span>
                     </div>
                   ) : (
-                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{s.campaigns.length} campaign{s.campaigns.length !== 1 ? 's' : ''}</div>
+                    <div style={TX.caption}>{s.campaigns.length} campaign{s.campaigns.length !== 1 ? 's' : ''}</div>
                   )}
-                </div>
+                </Hover>
               );
             })}
           </div>
@@ -184,8 +186,8 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
               <Card style={{ padding: '16px 20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                   <div>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.sans }}>{selected.name}</div>
-                    <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>{selected.city}</div>
+                    <div style={TX.heading}>{selected.name}</div>
+                    <div style={{ ...TX.helper, marginTop: 2 }}>{selected.city}</div>
                   </div>
                   <Badge status={nowPlaying ? 'active' : 'scheduled'} />
                 </div>
@@ -197,11 +199,11 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
               </Card>
 
               <Card style={{ padding: '16px 20px' }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
+                <div style={{ ...TX.strong, marginBottom: 12 }}>
                   Queued ({queued.length})
                 </div>
                 {queued.length === 0 ? (
-                  <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, padding: '12px 0' }}>No queued campaigns</div>
+                  <div style={{ ...TX.helperMuted, padding: '12px 0' }}>No queued campaigns</div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {queued.map((c, i) => (
@@ -212,14 +214,14 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
                       }}>
                         <div style={{ width: 12, height: 12, borderRadius: 3, background: c.color || C.purple, flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{c.advertiser}</div>
-                          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>
+                          <div style={{ ...TX.body, fontWeight: 500 }}>{c.advertiser}</div>
+                          <div style={TX.caption}>
                             {timeLabel(c.timeStart)}–{timeLabel(c.timeEnd)} · {c.duration}s · {c.slots}% share
                           </div>
                         </div>
                         <div style={{ textAlign: 'right', flexShrink: 0 }}>
                           <Badge status={c.status} />
-                          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.mono, marginTop: 3 }}>{c.start}</div>
+                          <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.mono, marginTop: 3 }}>{c.start}</div>
                         </div>
                       </div>
                     ))}

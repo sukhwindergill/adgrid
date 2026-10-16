@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase.js'
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js'
 import { useToast } from '../../components/primitives/Toast.jsx'
-import { C, F } from '../../design/tokens.js'
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx'
 import { Btn } from '../../components/primitives/Btn.jsx'
+import { Inp } from '../../components/primitives/Inp.jsx'
+import { compactField } from '../../components/primitives/field.js'
 import { Badge } from '../../components/primitives/Badge.jsx'
 import { DISPUTE_REASONS } from '../../lib/disputeReasons.js'
 
@@ -87,16 +90,16 @@ export function DisputeQueue() {
       <Btn variant="ghost" onClick={() => navigate('/app')} style={{ marginBottom: 16, paddingLeft: 0 }}>
         ← Back
       </Btn>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, fontFamily: F.display, marginBottom: 20 }}>
+      <h1 style={{ ...TX.pageTitle, marginBottom: 20 }}>
         Disputes
       </h1>
 
       {loading ? (
-        <div style={{ color: C.textSub, fontFamily: F.sans, fontSize: 13 }}>Loading…</div>
+        <div style={TX.bodySub}>Loading…</div>
       ) : error ? (
-        <div style={{ color: C.red, fontFamily: F.sans, fontSize: 13 }}>Couldn't load disputes — check your connection and try again.</div>
+        <div style={{ color: C.redText, fontFamily: F.sans, fontSize: T.base }}>Couldn't load disputes — check your connection and try again.</div>
       ) : open.length === 0 ? (
-        <div style={{ color: C.textSub, fontFamily: F.sans, fontSize: 13, marginBottom: 32 }}>No open disputes.</div>
+        <div style={{ ...TX.bodySub, marginBottom: 32 }}>No open disputes.</div>
       ) : (
         <div style={{ marginBottom: 32 }}>
           {open.map(d => {
@@ -105,8 +108,8 @@ export function DisputeQueue() {
               <Card key={d.id} style={{ marginBottom: 12, padding: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans }}>{reasonLabel(d.reason_code)}</div>
-                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+                    <div style={TX.strong}>{reasonLabel(d.reason_code)}</div>
+                    <div style={{ ...TX.caption, marginTop: 2 }}>
                       {booking ? `${booking.advertiser_name} · ${booking.screen_name} · $${Number(booking.budget).toLocaleString()} booked` : d.booking_id}
                     </div>
                   </div>
@@ -114,18 +117,19 @@ export function DisputeQueue() {
                 </div>
 
                 {d.reason_text && (
-                  <div style={{ fontSize: 13, color: C.textMid, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.5 }}>{d.reason_text}</div>
+                  <div style={{ fontSize: T.base, color: C.textMid, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.5 }}>{d.reason_text}</div>
                 )}
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
                   <Btn variant="success" size="sm" disabled={busyId === d.id} onClick={() => resolve(d, 'refund_full')}>
                     {busyId === d.id ? '…' : `Refund Full ($${booking ? Number(booking.budget).toLocaleString() : '—'})`}
                   </Btn>
-                  <input
-                    type="number" min="0.01" step="0.01" placeholder="Partial $"
+                  <Inp
+                    type="number" min="0.01" step="0.01" placeholder="Partial $" aria-label="Partial refund amount"
                     value={amounts[d.id] ?? ''}
                     onChange={e => setAmounts(s => ({ ...s, [d.id]: e.target.value }))}
-                    style={{ width: 90, padding: '6px 8px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.mono, fontSize: 12 }}
+                    wrapperStyle={{ width: 90 }}
+                    style={{ ...compactField, padding: '6px 8px', fontFamily: F.mono }}
                   />
                   <Btn variant="secondary" size="sm" disabled={busyId === d.id} onClick={() => resolve(d, 'refund_partial')}>
                     {busyId === d.id ? '…' : 'Refund Partial'}
@@ -142,7 +146,7 @@ export function DisputeQueue() {
 
       {resolved.length > 0 && (
         <>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.display, marginBottom: 12 }}>
+          <h2 style={{ fontSize: T.lg, fontWeight: 600, color: C.text, fontFamily: F.display, marginBottom: 12 }}>
             Resolved
           </h2>
           {resolved.map(d => {
@@ -150,8 +154,8 @@ export function DisputeQueue() {
             return (
               <Card key={d.id} style={{ marginBottom: 8, padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
                 <div>
-                  <div style={{ fontSize: 13, color: C.text, fontFamily: F.sans }}>{reasonLabel(d.reason_code)}</div>
-                  <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+                  <div style={TX.body}>{reasonLabel(d.reason_code)}</div>
+                  <div style={{ ...TX.caption, marginTop: 2 }}>
                     {booking ? `${booking.advertiser_name} · ${booking.screen_name}` : d.booking_id}
                   </div>
                 </div>
