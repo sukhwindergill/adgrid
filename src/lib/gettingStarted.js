@@ -50,14 +50,17 @@ export function operatorSteps({ screens = [], connectStatus } = {}) {
 
 // hasCard: true / false once known, null while the billing lookup is
 // pending or failed -- treated as not done so the step stays visible.
+// Value first: building a campaign comes before paperwork. Verification is
+// last because it's an optional perk (badge, operator auto-approve), not a
+// requirement to book.
 export function advertiserSteps({ isVerified, hasCard, hasCampaign } = {}) {
   return [
     {
-      id: 'verify',
-      title: 'Verify your business',
-      body: 'Verified advertisers get a badge and can be auto-approved by operators.',
-      done: Boolean(isVerified),
-      nav: 'verification',
+      id: 'campaign',
+      title: 'Build your first campaign',
+      body: 'Pick screens, upload your ad and set a budget. No minimum spend.',
+      done: Boolean(hasCampaign),
+      nav: 'adv-create',
     },
     {
       id: 'card',
@@ -67,11 +70,11 @@ export function advertiserSteps({ isVerified, hasCard, hasCampaign } = {}) {
       nav: 'adv-billing',
     },
     {
-      id: 'campaign',
-      title: 'Launch your first campaign',
-      body: 'Pick screens, upload your ad and set a budget. No minimum spend.',
-      done: Boolean(hasCampaign),
-      nav: 'adv-create',
+      id: 'verify',
+      title: 'Verify your business (optional)',
+      body: 'Verified advertisers get a badge and can be auto-approved by operators, so campaigns go live faster.',
+      done: Boolean(isVerified),
+      nav: 'verification',
     },
   ];
 }

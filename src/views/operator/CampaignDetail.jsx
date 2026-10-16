@@ -17,6 +17,7 @@ import { DeliveryCheckPanel } from '../../components/shared/DeliveryCheckPanel.j
 import { PacingCard } from '../../components/shared/PacingCard.jsx';
 import { IconEdit, IconClock } from '../../components/icons.jsx';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
+import { isAwaitingPayment } from '../../lib/unpaidCampaigns.js';
 
 export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onDuplicate, canReview = false, setCampaigns, onApprovalChange, isAdvertiserView = false }) {
   const toast = useToast();
@@ -44,6 +45,29 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
   // instead, which re-derives the correct target status server-side and
   // is the only thing that actually has a column-level UPDATE grant on
   // bookings.status.
+  // Advertiser-side "Pay later" follow-up: same charge path as the wizard's
+  // pay step. charge-campaign moves the booking to 'scheduled' on success.
+  const [paying, setPaying] = useState(false);
+  async function payNow() {
+    setPaying(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/charge-campaign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+      body: JSON.stringify({ campaign_id: c.id }),
+    });
+    const json = await res.json().catch(() => ({}));
+    setPaying(false);
+    if (!res.ok) {
+      toast.error(json.requires_action
+        ? 'Your card needs extra verification. Update it under Billing, then try again.'
+        : (json.error ?? 'Payment failed.'));
+      return;
+    }
+    onUpdate({ ...c, status: 'scheduled', payment_status: 'paid', __skipServerWrite: true });
+    toast.success('Payment captured. Your campaign is scheduled.');
+  }
+
   async function runStatusAction(action) {
     setStatusActionLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
@@ -159,6 +183,16 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
           <Btn variant="secondary" size="sm" icon={<IconEdit size={13} />} onClick={() => { setEditForm({ budget: c.budget, start: c.start, end: c.end }); setEditing(true); }}>Edit</Btn>
         </>}
       />
+
+      {isAdvertiserView && isAwaitingPayment(c) && (
+        <div role="status" style={{ background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', fontFamily: F.sans }}>
+          <div style={{ flex: 1, minWidth: 200, fontSize: 14, color: C.text }}>
+            <strong>Waiting on payment.</strong>{' '}
+            <span style={{ color: C.textSub }}>Screens won't play this campaign until payment is captured.</span>
+          </div>
+          <Btn size="sm" onClick={payNow} disabled={paying}>{paying ? 'Charging…' : 'Pay now'}</Btn>
+        </div>
+      )}
 
       {c.status === 'pending_review' && (
         <div style={{ background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, fontFamily: F.sans }}>

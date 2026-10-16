@@ -25,6 +25,7 @@ import { DraftsCard } from './createCampaign/DraftsCard.jsx';
 import { normalizeBooking } from '../../lib/normalizeBooking.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { advertiserSteps } from '../../lib/gettingStarted.js';
+import { awaitingPayment } from '../../lib/unpaidCampaigns.js';
 import { GettingStartedCard } from '../../components/shared/GettingStartedCard.jsx';
 import { IconDollar, IconEye, IconQr, IconTrendUp, IconTarget, IconScreen, IconWarning } from '../../components/icons.jsx';
 
@@ -99,6 +100,19 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
   const [screenCoords, setScreenCoords] = useState({}); // screen_id -> {lat, lon}
   const [disputeCampaignId, setDisputeCampaignId] = useState(null);
   const [compareCampaignId, setCompareCampaignId] = useState(null);
+  const [unpaid, setUnpaid] = useState([]);
+
+  // Separate from myCampaigns (which is capped to the most recent few) so an
+  // older "Pay later" campaign still gets surfaced.
+  useEffect(() => {
+    if (!advertiserId) return;
+    let cancelled = false;
+    supabase.from('bookings').select('id, advertiser_name, status, payment_status, budget, currency')
+      .eq('advertiser_id', advertiserId)
+      .eq('payment_status', 'unpaid')
+      .then(({ data }) => { if (!cancelled) setUnpaid(awaitingPayment(data || [])); });
+    return () => { cancelled = true; };
+  }, [advertiserId]);
 
   useEffect(() => {
     if (!advertiserId) return;
@@ -278,6 +292,23 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
         subtitle="Your campaign performance at a glance"
         actions={<Btn onClick={() => setAdvNav('adv-create')}>+ New Campaign</Btn>}
       />
+
+      {unpaid.length > 0 && (
+        <div role="status" style={{
+          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+          padding: '14px 16px', borderRadius: 10, marginBottom: 20,
+          background: C.amberSoft, border: `1px solid ${C.amberBorder}`,
+        }}>
+          <IconWarning size={16} />
+          <div style={{ flex: 1, minWidth: 200, fontSize: 14, fontFamily: F.sans, color: C.text }}>
+            <strong>{unpaid.length} {pluralize(unpaid.length, 'campaign')} waiting on payment.</strong>{' '}
+            <span style={{ color: C.textSub }}>Screens won't play {unpaid.length === 1 ? 'it' : 'them'} until payment is captured.</span>
+          </div>
+          <Btn size="sm" onClick={() => setAdvNav(unpaid.length === 1 ? `adv-campaigns/${unpaid[0].id}` : 'adv-campaigns')}>
+            {unpaid.length === 1 ? 'Pay now' : 'Review'}
+          </Btn>
+        </div>
+      )}
 
       {isOwnAccount && campaignsLoaded && (
         <GettingStartedCard
