@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { C } from '../../design/tokens.js';
+import { C, T } from '../../design/tokens.js';
 
 const THRESHOLD = 400;
 
@@ -32,7 +32,7 @@ export function ScrollToTopButton() {
         border: 'none',
         background: C.grad,
         color: '#fff',
-        fontSize: 18,
+        fontSize: T.lg,
         cursor: 'pointer',
         boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
         display: 'flex',

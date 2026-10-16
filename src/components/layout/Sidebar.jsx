@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { navFor, highlightedNavId } from './navConfig.js';
 import { MobileTabBar } from './MobileTabBar.jsx';
@@ -30,7 +30,7 @@ export function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
                 ? 'linear-gradient(135deg, rgba(124,58,237,0.25), rgba(168,85,247,0.15))'
                 : 'transparent',
               color: activeMode === m.id ? C.purple : C.textMuted,
-              fontSize: 11, fontWeight: 700, fontFamily: F.sans, letterSpacing: '0.04em',
+              fontSize: T.xs, fontWeight: 700, fontFamily: F.sans, letterSpacing: '0.04em',
               transition: 'all 0.15s',
             }}
           >
@@ -55,7 +55,7 @@ export function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
           onClick={() => onSwitch(m.id)}
           style={{
             flex: 1, padding: '7px 0', borderRadius: 6, border: 'none', cursor: 'pointer',
-            fontSize: 12, fontWeight: activeMode === m.id ? 600 : 500, fontFamily: F.sans,
+            fontSize: T.sm, fontWeight: activeMode === m.id ? 600 : 500, fontFamily: F.sans,
             transition: 'all 0.15s',
             background: activeMode === m.id ? C.surface : 'transparent',
             color: activeMode === m.id ? C.purple : C.textSub,
@@ -101,7 +101,7 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
         color: isActive ? C.purple : hovered ? C.text : C.textSub,
         cursor: 'pointer',
         fontFamily: F.sans,
-        fontSize: 13,
+        fontSize: T.base,
         fontWeight: isActive ? 600 : 400,
         transition: 'all 0.15s',
         position: 'relative',
@@ -140,7 +140,7 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
             borderRadius: 7,
             background: '#f59e0b',
             color: '#fff',
-            fontSize: 11,
+            fontSize: T.xs,
             fontWeight: 700,
             display: 'flex',
             alignItems: 'center',
@@ -164,7 +164,7 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
               borderRadius: 9,
               background: '#f59e0b',
               color: '#fff',
-              fontSize: 11,
+              fontSize: T.xs,
               fontWeight: 700,
               display: 'flex',
               alignItems: 'center',
@@ -264,7 +264,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
           alignItems: 'center',
           justifyContent: 'center',
           color: '#fff',
-          fontSize: 13,
+          fontSize: T.base,
           fontWeight: 700,
           fontFamily: F.sans,
           flexShrink: 0,
@@ -273,7 +273,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
           <span style={{
             fontFamily: F.sans,
             fontWeight: 700,
-            fontSize: 14,
+            fontSize: T.md,
             letterSpacing: '0.05em',
             color: C.text,
             whiteSpace: 'nowrap',
@@ -291,7 +291,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
             {gi > 0 && (collapsed
               ? <div style={{ height: 1, background: C.border, margin: '10px 4px' }} />
               : <div style={{
-                  padding: '14px 12px 6px', fontSize: 11, fontWeight: 600, fontFamily: F.sans,
+                  padding: '14px 12px 6px', fontSize: T.xs, fontWeight: 600, fontFamily: F.sans,
                   color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em',
                 }}>{g.group}</div>)}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -338,7 +338,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
               alignItems: 'center',
               justifyContent: 'center',
               color: '#fff',
-              fontSize: 11,
+              fontSize: T.xs,
               fontWeight: 600,
               fontFamily: F.sans,
               flexShrink: 0,
@@ -346,10 +346,10 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
               {(user?.name || user?.email || 'U').slice(0, 2).toUpperCase()}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: F.sans, fontSize: 12, fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontFamily: F.sans, fontSize: T.sm, fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user?.name || 'User'}
               </div>
-              <div style={{ fontFamily: F.sans, fontSize: 11, color: C.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontFamily: F.sans, fontSize: T.xs, color: C.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user?.email}
               </div>
             </div>
@@ -366,7 +366,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
                 cursor: 'pointer',
                 color: signOutHovered ? C.red : C.textMuted,
                 fontFamily: F.sans,
-                fontSize: 11,
+                fontSize: T.xs,
                 fontWeight: 500,
                 transition: 'all 0.15s',
                 flexShrink: 0,
@@ -403,7 +403,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
         {!collapsed && (
           <div style={{
             display: 'flex', gap: 10, padding: '2px 12px 4px',
-            fontSize: 11, fontFamily: F.sans, color: C.textMuted,
+            fontSize: T.xs, fontFamily: F.sans, color: C.textMuted,
           }}>
             <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: C.textMuted, textDecoration: 'none' }}
               onMouseEnter={e => e.currentTarget.style.color = C.purple}
@@ -439,7 +439,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
           }}
         >
           {!collapsed && (
-            <span style={{ fontFamily: F.sans, fontSize: 11, color: C.textMuted }}>Collapse</span>
+            <span style={{ fontFamily: F.sans, fontSize: T.xs, color: C.textMuted }}>Collapse</span>
           )}
           {collapsed ? ICONS.chevronRight : ICONS.chevronLeft}
         </button>}

@@ -1,7 +1,7 @@
 // src/components/shared/CreativePreview.jsx
 import { useRef } from 'react';
 import QRCode from 'react-qr-code';
-import { F } from '../../design/tokens.js';
+import { F, T } from '../../design/tokens.js';
 import { getCreativeRenderPlan } from '../../lib/getCreativeRenderPlan.js';
 import { clampQrCenter, clampQrSizePct } from '../../lib/creativeQrPosition.js';
 
@@ -20,7 +20,7 @@ function BottomBarBody({ headline, cta, bg, category, headlineFont }) {
       )}
       <div data-headline style={{
         position: 'absolute', bottom: 22, left: 14, right: 60,
-        fontSize: 13, fontWeight: 800, color: '#fff',
+        fontSize: T.base, fontWeight: 800, color: '#fff',
         lineHeight: 1.1, fontFamily: headlineFont,
         textShadow: '0 2px 8px rgba(0,0,0,0.5)',
         overflow: 'hidden', display: '-webkit-box',
@@ -51,7 +51,7 @@ function FullBleedBody({ headline, cta, bg, category, headlineFont }) {
         }}>{category}</div>
       )}
       <div data-headline style={{
-        fontSize: 14, fontWeight: 800, color: '#fff', lineHeight: 1.15,
+        fontSize: T.md, fontWeight: 800, color: '#fff', lineHeight: 1.15,
         fontFamily: headlineFont, textShadow: '0 2px 8px rgba(0,0,0,0.5)',
         overflow: 'hidden', display: '-webkit-box',
         WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
@@ -81,7 +81,7 @@ function SplitPanelBody({ headline, cta, bg, secondaryBg, category, headlineFont
           }}>{category}</div>
         )}
         <div data-headline style={{
-          fontSize: 12, fontWeight: 800, color: '#fff', lineHeight: 1.15,
+          fontSize: T.sm, fontWeight: 800, color: '#fff', lineHeight: 1.15,
           fontFamily: headlineFont, overflow: 'hidden', display: '-webkit-box',
           WebkitLineClamp: 3, WebkitBoxOrient: 'vertical',
         }}>{headline}</div>

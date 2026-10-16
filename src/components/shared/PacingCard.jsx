@@ -5,7 +5,7 @@
 // queries); the "Pacing behind schedule" automation rule an advertiser can
 // opt into (see AutomationRulesView) uses the same math (src/lib/pacing.js)
 // but only notifies on request -- this shows it by default.
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
 import { Card } from '../primitives/Card.jsx';
 import { ProgressBar } from '../primitives/ProgressBar.jsx';
 import { formatCurrency } from '../../lib/formatCurrency.js';
@@ -33,29 +33,29 @@ export function PacingCard({ startDate, endDate, spent, budget, currency }) {
   return (
     <Card style={{ marginBottom: 20, padding: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans }}>Pacing</div>
+        <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans }}>Pacing</div>
         <div style={{
-          fontSize: 11, fontWeight: 600, color: copy.color, fontFamily: F.sans,
+          fontSize: T.xs, fontWeight: 600, color: copy.color, fontFamily: F.sans,
           padding: '3px 10px', borderRadius: 999, background: `${copy.color}1a`, border: `1px solid ${copy.color}55`,
         }}>{copy.label}</div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 3 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginBottom: 3 }}>
             <span>Flight elapsed</span><span>{elapsedPct}%</span>
           </div>
           <ProgressBar value={elapsedPct} max={100} height={6} />
         </div>
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 3 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginBottom: 3 }}>
             <span>Budget spent</span><span>{spentPct}%</span>
           </div>
           <ProgressBar value={spentPct} max={100} height={6} />
         </div>
       </div>
 
-      <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5 }}>
+      <div style={{ fontSize: T.sm, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5 }}>
         {copy.desc}
         {projected !== null && (
           <> Projected final spend: <strong style={{ color: C.text }}>{formatCurrency(projected, currency)}</strong> of {formatCurrency(budget, currency)} budget.</>

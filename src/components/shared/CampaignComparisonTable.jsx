@@ -1,4 +1,4 @@
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
 import { Card } from '../primitives/Card.jsx';
 import { Badge } from '../primitives/Badge.jsx';
 
@@ -25,11 +25,11 @@ export function CampaignComparisonTable({ campaigns, onRemove }) {
 
   return (
     <Card style={{ padding: 0, marginBottom: 20, overflow: 'hidden' }}>
-      <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.border}`, fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans }}>
+      <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.border}`, fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans }}>
         Comparing {campaigns.length} campaign{campaigns.length !== 1 ? 's' : ''}
       </div>
       <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 480 + campaigns.length * 140 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: T.base, minWidth: 480 + campaigns.length * 140 }}>
           <thead>
             <tr>
               <th style={{ textAlign: 'left', padding: '10px 20px', color: C.textSub, fontWeight: 500, fontFamily: F.sans, borderBottom: `1px solid ${C.border}`, background: C.bg, position: 'sticky', left: 0 }} />
@@ -39,7 +39,7 @@ export function CampaignComparisonTable({ campaigns, onRemove }) {
                     <span style={{ fontWeight: 600, color: C.text, fontFamily: F.sans }}>{c.advertiser}</span>
                     {onRemove && (
                       <button onClick={() => onRemove(c.id)} aria-label={`Remove ${c.advertiser} from comparison`}
-                        style={{ border: 'none', background: 'none', color: C.textMuted, cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 2 }}>✕</button>
+                        style={{ border: 'none', background: 'none', color: C.textMuted, cursor: 'pointer', fontSize: T.md, lineHeight: 1, padding: 2 }}>✕</button>
                     )}
                   </div>
                 </th>

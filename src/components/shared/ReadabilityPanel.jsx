@@ -1,4 +1,4 @@
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
 import { Card } from '../primitives/Card.jsx';
 import { CreativePreview } from './CreativePreview.jsx';
 
@@ -20,13 +20,13 @@ export function ReadabilityPanel({ campaign, score, issues = [], tiers = [] }) {
 
   return (
     <div style={{ marginTop: 16 }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: scoreColor(score), fontFamily: F.sans, marginBottom: 4 }}>
+      <div style={{ fontSize: T.base, fontWeight: 600, color: scoreColor(score), fontFamily: F.sans, marginBottom: 4 }}>
         Readability: {score}
       </div>
       {issues.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 14 }}>
           {issues.map(i => (
-            <span key={i.type} style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>
+            <span key={i.type} style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.sans }}>
               ⚠ {i.message}
             </span>
           ))}
@@ -39,7 +39,7 @@ export function ReadabilityPanel({ campaign, score, issues = [], tiers = [] }) {
               <div style={{ width: '100%', marginBottom: 8 }}>
                 <CreativePreview campaign={campaign} blurPx={BLUR_BY_TIER[tier]} />
               </div>
-              <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>{TIER_LABEL[tier]}</div>
+              <div style={{ fontSize: T.xs, color: C.textSub, fontFamily: F.sans }}>{TIER_LABEL[tier]}</div>
             </Card>
           ))}
         </div>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase.js'
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js'
 import { useToast } from '../../components/primitives/Toast.jsx'
-import { C, F } from '../../design/tokens.js'
+import { C, F, T } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx'
 import { Btn } from '../../components/primitives/Btn.jsx'
 import { Inp } from '../../components/primitives/Inp.jsx'
@@ -98,7 +98,7 @@ export function AdminInvites() {
       <Btn variant="ghost" onClick={() => navigate('/app')} style={{ marginBottom: 16, paddingLeft: 0 }}>
         ← Back
       </Btn>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, fontFamily: F.display, marginBottom: 20 }}>
+      <h1 style={{ fontSize: T.xxl, fontWeight: 700, color: C.text, fontFamily: F.display, marginBottom: 20 }}>
         Invite an Operator
       </h1>
       <Card style={{ marginBottom: 24 }}>
@@ -118,15 +118,15 @@ export function AdminInvites() {
         </div>
       </Card>
 
-      <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.display, marginBottom: 12 }}>
+      <h2 style={{ fontSize: T.lg, fontWeight: 600, color: C.text, fontFamily: F.display, marginBottom: 12 }}>
         Invites
       </h2>
       {loading ? (
-        <div style={{ color: C.textSub, fontFamily: F.sans, fontSize: 13 }}>Loading…</div>
+        <div style={{ color: C.textSub, fontFamily: F.sans, fontSize: T.base }}>Loading…</div>
       ) : error ? (
-        <div style={{ color: C.red, fontFamily: F.sans, fontSize: 13 }}>Couldn't load invites — check your connection and try again.</div>
+        <div style={{ color: C.red, fontFamily: F.sans, fontSize: T.base }}>Couldn't load invites — check your connection and try again.</div>
       ) : invites.length === 0 ? (
-        <div style={{ color: C.textSub, fontFamily: F.sans, fontSize: 13 }}>No invites sent yet.</div>
+        <div style={{ color: C.textSub, fontFamily: F.sans, fontSize: T.base }}>No invites sent yet.</div>
       ) : (
         invites.map(inv => (
           <Card
@@ -134,9 +134,9 @@ export function AdminInvites() {
             style={{ marginBottom: 10, padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}
           >
             <div>
-              <div style={{ fontFamily: F.sans, fontSize: 13, color: C.text }}>{inv.email}</div>
+              <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.text }}>{inv.email}</div>
               {expiryLabel(inv) && (
-                <div style={{ fontFamily: F.sans, fontSize: 11, color: C.textMuted, marginTop: 2 }}>{expiryLabel(inv)}</div>
+                <div style={{ fontFamily: F.sans, fontSize: T.xs, color: C.textMuted, marginTop: 2 }}>{expiryLabel(inv)}</div>
               )}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

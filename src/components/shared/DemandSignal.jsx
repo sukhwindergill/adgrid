@@ -6,7 +6,7 @@
 // question onboarding never used to: "will anyone actually book this?"
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
 import { VENUE_TAXONOMY } from '../../lib/venueTypes.js';
 import { demandSignalMessage } from '../../lib/demandSignal.js';
 import { IconTrendUp } from '../icons.jsx';
@@ -41,7 +41,7 @@ export function DemandSignal({ city, venueCategory }) {
       border: `1px solid ${(active ? C.green : C.purple)}44`,
     }}>
       <span style={{ color: active ? C.green : C.purple, flexShrink: 0, marginTop: 1 }}><IconTrendUp size={14} /></span>
-      <span style={{ fontSize: 13, color: C.text, fontFamily: F.sans, lineHeight: 1.45 }}>{message.text}</span>
+      <span style={{ fontSize: T.base, color: C.text, fontFamily: F.sans, lineHeight: 1.45 }}>{message.text}</span>
     </div>
   );
 }

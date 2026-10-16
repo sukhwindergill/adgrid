@@ -1,4 +1,4 @@
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
 import { compareDeliveryCheck, VERDICT } from '../../lib/deliveryCheck.js';
 
 const VERDICT_LABEL = {
@@ -27,8 +27,8 @@ export function DeliveryCheckPanel({ holdoutEnabled, row }) {
         background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
         padding: '16px 20px', fontFamily: F.sans,
       }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 4 }}>Delivery Check</div>
-        <div style={{ fontSize: 13, color: C.textMuted }}>
+        <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 4 }}>Delivery Check</div>
+        <div style={{ fontSize: T.base, color: C.textMuted }}>
           Still collecting data for this delivery check.
         </div>
       </div>
@@ -42,18 +42,18 @@ export function DeliveryCheckPanel({ holdoutEnabled, row }) {
       background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
       padding: '16px 20px', fontFamily: F.sans,
     }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 10 }}>Delivery Check</div>
+      <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 10 }}>Delivery Check</div>
       <div style={{ display: 'flex', gap: 24, marginBottom: 10 }}>
         <div>
-          <div style={{ fontSize: 11, color: C.textMuted }}>Exposed delivered rate</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{exposedRate.toFixed(2)} ppl/min</div>
+          <div style={{ fontSize: T.xs, color: C.textMuted }}>Exposed delivered rate</div>
+          <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{exposedRate.toFixed(2)} ppl/min</div>
         </div>
         <div>
-          <div style={{ fontSize: 11, color: C.textMuted }}>Control ambient rate</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{controlRate.toFixed(2)} ppl/min</div>
+          <div style={{ fontSize: T.xs, color: C.textMuted }}>Control ambient rate</div>
+          <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{controlRate.toFixed(2)} ppl/min</div>
         </div>
       </div>
-      <div style={{ fontSize: 13, fontWeight: 500, color: VERDICT_COLOR[verdict] }}>
+      <div style={{ fontSize: T.base, fontWeight: 500, color: VERDICT_COLOR[verdict] }}>
         {VERDICT_LABEL[verdict]} — delivery vs. this campaign's randomly-assigned control group's measured ambient audience.
       </div>
     </div>

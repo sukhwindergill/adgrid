@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
 import { ModeSwitcher } from './Sidebar.jsx';
 import { ICONS } from './navIcons.jsx';
 import { navFor, tabsFor, highlightedNavId } from './navConfig.js';
@@ -13,7 +13,7 @@ function Badge({ count }) {
   return (
     <span style={{
       position: 'absolute', top: -4, right: -8, minWidth: 16, height: 16, borderRadius: 8,
-      background: C.amber, color: '#fff', fontSize: 11, fontWeight: 700, fontFamily: F.sans,
+      background: C.amber, color: '#fff', fontSize: T.xs, fontWeight: 700, fontFamily: F.sans,
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px',
     }}>{count > 99 ? '99+' : count}</span>
   );
@@ -39,7 +39,7 @@ export function MobileTabBar({ active, activeMode, onModeSwitch, onNavigate, onS
   const tabBtn = (isActive) => ({
     flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
     padding: '8px 0 6px', background: 'none', border: 'none', cursor: 'pointer',
-    color: isActive ? C.purple : C.textSub, fontFamily: F.sans, fontSize: 11,
+    color: isActive ? C.purple : C.textSub, fontFamily: F.sans, fontSize: T.xs,
     fontWeight: isActive ? 600 : 500, minHeight: 52,
   });
 
@@ -59,7 +59,7 @@ export function MobileTabBar({ active, activeMode, onModeSwitch, onNavigate, onS
           {navFor(activeMode).map(g => (
             <div key={g.group ?? 'top'} style={{ marginBottom: 8 }}>
               {g.group && (
-                <div style={{ padding: '8px 4px 4px', fontSize: 11, fontWeight: 600, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: F.sans }}>
+                <div style={{ padding: '8px 4px 4px', fontSize: T.xs, fontWeight: 600, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: F.sans }}>
                   {g.group}
                 </div>
               )}
@@ -67,7 +67,7 @@ export function MobileTabBar({ active, activeMode, onModeSwitch, onNavigate, onS
                 <button key={item.id} onClick={() => go(item.id)} aria-current={current === item.id ? 'page' : undefined} style={{
                   display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '12px 8px',
                   background: current === item.id ? C.purpleSoft : 'none', border: 'none', borderRadius: 8,
-                  color: current === item.id ? C.purple : C.text, fontFamily: F.sans, fontSize: 15, cursor: 'pointer', textAlign: 'left',
+                  color: current === item.id ? C.purple : C.text, fontFamily: F.sans, fontSize: T.md, cursor: 'pointer', textAlign: 'left',
                 }}>
                   <span style={{ display: 'flex', position: 'relative' }}>
                     {ICONS[item.icon]}
@@ -80,7 +80,7 @@ export function MobileTabBar({ active, activeMode, onModeSwitch, onNavigate, onS
           ))}
           <button onClick={() => { setMoreOpen(false); onSignOut(); }} style={{
             width: '100%', padding: '12px 8px', background: 'none', border: 'none', borderTop: `1px solid ${C.border}`,
-            color: C.red, fontFamily: F.sans, fontSize: 15, textAlign: 'left', cursor: 'pointer', marginTop: 4,
+            color: C.red, fontFamily: F.sans, fontSize: T.md, textAlign: 'left', cursor: 'pointer', marginTop: 4,
           }}>Sign out</button>
         </div>
       )}

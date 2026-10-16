@@ -1,6 +1,6 @@
 import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
@@ -45,27 +45,27 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
             <div style={{ fontWeight: 600, color: C.text, fontFamily: F.sans }}>{c.advertiser}</div>
-            {isPending && <span style={{ fontSize: 11, background: C.amber, color: '#fff', padding: '1px 6px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>REVIEW</span>}
+            {isPending && <span style={{ fontSize: T.xs, background: C.amber, color: '#fff', padding: '1px 6px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>REVIEW</span>}
           </div>
-          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.category} · {screenCount} {pluralize(screenCount, 'screen')} · {displayCity}</div>
+          <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>{c.category} · {screenCount} {pluralize(screenCount, 'screen')} · {displayCity}</div>
         </div>
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.mono }}>${c.spent.toLocaleString()}</span>
-            <span style={{ fontSize: 12, color: C.textMuted, fontFamily: F.mono }}>${c.budget.toLocaleString()}</span>
+            <span style={{ fontSize: T.sm, fontWeight: 600, color: C.text, fontFamily: F.mono }}>${c.spent.toLocaleString()}</span>
+            <span style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.mono }}>${c.budget.toLocaleString()}</span>
           </div>
           <ProgressBar value={c.spent} max={c.budget} height={4} />
-          <div style={{ fontSize: 11, color: pct > 90 ? C.red : pct > 70 ? C.amber : C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{pct}% used</div>
+          <div style={{ fontSize: T.xs, color: pct > 90 ? C.red : pct > 70 ? C.amber : C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{pct}% used</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: F.mono, fontSize: 14, fontWeight: 600, color: C.text }}>{(c.impressions / 1000).toFixed(1)}K</div>
-          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>impressions</div>
+          <div style={{ fontFamily: F.mono, fontSize: T.md, fontWeight: 600, color: C.text }}>{(c.impressions / 1000).toFixed(1)}K</div>
+          <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>impressions</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: F.mono, fontSize: 14, fontWeight: 600, color: C.purple }}>{c.scans}</div>
-          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>scans</div>
+          <div style={{ fontFamily: F.mono, fontSize: T.md, fontWeight: 600, color: C.purple }}>{c.scans}</div>
+          <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>scans</div>
         </div>
-        <div style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub, whiteSpace: 'nowrap' }}>{c.start} →<br />{c.end}</div>
+        <div style={{ fontFamily: F.mono, fontSize: T.xs, color: C.textSub, whiteSpace: 'nowrap' }}>{c.start} →<br />{c.end}</div>
         {isPending && canReview ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }} onClick={e => e.preventDefault()}>
             <ApproveBtn campaign={c} setCampaigns={setCampaigns} onSuccess={onApprovalChange} />

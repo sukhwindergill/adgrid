@@ -1,4 +1,4 @@
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
 export function AppShell({ sidebar, header, children, impersonating, onStopImpersonation }) {
@@ -23,7 +23,7 @@ export function AppShell({ sidebar, header, children, impersonating, onStopImper
           justifyContent: 'center',
           gap: 16,
           fontFamily: F.sans,
-          fontSize: 13,
+          fontSize: T.base,
           fontWeight: 500,
         }}>
           <span>👁 Viewing as {impersonating.name}</span>
@@ -37,7 +37,7 @@ export function AppShell({ sidebar, header, children, impersonating, onStopImper
               color: '#fff',
               cursor: 'pointer',
               fontFamily: F.sans,
-              fontSize: 12,
+              fontSize: T.sm,
               fontWeight: 600,
             }}
           >Exit</button>

@@ -27,6 +27,7 @@ import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/reve
 import { CreateCampaign } from '../advertiser/CreateCampaign.jsx';
 import { CATEGORIES } from '../../lib/data.js';
 import { SENSITIVE_CATEGORIES, isCategoryBlocked, toggleBlockedCategory } from '../../lib/adGuardrails.js';
+import { T } from '../../design/tokens.js';
 
 async function startStripeConnect(setConnecting) {
   setConnecting(true);
@@ -65,7 +66,7 @@ function PillGroup({ options, value, onChange }) {
             border: `1px solid ${active ? C.purple : C.border}`,
             background: active ? C.purpleSoft : C.surface,
             color: active ? C.purple : C.textSub,
-            fontSize: 12, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
+            fontSize: T.sm, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
           }}
             onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
             onMouseLeave={e => { if (!active) e.currentTarget.style.background = C.surface; }}
@@ -142,7 +143,7 @@ function DetailsTab({ screen, onSaved }) {
 
       {/* Venue details */}
       <Card style={{ padding: 24 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 20 }}>Venue Details</div>
+        <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 20 }}>Venue Details</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
           <SelInput label="Country" value={fields.country} onChange={e => setFields(s => ({ ...s, country: e.target.value, state: '' }))}>
             {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
@@ -164,7 +165,7 @@ function DetailsTab({ screen, onSaved }) {
             </SelInput>
           )}
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Environment</div>
+            <div style={{ fontSize: T.base, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Environment</div>
             <PillGroup
               options={[{ value: 'indoor', label: 'Indoor' }, { value: 'outdoor', label: 'Outdoor' }]}
               value={fields.environment}
@@ -172,14 +173,14 @@ function DetailsTab({ screen, onSaved }) {
             />
           </div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Screen Position</div>
+            <div style={{ fontSize: T.base, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Screen Position</div>
             <PillGroup options={SCREEN_POSITION_OPTIONS} value={fields.screen_position} onChange={val => set('screen_position', val)} />
           </div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>
+            <div style={{ fontSize: T.base, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>
               Screen Location
             </div>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 8 }}>
+            <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginBottom: 8 }}>
               Advertisers searching by radius can't find this screen without a pinned location, and it's
               excluded from audience reach estimates.
             </div>
@@ -191,17 +192,17 @@ function DetailsTab({ screen, onSaved }) {
           <Inp label="Max house-ad share of loop (%)" type="number" min="0" max="100"
             value={fields.house_ad_max_pct}
             onChange={e => set('house_ad_max_pct', Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0)))} />
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: C.textMid, fontFamily: F.sans, cursor: 'pointer' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: T.base, color: C.textMid, fontFamily: F.sans, cursor: 'pointer' }}>
             <input type="checkbox" checked={fields.programmatic_backfill_enabled}
               onChange={e => set('programmatic_backfill_enabled', e.target.checked)} />
             Allow programmatic backfill on this screen
           </label>
-          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: -8 }}>
+          <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginTop: -8 }}>
             When there's no paid campaign or house ad to play, fill with external programmatic demand instead of the idle slide. Never bumps a paid campaign or house ad.
           </div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 4 }}>Blocked ad categories</div>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 8 }}>
+            <div style={{ fontSize: T.base, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 4 }}>Blocked ad categories</div>
+            <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginBottom: 8 }}>
               Advertisers in these categories can't target this screen, and it will never play their ads. Campaigns already in your approval queue are flagged.
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -215,7 +216,7 @@ function DetailsTab({ screen, onSaved }) {
                       border: `1px solid ${active ? C.red : C.border}`,
                       background: active ? C.redSoft : C.surface,
                       color: active ? C.red : C.textSub,
-                      fontSize: 12, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
+                      fontSize: T.sm, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
                     }}
                   >{active ? '⊘ ' : ''}{cat}</button>
                 );
@@ -224,7 +225,7 @@ function DetailsTab({ screen, onSaved }) {
           </div>
         </div>
         {msg && (
-          <div style={{ fontSize: 12, color: msg.ok ? C.green : C.red, fontFamily: F.sans, marginBottom: 12 }}>
+          <div style={{ fontSize: T.sm, color: msg.ok ? C.green : C.red, fontFamily: F.sans, marginBottom: 12 }}>
             {msg.text}
           </div>
         )}
@@ -448,7 +449,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   if (!screen) {
     return (
       <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-        <div style={{ fontSize: 14, color: screenLoadError ? C.red : C.textSub, fontFamily: F.sans }}>
+        <div style={{ fontSize: T.md, color: screenLoadError ? C.red : C.textSub, fontFamily: F.sans }}>
           {screenLoadError ? "Couldn't load this screen — check your connection and try again." : 'Screen not found.'}
         </div>
         <Btn variant="secondary" style={{ marginTop: 16 }} onClick={onBack}>← Back</Btn>
@@ -492,7 +493,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
               return (
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', gap: 5,
-                  padding: '3px 9px', borderRadius: 20, fontSize: 11, fontWeight: 500,
+                  padding: '3px 9px', borderRadius: 20, fontSize: T.xs, fontWeight: 500,
                   fontFamily: F.sans, background: `${hs.dot}1a`, color: hs.dot, border: `1px solid ${hs.dot}55`,
                 }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: hs.dot }} />
@@ -544,7 +545,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       />
 
       {reactivateError && (
-        <div style={{ marginBottom: 16, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder ?? '#fde68a'}`, borderRadius: 8, fontSize: 12, color: '#92400e', fontFamily: F.sans }}>
+        <div style={{ marginBottom: 16, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder ?? '#fde68a'}`, borderRadius: 8, fontSize: T.sm, color: '#92400e', fontFamily: F.sans }}>
           {reactivateError}
         </div>
       )}
@@ -560,7 +561,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
           justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
           background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8,
         }}>
-          <span style={{ fontSize: 12, color: C.red, fontFamily: F.sans }}>
+          <span style={{ fontSize: T.sm, color: C.red, fontFamily: F.sans }}>
             {healthSignal(screen).label === 'Offline'
               ? "This screen isn't sending heartbeats. Check that its display is powered on and connected to the internet."
               : "This screen's last heartbeat is stale — it may be about to go offline."}
@@ -582,7 +583,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
             onClick={() => setTab(t.key)}
             style={{
               padding: '9px 18px', border: 'none', background: 'none', cursor: 'pointer',
-              fontFamily: F.sans, fontSize: 13, fontWeight: tab === t.key ? 600 : 400,
+              fontFamily: F.sans, fontSize: T.base, fontWeight: tab === t.key ? 600 : 400,
               color: tab === t.key ? C.purple : C.textSub,
               borderBottom: `2px solid ${tab === t.key ? C.purple : 'transparent'}`,
               marginBottom: -1, transition: 'all 0.15s',
@@ -625,10 +626,10 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       {/* Uptime grid + screen details */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
         <Card>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>
+          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>
             7-Day Uptime
             {heartbeats.length === 0 && !loadingData && (
-              <span style={{ fontSize: 11, color: C.textMuted, fontWeight: 400, marginLeft: 8 }}>(no heartbeat data — screen may be offline)</span>
+              <span style={{ fontSize: T.xs, color: C.textMuted, fontWeight: 400, marginLeft: 8 }}>(no heartbeat data — screen may be offline)</span>
             )}
           </div>
           {loadingData
@@ -638,7 +639,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         </Card>
 
         <Card>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Screen Details</div>
+          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Screen Details</div>
           {[
             ['Screen ID', screen.id?.slice(0, 8) + '…'],
             ['Owner', screen.owner || '—'],
@@ -649,8 +650,8 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
             ['CPM Floor', `$${(screen.cpm_floor ?? screen.cpm ?? 3.00).toFixed(2)}`],
           ].map(([l, v]) => (
             <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
-              <span style={{ fontSize: 12, color: C.textSub }}>{l}</span>
-              <span style={{ fontSize: 12, fontWeight: 500, color: C.text, maxWidth: 200, textAlign: 'right' }}>{v}</span>
+              <span style={{ fontSize: T.sm, color: C.textSub }}>{l}</span>
+              <span style={{ fontSize: T.sm, fontWeight: 500, color: C.text, maxWidth: 200, textAlign: 'right' }}>{v}</span>
             </div>
           ))}
         </Card>
@@ -659,7 +660,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       {/* Revenue split + payout */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
         <Card>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Revenue Split</div>
+          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Revenue Split</div>
           <div style={{ height: 6, borderRadius: 3, overflow: 'hidden', display: 'flex', marginBottom: 12 }}>
             <div style={{ width: `${ownerPct}%`, background: C.green }} />
             <div style={{ flex: 1, background: C.blue }} />
@@ -669,21 +670,21 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
             [`Platform (${100 - ownerPct}%)`, `$${platformSplit.toLocaleString()}`, C.blue],
           ].map(([l, v, c]) => (
             <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
-              <span style={{ fontSize: 12, color: C.textSub }}>{l}</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: c }}>{v}</span>
+              <span style={{ fontSize: T.sm, color: C.textSub }}>{l}</span>
+              <span style={{ fontSize: T.base, fontWeight: 600, color: c }}>{v}</span>
             </div>
           ))}
         </Card>
 
         <Card>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Payout Setup</div>
+          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Payout Setup</div>
           {profile?.connect_status === 'active' ? (
-            <div style={{ padding: '10px 12px', background: C.greenSoft, border: `1px solid ${C.greenBorder}`, borderRadius: 8, fontSize: 12, color: C.green, fontFamily: F.sans }}>
+            <div style={{ padding: '10px 12px', background: C.greenSoft, border: `1px solid ${C.greenBorder}`, borderRadius: 8, fontSize: T.sm, color: C.green, fontFamily: F.sans }}>
               ✓ Stripe Connect active — payouts enabled
             </div>
           ) : (
             <>
-              <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 10 }}>
+              <div style={{ fontSize: T.sm, color: C.textSub, fontFamily: F.sans, marginBottom: 10 }}>
                 Connect a Stripe account to receive payouts for ad revenue on your screens.
               </div>
               <Btn size="sm" disabled={connecting} onClick={() => startStripeConnect(setConnecting)}>
@@ -696,18 +697,18 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
 
       {/* Screen referral invite (BYOA) */}
       <Card style={{ padding: '16px 20px', marginBottom: 20 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>
+        <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>
           Invite an advertiser
         </div>
-        <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.5 }}>
+        <div style={{ fontSize: T.sm, color: C.textSub, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.5 }}>
           Know a local business that would want to advertise here? Send them a link scoped to this exact screen — no search, no signup friction.
         </div>
         <Btn onClick={createInvite} disabled={creatingInvite} style={{ marginBottom: 12 }}>
           {creatingInvite ? 'Creating…' : '+ Get invite link'}
         </Btn>
-        {inviteError && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginBottom: 12 }}>{inviteError}</div>}
+        {inviteError && <div style={{ fontSize: T.sm, color: C.red, fontFamily: F.sans, marginBottom: 12 }}>{inviteError}</div>}
         {invites.length === 0 ? (
-          <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>No invites sent yet.</div>
+          <div style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.sans }}>No invites sent yet.</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {invites.map(inv => {
@@ -716,10 +717,10 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
                 <div key={inv.id} style={{ padding: '8px 10px', background: C.surfaceAlt, borderRadius: 8 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 500, color: C.text, fontFamily: F.sans, textTransform: 'capitalize' }}>{inv.status.replace('_', ' ')}</div>
-                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{inv.view_count} view{inv.view_count !== 1 ? 's' : ''} · {new Date(inv.created_at).toLocaleDateString()}</div>
+                      <div style={{ fontSize: T.sm, fontWeight: 500, color: C.text, fontFamily: F.sans, textTransform: 'capitalize' }}>{inv.status.replace('_', ' ')}</div>
+                      <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>{inv.view_count} view{inv.view_count !== 1 ? 's' : ''} · {new Date(inv.created_at).toLocaleDateString()}</div>
                       {inv.advertiser_name && (
-                        <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>
+                        <div style={{ fontSize: T.xs, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>
                           {inv.status === 'booked' ? 'Booked by ' : 'Signed up: '}{inv.advertiser_name}
                         </div>
                       )}
@@ -731,11 +732,11 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
                         copiedLabel="✓ Copied"
                         variant="ghost"
                         size="sm"
-                        style={{ fontSize: 11, color: C.textSub, padding: 0, border: 'none', background: 'none' }}
+                        style={{ fontSize: T.xs, color: C.textSub, padding: 0, border: 'none', background: 'none' }}
                       />
                       <button
                         onClick={() => setQrInviteId(id => id === inv.id ? null : inv.id)}
-                        style={{ fontSize: 11, color: C.purple, padding: 0, border: 'none', background: 'none', cursor: 'pointer', fontFamily: F.sans }}
+                        style={{ fontSize: T.xs, color: C.purple, padding: 0, border: 'none', background: 'none', cursor: 'pointer', fontFamily: F.sans }}
                       >
                         {qrInviteId === inv.id ? 'Hide QR' : 'Show QR'}
                       </button>
@@ -745,7 +746,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
                         copiedLabel="✓ Copied"
                         variant="ghost"
                         size="sm"
-                        style={{ fontSize: 11, color: C.purple, padding: 0, border: 'none', background: 'none' }}
+                        style={{ fontSize: T.xs, color: C.purple, padding: 0, border: 'none', background: 'none' }}
                       />
                     </div>
                   </div>
@@ -763,14 +764,14 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
 
       {/* Campaign history */}
       <Card style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.border}`, fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans }}>
+        <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.border}`, fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans }}>
           Campaign History
-          <span style={{ fontSize: 12, fontWeight: 400, color: C.textMuted, marginLeft: 8 }}>{screenCampaigns.length} total</span>
+          <span style={{ fontSize: T.sm, fontWeight: 400, color: C.textMuted, marginLeft: 8 }}>{screenCampaigns.length} total</span>
         </div>
         {loadingData ? (
           <div style={{ padding: 20 }}><Skeleton height={120} radius={6} /></div>
         ) : screenCampaigns.length === 0 ? (
-          <div style={{ padding: '32px 20px', textAlign: 'center', color: C.textMuted, fontSize: 13, fontFamily: F.sans }}>
+          <div style={{ padding: '32px 20px', textAlign: 'center', color: C.textMuted, fontSize: T.base, fontFamily: F.sans }}>
             No campaigns have run on this screen yet.
           </div>
         ) : (
@@ -781,7 +782,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
               { key: 'budget', label: 'Budget', render: v => <span style={{ fontFamily: F.mono, fontWeight: 600 }}>${(v || 0).toLocaleString()}</span> },
               { key: 'impressions', label: 'Impressions', render: v => <span style={{ fontFamily: F.mono }}>{v ? `${(v/1000).toFixed(1)}K` : '—'}</span> },
               { key: 'scans', label: 'Scans', render: v => <span style={{ fontFamily: F.mono, color: C.purple }}>{v ?? '—'}</span> },
-              { key: 'start_date', label: 'Dates', render: (v, r) => <span style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub }}>{v} → {r.end_date}</span> },
+              { key: 'start_date', label: 'Dates', render: (v, r) => <span style={{ fontFamily: F.mono, fontSize: T.xs, color: C.textSub }}>{v} → {r.end_date}</span> },
             ]}
             rows={screenCampaigns}
           />
@@ -791,14 +792,14 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       {downtime.length > 0 && (
         <Card style={{ padding: 0, overflow: 'hidden', marginTop: 20 }}>
           <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.border}` }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans }}>Missed delivery</div>
-            <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+            <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans }}>Missed delivery</div>
+            <div style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
               Days this screen delivered fewer plays than campaigns had scheduled. Advertisers were credited for the shortfall.
             </div>
           </div>
           <Table
             columns={[
-              { key: 'day', label: 'Day', render: v => <span style={{ fontFamily: F.mono, fontSize: 11 }}>{v}</span> },
+              { key: 'day', label: 'Day', render: v => <span style={{ fontFamily: F.mono, fontSize: T.xs }}>{v}</span> },
               { key: 'delivered_plays', label: 'Delivered', render: (v, r) => <span style={{ fontFamily: F.mono }}>{v} of {r.expected_plays}</span> },
               { key: 'reason', label: 'Cause', render: v => <span style={{ fontFamily: F.sans }}>{v === 'screen_offline' ? 'Screen offline' : 'Under-delivered'}</span> },
               { key: 'credit_amount', label: 'Credited back', render: (v, r) => <span style={{ fontFamily: F.mono, color: C.red }}>${Number(v || 0).toFixed(2)} {String(r.currency ?? '').toUpperCase()}</span> },
@@ -820,12 +821,12 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       {tab === 'cv' && (
         <div>
           {cvLoading ? (
-            <div style={{ padding: '48px 0', textAlign: 'center', color: C.textMuted, fontFamily: F.sans, fontSize: 13 }}>Loading CV data…</div>
+            <div style={{ padding: '48px 0', textAlign: 'center', color: C.textMuted, fontFamily: F.sans, fontSize: T.base }}>Loading CV data…</div>
           ) : cvEvents.length === 0 ? (
             <div style={{ padding: '48px 24px', textAlign: 'center', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
               <div style={{ color: C.textMuted, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconCamera size={28} /></div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No CV data yet</div>
-              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Requires screen-agent with USB camera. See Setup Guide tab.</div>
+              <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No CV data yet</div>
+              <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans }}>Requires screen-agent with USB camera. See Setup Guide tab.</div>
             </div>
           ) : (() => {
             const totalPeople  = cvEvents.reduce((a, e) => a + (e.people_count ?? 0), 0);
@@ -866,33 +867,33 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
                 </div>
 
                 <Card style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Age Breakdown</div>
+                  <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Age Breakdown</div>
                   {ageBuckets.map(b => (
                     <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-                      <div style={{ width: 44, fontSize: 12, color: C.textSub, fontFamily: F.sans, textAlign: 'right', flexShrink: 0 }}>{b.label}</div>
+                      <div style={{ width: 44, fontSize: T.sm, color: C.textSub, fontFamily: F.sans, textAlign: 'right', flexShrink: 0 }}>{b.label}</div>
                       <div style={{ flex: 1, background: C.surfaceAlt, borderRadius: 4, height: 12, overflow: 'hidden' }}>
                         <div style={{ width: `${(b.val / maxAge) * 100}%`, height: '100%', background: C.purple, borderRadius: 4, transition: 'width 0.3s' }} />
                       </div>
-                      <div style={{ width: 40, fontSize: 12, color: C.text, fontFamily: F.mono, textAlign: 'right', flexShrink: 0 }}>{b.val.toLocaleString()}</div>
+                      <div style={{ width: 40, fontSize: T.sm, color: C.text, fontFamily: F.mono, textAlign: 'right', flexShrink: 0 }}>{b.val.toLocaleString()}</div>
                     </div>
                   ))}
                 </Card>
 
                 <Card style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Gender Split</div>
+                  <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Gender Split</div>
                   {genderBuckets.map(b => (
                     <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-                      <div style={{ width: 60, fontSize: 12, color: C.textSub, fontFamily: F.sans, textAlign: 'right', flexShrink: 0 }}>{b.label}</div>
+                      <div style={{ width: 60, fontSize: T.sm, color: C.textSub, fontFamily: F.sans, textAlign: 'right', flexShrink: 0 }}>{b.label}</div>
                       <div style={{ flex: 1, background: C.surfaceAlt, borderRadius: 4, height: 12, overflow: 'hidden' }}>
                         <div style={{ width: `${(b.val / maxGender) * 100}%`, height: '100%', background: b.color, borderRadius: 4, transition: 'width 0.3s' }} />
                       </div>
-                      <div style={{ width: 40, fontSize: 12, color: C.text, fontFamily: F.mono, textAlign: 'right', flexShrink: 0 }}>{b.val.toLocaleString()}</div>
+                      <div style={{ width: 40, fontSize: T.sm, color: C.text, fontFamily: F.mono, textAlign: 'right', flexShrink: 0 }}>{b.val.toLocaleString()}</div>
                     </div>
                   ))}
                 </Card>
 
                 <Card>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>7-Day People Trend</div>
+                  <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>7-Day People Trend</div>
                   <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 80 }}>
                     {days7.map(d => (
                       <div key={d.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
@@ -902,7 +903,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
                           background: d.count > 0 ? C.purple : C.border,
                           transition: 'height 0.2s',
                         }} title={`${d.key}: ${d.count}`} />
-                        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{d.key.slice(5)}</div>
+                        <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>{d.key.slice(5)}</div>
                       </div>
                     ))}
                   </div>
@@ -916,7 +917,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       {tab === 'setup' && screen && (
   <div>
     <Card style={{ marginBottom: 16 }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Connect a display</div>
+      <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Connect a display</div>
       {/* Hardware selector */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
         {HARDWARE_OPTIONS.map(hw => (
@@ -925,7 +926,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
             border: `1px solid ${hwType === hw ? C.purple : C.border}`,
             background: hwType === hw ? C.purpleSoft : C.surface,
             color: hwType === hw ? C.purple : C.textSub,
-            fontSize: 12, fontWeight: 500, fontFamily: F.sans, transition: 'background 0.15s',
+            fontSize: T.sm, fontWeight: 500, fontFamily: F.sans, transition: 'background 0.15s',
           }}
             onMouseEnter={e => { if (hwType !== hw) e.currentTarget.style.background = C.surfaceAlt; }}
             onMouseLeave={e => { if (hwType !== hw) e.currentTarget.style.background = C.surface; }}
@@ -937,19 +938,19 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
 
     {(hwType === 'Raspberry Pi 5' || hwType === 'Mini PC') && (
       <Card style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
+        <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
           Audience Measurement Camera (optional)
         </div>
-        <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.7, marginBottom: 12 }}>
+        <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans, lineHeight: 1.7, marginBottom: 12 }}>
           Plug in a USB camera and run the screen-agent Docker stack to get real audience
           counts instead of estimated reach. All face detection runs on the device — no
           images or video ever leave it, only anonymous aggregate stats (person count,
           dwell time, attention, age/gender brackets) every 30 seconds. See{' '}
-          <code style={{ background: C.surfaceAlt, padding: '1px 5px', borderRadius: 3, fontFamily: F.mono, fontSize: 12 }}>
+          <code style={{ background: C.surfaceAlt, padding: '1px 5px', borderRadius: 3, fontFamily: F.mono, fontSize: T.sm }}>
             screen-agent/README.md
           </code>{' '}for the Docker Compose setup steps.
         </div>
-        <div style={{ padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder ?? '#fde68a'}`, borderRadius: 8, fontSize: 12, color: '#92400e', fontFamily: F.sans, lineHeight: 1.6, marginBottom: 12 }}>
+        <div style={{ padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder ?? '#fde68a'}`, borderRadius: 8, fontSize: T.sm, color: '#92400e', fontFamily: F.sans, lineHeight: 1.6, marginBottom: 12 }}>
           <strong>Required if you enable this:</strong> post a visible notice at the venue
           disclosing that anonymous audience-analytics camera is in use. This is a condition
           of enabling the feature, not optional signage.
@@ -961,7 +962,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         {(() => {
           const cv = cvAgentSignal(screen);
           return (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontFamily: F.sans, color: cv.connected ? C.green : C.textSub }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: T.sm, fontFamily: F.sans, color: cv.connected ? C.green : C.textSub }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: cv.connected ? C.green : C.border }} />
               Camera agent: {cv.label}
             </div>
@@ -972,11 +973,11 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
 
     {/* Screen token -- the camera agent (screen-agent/.env) still needs it. */}
     <Card style={{ marginBottom: 16 }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Screen Token</div>
-      <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, marginBottom: 12 }}>
+      <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Screen Token</div>
+      <div style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.sans, marginBottom: 12 }}>
         Only needed for the audience camera agent or the advanced player URL. Keep it private — it authenticates your display.
       </div>
-      <div style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: 13, color: C.text, wordBreak: 'break-all', letterSpacing: '0.5px', marginBottom: 8 }}>
+      <div style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: T.base, color: C.text, wordBreak: 'break-all', letterSpacing: '0.5px', marginBottom: 8 }}>
         {screenToken}
       </div>
       <CopyButton value={screenToken} label="Copy Token" size="sm" />
@@ -987,8 +988,8 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         checkAndGoLive / the require_connect_active_for_live_screen trigger).
         For an already-live screen this is a plain diagnostic check. */}
     <Card>
-      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Test Connection</div>
-      <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>
+      <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Test Connection</div>
+      <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>
         {screen.status === 'live'
           ? 'Verify your screen is still sending heartbeats.'
           : 'After completing setup, click below to verify your screen is sending heartbeats and go live.'}
@@ -1029,25 +1030,25 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
           {connStatus === 'checking' ? 'Checking…' : 'Check Connection'}
         </Btn>
         {connStatus === 'ok' && (
-          <span style={{ fontSize: 13, color: C.green, fontFamily: F.sans }}>
+          <span style={{ fontSize: T.base, color: C.green, fontFamily: F.sans }}>
             {screen.status === 'live' ? '✓ Connected — heartbeat received' : '✓ Screen is now live'}
           </span>
         )}
         {connStatus === 'no_heartbeat' && (
-          <span style={{ fontSize: 13, color: C.amber, fontFamily: F.sans }}>No heartbeat in last 5 minutes — check your setup</span>
+          <span style={{ fontSize: T.base, color: C.amber, fontFamily: F.sans }}>No heartbeat in last 5 minutes — check your setup</span>
         )}
         {connStatus === 'needs_payout' && (
-          <span style={{ fontSize: 13, color: C.amber, fontFamily: F.sans }}>
+          <span style={{ fontSize: T.base, color: C.amber, fontFamily: F.sans }}>
             Heartbeat received — set up payouts below before this screen can go live.
           </span>
         )}
         {connStatus === 'needs_profile' && (
-          <span style={{ fontSize: 13, color: C.amber, fontFamily: F.sans }}>
+          <span style={{ fontSize: T.base, color: C.amber, fontFamily: F.sans }}>
             Heartbeat received — finish this screen's profile (Edit above) before it can go live.
           </span>
         )}
         {connStatus === 'check_failed' && (
-          <span style={{ fontSize: 13, color: C.red, fontFamily: F.sans }}>Couldn't check your connection — check your network and try again.</span>
+          <span style={{ fontSize: T.base, color: C.red, fontFamily: F.sans }}>Couldn't check your connection — check your network and try again.</span>
         )}
       </div>
     </Card>

@@ -1,4 +1,4 @@
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
 
 export function UptimeGrid({ hourly }) {
   // 168 hourly buckets (7 days), grouped into 7 rows of 24
@@ -13,7 +13,7 @@ export function UptimeGrid({ hourly }) {
     <div>
       {days.map((row, di) => (
         <div key={di} style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
-          <span style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, width: 26, flexShrink: 0 }}>{dayLabels[di]}</span>
+          <span style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, width: 26, flexShrink: 0 }}>{dayLabels[di]}</span>
           <div style={{ display: 'flex', gap: 2, flex: 1 }}>
             {row.map((v, hi) => (
               <div key={hi} title={`${String(hi).padStart(2,'0')}:00`} style={{
@@ -27,9 +27,9 @@ export function UptimeGrid({ hourly }) {
       ))}
       <div style={{ display: 'flex', gap: 4, marginTop: 6, alignItems: 'center' }}>
         <div style={{ width: 10, height: 10, borderRadius: 2, background: C.green, opacity: 0.85 }} />
-        <span style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginRight: 10 }}>Online</span>
+        <span style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginRight: 10 }}>Online</span>
         <div style={{ width: 10, height: 10, borderRadius: 2, background: C.border, opacity: 0.4 }} />
-        <span style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>No data</span>
+        <span style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>No data</span>
       </div>
     </div>
   );

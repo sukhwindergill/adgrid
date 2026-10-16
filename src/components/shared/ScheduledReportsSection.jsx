@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
 import { Btn } from '../primitives/Btn.jsx';
 import { Inp } from '../primitives/Inp.jsx';
 import { SelInput } from '../primitives/SelInput.jsx';
@@ -78,8 +78,8 @@ export function ScheduledReportsSection({ campaignId, userId, audience }) {
 
   return (
     <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 20, paddingTop: 18 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Scheduled reports</div>
-      <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, marginBottom: 14 }}>
+      <div style={{ fontSize: T.md, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Scheduled reports</div>
+      <div style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.sans, marginBottom: 14 }}>
         Email a KPI summary, a report link and a CSV of daily delivery to up to {MAX_RECIPIENTS} people.
         Weekly reports cover the previous seven days; monthly reports cover the previous calendar month.
       </div>
@@ -105,7 +105,7 @@ export function ScheduledReportsSection({ campaignId, userId, audience }) {
       <Btn onClick={create} disabled={saving} style={{ marginTop: 10 }}>{saving ? 'Scheduling…' : 'Schedule report'}</Btn>
 
       {loadError && (
-        <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginTop: 12 }}>
+        <div style={{ fontSize: T.sm, color: C.red, fontFamily: F.sans, marginTop: 12 }}>
           Couldn't load scheduled reports — check your connection and try again.
         </div>
       )}
@@ -114,18 +114,18 @@ export function ScheduledReportsSection({ campaignId, userId, audience }) {
         {schedules.map(s => (
           <div key={s.id} style={{ borderTop: `1px solid ${C.border}`, paddingTop: 10, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, color: C.text, fontFamily: F.sans, fontWeight: 600 }}>
+              <div style={{ fontSize: T.base, color: C.text, fontFamily: F.sans, fontWeight: 600 }}>
                 {describeSchedule(s.frequency)} · {s.scope === 'all' ? 'all campaigns' : 'this campaign'}
               </div>
-              <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.mono, wordBreak: 'break-all', margin: '2px 0' }}>
+              <div style={{ fontSize: T.xs, color: C.textSub, fontFamily: F.mono, wordBreak: 'break-all', margin: '2px 0' }}>
                 {(s.recipients ?? []).join(', ')}
               </div>
-              <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>
+              <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>
                 Next {new Date(s.next_run_at).toLocaleDateString()}
                 {s.last_sent_at ? ` · last sent ${new Date(s.last_sent_at).toLocaleDateString()}` : ''}
               </div>
               {s.last_error && (
-                <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, marginTop: 2 }}>Last send failed — it will try again next period.</div>
+                <div style={{ fontSize: T.xs, color: C.red, fontFamily: F.sans, marginTop: 2 }}>Last send failed — it will try again next period.</div>
               )}
             </div>
             <Btn size="sm" variant="ghost" onClick={() => remove(s.id)}>Remove</Btn>

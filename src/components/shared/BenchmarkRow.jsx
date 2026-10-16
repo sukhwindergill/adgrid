@@ -1,4 +1,4 @@
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
 import { compareToBenchmark } from '../../lib/benchmark.js';
 
 const POSITION_LABEL = {
@@ -27,14 +27,14 @@ export function BenchmarkRow({ label, value, stats, format = v => String(v) }) {
 
   if (!result.available) {
     return (
-      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 4 }}>
+      <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginTop: 4 }}>
         Not enough comparable campaigns yet to benchmark {label.toLowerCase()}.
       </div>
     );
   }
 
   return (
-    <div style={{ fontSize: 11, fontFamily: F.sans, marginTop: 4, color: C.textMuted }}>
+    <div style={{ fontSize: T.xs, fontFamily: F.sans, marginTop: 4, color: C.textMuted }}>
       <span style={{ color: POSITION_COLOR[result.position], fontWeight: 500 }}>
         {POSITION_LABEL[result.position]}
       </span>

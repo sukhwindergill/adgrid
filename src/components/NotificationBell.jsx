@@ -6,6 +6,7 @@ import {
   IconTarget, IconChart, IconDollar, IconTrendUp, IconParty, IconChat,
   IconWarning, IconClipboard, IconGlobe, IconClock,
 } from "./icons.jsx";
+import { T } from '../design/tokens.js';
 
 const TYPE_ICONS = {
   campaign_approved: IconTarget,
@@ -117,7 +118,7 @@ export default function NotificationBell() {
         style={{
           width: 32, height: 32, borderRadius: "50%", border: `1px solid ${C.border}`,
           background: C.surface, cursor: "pointer", display: "flex", alignItems: "center",
-          justifyContent: "center", fontSize: 15, position: "relative",
+          justifyContent: "center", fontSize: T.md, position: "relative",
         }}
       >
         <span aria-hidden="true">🔔</span>
@@ -125,7 +126,7 @@ export default function NotificationBell() {
           <span style={{
             position: "absolute", top: -4, right: -4,
             background: C.red, color: "#fff", borderRadius: "50%",
-            width: 16, height: 16, fontSize: 11, fontWeight: 700,
+            width: 16, height: 16, fontSize: T.xs, fontWeight: 700,
             display: "flex", alignItems: "center", justifyContent: "center",
             fontFamily: F.sans,
           }}>
@@ -145,21 +146,21 @@ export default function NotificationBell() {
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "12px 16px", borderBottom: `1px solid ${C.border}`,
           }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>Notifications</span>
+            <span style={{ fontSize: T.base, fontWeight: 600, color: C.text }}>Notifications</span>
             {unread > 0 && (
               <button onClick={markAllRead} style={{
-                fontSize: 11, color: C.blue, background: "none", border: "none",
+                fontSize: T.xs, color: C.blue, background: "none", border: "none",
                 cursor: "pointer", fontFamily: F.sans,
               }}>Mark all read</button>
             )}
           </div>
 
           {loadError ? (
-            <div style={{ padding: "24px 16px", textAlign: "center", fontSize: 13, color: C.red }}>
+            <div style={{ padding: "24px 16px", textAlign: "center", fontSize: T.base, color: C.red }}>
               Couldn't load notifications
             </div>
           ) : notifications.length === 0 ? (
-            <div style={{ padding: "24px 16px", textAlign: "center", fontSize: 13, color: C.textMuted }}>
+            <div style={{ padding: "24px 16px", textAlign: "center", fontSize: T.base, color: C.textMuted }}>
               No notifications yet
             </div>
           ) : notifications.map((n) => (
@@ -173,15 +174,15 @@ export default function NotificationBell() {
                 transition: "background 0.15s",
               }}
             >
-              <span style={{ fontSize: 16, flexShrink: 0, display: "flex", alignItems: "center", color: C.textSub }}>
+              <span style={{ fontSize: T.lg, flexShrink: 0, display: "flex", alignItems: "center", color: C.textSub }}>
                 {typeof TYPE_ICONS[n.type] === "function"
                   ? (() => { const Icon = TYPE_ICONS[n.type]; return <Icon size={16} />; })()
                   : (TYPE_ICONS[n.type] ?? "🔔")}
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 2 }}>{n.title}</div>
-                <div style={{ fontSize: 11, color: C.textSub, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.body}</div>
-                <div style={{ fontSize: 11, color: C.textMuted, marginTop: 3 }}>{timeAgo(n.created_at)}</div>
+                <div style={{ fontSize: T.sm, fontWeight: 600, color: C.text, marginBottom: 2 }}>{n.title}</div>
+                <div style={{ fontSize: T.xs, color: C.textSub, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.body}</div>
+                <div style={{ fontSize: T.xs, color: C.textMuted, marginTop: 3 }}>{timeAgo(n.created_at)}</div>
               </div>
               {!n.read && (
                 <div style={{ width: 7, height: 7, borderRadius: "50%", background: C.blue, flexShrink: 0, marginTop: 4 }} />

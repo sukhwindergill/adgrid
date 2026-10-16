@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { C, F } from '../../design/tokens.js'
+import { C, F, T } from '../../design/tokens.js';
 
 function RoleBadge({ role }) {
   const colors = {
@@ -12,7 +12,7 @@ function RoleBadge({ role }) {
   const s = colors[role] ?? colors.viewer
   return (
     <span style={{
-      padding: '2px 7px', borderRadius: 8, fontSize: 11, fontWeight: 600,
+      padding: '2px 7px', borderRadius: 8, fontSize: T.xs, fontWeight: 600,
       textTransform: 'capitalize', background: s.bg, color: s.color,
     }}>{role}</span>
   )
@@ -50,14 +50,14 @@ export function AccountSwitcher() {
           padding: '5px 12px', borderRadius: 8,
           background: activeAccount ? 'rgba(37,99,235,0.1)' : C.bg,
           border: `1px solid ${activeAccount ? C.blue : C.border}`,
-          cursor: 'pointer', fontFamily: F.sans, fontSize: 13, color: C.text,
+          cursor: 'pointer', fontFamily: F.sans, fontSize: T.base, color: C.text,
         }}
       >
         <span style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {currentName}
         </span>
         {activeAccount && <RoleBadge role={activeAccount.role} />}
-        <span style={{ color: C.textMuted, fontSize: 11 }}>▾</span>
+        <span style={{ color: C.textMuted, fontSize: T.xs }}>▾</span>
       </button>
 
       {open && (
@@ -78,12 +78,12 @@ export function AccountSwitcher() {
               }}
             >
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: !activeAccount ? 600 : 400, color: C.text }}>
+                <div style={{ fontSize: T.base, fontWeight: !activeAccount ? 600 : 400, color: C.text }}>
                   {profile?.company_name || profile?.name || 'My Account'}
                 </div>
-                <div style={{ fontSize: 11, color: C.textMuted }}>Your account</div>
+                <div style={{ fontSize: T.xs, color: C.textMuted }}>Your account</div>
               </div>
-              {!activeAccount && <span style={{ fontSize: 11, color: C.blue }}>●</span>}
+              {!activeAccount && <span style={{ fontSize: T.xs, color: C.blue }}>●</span>}
             </button>
 
             {grants.length > 0 && (
@@ -111,12 +111,12 @@ export function AccountSwitcher() {
                   }}
                 >
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: isActive ? 600 : 400, color: C.text }}>
+                    <div style={{ fontSize: T.base, fontWeight: isActive ? 600 : 400, color: C.text }}>
                       {g.account?.company_name || g.account?.name || 'Client Account'}
                     </div>
                     <div style={{ marginTop: 2 }}><RoleBadge role={g.role} /></div>
                   </div>
-                  {isActive && <span style={{ fontSize: 11, color: C.blue }}>●</span>}
+                  {isActive && <span style={{ fontSize: T.xs, color: C.blue }}>●</span>}
                 </button>
               )
             })}

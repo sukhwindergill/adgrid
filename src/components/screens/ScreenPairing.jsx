@@ -4,6 +4,7 @@ import { C, F, SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { Btn } from '../primitives/Btn.jsx';
 import { CopyButton } from '../primitives/CopyButton.jsx';
 import { callPairing, isValidPairingCode, normalizePairingCode, PAIRING_CODE_LENGTH } from '../../lib/screenPairing.js';
+import { T } from '../../design/tokens.js';
 
 // Shared by the onboarding wizard's Setup step (ScreenOnboard.jsx) and the
 // screen detail page's Setup Guide tab (ScreenDetail.jsx).
@@ -17,14 +18,14 @@ export function CopyBox({ label, value }) {
   return (
     <div style={{ marginBottom: 16 }}>
       {label && (
-        <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+        <div style={{ fontSize: T.xs, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
           {label}
         </div>
       )}
       <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
         <div style={{
           flex: 1, background: C.surfaceAlt, border: `1px solid ${C.border}`,
-          borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: 12,
+          borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: T.sm,
           color: C.text, wordBreak: 'break-all', lineHeight: 1.5,
         }}>
           {value}
@@ -39,14 +40,14 @@ function CodeBox({ label, value }) {
   return (
     <div style={{ marginBottom: 16 }}>
       {label && (
-        <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+        <div style={{ fontSize: T.xs, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
           {label}
         </div>
       )}
       <div style={{ position: 'relative' }}>
         <pre style={{
           background: '#0a0a0a', borderRadius: 8, padding: '14px 16px',
-          fontFamily: F.mono, fontSize: 11, color: '#a3e635',
+          fontFamily: F.mono, fontSize: T.xs, color: '#a3e635',
           whiteSpace: 'pre', overflowX: 'auto', margin: 0,
         }}>{value}</pre>
         <CopyButton
@@ -57,7 +58,7 @@ function CodeBox({ label, value }) {
           style={{
             position: 'absolute', top: 8, right: 8,
             background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: 4, color: '#fff', fontSize: 11, padding: '3px 10px',
+            borderRadius: 4, color: '#fff', fontSize: T.xs, padding: '3px 10px',
           }}
         />
       </div>
@@ -65,8 +66,8 @@ function CodeBox({ label, value }) {
   );
 }
 
-const kbd = { background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 };
-const steps = { fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.8, paddingLeft: 20, margin: '0 0 16px' };
+const kbd = { background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: T.xs };
+const steps = { fontSize: T.base, color: C.textSub, fontFamily: F.sans, lineHeight: 1.8, paddingLeft: 20, margin: '0 0 16px' };
 
 export function PairingCodeEntry({ screen, onPaired }) {
   const [code, setCode] = useState('');
@@ -104,13 +105,13 @@ export function PairingCodeEntry({ screen, onPaired }) {
     return (
       <div role="status" style={{
         padding: '14px 16px', borderRadius: 10, background: C.greenSoft, border: `1px solid ${C.greenBorder}`,
-        fontSize: 13, color: C.text, fontFamily: F.sans, lineHeight: 1.6,
+        fontSize: T.base, color: C.text, fontFamily: F.sans, lineHeight: 1.6,
       }}>
         <strong style={{ color: C.green }}>Paired.</strong> {screen.name} will switch from the code to your ads
         within a few seconds. If it doesn't, check the screen is still on the pairing page.
         <div>
           <button type="button" onClick={() => { setCode(''); setState('idle'); }} style={{
-            background: 'none', border: 'none', padding: 0, marginTop: 6, fontSize: 12,
+            background: 'none', border: 'none', padding: 0, marginTop: 6, fontSize: T.sm,
             color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, textDecoration: 'underline',
           }}>Pair another display to this screen</button>
         </div>
@@ -120,7 +121,7 @@ export function PairingCodeEntry({ screen, onPaired }) {
 
   return (
     <form onSubmit={submit}>
-      <label htmlFor={`pair-code-${screen.id}`} style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 8 }}>
+      <label htmlFor={`pair-code-${screen.id}`} style={{ display: 'block', fontSize: T.base, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 8 }}>
         Enter pairing code
       </label>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -138,7 +139,7 @@ export function PairingCodeEntry({ screen, onPaired }) {
           style={{
             flex: '1 1 160px', minWidth: 0, padding: '10px 14px',
             border: `1px solid ${err ? C.red : C.border}`, borderRadius: 8,
-            fontFamily: F.mono, fontSize: 20, letterSpacing: '0.15em', color: C.text,
+            fontFamily: F.mono, fontSize: T.xl, letterSpacing: '0.15em', color: C.text,
             background: C.surface, outline: 'none', textTransform: 'uppercase',
           }}
         />
@@ -147,7 +148,7 @@ export function PairingCodeEntry({ screen, onPaired }) {
           {state === 'submitting' ? 'Pairing…' : 'Pair screen'}
         </Btn>
       </div>
-      {err && <div role="alert" style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginTop: 6 }}>{err}</div>}
+      {err && <div role="alert" style={{ fontSize: T.sm, color: C.red, fontFamily: F.sans, marginTop: 6 }}>{err}</div>}
     </form>
   );
 }
@@ -197,7 +198,7 @@ EOF`;
           <li>Type the code it shows into the box above.</li>
         </ol>
         <CodeBox label="Paste into the Pi's terminal" value={piSetup} />
-        <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, lineHeight: 1.6, marginBottom: 16 }}>
+        <div style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.sans, lineHeight: 1.6, marginBottom: 16 }}>
           Older Bookworm installs that still use Wayfire: switch to labwc first with{' '}
           <code style={kbd}>sudo raspi-config</code> → Advanced Options → Wayland → labwc, then run the commands.
         </div>
@@ -238,7 +239,7 @@ EOF`;
   return (
     <div>
       <div style={{ background: C.surfaceAlt, borderRadius: 10, padding: '16px 18px', marginBottom: 20 }}>
-        <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, marginBottom: 14 }}>
+        <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, marginBottom: 14 }}>
           On the screen, open <strong style={{ color: C.text, fontFamily: F.mono }}>{host}/pair</strong>. It shows a
           short code — type it here to connect the screen to <strong style={{ color: C.text }}>{screen.name}</strong>.
         </div>
@@ -247,7 +248,7 @@ EOF`;
 
       {howToOpen}
 
-      <details style={{ fontFamily: F.sans, fontSize: 13, color: C.textSub, borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
+      <details style={{ fontFamily: F.sans, fontSize: T.base, color: C.textSub, borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
         <summary style={{ cursor: 'pointer', color: C.textMid, fontWeight: 500 }}>
           Advanced: use the full player URL instead
         </summary>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
 import { AdRenderPreview } from './AdRenderPreview.jsx';
 
 // Modal shell around AdRenderPreview -- lets the advertiser switch between
@@ -19,8 +19,8 @@ export function AdRenderPreviewModal({ screenName, markedPhotos, mediaUrl, media
         onClick={e => e.stopPropagation()}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans }}>{screenName}</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, color: C.textMuted, cursor: 'pointer' }}>×</button>
+          <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.sans }}>{screenName}</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: T.xl, color: C.textMuted, cursor: 'pointer' }}>×</button>
         </div>
 
         <AdRenderPreview photoUrl={active.url} corners={active.corners} mediaUrl={mediaUrl} mediaType={mediaType} />
@@ -42,7 +42,7 @@ export function AdRenderPreviewModal({ screenName, markedPhotos, mediaUrl, media
           </div>
         )}
 
-        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 12, lineHeight: 1.5 }}>
+        <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginTop: 12, lineHeight: 1.5 }}>
           Approximate preview — actual on-screen appearance depends on your display's brightness, viewing angle, and ambient light.
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
 import { Btn } from '../primitives/Btn.jsx';
 import { downloadCsv } from '../../lib/csv.js';
 import { geocodeAddress } from '../../lib/geocodeAddress.js';
@@ -82,34 +82,34 @@ export function BulkImportModal({ onClose, onImported }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
       <div style={{ background: C.surface, borderRadius: 14, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', padding: 28, boxShadow: '0 24px 60px rgba(0,0,0,0.15)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans }}>Bulk Import Screens</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, color: C.textMuted, cursor: 'pointer' }}>×</button>
+          <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.sans }}>Bulk Import Screens</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: T.xl, color: C.textMuted, cursor: 'pointer' }}>×</button>
         </div>
 
         {phase === 'pick' && (
           <div>
-            <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 16 }}>
+            <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans, marginBottom: 16 }}>
               Upload a CSV of your screens to register them all at once. Each row needs the same info as registering one screen manually.
             </div>
             <Btn variant="ghost" size="sm" onClick={downloadTemplate} style={{ marginBottom: 16 }}>↓ Download template</Btn>
             <input type="file" accept=".csv" onChange={handleFile} />
-            {fileError && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginTop: 12 }}>{fileError}</div>}
+            {fileError && <div style={{ fontSize: T.sm, color: C.red, fontFamily: F.sans, marginTop: 12 }}>{fileError}</div>}
           </div>
         )}
 
         {phase === 'checking' && (
-          <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>Checking your file…</div>
+          <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans }}>Checking your file…</div>
         )}
 
         {(phase === 'ready' || phase === 'importing') && (
           <div>
-            <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>
+            <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>
               {validCount} of {results.length} row{results.length !== 1 ? 's' : ''} ready to import.
             </div>
-            {importError && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginBottom: 12 }}>{importError}</div>}
+            {importError && <div style={{ fontSize: T.sm, color: C.red, fontFamily: F.sans, marginBottom: 12 }}>{importError}</div>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20, maxHeight: 300, overflowY: 'auto' }}>
               {results.map(r => (
-                <div key={r.row._rowNum} style={{ padding: '8px 10px', borderRadius: 8, background: r.errors.length > 0 ? C.redSoft : C.surfaceAlt, fontSize: 12, fontFamily: F.sans }}>
+                <div key={r.row._rowNum} style={{ padding: '8px 10px', borderRadius: 8, background: r.errors.length > 0 ? C.redSoft : C.surfaceAlt, fontSize: T.sm, fontFamily: F.sans }}>
                   <span style={{ fontWeight: 600 }}>Row {r.row._rowNum}: {r.row.name || '(no name)'}</span>
                   {r.errors.length > 0 ? (
                     <span style={{ color: C.red }}> — {r.errors.join('; ')}</span>
@@ -127,7 +127,7 @@ export function BulkImportModal({ onClose, onImported }) {
 
         {phase === 'done' && (
           <div>
-            <div style={{ fontSize: 13, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
+            <div style={{ fontSize: T.base, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
               {imported.length} screen{imported.length !== 1 ? 's' : ''} imported successfully.
             </div>
             <Btn onClick={onClose}>Done</Btn>

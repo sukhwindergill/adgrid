@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { C, F, glass } from '../../design/tokens.js';
+import { C, F, glass, T } from '../../design/tokens.js';
 import NotificationBell from '../NotificationBell.jsx';
 import { AccountSwitcher } from './AccountSwitcher.jsx';
 
@@ -31,12 +31,12 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
             marginRight: 'auto', display: 'flex', alignItems: 'center', gap: 8,
             padding: '7px 12px', minWidth: 0, borderRadius: 8, cursor: 'pointer',
             border: `1px solid ${C.border}`, background: C.surfaceAlt, color: C.textMuted,
-            fontFamily: F.sans, fontSize: 13,
+            fontFamily: F.sans, fontSize: T.base,
           }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
           <span>Search</span>
-          <kbd style={{ fontFamily: F.sans, fontSize: 11, padding: '1px 5px', borderRadius: 4, border: `1px solid ${C.border}`, background: C.surface }}>{isMac ? '⌘K' : 'Ctrl K'}</kbd>
+          <kbd style={{ fontFamily: F.sans, fontSize: T.xs, padding: '1px 5px', borderRadius: 4, border: `1px solid ${C.border}`, background: C.surface }}>{isMac ? '⌘K' : 'Ctrl K'}</kbd>
         </button>
       )}
       <AccountSwitcher />
@@ -55,7 +55,7 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
             alignItems: 'center',
             justifyContent: 'center',
             color: '#fff',
-            fontSize: 12,
+            fontSize: T.sm,
             fontWeight: 600,
             fontFamily: F.sans,
             cursor: 'pointer',
@@ -84,10 +84,10 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
             }}>
               {/* User info */}
               <div style={{ padding: '10px 16px', borderBottom: `1px solid ${C.border}` }}>
-                <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: C.text }}>
+                <div style={{ fontFamily: F.sans, fontSize: T.base, fontWeight: 600, color: C.text }}>
                   {user?.name || 'User'}
                 </div>
-                <div style={{ fontFamily: F.sans, fontSize: 11, color: C.textMuted, marginTop: 2 }}>
+                <div style={{ fontFamily: F.sans, fontSize: T.xs, color: C.textMuted, marginTop: 2 }}>
                   {user?.email}
                 </div>
               </div>
@@ -109,7 +109,7 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
                     border: 'none',
                     borderBottom: `1px solid ${C.border}`,
                     fontFamily: F.sans,
-                    fontSize: 13,
+                    fontSize: T.base,
                     color: C.text,
                     cursor: 'pointer',
                   }}
@@ -139,7 +139,7 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
                   background: 'none',
                   border: 'none',
                   fontFamily: F.sans,
-                  fontSize: 13,
+                  fontSize: T.base,
                   color: C.red,
                   cursor: 'pointer',
                 }}

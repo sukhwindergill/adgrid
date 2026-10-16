@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase.js'
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js'
 import { useToast } from '../../components/primitives/Toast.jsx'
-import { C, F } from '../../design/tokens.js'
+import { C, F, T } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx'
 import { Btn } from '../../components/primitives/Btn.jsx'
 import { Badge } from '../../components/primitives/Badge.jsx'
@@ -79,27 +79,27 @@ export function AdvertiserVerificationQueue() {
       <Btn variant="ghost" onClick={() => navigate('/app')} style={{ marginBottom: 16, paddingLeft: 0 }}>
         ← Back
       </Btn>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, fontFamily: F.display, marginBottom: 20 }}>
+      <h1 style={{ fontSize: T.xxl, fontWeight: 700, color: C.text, fontFamily: F.display, marginBottom: 20 }}>
         Advertiser Verification Queue
       </h1>
 
       {loading ? (
-        <div style={{ color: C.textSub, fontFamily: F.sans, fontSize: 13 }}>Loading…</div>
+        <div style={{ color: C.textSub, fontFamily: F.sans, fontSize: T.base }}>Loading…</div>
       ) : error ? (
-        <div style={{ color: C.red, fontFamily: F.sans, fontSize: 13 }}>Couldn't load the queue — check your connection and try again.</div>
+        <div style={{ color: C.red, fontFamily: F.sans, fontSize: T.base }}>Couldn't load the queue — check your connection and try again.</div>
       ) : pending.length === 0 ? (
-        <div style={{ color: C.textSub, fontFamily: F.sans, fontSize: 13, marginBottom: 32 }}>Nothing awaiting manual review.</div>
+        <div style={{ color: C.textSub, fontFamily: F.sans, fontSize: T.base, marginBottom: 32 }}>Nothing awaiting manual review.</div>
       ) : (
         <div style={{ marginBottom: 32 }}>
           {pending.map(v => (
             <Card key={v.id} style={{ marginBottom: 12, padding: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans }}>{v.company_name}</div>
-                  <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+                  <div style={{ fontSize: T.base, fontWeight: 600, color: C.text, fontFamily: F.sans }}>{v.company_name}</div>
+                  <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
                     {v.profiles?.name ?? 'Unnamed advertiser'} · {v.profiles?.email}
                   </div>
-                  <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+                  <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
                     Domain: {v.business_domain}{v.business_number ? ` · Business #: ${v.business_number}` : ''}
                   </div>
                 </div>
@@ -120,7 +120,7 @@ export function AdvertiserVerificationQueue() {
                   type="text" placeholder="Rejection reason (optional)"
                   value={reasons[v.id] ?? ''}
                   onChange={e => setReasons(r => ({ ...r, [v.id]: e.target.value }))}
-                  style={{ flex: 1, minWidth: 160, padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.sans, fontSize: 12 }}
+                  style={{ flex: 1, minWidth: 160, padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.sans, fontSize: T.sm }}
                 />
                 <Btn variant="danger" size="sm" disabled={busyId === v.id} onClick={() => review(v.id, 'rejected')}>
                   {busyId === v.id ? '…' : 'Reject'}
@@ -133,14 +133,14 @@ export function AdvertiserVerificationQueue() {
 
       {reviewed.length > 0 && (
         <>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.display, marginBottom: 12 }}>
+          <h2 style={{ fontSize: T.lg, fontWeight: 600, color: C.text, fontFamily: F.display, marginBottom: 12 }}>
             Recently reviewed
           </h2>
           {reviewed.map(v => (
             <Card key={v.id} style={{ marginBottom: 8, padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
               <div>
-                <div style={{ fontSize: 13, color: C.text, fontFamily: F.sans }}>{v.company_name}</div>
-                <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+                <div style={{ fontSize: T.base, color: C.text, fontFamily: F.sans }}>{v.company_name}</div>
+                <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
                   {v.profiles?.name ?? 'Unnamed advertiser'} · {v.profiles?.email}
                 </div>
               </div>
