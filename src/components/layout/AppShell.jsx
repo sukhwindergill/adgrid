@@ -2,7 +2,9 @@ import { C, F } from '../../design/tokens.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 
 export function AppShell({ sidebar, header, children, impersonating, onStopImpersonation }) {
-  const { isMobile } = useBreakpoint();
+  const { isMobile, width } = useBreakpoint();
+  // Phones carry a fixed bottom tab bar (see MobileTabBar); keep content clear of it.
+  const bottomPad = width < 768 ? 'calc(88px + env(safe-area-inset-bottom))' : (isMobile ? '40px' : '60px');
   return (
     <div style={{ minHeight: '100vh', background: C.bg }}>
       {/* Impersonation banner — fixed, full width */}
@@ -55,7 +57,7 @@ export function AppShell({ sidebar, header, children, impersonating, onStopImper
         {/* Right column: TopBar + main content */}
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
           {header}
-          <main id="main-content" style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '16px 12px 40px' : '28px 28px 60px', width: '100%', boxSizing: 'border-box' }}>
+          <main id="main-content" style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? `16px 12px ${bottomPad}` : `28px 28px ${bottomPad}`, width: '100%', boxSizing: 'border-box' }}>
             {children}
           </main>
         </div>

@@ -13,6 +13,7 @@ import { LoginPage } from './components/login/LoginPage.jsx';
 import { GlobalHeader } from './components/layout/GlobalHeader.jsx';
 import { AppShell } from './components/layout/AppShell.jsx';
 import { Sidebar } from './components/layout/Sidebar.jsx';
+import { CommandPalette } from './components/layout/CommandPalette.jsx';
 import { ErrorBoundary } from './components/primitives/ErrorBoundary.jsx';
 import { RequireAuth, peekReturnTo } from './components/auth/RequireAuth.jsx';
 
@@ -152,6 +153,17 @@ function AppInner() {
     const id = sessionStorage.getItem('adgrid_preset_screen_id')
     return id ? [id] : null
   })
+  const [searchOpen, setSearchOpen] = useState(false);
+  useEffect(() => {
+    const onKey = e => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen(o => !o);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   const [approvalRefreshKey, setApprovalRefreshKey] = useState(0);
   const bumpApprovalRefresh = useCallback(() => setApprovalRefreshKey(k => k + 1), []);
   const pendingCount = usePendingApprovalCount(myScreens.map(s => s.id), approvalRefreshKey);
@@ -652,9 +664,18 @@ function AppInner() {
           onSignOut={signOut}
           demoMode={demoMode}
           onToggleDemoMode={canUseDemoMode ? toggleDemoMode : undefined}
+          onOpenSearch={() => setSearchOpen(true)}
         />
       }
     >
+      {searchOpen && <CommandPalette
+        onClose={() => setSearchOpen(false)}
+        activeMode={isAdv ? 'advertiser' : 'operator'}
+        screens={visibleMyScreens}
+        advertiserId={currentAdvertiserId}
+        operatorCampaignIds={operatorCampaignIds}
+        onNavigate={navTo}
+      />}
       {loadError && (
         <div style={{
           background: '#ff000022', border: '1px solid #ff4444', borderRadius: 8,

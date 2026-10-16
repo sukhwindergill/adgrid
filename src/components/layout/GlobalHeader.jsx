@@ -3,7 +3,8 @@ import { C, F, glass } from '../../design/tokens.js';
 import NotificationBell from '../NotificationBell.jsx';
 import { AccountSwitcher } from './AccountSwitcher.jsx';
 
-export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMode }) {
+export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMode, onOpenSearch }) {
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
   const [menuOpen, setMenuOpen] = useState(false);
   const initials = (user?.name || user?.email || 'U').slice(0, 2).toUpperCase();
 
@@ -21,6 +22,23 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
       borderBottom: '1px solid rgba(0,0,0,0.07)',
       gap: 12,
     }}>
+      {onOpenSearch && (
+        <button
+          onClick={onOpenSearch}
+          aria-label="Search"
+          aria-keyshortcuts={isMac ? 'Meta+K' : 'Control+K'}
+          style={{
+            marginRight: 'auto', display: 'flex', alignItems: 'center', gap: 8,
+            padding: '7px 12px', minWidth: 0, borderRadius: 8, cursor: 'pointer',
+            border: `1px solid ${C.border}`, background: C.surfaceAlt, color: C.textMuted,
+            fontFamily: F.sans, fontSize: 13,
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <span>Search</span>
+          <kbd style={{ fontFamily: F.sans, fontSize: 11, padding: '1px 5px', borderRadius: 4, border: `1px solid ${C.border}`, background: C.surface }}>{isMac ? '⌘K' : 'Ctrl K'}</kbd>
+        </button>
+      )}
       <AccountSwitcher />
       <NotificationBell />
 

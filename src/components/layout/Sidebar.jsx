@@ -2,36 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { C, F } from '../../design/tokens.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
-
-// ─── Icons ────────────────────────────────────────────────────────────────────
-
-const ICONS = {
-  overview:     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
-  campaigns:    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6M9 16h4"/></svg>,
-  analytics:    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>,
-  screens:      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>,
-  revenue:      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.5 9a2.5 2.5 0 00-5 0c0 5 5 3 5 8a2.5 2.5 0 01-5 0M12 7v1m0 8v1"/></svg>,
-  audience:     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
-  approval:     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
-  advertisers:  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>,
-  signals:      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
-  rules:        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01"/></svg>,
-  integrations: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>,
-  display:      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M17 2l-5 5-5-5"/></svg>,
-  billing:      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>,
-  scans:        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9V5a2 2 0 012-2h4M3 15v4a2 2 0 002 2h4M15 3h4a2 2 0 012 2v4M15 21h4a2 2 0 002-2v-4M9 9h6v6H9z"/></svg>,
-  settings:     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,
-  marketplace:  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l1-5h16l1 5M3 9h18M3 9v9a1 1 0 001 1h16a1 1 0 001-1V9"/></svg>,
-  user:         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>,
-  operatorMode:   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>,
-  advertiserMode: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.22 1.18 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.56-.56a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>,
-  chevronLeft:  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>,
-  chevronRight: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>,
-};
+import { navFor, highlightedNavId } from './navConfig.js';
+import { MobileTabBar } from './MobileTabBar.jsx';
+import { ICONS } from './navIcons.jsx';
 
 // ─── ModeSwitcher ─────────────────────────────────────────────────────────────
 
-function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
+export function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
   const modes = [
     { id: 'operator',   label: 'Operator' },
     { id: 'advertiser', label: 'Advertiser' },
@@ -52,8 +29,8 @@ function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
               background: activeMode === m.id
                 ? 'linear-gradient(135deg, rgba(124,58,237,0.25), rgba(168,85,247,0.15))'
                 : 'transparent',
-              color: activeMode === m.id ? '#a855f7' : '#555',
-              fontSize: 9, fontWeight: 700, fontFamily: F.sans, letterSpacing: '0.04em',
+              color: activeMode === m.id ? C.purple : C.textMuted,
+              fontSize: 11, fontWeight: 700, fontFamily: F.sans, letterSpacing: '0.04em',
               transition: 'all 0.15s',
             }}
           >
@@ -68,9 +45,9 @@ function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
 
   return (
     <div style={{
-      display: 'flex', background: 'rgba(0,0,0,0.2)', borderRadius: 8,
+      display: 'flex', background: C.surfaceAlt, borderRadius: 8,
       padding: 3, gap: 2, margin: '0 0 10px 0',
-      border: '1px solid rgba(255,255,255,0.06)',
+      border: `1px solid ${C.border}`,
     }}>
       {modes.map(m => (
         <button
@@ -78,13 +55,11 @@ function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
           onClick={() => onSwitch(m.id)}
           style={{
             flex: 1, padding: '7px 0', borderRadius: 6, border: 'none', cursor: 'pointer',
-            fontSize: 11, fontWeight: activeMode === m.id ? 600 : 500, fontFamily: F.sans,
+            fontSize: 12, fontWeight: activeMode === m.id ? 600 : 500, fontFamily: F.sans,
             transition: 'all 0.15s',
-            background: activeMode === m.id
-              ? 'linear-gradient(135deg, rgba(124,58,237,0.3), rgba(168,85,247,0.2))'
-              : 'transparent',
-            color: activeMode === m.id ? '#a855f7' : '#555',
-            boxShadow: activeMode === m.id ? '0 1px 4px rgba(124,58,237,0.2)' : 'none',
+            background: activeMode === m.id ? C.surface : 'transparent',
+            color: activeMode === m.id ? C.purple : C.textSub,
+            boxShadow: activeMode === m.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
           }}
         >
           {m.label}
@@ -94,48 +69,11 @@ function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
   );
 }
 
-// ─── Nav definitions ──────────────────────────────────────────────────────────
-
-const OP_PRIMARY = [
-  { id: 'overview',  label: 'Dashboard',  icon: 'overview' },
-  { id: 'campaigns', label: 'Campaigns',  icon: 'campaigns' },
-  { id: 'analytics', label: 'Analytics',  icon: 'analytics' },
-  { id: 'screens',   label: 'Screens',    icon: 'screens' },
-  { id: 'marketplace-listings', label: 'Marketplace', icon: 'marketplace' },
-];
-
-const OP_SECONDARY = [
-  { id: 'revenue',      label: 'Revenue',         icon: 'revenue' },
-  { id: 'audience',     label: 'Audience & Scans', icon: 'audience' },
-  { id: 'approval',     label: 'Approval Queue',   icon: 'approval', badge: true },
-  { id: 'advertisers',  label: 'Advertisers',      icon: 'advertisers' },
-  { id: 'signals',      label: 'Live Signals',     icon: 'signals' },
-  { id: 'rules',        label: 'Alerts & Rules',   icon: 'rules' },
-  { id: 'integrations', label: 'Integrations',     icon: 'integrations' },
-  { id: 'display',      label: 'Display Manager',  icon: 'display' },
-  { id: 'op-settings',  label: 'Settings',         icon: 'settings' },
-];
-
-const ADV_PRIMARY = [
-  { id: 'adv-overview',  label: 'Dashboard',  icon: 'overview' },
-  { id: 'adv-campaigns', label: 'Campaigns',  icon: 'campaigns' },
-  { id: 'adv-analytics', label: 'Analytics',  icon: 'analytics' },
-  { id: 'adv-marketplace', label: 'Marketplace', icon: 'marketplace' },
-];
-
-const ADV_SECONDARY = [
-  { id: 'adv-audience',     label: 'Scans & Data',  icon: 'scans' },
-  { id: 'adv-rules',        label: 'Alerts & Rules', icon: 'rules' },
-  { id: 'adv-billing',      label: 'Billing',        icon: 'billing' },
-  { id: 'adv-settings',     label: 'Settings',       icon: 'settings' },
-  { id: 'adv-integrations', label: 'Integrations',   icon: 'integrations' },
-];
-
 // ─── NavItem ─────────────────────────────────────────────────────────────────
 
 function NavItem({ item, active, collapsed, pendingCount, onClick }) {
   const [hovered, setHovered] = useState(false);
-  const isActive = active === item.id;
+  const isActive = highlightedNavId(active) === item.id;
   const showBadge = item.badge && pendingCount > 0;
 
   return (
@@ -202,7 +140,7 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
             borderRadius: 7,
             background: '#f59e0b',
             color: '#fff',
-            fontSize: 9,
+            fontSize: 10,
             fontWeight: 700,
             display: 'flex',
             alignItems: 'center',
@@ -226,7 +164,7 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
               borderRadius: 9,
               background: '#f59e0b',
               color: '#fff',
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 700,
               display: 'flex',
               alignItems: 'center',
@@ -249,7 +187,8 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
 export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pendingCount = 0 }) {
   const navigate = useNavigate();
   const setActive = id => navigate('/app/' + id);
-  const { isMobile } = useBreakpoint();
+  const { isMobile, width: viewportWidth } = useBreakpoint();
+  const isPhone = viewportWidth < 768;
   const [collapsedPref, setCollapsedPref] = useState(() => {
     try {
       return localStorage.getItem('sidebar_collapsed') === 'true';
@@ -276,11 +215,19 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
     }
   };
 
-  const isAdv     = activeMode === 'advertiser';
-  const primary   = isAdv ? ADV_PRIMARY   : OP_PRIMARY;
-  const secondary = isAdv ? ADV_SECONDARY : OP_SECONDARY;
-
+  const groups = navFor(activeMode);
   const width = collapsed ? 52 : 220;
+
+  // Phones get a bottom tab bar instead of a sidebar: an icon rail with a
+  // dozen look-alike icons was the only nav, and it ate a fifth of the width.
+  if (isPhone) {
+    return (
+      <MobileTabBar
+        active={active} activeMode={activeMode} onModeSwitch={onModeSwitch}
+        onNavigate={setActive} onSignOut={onSignOut} pendingCount={pendingCount}
+      />
+    );
+  }
 
   return (
     <aside style={{
@@ -339,40 +286,28 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
         {/* Mode switcher */}
         <ModeSwitcher activeMode={activeMode} onSwitch={onModeSwitch} collapsed={collapsed} />
 
-        {/* Primary nav */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {primary.map(item => (
-            <NavItem
-              key={item.id}
-              item={item}
-              active={active}
-              collapsed={collapsed}
-              pendingCount={pendingCount}
-              onClick={setActive}
-            />
-          ))}
-        </div>
-
-        {/* Divider */}
-        <div style={{
-          height: 1,
-          background: C.border,
-          margin: collapsed ? '10px 4px' : '10px 4px',
-        }} />
-
-        {/* Secondary nav */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {secondary.map(item => (
-            <NavItem
-              key={item.id}
-              item={item}
-              active={active}
-              collapsed={collapsed}
-              pendingCount={pendingCount}
-              onClick={setActive}
-            />
-          ))}
-        </div>
+        {groups.map((g, gi) => (
+          <div key={g.group ?? 'top'} role="group" aria-label={g.group ?? 'Home'}>
+            {gi > 0 && (collapsed
+              ? <div style={{ height: 1, background: C.border, margin: '10px 4px' }} />
+              : <div style={{
+                  padding: '14px 12px 6px', fontSize: 11, fontWeight: 600, fontFamily: F.sans,
+                  color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em',
+                }}>{g.group}</div>)}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {g.items.map(item => (
+                <NavItem
+                  key={item.id}
+                  item={item}
+                  active={active}
+                  collapsed={collapsed}
+                  pendingCount={pendingCount}
+                  onClick={setActive}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Bottom section */}
@@ -414,7 +349,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
               <div style={{ fontFamily: F.sans, fontSize: 12, fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user?.name || 'User'}
               </div>
-              <div style={{ fontFamily: F.sans, fontSize: 10, color: C.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontFamily: F.sans, fontSize: 11, color: C.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user?.email}
               </div>
             </div>
@@ -468,7 +403,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
         {!collapsed && (
           <div style={{
             display: 'flex', gap: 10, padding: '2px 12px 4px',
-            fontSize: 10, fontFamily: F.sans, color: C.textMuted,
+            fontSize: 11, fontFamily: F.sans, color: C.textMuted,
           }}>
             <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: C.textMuted, textDecoration: 'none' }}
               onMouseEnter={e => e.currentTarget.style.color = C.purple}
