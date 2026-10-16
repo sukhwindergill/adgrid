@@ -53,7 +53,11 @@
 .nl { background: none; border: none; cursor: pointer; font: 500 14px/1 var(--inter); color: var(--sec); padding: 8px 12px; border-radius: 6px; transition: color .15s; white-space: nowrap; }
 .nl:hover { color: #fff; }
 .nav-spacer { flex: 1; }
-@media (max-width: 768px) { .nav-mid { display: none; } }
+/* Section links never wrap; below 960px (where French labels stop fitting)
+   they move into the burger menu, while Sign in / Get started stay visible
+   down to the phone breakpoint. */
+.nav-mid { display: flex; flex-wrap: nowrap; }
+@media (max-width: 960px) { .nav-mid { display: none; } }
 .nav-search-wrap { flex-shrink: 0; }
 .site-search-input {
   padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
@@ -84,6 +88,7 @@
   transition: background .15s;
 }
 .nav-burger:hover { background: rgba(255,255,255,0.06); }
+@media (max-width: 960px) { .nav-burger { display: flex; } }
 .nav-burger span { display: block; width: 20px; height: 2px; background: #fff; border-radius: 2px; transition: opacity .15s; }
 .nav-mobile-menu {
   display: flex; flex-direction: column;
@@ -93,7 +98,6 @@
 .nav-mobile-menu .nl { text-align: left; padding: 12px 20px; font-size: 15px; }
 .nav-divider { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
 @media (max-width: 768px) {
-  .nav-burger { display: flex; }
   .nav-desktop-only { display: none; }
 }
 
