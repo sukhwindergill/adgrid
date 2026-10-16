@@ -1,18 +1,23 @@
-import { C, F } from '../../design/tokens.js';
+import { useId } from 'react';
+import { C } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
+import { fieldStyle, useFieldFocus } from './Inp.jsx';
 
-export const SelInput = ({ label, children, style = {}, ...p }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-    {label && <label style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans }}>{label}</label>}
-    <select
-      {...p}
-      style={{
-        padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8,
-        fontSize: 13, fontFamily: F.sans, color: C.text, background: C.surface, outline: 'none', ...style,
-      }}
-      onFocus={e => e.target.style.borderColor = C.purple}
-      onBlur={e => e.target.style.borderColor = C.border}
-    >
-      {children}
-    </select>
-  </div>
-);
+export const SelInput = ({ label, children, style = {}, id, onFocus, onBlur, ...p }) => {
+  const autoId = useId();
+  const selectId = id ?? autoId;
+  const [focused, focusProps] = useFieldFocus({ onFocus, onBlur });
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+      {label && <label htmlFor={selectId} style={TX.label}>{label}</label>}
+      <select
+        {...p}
+        id={selectId}
+        style={{ ...fieldStyle, ...style, ...(focused ? { border: `1px solid ${C.purple}` } : null) }}
+        {...focusProps}
+      >
+        {children}
+      </select>
+    </div>
+  );
+};

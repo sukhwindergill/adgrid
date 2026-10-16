@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
 import { isValidHexColor } from '../../lib/qrColor.js';
+import { TX } from '../../design/text.js';
+import { Btn } from './Btn.jsx';
 
 // Swatch + hex input + eyedropper, shared by CreativeCard's Accent Colour
 // and QR Dots/Background fields.
@@ -21,6 +23,8 @@ const EyedropperIcon = () => (
     <path d="m10 13 4-4 4 4-4 4-4-4Z" />
   </svg>
 );
+
+const SWATCH_BTN = { height: 32, border: `1px solid ${C.border}`, borderRadius: 6, background: C.surface, color: C.textSub };
 
 export function ColorField({ label, value, onChange, onPickFromCreative }) {
   const [draft, setDraft] = useState(value);
@@ -50,7 +54,7 @@ export function ColorField({ label, value, onChange, onPickFromCreative }) {
 
   return (
     <div>
-      <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>{label}</div>
+      <div style={{ ...TX.label, marginBottom: 6 }}>{label}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {/* The visible swatch is this div's background, not the native input's
             own rendering. A controlled `value` on input[type="color"] would
@@ -77,23 +81,23 @@ export function ColorField({ label, value, onChange, onPickFromCreative }) {
           value={draft}
           onChange={e => setDraft(e.target.value)}
           onBlur={commitDraft}
-          style={{ width: 80, fontSize: 12, color: C.textSub, fontFamily: F.mono, border: `1px solid ${C.border}`, borderRadius: 6, padding: '6px 8px' }}
+          style={{ width: 80, fontSize: T.sm, color: C.textSub, fontFamily: F.mono, border: `1px solid ${C.border}`, borderRadius: 6, padding: '6px 8px' }}
         />
         {hasNativeEyeDropper && (
-          <button
-            type="button" onClick={openNativeEyeDropper} title="Pick color from screen"
-            style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}`, borderRadius: 6, background: C.surface, cursor: 'pointer', color: C.textSub }}
+          <Btn
+            variant="unstyled" type="button" onClick={openNativeEyeDropper} title="Pick color from screen" aria-label="Pick color from screen"
+            style={{ ...SWATCH_BTN, width: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             <EyedropperIcon />
-          </button>
+          </Btn>
         )}
         {onPickFromCreative && (
-          <button
-            type="button" onClick={onPickFromCreative} title="Pick color from your creative"
-            style={{ padding: '0 10px', height: 32, border: `1px solid ${C.border}`, borderRadius: 6, background: C.surface, cursor: 'pointer', fontSize: 11, fontFamily: F.sans, color: C.textSub, whiteSpace: 'nowrap' }}
+          <Btn
+            variant="unstyled" type="button" onClick={onPickFromCreative} title="Pick color from your creative"
+            style={{ ...SWATCH_BTN, padding: '0 10px', fontSize: T.xs, fontFamily: F.sans, whiteSpace: 'nowrap' }}
           >
             From creative
-          </button>
+          </Btn>
         )}
       </div>
     </div>
