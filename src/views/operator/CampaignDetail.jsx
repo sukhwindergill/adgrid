@@ -367,6 +367,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
         <ShareReportModal
           campaignId={c.id}
           userId={user?.id}
+          audience={isAdvertiserView ? 'advertiser' : 'operator'}
           onClose={() => setSharing(false)}
         />
       )}

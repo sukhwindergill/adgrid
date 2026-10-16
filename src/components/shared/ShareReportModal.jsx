@@ -5,6 +5,7 @@ import { Card } from '../primitives/Card.jsx';
 import { Btn } from '../primitives/Btn.jsx';
 import { CopyButton } from '../primitives/CopyButton.jsx';
 import { useToast } from '../primitives/Toast.jsx';
+import { ScheduledReportsSection } from './ScheduledReportsSection.jsx';
 
 // base64url token, generated client-side. The value is only ever a lookup key
 // for the campaign-report function; it grants nothing on its own, and the
@@ -18,7 +19,7 @@ function newToken() {
 
 const DEFAULT_DAYS = 90;
 
-export function ShareReportModal({ campaignId, userId, onClose }) {
+export function ShareReportModal({ campaignId, userId, audience = 'advertiser', onClose }) {
   const toast = useToast();
   const [links, setLinks] = useState([]);
   const [loadError, setLoadError] = useState(false);
@@ -106,6 +107,8 @@ export function ShareReportModal({ campaignId, userId, onClose }) {
             );
           })}
         </div>
+
+        <ScheduledReportsSection campaignId={campaignId} userId={userId} audience={audience} />
 
         <div style={{ marginTop: 20, textAlign: 'right' }}>
           <Btn variant="secondary" onClick={onClose}>Close</Btn>
