@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase.js'
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js'
 import { useToast } from '../../components/primitives/Toast.jsx'
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx'
 import { Btn } from '../../components/primitives/Btn.jsx'
 import { Badge } from '../../components/primitives/Badge.jsx'
@@ -87,16 +88,16 @@ export function DisputeQueue() {
       <Btn variant="ghost" onClick={() => navigate('/app')} style={{ marginBottom: 16, paddingLeft: 0 }}>
         ← Back
       </Btn>
-      <h1 style={{ fontSize: T.xxl, fontWeight: 700, color: C.text, fontFamily: F.display, marginBottom: 20 }}>
+      <h1 style={{ ...TX.pageTitle, marginBottom: 20 }}>
         Disputes
       </h1>
 
       {loading ? (
-        <div style={{ color: C.textSub, fontFamily: F.sans, fontSize: T.base }}>Loading…</div>
+        <div style={TX.bodySub}>Loading…</div>
       ) : error ? (
-        <div style={{ color: C.red, fontFamily: F.sans, fontSize: T.base }}>Couldn't load disputes — check your connection and try again.</div>
+        <div style={{ color: C.redText, fontFamily: F.sans, fontSize: T.base }}>Couldn't load disputes — check your connection and try again.</div>
       ) : open.length === 0 ? (
-        <div style={{ color: C.textSub, fontFamily: F.sans, fontSize: T.base, marginBottom: 32 }}>No open disputes.</div>
+        <div style={{ ...TX.bodySub, marginBottom: 32 }}>No open disputes.</div>
       ) : (
         <div style={{ marginBottom: 32 }}>
           {open.map(d => {
@@ -105,8 +106,8 @@ export function DisputeQueue() {
               <Card key={d.id} style={{ marginBottom: 12, padding: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
                   <div>
-                    <div style={{ fontSize: T.base, fontWeight: 600, color: C.text, fontFamily: F.sans }}>{reasonLabel(d.reason_code)}</div>
-                    <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+                    <div style={TX.strong}>{reasonLabel(d.reason_code)}</div>
+                    <div style={{ ...TX.caption, marginTop: 2 }}>
                       {booking ? `${booking.advertiser_name} · ${booking.screen_name} · $${Number(booking.budget).toLocaleString()} booked` : d.booking_id}
                     </div>
                   </div>
@@ -150,8 +151,8 @@ export function DisputeQueue() {
             return (
               <Card key={d.id} style={{ marginBottom: 8, padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
                 <div>
-                  <div style={{ fontSize: T.base, color: C.text, fontFamily: F.sans }}>{reasonLabel(d.reason_code)}</div>
-                  <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+                  <div style={TX.body}>{reasonLabel(d.reason_code)}</div>
+                  <div style={{ ...TX.caption, marginTop: 2 }}>
                     {booking ? `${booking.advertiser_name} · ${booking.screen_name}` : d.booking_id}
                   </div>
                 </div>

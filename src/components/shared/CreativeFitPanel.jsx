@@ -1,4 +1,5 @@
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../primitives/Card.jsx';
 import { CreativePreview } from './CreativePreview.jsx';
 import { REASON_LABEL } from '../../lib/creativeFit.js';
@@ -11,10 +12,10 @@ export function CreativeFitPanel({ campaign, mismatches = [] }) {
 
   return (
     <div style={{ marginTop: 16 }}>
-      <div style={{ fontSize: T.base, fontWeight: 600, color: C.amber, fontFamily: F.sans, marginBottom: 4 }}>
+      <div style={{ fontSize: T.base, fontWeight: 600, color: C.amberText, fontFamily: F.sans, marginBottom: 4 }}>
         This creative may not fit {mismatches.length} screen{mismatches.length === 1 ? '' : 's'}
       </div>
-      <div style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.sans, marginBottom: 14 }}>
+      <div style={{ ...TX.helperMuted, marginBottom: 14 }}>
         You can still submit — but the preview below is how it will actually look on each screen.
         Upload a different file for these screens in the per-screen overrides below.
       </div>
@@ -29,7 +30,7 @@ export function CreativeFitPanel({ campaign, mismatches = [] }) {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {m.reasons.map(r => (
-                <span key={r} style={{ fontSize: T.xs, color: C.amber, fontFamily: F.sans }}>
+                <span key={r} style={{ fontSize: T.xs, color: C.amberText, fontFamily: F.sans }}>
                   ⚠ {REASON_LABEL[r] ?? r}
                 </span>
               ))}

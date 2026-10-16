@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
@@ -23,7 +24,7 @@ function timeLabel(t) {
 
 function NowPlayingCard({ campaign }) {
   if (!campaign) return (
-    <div style={{ padding: '20px 0', textAlign: 'center', color: C.textMuted, fontFamily: F.sans, fontSize: T.base }}>
+    <div style={{ ...TX.bodyMuted, padding: '20px 0', textAlign: 'center' }}>
       No active campaigns right now
     </div>
   );
@@ -31,12 +32,12 @@ function NowPlayingCard({ campaign }) {
     <div style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${C.border}`, background: C.surface }}>
       <div style={{ height: 4, background: campaign.color || C.purple }} />
       <div style={{ padding: '14px 16px' }}>
-        <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Now Playing</div>
-        <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{campaign.headline || campaign.advertiser || campaign.advertiser_name || ''}</div>
+        <div style={{ ...TX.caption, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Now Playing</div>
+        <div style={{ ...TX.heading, marginBottom: 2 }}>{campaign.headline || campaign.advertiser || campaign.advertiser_name || ''}</div>
         {/* When there's no headline, the title above already shows the advertiser name --
             repeating it here would read as "Nike / Nike · Fashion", so drop it from the subtitle. */}
-        <div style={{ fontSize: T.sm, color: C.textSub, fontFamily: F.sans, marginBottom: 10 }}>{campaign.headline ? `${campaign.advertiser} · ${campaign.category}` : campaign.category}</div>
-        <div style={{ display: 'flex', gap: 16, fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>
+        <div style={{ ...TX.helper, marginBottom: 10 }}>{campaign.headline ? `${campaign.advertiser} · ${campaign.category}` : campaign.category}</div>
+        <div style={{ ...TX.caption, display: 'flex', gap: 16 }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconClock size={14} /> {timeLabel(campaign.timeStart)} – {timeLabel(campaign.timeEnd)}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconClock size={14} /> {campaign.duration}s slots</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconChart size={14} /> {campaign.slots}% share</span>
@@ -133,14 +134,14 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
       {screens.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '64px 24px', background: C.surface, borderRadius: 12, border: `1px solid ${C.border}` }}>
           <div style={{ color: C.textMuted, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconScreen size={36} /></div>
-          <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No screens with campaigns</div>
-          <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans }}>Create campaigns to see them here</div>
+          <div style={{ ...TX.titleLg, marginBottom: 6 }}>No screens with campaigns</div>
+          <div style={TX.bodySub}>Create campaigns to see them here</div>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 20, alignItems: 'start' }}>
           {/* Screen list */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontSize: T.xs, fontWeight: 600, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Screens</div>
+            <div style={{ ...TX.caption, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Screens</div>
             {screens.map(s => {
               const isSelected = s.id === selectedId;
               const liveCount  = s.campaigns.filter(c => c.status === 'active').length;
@@ -164,14 +165,14 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
                     <div style={{ fontSize: T.base, fontWeight: 600, color: isSelected ? C.purple : C.text, fontFamily: F.sans }}>{s.name}</div>
                     {liveCount > 0 && <div style={{ width: 7, height: 7, borderRadius: '50%', background: C.green, flexShrink: 0 }} />}
                   </div>
-                  <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginBottom: nowLive ? 6 : 0 }}>{s.city}</div>
+                  <div style={{ ...TX.caption, marginBottom: nowLive ? 6 : 0 }}>{s.city}</div>
                   {nowLive ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                       <div style={{ width: 10, height: 10, borderRadius: 2, background: nowLive.color || C.purple, flexShrink: 0 }} />
                       <span style={{ fontSize: T.xs, color: C.textSub, fontFamily: F.sans, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nowLive.advertiser}</span>
                     </div>
                   ) : (
-                    <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>{s.campaigns.length} campaign{s.campaigns.length !== 1 ? 's' : ''}</div>
+                    <div style={TX.caption}>{s.campaigns.length} campaign{s.campaigns.length !== 1 ? 's' : ''}</div>
                   )}
                 </div>
               );
@@ -184,8 +185,8 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
               <Card style={{ padding: '16px 20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                   <div>
-                    <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.sans }}>{selected.name}</div>
-                    <div style={{ fontSize: T.sm, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>{selected.city}</div>
+                    <div style={TX.heading}>{selected.name}</div>
+                    <div style={{ ...TX.helper, marginTop: 2 }}>{selected.city}</div>
                   </div>
                   <Badge status={nowPlaying ? 'active' : 'scheduled'} />
                 </div>
@@ -197,11 +198,11 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
               </Card>
 
               <Card style={{ padding: '16px 20px' }}>
-                <div style={{ fontSize: T.base, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
+                <div style={{ ...TX.strong, marginBottom: 12 }}>
                   Queued ({queued.length})
                 </div>
                 {queued.length === 0 ? (
-                  <div style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.sans, padding: '12px 0' }}>No queued campaigns</div>
+                  <div style={{ ...TX.helperMuted, padding: '12px 0' }}>No queued campaigns</div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {queued.map((c, i) => (
@@ -212,8 +213,8 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
                       }}>
                         <div style={{ width: 12, height: 12, borderRadius: 3, background: c.color || C.purple, flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: T.base, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{c.advertiser}</div>
-                          <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>
+                          <div style={{ ...TX.body, fontWeight: 500 }}>{c.advertiser}</div>
+                          <div style={TX.caption}>
                             {timeLabel(c.timeStart)}–{timeLabel(c.timeEnd)} · {c.duration}s · {c.slots}% share
                           </div>
                         </div>

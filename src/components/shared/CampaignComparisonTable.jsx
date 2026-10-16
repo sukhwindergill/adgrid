@@ -1,4 +1,5 @@
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../primitives/Card.jsx';
 import { Badge } from '../primitives/Badge.jsx';
 
@@ -25,7 +26,7 @@ export function CampaignComparisonTable({ campaigns, onRemove }) {
 
   return (
     <Card style={{ padding: 0, marginBottom: 20, overflow: 'hidden' }}>
-      <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.border}`, fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans }}>
+      <div style={{ ...TX.title, padding: '14px 20px', borderBottom: `1px solid ${C.border}` }}>
         Comparing {campaigns.length} campaign{campaigns.length !== 1 ? 's' : ''}
       </div>
       <div style={{ overflowX: 'auto' }}>

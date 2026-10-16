@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { C, F, T } from '../../design/tokens.js';
+import { C, F, T, SH } from '../../design/tokens.js';
 import { scopedBookings, applyBookingSearch } from '../../lib/bookingsQuery.js';
 import { navItems } from './navConfig.js';
 import { rankMatches } from '../../lib/commandSearch.js';
@@ -64,10 +64,10 @@ export function CommandPalette({ onClose, activeMode, screens = [], advertiserId
   };
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.35)', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '12vh 16px 16px' }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: C.overlay, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '12vh 16px 16px' }}>
       <div role="dialog" aria-modal="true" aria-label="Search" onClick={e => e.stopPropagation()} style={{
         width: '100%', maxWidth: 560, background: C.surface, borderRadius: 12, border: `1px solid ${C.border}`,
-        boxShadow: '0 16px 48px rgba(0,0,0,0.18)', overflow: 'hidden', fontFamily: F.sans,
+        boxShadow: SH.modal, overflow: 'hidden', fontFamily: F.sans,
       }}>
         <input
           ref={inputRef}

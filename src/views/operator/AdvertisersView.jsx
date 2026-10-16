@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { C, F, SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
+import { SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
 import { useToast } from "../../components/primitives/Toast.jsx";
 import { useConfirm } from "../../components/primitives/ConfirmModal.jsx";
@@ -7,7 +7,8 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useOperatorCampaignIds } from "../../hooks/useOperatorCampaignIds.js";
 import { PageHeader } from "../../components/primitives/PageHeader.jsx";
 import { Btn } from "../../components/primitives/Btn.jsx";
-import { T } from '../../design/tokens.js';
+import { T, SH, C, F } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 
 // profiles.status/credits/rate_override are pinned by a BEFORE UPDATE
 // trigger (20260909194813_pin_profile_admin_columns.sql) to everyone
@@ -42,8 +43,8 @@ function StatusBadge({ status }) {
 
 function Modal({ title, onClose, children }) {
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <div style={{ background: C.surface, borderRadius: 16, padding: 28, width: 400, maxWidth: "calc(100vw - 32px)", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", fontFamily: F.sans }} onClick={(e) => e.stopPropagation()}>
+    <div style={{ position: "fixed", inset: 0, background: C.overlay, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <div style={{ background: C.surface, borderRadius: 16, padding: 28, width: 400, maxWidth: "calc(100vw - 32px)", boxShadow: SH.modal, fontFamily: F.sans }} onClick={(e) => e.stopPropagation()}>
         <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, marginBottom: 20 }}>{title}</div>
         {children}
         <Btn variant="secondary" size="sm" style={{ marginTop: 16 }} onClick={onClose}>Cancel</Btn>
@@ -370,12 +371,12 @@ export default function AdvertisersView({ onImpersonate }) {
       <PageHeader title="Advertisers" subtitle="Every advertiser on your network — spend, status, and account actions" />
       <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
         <input placeholder="Search name, email, company…" value={search} onChange={(e) => setSearch(e.target.value)}
-          style={{ flex: 1, padding: "9px 14px", border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: T.base, color: C.text, outline: "none", transition: "border-color 0.15s" }}
+          style={{ ...TX.body, flex: 1, padding: "9px 14px", border: `1px solid ${C.border}`, borderRadius: 8, outline: "none", transition: "border-color 0.15s" }}
           onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
           onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
         />
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-          style={{ padding: "9px 14px", border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: T.base, color: C.text, background: C.surface, outline: "none", transition: "border-color 0.15s" }}
+          style={{ ...TX.body, padding: "9px 14px", border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: "none", transition: "border-color 0.15s" }}
           onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
           onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
         >
@@ -428,7 +429,7 @@ export default function AdvertisersView({ onImpersonate }) {
               );
             })}
             {filtered.length === 0 && (
-              <tr><td colSpan={8} style={{ padding: "32px 16px", textAlign: "center", color: loadError ? C.red : C.textMuted }}>
+              <tr><td colSpan={8} style={{ padding: "32px 16px", textAlign: "center", color: loadError ? C.redText : C.textMuted }}>
                 {loadError ? "Couldn't load advertisers — check your connection and try again." : "No advertisers found."}
               </td></tr>
             )}

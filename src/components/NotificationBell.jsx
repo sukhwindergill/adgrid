@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { C, F } from "../lib/constants.js";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import {
   IconTarget, IconChart, IconDollar, IconTrendUp, IconParty, IconChat,
   IconWarning, IconClipboard, IconGlobe, IconClock,
 } from "./icons.jsx";
-import { T } from '../design/tokens.js';
+import { T, SH, C, F } from '../design/tokens.js';
 
 const TYPE_ICONS = {
   campaign_approved: IconTarget,
@@ -125,7 +124,7 @@ export default function NotificationBell() {
         {unread > 0 && (
           <span style={{
             position: "absolute", top: -4, right: -4,
-            background: C.red, color: "#fff", borderRadius: "50%",
+            background: C.red, color: C.white, borderRadius: "50%",
             width: 16, height: 16, fontSize: T.xs, fontWeight: 700,
             display: "flex", alignItems: "center", justifyContent: "center",
             fontFamily: F.sans,
@@ -139,7 +138,7 @@ export default function NotificationBell() {
         <div style={{
           position: "absolute", top: 40, right: 0, width: 320,
           background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.12)", zIndex: 1000, overflow: "hidden",
+          boxShadow: SH.pop, zIndex: 1000, overflow: "hidden",
           fontFamily: F.sans,
         }}>
           <div style={{
@@ -149,14 +148,14 @@ export default function NotificationBell() {
             <span style={{ fontSize: T.base, fontWeight: 600, color: C.text }}>Notifications</span>
             {unread > 0 && (
               <button onClick={markAllRead} style={{
-                fontSize: T.xs, color: C.blue, background: "none", border: "none",
+                fontSize: T.xs, color: C.blueText, background: "none", border: "none",
                 cursor: "pointer", fontFamily: F.sans,
               }}>Mark all read</button>
             )}
           </div>
 
           {loadError ? (
-            <div style={{ padding: "24px 16px", textAlign: "center", fontSize: T.base, color: C.red }}>
+            <div style={{ padding: "24px 16px", textAlign: "center", fontSize: T.base, color: C.redText }}>
               Couldn't load notifications
             </div>
           ) : notifications.length === 0 ? (

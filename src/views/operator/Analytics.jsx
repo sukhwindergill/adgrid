@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { SkeletonRow, Skeleton } from '../../components/primitives/Skeleton.jsx';
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { IconEye, IconClock, IconDollar, IconQr, IconChart } from '../../components/icons.jsx';
@@ -30,7 +31,7 @@ function HeatmapGrid({ data }) {
           width: 36, height: 36, borderRadius: 6, background: v === 0 ? C.surfaceAlt : C.purple,
           opacity: v === 0 ? 1 : 0.20 + (v / max) * 0.80,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: T.xs, fontFamily: F.mono, color: v / max > 0.4 ? '#fff' : C.textMuted,
+          fontSize: T.xs, fontFamily: F.mono, color: v / max > 0.4 ? C.white : C.textMuted,
           cursor: 'default', transition: 'transform 0.15s',
         }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
@@ -49,7 +50,7 @@ function DayBars({ data }) {
         <div key={day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
           <div style={{ fontSize: T.xs, fontFamily: F.mono, color: C.textMuted }}>{v}</div>
           <div style={{ width: '100%', height: `${(v / max) * 60}px`, background: C.purple, borderRadius: '3px 3px 0 0', opacity: 0.7, minHeight: 4 }} />
-          <div style={{ fontSize: T.xs, fontFamily: F.sans, color: C.textMuted }}>{day}</div>
+          <div style={TX.caption}>{day}</div>
         </div>
       ))}
     </div>
@@ -292,7 +293,7 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
           padding: '12px 16px', background: C.surface, border: `1px solid ${C.border}`,
           borderRadius: 12, marginBottom: 16,
         }}>
-          <span style={{ fontSize: T.sm, fontWeight: 600, color: C.textSub, fontFamily: F.sans }}>Date range:</span>
+          <span style={{ ...TX.helper, fontWeight: 600 }}>Date range:</span>
           <input
             type="date"
             value={customFrom}
@@ -301,7 +302,7 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
             onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
             onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
           />
-          <span style={{ fontSize: T.sm, color: C.textSub, fontFamily: F.sans }}>to</span>
+          <span style={TX.helper}>to</span>
           <input
             type="date"
             value={customTo}
@@ -315,8 +316,8 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
 
       {!hasReal && !loading && loadError && (
         <div style={{
-          padding: '12px 16px', background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`,
-          borderRadius: 8, marginBottom: 20, fontSize: T.base, color: C.red, fontFamily: F.sans,
+          padding: '12px 16px', background: C.redSoft, border: `1px solid ${C.redBorder}`,
+          borderRadius: 8, marginBottom: 20, fontSize: T.base, color: C.redText, fontFamily: F.sans,
         }}>
           Couldn't load verified impression data — check your connection and try again. Showing estimated data below in the meantime.
         </div>
@@ -325,7 +326,7 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
       {!hasReal && !loading && !loadError && (
         <div style={{
           padding: '12px 16px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`,
-          borderRadius: 8, marginBottom: 20, fontSize: T.base, color: C.amber, fontFamily: F.sans,
+          borderRadius: 8, marginBottom: 20, fontSize: T.base, color: C.amberText, fontFamily: F.sans,
         }}>
           No impression data yet — connect a Screen Agent to start tracking verified impressions. Showing estimated data below.
         </div>
@@ -337,9 +338,9 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
         padding: '14px 16px', background: C.surface, border: `1px solid ${C.border}`,
         borderRadius: 12, marginBottom: 24,
       }}>
-        <span style={{ fontSize: T.sm, fontWeight: 600, color: C.textSub, fontFamily: F.sans }}>Filter by:</span>
+        <span style={{ ...TX.helper, fontWeight: 600 }}>Filter by:</span>
         <select value={filters.gender} onChange={e => setFilters(f => ({ ...f, gender: e.target.value }))}
-          style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: T.base, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
+          style={{ ...TX.body, padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
           onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
           onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
         >
@@ -348,7 +349,7 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
           <option value="Male">Male</option>
         </select>
         <select value={filters.age} onChange={e => setFilters(f => ({ ...f, age: e.target.value }))}
-          style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: T.base, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
+          style={{ ...TX.body, padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
           onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
           onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
         >
@@ -360,14 +361,14 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
           <option value="55+">55+</option>
         </select>
         <button onClick={() => setFilters({ gender: '', age: '' })}
-          style={{ padding: '6px 14px', background: 'none', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: T.base, color: C.textSub, cursor: 'pointer', transition: 'background 0.15s' }}
+          style={{ ...TX.bodySub, padding: '6px 14px', background: 'none', border: `1px solid ${C.border}`, borderRadius: 8, cursor: 'pointer', transition: 'background 0.15s' }}
           onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
           onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
         >
           Reset
         </button>
         {hasReal && (
-          <span style={{ marginLeft: 'auto', fontSize: T.xs, color: C.green, fontFamily: F.sans, fontWeight: 600 }}>
+          <span style={{ marginLeft: 'auto', fontSize: T.xs, color: C.greenText, fontFamily: F.sans, fontWeight: 600 }}>
             ✓ Verified impressions
           </span>
         )}
@@ -397,15 +398,15 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
       {/* Heatmap + Day bars */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <Card>
-          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>
+          <div style={{ ...TX.title, marginBottom: 14 }}>
             {hasReal ? 'People by Hour' : 'Scans by Hour'}
             {!hasReal && <span style={{ fontSize: T.xs, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>(estimated)</span>}
           </div>
           <HeatmapGrid data={hourlyData} />
-          <div style={{ marginTop: 10, fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>Hover a block to see count · Darker = more activity</div>
+          <div style={{ ...TX.caption, marginTop: 10 }}>Hover a block to see count · Darker = more activity</div>
         </Card>
         <Card>
-          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>
+          <div style={{ ...TX.title, marginBottom: 14 }}>
             {hasReal ? 'People by Day of Week' : 'Scans by Day of Week'}
             {!hasReal && <span style={{ fontSize: T.xs, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>(estimated)</span>}
           </div>
@@ -416,12 +417,12 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
       {/* Demographics */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20, marginBottom: 20 }}>
         <Card>
-          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Gender Split</div>
-          {!hasReal && <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginBottom: 12 }}>estimated</div>}
-          {[['Female', femalePct, '#ec4899'], ['Male', malePct, C.blue]].map(([g, pct, col]) => (
+          <div style={{ ...TX.title, marginBottom: 4 }}>Gender Split</div>
+          {!hasReal && <div style={{ ...TX.caption, marginBottom: 12 }}>estimated</div>}
+          {[['Female', femalePct, C.pink], ['Male', malePct, C.blue]].map(([g, pct, col]) => (
             <div key={g} style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: T.base, color: C.text, fontFamily: F.sans }}>{g}</span>
+                <span style={TX.body}>{g}</span>
                 <span style={{ fontSize: T.base, fontWeight: 600, color: col, fontFamily: F.mono }}>{pct}%</span>
               </div>
               <div style={{ height: 6, borderRadius: 3, background: C.surfaceAlt, overflow: 'hidden' }}>
@@ -432,8 +433,8 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
         </Card>
 
         <Card>
-          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Age Distribution</div>
-          {!hasReal && <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginBottom: 8 }}>estimated</div>}
+          <div style={{ ...TX.title, marginBottom: 4 }}>Age Distribution</div>
+          {!hasReal && <div style={{ ...TX.caption, marginBottom: 8 }}>estimated</div>}
           <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 80, marginBottom: 8 }}>
             {ageData.map(([label, pct]) => {
               const maxPct = Math.max(...ageData.map(d => d[1]), 1);
@@ -441,7 +442,7 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
                 <div key={label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                   <div style={{ fontSize: T.xs, fontFamily: F.mono, color: C.textMuted }}>{pct}%</div>
                   <div style={{ width: '100%', height: `${(pct / maxPct) * 60}px`, background: C.purple, opacity: 0.7, borderRadius: '2px 2px 0 0', minHeight: 3 }} />
-                  <div style={{ fontSize: T.xs, fontFamily: F.sans, color: C.textMuted, whiteSpace: 'nowrap' }}>{label}</div>
+                  <div style={{ ...TX.caption, whiteSpace: 'nowrap' }}>{label}</div>
                 </div>
               );
             })}
@@ -449,7 +450,7 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
         </Card>
 
         <Card>
-          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Campaign Performance</div>
+          <div style={{ ...TX.title, marginBottom: 16 }}>Campaign Performance</div>
           {campaigns.slice(0, 5).map(c => (
             <div key={c.id} style={{ marginBottom: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
@@ -465,20 +466,20 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
       {/* Impressions by city + 24h pattern */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <Card>
-          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Impressions by City</div>
+          <div style={{ ...TX.title, marginBottom: 14 }}>Impressions by City</div>
           {byCity.length > 0 ? byCity.map(({ city, impr, scans }) => (
             <div key={city} style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                <span style={{ fontSize: T.base, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{city}</span>
-                <span style={{ fontSize: T.sm, color: C.textSub, fontFamily: F.sans }}>{(impr / 1000).toFixed(0)}K impr · {scans} scans</span>
+                <span style={{ ...TX.body, fontWeight: 500 }}>{city}</span>
+                <span style={TX.helper}>{(impr / 1000).toFixed(0)}K impr · {scans} scans</span>
               </div>
               <ProgressBar value={impr} max={maxImpr} height={5} />
             </div>
-          )) : <div style={{ fontSize: T.base, color: C.textMuted, fontFamily: F.sans }}>No campaign data</div>}
+          )) : <div style={TX.bodyMuted}>No campaign data</div>}
         </Card>
 
         <Card>
-          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>
+          <div style={{ ...TX.title, marginBottom: 14 }}>
             24h Activity Pattern
             {!hasReal && <span style={{ fontSize: T.xs, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>(estimated)</span>}
           </div>
@@ -505,7 +506,7 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
       {/* Campaign table */}
       <Table
         columns={[
-          { key: 'advertiser', label: 'Campaign', render: (v, r) => <div><div style={{ fontWeight: 500, color: C.text, fontFamily: F.sans }}>{v}</div><div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>{r.category} · {r.city}</div></div> },
+          { key: 'advertiser', label: 'Campaign', render: (v, r) => <div><div style={{ fontWeight: 500, color: C.text, fontFamily: F.sans }}>{v}</div><div style={TX.caption}>{r.category} · {r.city}</div></div> },
           { key: 'screen',     label: 'Screen' },
           { key: 'impressions',label: 'Impressions', render: v => <span style={{ fontWeight: 600, fontFamily: F.mono }}>{(v / 1000).toFixed(1)}K</span> },
           { key: 'scans',      label: 'Scans', render: v => <span style={{ color: C.purple, fontWeight: 600, fontFamily: F.mono }}>{v}</span> },

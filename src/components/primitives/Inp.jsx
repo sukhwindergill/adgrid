@@ -1,21 +1,7 @@
-import { useId, useState } from 'react';
-import { C, F, T } from '../../design/tokens.js';
+import { useId } from 'react';
+import { C } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
-
-export const fieldStyle = {
-  padding: '9px 12px', border: `1px solid ${C.border}`,
-  borderRadius: 8, fontSize: T.base, fontFamily: F.sans, color: C.text,
-  background: C.surface, outline: 'none',
-};
-
-// Shared focus handling for Inp / SelInput / textareas: purple border while focused.
-export function useFieldFocus({ onFocus, onBlur } = {}) {
-  const [focused, setFocused] = useState(false);
-  return [focused, {
-    onFocus: e => { setFocused(true); onFocus?.(e); },
-    onBlur: e => { setFocused(false); onBlur?.(e); },
-  }];
-}
+import { fieldStyle, fieldFocusStyle, useFieldFocus } from './field.js';
 
 export const Inp = ({ label, hint, error, style = {}, id, onFocus, onBlur, ...p }) => {
   const autoId = useId();
@@ -30,7 +16,7 @@ export const Inp = ({ label, hint, error, style = {}, id, onFocus, onBlur, ...p 
         aria-invalid={error ? true : undefined}
         style={{
           ...fieldStyle, width: '100%', ...(error ? { border: `1px solid ${C.red}` } : null), ...style,
-          ...(focused ? { border: `1px solid ${C.purple}` } : null),
+          ...(focused ? fieldFocusStyle : null),
         }}
         {...focusProps}
       />
@@ -51,7 +37,7 @@ export const TextArea = ({ label, hint, style = {}, id, onFocus, onBlur, ...p })
       <textarea
         {...p}
         id={inputId}
-        style={{ ...fieldStyle, width: '100%', resize: 'vertical', ...style, ...(focused ? { border: `1px solid ${C.purple}` } : null) }}
+        style={{ ...fieldStyle, width: '100%', resize: 'vertical', ...style, ...(focused ? fieldFocusStyle : null) }}
         {...focusProps}
       />
       {hint && <div style={TX.caption}>{hint}</div>}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { Inp } from '../../components/primitives/Inp.jsx';
@@ -27,12 +28,12 @@ function WizardProgress({ step, total, onCancel }) {
   return (
     <div style={{ marginBottom: 32 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <div style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.sans }}>
+        <div style={TX.helperMuted}>
           Step {step} of {total}
         </div>
         <button
           onClick={onCancel}
-          style={{ background: 'none', border: 'none', fontSize: T.sm, color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s' }}
+          style={{ ...TX.helperMuted, background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.15s' }}
           onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
           onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
         >
@@ -253,7 +254,7 @@ function StepRegister({ onBack, onScreenCreated }) {
         <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>
           Tell us about your screen
         </h2>
-        <p style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans, margin: '0 0 28px' }}>
+        <p style={{ ...TX.bodySub, margin: '0 0 28px' }}>
           These details help advertisers find and book your screen.
         </p>
 
@@ -297,7 +298,7 @@ function StepRegister({ onBack, onScreenCreated }) {
           <DemandSignal city={form.city.trim()} venueCategory={form.venue_category} />
         </div>
 
-        <div style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.sans, marginBottom: 20, lineHeight: 1.5 }}>
+        <div style={{ ...TX.helperMuted, marginBottom: 20, lineHeight: 1.5 }}>
           Exact address, display size, and foot traffic come next — after you've got the display
           running, so you're not guessing at specs before you've even plugged it in.
         </div>
@@ -305,7 +306,7 @@ function StepRegister({ onBack, onScreenCreated }) {
         <ErrorBanner message={err} onDismiss={() => setErr(null)} />
 
         {!valid && (
-          <div style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.sans, marginBottom: 10, textAlign: 'right' }}>
+          <div style={{ ...TX.helperMuted, marginBottom: 10, textAlign: 'right' }}>
             Still need: {missingFields.join(', ')}
           </div>
         )}
@@ -338,7 +339,7 @@ function StepSetup({ screen, onNext, onBack, onSkip }) {
         <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>
           Set up your display
         </h2>
-        <p style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>
+        <p style={{ ...TX.bodySub, margin: '0 0 24px' }}>
           Choose your hardware, open the pairing page on the screen, and type in the code it shows.
         </p>
 
@@ -439,7 +440,7 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
         <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>
           Finish your screen's profile
         </h2>
-        <p style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans, margin: '0 0 28px', lineHeight: 1.5 }}>
+        <p style={{ ...TX.bodySub, margin: '0 0 28px', lineHeight: 1.5 }}>
           This is what advertisers see when deciding whether to book {screen.name}. You can skip it for
           now, but the screen can't go live and start taking bookings until it's filled in.
         </p>
@@ -449,7 +450,7 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
             value={form.location} onChange={e => set('location', e.target.value)} />
 
           <div>
-            <div style={{ fontSize: T.base, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>
+            <div style={{ ...TX.label, marginBottom: 8 }}>
               Screen Location
             </div>
             <ScreenLocationPicker
@@ -459,7 +460,7 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
           </div>
 
           <div>
-            <div style={{ fontSize: T.base, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Environment</div>
+            <div style={{ ...TX.label, marginBottom: 8 }}>Environment</div>
             <PillGroup
               options={[{ value: 'indoor', label: 'Indoor' }, { value: 'outdoor', label: 'Outdoor' }]}
               value={form.environment}
@@ -468,7 +469,7 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
           </div>
 
           <div>
-            <div style={{ fontSize: T.base, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Screen Position</div>
+            <div style={{ ...TX.label, marginBottom: 8 }}>Screen Position</div>
             <PillGroup
               options={SCREEN_POSITION_OPTIONS}
               value={form.screen_position}
@@ -486,7 +487,7 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
             value={form.monthly_traffic_estimate}
             onChange={e => set('monthly_traffic_estimate', e.target.value)}
           />
-          <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginTop: -10 }}>
+          <div style={{ ...TX.caption, marginTop: -10 }}>
             Rough headcount past this screen per month. Drives the reach estimate advertisers see.
           </div>
 
@@ -541,7 +542,7 @@ function StepConnect({ screen, onDone, onSkip, onBack }) {
     <div style={{ maxWidth: 520, margin: '0 auto' }}>
       <Card style={{ padding: 40, textAlign: 'center' }}>
         <div style={{
-          color: status === 'connected' ? C.green : blockedByOwnAction ? C.purple : status === 'none' ? C.amber : C.textMuted,
+          color: status === 'connected' ? C.greenText : blockedByOwnAction ? C.purple : status === 'none' ? C.amberText : C.textMuted,
           marginBottom: 20, display: 'flex', justifyContent: 'center',
         }}>
           {status === 'connected' ? <IconCheckCircle size={48} /> : blockedByOwnAction ? <IconCard size={48} /> : status === 'none' ? <IconWarning size={48} /> : <IconSignal size={48} />}
@@ -549,7 +550,7 @@ function StepConnect({ screen, onDone, onSkip, onBack }) {
         <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
           {status === 'connected' ? 'Screen is live!' : blockedByOwnAction ? 'Heartbeat confirmed' : 'Test your connection'}
         </h2>
-        <p style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, margin: '0 0 28px' }}>
+        <p style={{ ...TX.bodySub, lineHeight: 1.6, margin: '0 0 28px' }}>
           {status === 'connected'
             ? `${screen.name} is connected and sending heartbeats. You're all set.`
             : status === 'needs_profile'
@@ -642,11 +643,11 @@ function StepPayouts({ onDone, onSkip, onBack }) {
     return (
       <div style={{ maxWidth: 520, margin: '0 auto' }}>
         <Card style={{ padding: 40, textAlign: 'center' }}>
-          <div style={{ color: C.green, marginBottom: 20, display: 'flex', justifyContent: 'center' }}><IconCheckCircle size={48} /></div>
+          <div style={{ color: C.greenText, marginBottom: 20, display: 'flex', justifyContent: 'center' }}><IconCheckCircle size={48} /></div>
           <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
             Payouts are set up
           </h2>
-          <p style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, margin: '0 0 28px' }}>
+          <p style={{ ...TX.bodySub, lineHeight: 1.6, margin: '0 0 28px' }}>
             Your Stripe account is connected. You'll get paid automatically as campaigns run.
           </p>
           <Btn onClick={onDone} style={{ width: '100%' }}>Finish →</Btn>
@@ -662,7 +663,7 @@ function StepPayouts({ onDone, onSkip, onBack }) {
         <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
           Set up payouts
         </h2>
-        <p style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, margin: '0 0 28px' }}>
+        <p style={{ ...TX.bodySub, lineHeight: 1.6, margin: '0 0 28px' }}>
           Connect a bank account via Stripe so you actually get paid when advertisers book your screen.
           Without this, your cut of every campaign is held and never transferred.
         </p>

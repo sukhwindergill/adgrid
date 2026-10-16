@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
@@ -68,19 +69,19 @@ export function SignalsView({ operatorScreenIds = [], screens = [] }) {
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '320px 1fr', gap: 20, alignItems: 'start' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Card>
-            <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Context Signals</div>
+            <div style={{ ...TX.title, marginBottom: 14 }}>Context Signals</div>
             <SelInput label="Screen" value={screen} onChange={e => setScreen(e.target.value)} style={{ marginBottom: 12 }}>
               {liveScreens.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </SelInput>
             <div style={{ marginBottom: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <label style={{ fontSize: T.base, fontWeight: 500, color: C.textMid, fontFamily: F.sans }}>Time of Day</label>
+                <label style={TX.label}>Time of Day</label>
                 <span style={{ fontSize: T.sm, color: C.purple, fontFamily: F.sans, fontWeight: 500 }}>{String(hour).padStart(2, '0')}:00 · {timeLabel(hour)}</span>
               </div>
               <input type="range" min={0} max={23} value={hour} onChange={e => { setLive(false); setHour(parseInt(e.target.value)); }} style={{ width: '100%', accentColor: C.purple }} />
             </div>
             <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: T.base, fontWeight: 500, color: C.textMid, fontFamily: F.sans, display: 'block', marginBottom: 6 }}>Day of Week</label>
+              <label style={{ ...TX.label, display: 'block', marginBottom: 6 }}>Day of Week</label>
               <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                 {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
                   <button key={d} onClick={() => { setLive(false); setDay(d); }} style={{
@@ -115,32 +116,32 @@ export function SignalsView({ operatorScreenIds = [], screens = [] }) {
             <div style={{ background: `linear-gradient(135deg, ${C.purpleSoft}, ${C.greenSoft})`, border: `1px solid ${C.purpleBorder}`, borderRadius: 12, padding: 20, marginBottom: 16 }}>
               <div style={{ fontSize: T.xs, fontWeight: 600, color: C.purple, letterSpacing: '0.5px', marginBottom: 4, fontFamily: F.sans }}>NOW PLAYING — HIGHEST SIGNAL MATCH</div>
               <div style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{winner.advertiser}</div>
-              <div style={{ fontSize: T.sm, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>{winner.category} · {winner.screenName}</div>
+              <div style={{ ...TX.helper, marginBottom: 12 }}>{winner.category} · {winner.screenName}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ fontSize: T.jumbo, fontWeight: 800, color: scoreColor(winner.score), fontFamily: F.mono, lineHeight: 1 }}>{winner.score}</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginBottom: 4 }}>Signal match score</div>
+                  <div style={{ ...TX.caption, marginBottom: 4 }}>Signal match score</div>
                   <ProgressBar value={winner.score} max={100} height={8} color={scoreColor(winner.score)} />
                 </div>
               </div>
             </div>
           )}
 
-          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>All Campaigns — Ranked by Signal Match</div>
+          <div style={{ ...TX.title, marginBottom: 12 }}>All Campaigns — Ranked by Signal Match</div>
           {ranked.length === 0 && <Card style={{ textAlign: 'center', padding: 32, color: C.textMuted, fontFamily: F.sans }}>No active campaigns on this screen</Card>}
           {ranked.map((c, i) => (
             <Card key={c.id} style={{ marginBottom: 10, padding: '14px 18px', border: i === 0 ? `1px solid ${C.purpleBorder}` : undefined }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: i === 0 ? C.purple : C.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: T.xs, fontWeight: 700, color: i === 0 ? '#fff' : C.textSub, fontFamily: F.sans }}>#{i + 1}</div>
+                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: i === 0 ? C.purple : C.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: T.xs, fontWeight: 700, color: i === 0 ? C.white : C.textSub, fontFamily: F.sans }}>#{i + 1}</div>
                   <div>
                     <div style={{ fontWeight: 600, color: C.text, fontFamily: F.sans }}>{c.advertiser}</div>
-                    <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>{c.category} · {c.timeStart}–{c.timeEnd}</div>
+                    <div style={TX.caption}>{c.category} · {c.timeStart}–{c.timeEnd}</div>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: T.xxl, fontWeight: 800, color: scoreColor(c.score), fontFamily: F.mono, lineHeight: 1 }}>{c.score}</div>
-                  <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>/100</div>
+                  <div style={TX.caption}>/100</div>
                 </div>
               </div>
               <ProgressBar value={c.score} max={100} height={4} color={scoreColor(c.score)} />

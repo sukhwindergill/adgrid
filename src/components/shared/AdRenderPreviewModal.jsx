@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { C, F, T } from '../../design/tokens.js';
+import { C, F, T, SH } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { AdRenderPreview } from './AdRenderPreview.jsx';
 
 // Modal shell around AdRenderPreview -- lets the advertiser switch between
@@ -11,15 +12,15 @@ export function AdRenderPreviewModal({ screenName, markedPhotos, mediaUrl, media
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}
+      style={{ position: 'fixed', inset: 0, background: C.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}
       onClick={onClose}
     >
       <div
-        style={{ background: C.surface, borderRadius: 14, width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', padding: 24, boxShadow: '0 24px 60px rgba(0,0,0,0.15)' }}
+        style={{ background: C.surface, borderRadius: 14, width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', padding: 24, boxShadow: SH.modal }}
         onClick={e => e.stopPropagation()}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.sans }}>{screenName}</div>
+          <div style={TX.heading}>{screenName}</div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: T.xl, color: C.textMuted, cursor: 'pointer' }}>×</button>
         </div>
 
@@ -42,7 +43,7 @@ export function AdRenderPreviewModal({ screenName, markedPhotos, mediaUrl, media
           </div>
         )}
 
-        <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginTop: 12, lineHeight: 1.5 }}>
+        <div style={{ ...TX.caption, marginTop: 12, lineHeight: 1.5 }}>
           Approximate preview — actual on-screen appearance depends on your display's brightness, viewing angle, and ambient light.
         </div>
       </div>

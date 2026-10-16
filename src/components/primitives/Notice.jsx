@@ -2,7 +2,7 @@ import { C, F, T } from '../../design/tokens.js';
 
 // Inline status box (form errors, warnings, info callouts). Text colours are
 // the AA-safe *Text tokens, not the fill colours.
-export const NOTICE_TONES = {
+const NOTICE_TONES = {
   error:   { background: C.redSoft,    border: `1px solid ${C.redBorder}`,    color: C.redText },
   warning: { background: C.amberSoft,  border: `1px solid ${C.amberBorder}`,  color: C.amberText },
   alert:   { background: C.amberWash,  border: `1px solid ${C.amberStrong}`,  color: C.amberText },

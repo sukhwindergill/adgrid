@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { C, F, T } from '../../design/tokens.js';
+import { C, F, T, SH } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { ModeSwitcher } from './Sidebar.jsx';
 import { ICONS } from './navIcons.jsx';
 import { navFor, tabsFor, highlightedNavId } from './navConfig.js';
@@ -13,7 +14,7 @@ function Badge({ count }) {
   return (
     <span style={{
       position: 'absolute', top: -4, right: -8, minWidth: 16, height: 16, borderRadius: 8,
-      background: C.amber, color: '#fff', fontSize: T.xs, fontWeight: 700, fontFamily: F.sans,
+      background: C.amber, color: C.white, fontSize: T.xs, fontWeight: 700, fontFamily: F.sans,
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px',
     }}>{count > 99 ? '99+' : count}</span>
   );
@@ -46,20 +47,20 @@ export function MobileTabBar({ active, activeMode, onModeSwitch, onNavigate, onS
   return (
     <>
       {moreOpen && (
-        <div onClick={() => setMoreOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 140 }} />
+        <div onClick={() => setMoreOpen(false)} style={{ position: 'fixed', inset: 0, background: C.overlay, zIndex: 140 }} />
       )}
       {moreOpen && (
         <div role="dialog" aria-modal="true" aria-label="All pages" style={{
           position: 'fixed', left: 0, right: 0, bottom: 'calc(60px + env(safe-area-inset-bottom))',
           maxHeight: '70vh', overflowY: 'auto', zIndex: 150, background: C.surface,
           borderTop: `1px solid ${C.border}`, borderRadius: '16px 16px 0 0', padding: '16px 16px 8px',
-          boxShadow: '0 -8px 24px rgba(0,0,0,0.08)',
+          boxShadow: SH.sheet,
         }}>
           {onModeSwitch && <ModeSwitcher activeMode={activeMode} onSwitch={m => { setMoreOpen(false); onModeSwitch(m); }} collapsed={false} />}
           {navFor(activeMode).map(g => (
             <div key={g.group ?? 'top'} style={{ marginBottom: 8 }}>
               {g.group && (
-                <div style={{ padding: '8px 4px 4px', fontSize: T.xs, fontWeight: 600, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: F.sans }}>
+                <div style={{ ...TX.caption, padding: '8px 4px 4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   {g.group}
                 </div>
               )}
@@ -80,7 +81,7 @@ export function MobileTabBar({ active, activeMode, onModeSwitch, onNavigate, onS
           ))}
           <button onClick={() => { setMoreOpen(false); onSignOut(); }} style={{
             width: '100%', padding: '12px 8px', background: 'none', border: 'none', borderTop: `1px solid ${C.border}`,
-            color: C.red, fontFamily: F.sans, fontSize: T.md, textAlign: 'left', cursor: 'pointer', marginTop: 4,
+            color: C.redText, fontFamily: F.sans, fontSize: T.md, textAlign: 'left', cursor: 'pointer', marginTop: 4,
           }}>Sign out</button>
         </div>
       )}

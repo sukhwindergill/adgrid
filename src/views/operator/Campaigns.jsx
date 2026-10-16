@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { SkeletonRow, SkeletonCard } from '../../components/primitives/Skeleton.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
@@ -269,7 +270,7 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
     <div>
 
       {loadError && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: C.red, fontSize: T.md, fontFamily: F.sans }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: C.redText, fontSize: T.md, fontFamily: F.sans }}>
           <IconWarning size={16} /> {loadError}
         </div>
       )}
@@ -288,7 +289,7 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
         compareCampaigns.length > 0
           ? <CampaignComparisonTable campaigns={compareCampaigns} onRemove={toggleCompare} />
           : (
-            <div style={{ padding: '14px 20px', marginBottom: 20, background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: T.base, color: C.textSub, fontFamily: F.sans }}>
+            <div style={{ ...TX.bodySub, padding: '14px 20px', marginBottom: 20, background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8 }}>
               Select two or more campaigns below to compare spend, CPM, and cost per scan side by side.
             </div>
           )
@@ -334,10 +335,10 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
           <div style={{ display: 'flex', justifyContent: 'center', color: C.textMuted, marginBottom: 12 }}><IconClipboard size={40} /></div>
           {totalCount === 0 && filter === 'all' && !search ? (
             <>
-              <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>
+              <div style={{ ...TX.heading, marginBottom: 6 }}>
                 No campaigns yet
               </div>
-              <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans, maxWidth: 320, margin: '0 auto 20px' }}>
+              <div style={{ ...TX.bodySub, maxWidth: 320, margin: '0 auto 20px' }}>
                 Create your first campaign to start reaching customers on your screens.
               </div>
               <Btn onClick={onNewCampaign}>
@@ -346,10 +347,10 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
             </>
           ) : (
             <>
-              <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>
+              <div style={{ ...TX.titleLg, marginBottom: 6 }}>
                 No campaigns match these filters
               </div>
-              <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans }}>
+              <div style={TX.bodySub}>
                 Try adjusting the search, status filter or city selector.
               </div>
             </>
@@ -393,18 +394,18 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
                 >
                   <div>
                     <div style={{ fontWeight: 700, color: C.text, fontFamily: F.sans }}>{expanded ? '▾' : '▸'} {parentName}</div>
-                    <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+                    <div style={{ ...TX.caption, marginTop: 2 }}>
                       {withBadge.length} {pluralize(withBadge.length, 'targeting group')} · {totalScreens} {pluralize(totalScreens, 'screen')} · ${rollup.spent.toLocaleString()} of ${rollup.budget.toLocaleString()}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 20 }}>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontFamily: F.mono, fontSize: T.base, fontWeight: 600, color: C.text }}>{(rollup.impressions / 1000).toFixed(1)}K</div>
-                      <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>impressions</div>
+                      <div style={TX.caption}>impressions</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontFamily: F.mono, fontSize: T.base, fontWeight: 600, color: C.purple }}>{rollup.scans}</div>
-                      <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>scans</div>
+                      <div style={TX.caption}>scans</div>
                     </div>
                   </div>
                 </div>

@@ -1,14 +1,15 @@
 // src/views/operator/OperatorSettingsView.jsx
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { SUPABASE_FUNCTIONS_URL, C, F } from '../../lib/constants.js';
+import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { TeamClientRoles } from '../accounts/TeamClientRoles.jsx';
 import { EVENTS, normalizeChannelPrefs } from '../../lib/notificationPrefs.js';
-import { T } from '../../design/tokens.js';
+import { T, C, F } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 
 const TIMEZONES = [
   'UTC', 'America/New_York', 'America/Chicago', 'America/Denver',
@@ -22,7 +23,7 @@ function TabBtn({ label, active, onClick }) {
       padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer',
       fontFamily: F.sans, fontSize: T.base, fontWeight: 500,
       background: active ? C.purple : 'transparent',
-      color: active ? '#fff' : C.textSub,
+      color: active ? C.white : C.textSub,
       transition: 'all 0.15s',
     }}
       onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
@@ -85,7 +86,7 @@ function Toggle({ checked, onChange }) {
     >
       <span style={{
         position: 'absolute', top: 3, left: checked ? 23 : 3,
-        width: 18, height: 18, borderRadius: '50%', background: '#fff',
+        width: 18, height: 18, borderRadius: '50%', background: C.white,
         transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
       }} />
     </button>
@@ -135,7 +136,7 @@ export function ProfileTab({ profile, onSaved }) {
         <select
           value={timezone}
           onChange={e => setTimezone(e.target.value)}
-          style={{ width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: T.base, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
+          style={{ ...TX.body, width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
           onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
           onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
         >
@@ -144,7 +145,7 @@ export function ProfileTab({ profile, onSaved }) {
       </Field>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <SaveBtn onClick={save} saving={saving} />
-        {msg && <span style={{ fontSize: T.base, color: msg === 'Saved.' ? C.green : C.red }}>{msg}</span>}
+        {msg && <span style={{ fontSize: T.base, color: msg === 'Saved.' ? C.greenText : C.redText }}>{msg}</span>}
       </div>
     </div>
   );
@@ -201,7 +202,7 @@ export function SecurityTab() {
       <div style={{ marginBottom: 32 }}>
         <SaveBtn onClick={changeEmail} saving={emailSaving} label="Update Email" />
         {emailMsg && (
-          <div style={{ fontSize: T.base, color: emailMsg.ok ? C.green : C.red, fontFamily: F.sans, marginTop: 8 }}>
+          <div style={{ fontSize: T.base, color: emailMsg.ok ? C.greenText : C.redText, fontFamily: F.sans, marginTop: 8 }}>
             {emailMsg.text}
           </div>
         )}
@@ -216,7 +217,7 @@ export function SecurityTab() {
         </Field>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <SaveBtn onClick={changePassword} saving={pwSaving} label="Update Password" />
-          {pwMsg && <span style={{ fontSize: T.base, color: pwMsg.ok ? C.green : C.red }}>{pwMsg.text}</span>}
+          {pwMsg && <span style={{ fontSize: T.base, color: pwMsg.ok ? C.greenText : C.redText }}>{pwMsg.text}</span>}
         </div>
       </div>
     </div>
@@ -302,7 +303,7 @@ export function ReviewTab({ profile, setNav }) {
 
   return (
     <div style={{ maxWidth: 520 }}>
-      <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans, marginBottom: 20, lineHeight: 1.5 }}>
+      <div style={{ ...TX.bodySub, marginBottom: 20, lineHeight: 1.5 }}>
         How long you get to review a campaign before it is dropped from your screens.
         A dropped campaign is revenue you do not earn.
       </div>
@@ -359,7 +360,7 @@ export function ReviewTab({ profile, setNav }) {
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {categories.length === 0 && (
-                <span style={{ fontSize: T.sm, color: C.textSub, fontFamily: F.sans }}>No campaign categories yet.</span>
+                <span style={TX.helper}>No campaign categories yet.</span>
               )}
               {categories.map(cat => {
                 const active = policy.auto_approve_categories.includes(cat);
@@ -368,7 +369,7 @@ export function ReviewTab({ profile, setNav }) {
                     padding: '6px 12px', borderRadius: 20, cursor: 'pointer',
                     border: `1px solid ${active ? C.purple : C.border}`,
                     background: active ? C.purple : 'transparent',
-                    color: active ? '#fff' : C.textSub,
+                    color: active ? C.white : C.textSub,
                     fontSize: T.sm, fontFamily: F.sans, transition: 'background 0.15s',
                   }}
                     onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
@@ -391,7 +392,7 @@ export function ReviewTab({ profile, setNav }) {
 
       <div style={{ marginTop: 20, display: 'flex', gap: 12, alignItems: 'center' }}>
         <SaveBtn onClick={save} saving={saving} />
-        {msg && <span style={{ fontSize: T.base, color: msg === 'Saved.' ? C.green : C.red }}>{msg}</span>}
+        {msg && <span style={{ fontSize: T.base, color: msg === 'Saved.' ? C.greenText : C.redText }}>{msg}</span>}
       </div>
     </div>
   );
@@ -444,7 +445,7 @@ export function NotificationsTab({ profile }) {
       ))}
       <div style={{ marginTop: 20, display: 'flex', gap: 12, alignItems: 'center' }}>
         <SaveBtn onClick={save} saving={saving} />
-        {msg && <span style={{ fontSize: T.base, color: msg === 'Saved.' ? C.green : C.red }}>{msg}</span>}
+        {msg && <span style={{ fontSize: T.base, color: msg === 'Saved.' ? C.greenText : C.redText }}>{msg}</span>}
       </div>
     </div>
   );
@@ -499,7 +500,7 @@ function TeamTab({ profile }) {
   }
 
   if (loading) return <div style={{ color: C.textSub, fontSize: T.base }}>Loading team…</div>;
-  if (loadError) return <div style={{ color: C.red, fontSize: T.base }}>Couldn't load your team — check your connection and try again.</div>;
+  if (loadError) return <div style={{ color: C.redText, fontSize: T.base }}>Couldn't load your team — check your connection and try again.</div>;
 
   return (
     <div style={{ maxWidth: 560 }}>
@@ -520,7 +521,7 @@ function TeamTab({ profile }) {
                 background: m.role === 'admin' ? C.purpleLight : C.bg,
                 color: m.role === 'admin' ? C.purple : C.textSub, textTransform: 'capitalize',
               }}>{m.role}</span>
-              <Btn variant="ghost" size="sm" onClick={() => removeMember(m.id)} style={{ color: C.red }}>Remove</Btn>
+              <Btn variant="ghost" size="sm" onClick={() => removeMember(m.id)} style={{ color: C.redText }}>Remove</Btn>
             </div>
           ))}
         </div>
@@ -533,14 +534,14 @@ function TeamTab({ profile }) {
             placeholder="colleague@company.com"
             value={inviteEmail}
             onChange={e => setInviteEmail(e.target.value)}
-            style={{ flex: 1, padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: T.base, color: C.text, outline: 'none', transition: 'border-color 0.15s' }}
+            style={{ ...TX.body, flex: 1, padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, outline: 'none', transition: 'border-color 0.15s' }}
             onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
             onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
           />
           <select
             value={inviteRole}
             onChange={e => setInviteRole(e.target.value)}
-            style={{ padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: T.base, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
+            style={{ ...TX.body, padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
             onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
             onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
           >
@@ -551,7 +552,7 @@ function TeamTab({ profile }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Btn onClick={invite}>Send Invite</Btn>
-          {msg && <span style={{ fontSize: T.base, color: msg.startsWith('Error') ? C.red : C.green }}>{msg}</span>}
+          {msg && <span style={{ fontSize: T.base, color: msg.startsWith('Error') ? C.redText : C.greenText }}>{msg}</span>}
         </div>
       </div>
     </div>
@@ -691,7 +692,7 @@ function PayoutsTab({ profile }) {
             </Btn>
           </>
         )}
-        {msg && <div style={{ fontSize: T.sm, color: msg.ok ? C.green : C.red, marginTop: 8 }}>{msg.text}</div>}
+        {msg && <div style={{ fontSize: T.sm, color: msg.ok ? C.greenText : C.redText, marginTop: 8 }}>{msg.text}</div>}
       </Card>
 
       <div style={{ fontSize: T.sm, color: C.textMuted, lineHeight: 1.5 }}>
@@ -782,7 +783,7 @@ function VerificationTab({ profile }) {
               Your last verification attempt was rejected.
             </div>
             {profile?.verification_rejection_reason && (
-              <div style={{ fontSize: T.sm, color: C.red, marginBottom: 16 }}>Reason: {profile.verification_rejection_reason}</div>
+              <div style={{ fontSize: T.sm, color: C.redText, marginBottom: 16 }}>Reason: {profile.verification_rejection_reason}</div>
             )}
             <Btn onClick={startVerification} disabled={starting}>
               {starting ? 'Redirecting…' : 'Try again'}
@@ -802,7 +803,7 @@ function VerificationTab({ profile }) {
         )}
 
         {msg && (
-          <div style={{ fontSize: T.sm, color: msg.ok ? C.green : C.red, marginTop: 12 }}>{msg.text}</div>
+          <div style={{ fontSize: T.sm, color: msg.ok ? C.greenText : C.redText, marginTop: 12 }}>{msg.text}</div>
         )}
       </Card>
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../primitives/Card.jsx';
 import { Btn } from '../primitives/Btn.jsx';
 import { CopyButton } from '../primitives/CopyButton.jsx';
@@ -63,10 +64,10 @@ export function ShareReportModal({ campaignId, userId, audience = 'advertiser', 
   const urlFor = (token) => `${window.location.origin}/report/${token}`;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+    <div style={{ position: 'fixed', inset: 0, background: C.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
       <Card style={{ padding: 24, width: 'min(560px, 92vw)', maxHeight: '80vh', overflowY: 'auto' }}>
-        <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Share this report</div>
-        <div style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.sans, marginBottom: 18 }}>
+        <div style={{ ...TX.heading, marginBottom: 4 }}>Share this report</div>
+        <div style={{ ...TX.helperMuted, marginBottom: 18 }}>
           Anyone with the link can view delivery results for this campaign — no sign-in, and no account or billing data.
           Links expire after {DEFAULT_DAYS} days and can be revoked at any time.
         </div>
@@ -74,7 +75,7 @@ export function ShareReportModal({ campaignId, userId, audience = 'advertiser', 
         <Btn onClick={create} style={{ marginBottom: 18 }}>Create share link</Btn>
 
         {loadError && (
-          <div style={{ fontSize: T.sm, color: C.red, fontFamily: F.sans, marginBottom: 12 }}>
+          <div style={{ ...TX.error, marginBottom: 12 }}>
             Couldn't load existing share links — check your connection and try again.
           </div>
         )}
@@ -87,7 +88,7 @@ export function ShareReportModal({ campaignId, userId, audience = 'advertiser', 
                 <div style={{ fontSize: T.xs, fontFamily: F.mono, color: dead ? C.textMuted : C.textSub, wordBreak: 'break-all', textDecoration: dead ? 'line-through' : 'none' }}>
                   {urlFor(l.token)}
                 </div>
-                <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, margin: '4px 0 8px' }}>
+                <div style={{ ...TX.caption, margin: '4px 0 8px' }}>
                   {l.revoked_at ? 'Revoked' : l.expires_at ? `Expires ${new Date(l.expires_at).toLocaleDateString()}` : 'No expiry'}
                   {' · '}{l.view_count} view{l.view_count === 1 ? '' : 's'}
                 </div>

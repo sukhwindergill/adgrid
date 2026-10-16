@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../primitives/Card.jsx';
 import { Btn } from '../primitives/Btn.jsx';
 import { checklistProgress } from '../../lib/gettingStarted.js';
@@ -28,9 +29,9 @@ export function GettingStartedCard({ title = 'Get started', steps, storageKey, o
       <section aria-label={title}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 10 }}>
           <h2 style={{ margin: 0, fontFamily: F.display, fontSize: T.lg, fontWeight: 600, color: C.text }}>{title}</h2>
-          <span style={{ fontFamily: F.sans, fontSize: T.sm, color: C.textMuted }}>{done} of {total} done</span>
+          <span style={TX.helperMuted}>{done} of {total} done</span>
           <button type="button" onClick={dismiss}
-            style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontFamily: F.sans, fontSize: T.sm, color: C.textMuted }}>
+            style={{ ...TX.helperMuted, marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer' }}>
             Hide
           </button>
         </div>
@@ -53,7 +54,7 @@ export function GettingStartedCard({ title = 'Get started', steps, storageKey, o
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: T.sm,
                   background: step.done ? C.green : 'transparent',
                   border: step.done ? 'none' : `1.5px solid ${isNext ? C.purple : C.borderDark}`,
-                  color: '#fff',
+                  color: C.white,
                 }}>{step.done ? '✓' : ''}</span>
                 <div style={{ flex: 1, minWidth: 0, fontFamily: F.sans }}>
                   <div style={{

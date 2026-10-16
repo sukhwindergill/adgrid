@@ -1,7 +1,7 @@
 // src/components/shared/CreativePreview.jsx
 import { useRef } from 'react';
 import QRCode from 'react-qr-code';
-import { F, T } from '../../design/tokens.js';
+import { F, T, C } from '../../design/tokens.js';
 import { getCreativeRenderPlan } from '../../lib/getCreativeRenderPlan.js';
 import { clampQrCenter, clampQrSizePct } from '../../lib/creativeQrPosition.js';
 
@@ -20,7 +20,7 @@ function BottomBarBody({ headline, cta, bg, category, headlineFont }) {
       )}
       <div data-headline style={{
         position: 'absolute', bottom: 22, left: 14, right: 60,
-        fontSize: T.base, fontWeight: 800, color: '#fff',
+        fontSize: T.base, fontWeight: 800, color: C.white,
         lineHeight: 1.1, fontFamily: headlineFont,
         textShadow: '0 2px 8px rgba(0,0,0,0.5)',
         overflow: 'hidden', display: '-webkit-box',
@@ -51,7 +51,7 @@ function FullBleedBody({ headline, cta, bg, category, headlineFont }) {
         }}>{category}</div>
       )}
       <div data-headline style={{
-        fontSize: T.md, fontWeight: 800, color: '#fff', lineHeight: 1.15,
+        fontSize: T.md, fontWeight: 800, color: C.white, lineHeight: 1.15,
         fontFamily: headlineFont, textShadow: '0 2px 8px rgba(0,0,0,0.5)',
         overflow: 'hidden', display: '-webkit-box',
         WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
@@ -59,7 +59,7 @@ function FullBleedBody({ headline, cta, bg, category, headlineFont }) {
       {cta && (
         <div style={{
           padding: '4px 14px', borderRadius: 20, background: bg,
-          color: '#fff', fontSize: 8, fontWeight: 700, fontFamily: F.sans, letterSpacing: '0.5px',
+          color: C.white, fontSize: 8, fontWeight: 700, fontFamily: F.sans, letterSpacing: '0.5px',
         }}>{cta}</div>
       )}
     </div>
@@ -81,14 +81,14 @@ function SplitPanelBody({ headline, cta, bg, secondaryBg, category, headlineFont
           }}>{category}</div>
         )}
         <div data-headline style={{
-          fontSize: T.sm, fontWeight: 800, color: '#fff', lineHeight: 1.15,
+          fontSize: T.sm, fontWeight: 800, color: C.white, lineHeight: 1.15,
           fontFamily: headlineFont, overflow: 'hidden', display: '-webkit-box',
           WebkitLineClamp: 3, WebkitBoxOrient: 'vertical',
         }}>{headline}</div>
         {cta && (
           <div style={{
             display: 'inline-block', padding: '2px 8px', border: '1.5px solid #fff',
-            color: '#fff', fontSize: 7, fontWeight: 600, borderRadius: 3,
+            color: C.white, fontSize: 7, fontWeight: 600, borderRadius: 3,
             fontFamily: F.sans, letterSpacing: '0.5px', alignSelf: 'flex-start',
           }}>{cta}</div>
         )}
@@ -168,7 +168,7 @@ function QrOverlay({ url, x, y, sizePct, frameAspect, editable, onChange, fgColo
             onPointerDown={startDrag('resize')}
             style={{
               position: 'absolute', right: -6, bottom: -6, width: 14, height: 14,
-              borderRadius: '50%', background: '#7c3aed', border: '2px solid #fff',
+              borderRadius: '50%', background: C.purple, border: '2px solid #fff',
               cursor: 'nwse-resize', touchAction: 'none',
             }}
           />

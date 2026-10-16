@@ -1,4 +1,5 @@
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Inp } from '../primitives/Inp.jsx';
 
 // Hours form for screens.operating_hours_*; value shape and the save/validate
@@ -8,13 +9,13 @@ export function OperatingHoursFields({ value, onChange }) {
   const overnight = !value.allDay && value.start && value.end && value.end < value.start;
   return (
     <div>
-      <div style={{ fontSize: T.base, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 4 }}>
+      <div style={{ ...TX.label, marginBottom: 4 }}>
         Operating hours
       </div>
-      <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginBottom: 10, lineHeight: 1.5 }}>
+      <div style={{ ...TX.caption, marginBottom: 10, lineHeight: 1.5 }}>
         Ads only play between these times, in the screen's local timezone.
       </div>
-      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: T.base, color: C.text, fontFamily: F.sans, marginBottom: 10, cursor: 'pointer' }}>
+      <label style={{ ...TX.body, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, cursor: 'pointer' }}>
         <input
           type="checkbox"
           checked={value.allDay}
@@ -31,7 +32,7 @@ export function OperatingHoursFields({ value, onChange }) {
         </div>
       )}
       {overnight && (
-        <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginTop: 6 }}>
+        <div style={{ ...TX.caption, marginTop: 6 }}>
           Runs overnight — closes at {value.end} the next day.
         </div>
       )}

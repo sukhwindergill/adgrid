@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { C, F, T } from '../../design/tokens.js';
+import { C, F, T, SH } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { navFor, highlightedNavId } from './navConfig.js';
 import { MobileTabBar } from './MobileTabBar.jsx';
@@ -59,7 +60,7 @@ export function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
             transition: 'all 0.15s',
             background: activeMode === m.id ? C.surface : 'transparent',
             color: activeMode === m.id ? C.purple : C.textSub,
-            boxShadow: activeMode === m.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+            boxShadow: activeMode === m.id ? SH.sm : 'none',
           }}
         >
           {m.label}
@@ -138,8 +139,8 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
             minWidth: 14,
             height: 14,
             borderRadius: 7,
-            background: '#f59e0b',
-            color: '#fff',
+            background: C.amber,
+            color: C.white,
             fontSize: T.xs,
             fontWeight: 700,
             display: 'flex',
@@ -162,8 +163,8 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
               minWidth: 18,
               height: 18,
               borderRadius: 9,
-              background: '#f59e0b',
-              color: '#fff',
+              background: C.amber,
+              color: C.white,
               fontSize: T.xs,
               fontWeight: 700,
               display: 'flex',
@@ -259,11 +260,11 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
           width: 30,
           height: 30,
           borderRadius: 8,
-          background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+          background: C.gradStrong,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#fff',
+          color: C.white,
           fontSize: T.base,
           fontWeight: 700,
           fontFamily: F.sans,
@@ -333,11 +334,11 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
               width: 28,
               height: 28,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+              background: C.gradStrong,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#fff',
+              color: C.white,
               fontSize: T.xs,
               fontWeight: 600,
               fontFamily: F.sans,
@@ -349,7 +350,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
               <div style={{ fontFamily: F.sans, fontSize: T.sm, fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user?.name || 'User'}
               </div>
-              <div style={{ fontFamily: F.sans, fontSize: T.xs, color: C.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ ...TX.caption, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user?.email}
               </div>
             </div>
@@ -364,7 +365,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
                 borderRadius: 6,
                 padding: '4px 6px',
                 cursor: 'pointer',
-                color: signOutHovered ? C.red : C.textMuted,
+                color: signOutHovered ? C.redText : C.textMuted,
                 fontFamily: F.sans,
                 fontSize: T.xs,
                 fontWeight: 500,
@@ -391,7 +392,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
               border: 'none',
               borderRadius: 8,
               cursor: 'pointer',
-              color: signOutHovered ? C.red : C.textMuted,
+              color: signOutHovered ? C.redText : C.textMuted,
               transition: 'all 0.15s',
             }}
           >
@@ -439,7 +440,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
           }}
         >
           {!collapsed && (
-            <span style={{ fontFamily: F.sans, fontSize: T.xs, color: C.textMuted }}>Collapse</span>
+            <span style={TX.caption}>Collapse</span>
           )}
           {collapsed ? ICONS.chevronRight : ICONS.chevronLeft}
         </button>}

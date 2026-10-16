@@ -31,7 +31,7 @@ export function ScrollToTopButton() {
         borderRadius: '50%',
         border: 'none',
         background: C.grad,
-        color: '#fff',
+        color: C.white,
         fontSize: T.lg,
         cursor: 'pointer',
         boxShadow: '0 4px 16px rgba(0,0,0,0.2)',

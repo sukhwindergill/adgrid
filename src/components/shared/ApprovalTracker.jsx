@@ -1,4 +1,5 @@
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../primitives/Card.jsx';
 
 function hoursLeft(dueAt, now) {
@@ -17,10 +18,10 @@ export function ApprovalTracker({ rows = [], now = new Date() }) {
 
   return (
     <Card style={{ padding: 20, marginBottom: 24 }}>
-      <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>
+      <div style={{ ...TX.title, marginBottom: 4 }}>
         Waiting on screen owners
       </div>
-      <div style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.sans, marginBottom: 14 }}>
+      <div style={{ ...TX.helperMuted, marginBottom: 14 }}>
         Each owner has a review window. A screen that misses it is dropped and credited back to you.
       </div>
 
@@ -48,7 +49,7 @@ export function ApprovalTracker({ rows = [], now = new Date() }) {
 
           return (
             <div key={`${r.screen_id}-${r.status}`} style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-              <span style={{ fontSize: T.base, color: C.text, fontFamily: F.sans }}>{r.screen_name ?? r.screen_id}</span>
+              <span style={TX.body}>{r.screen_name ?? r.screen_id}</span>
               <span style={{ fontSize: T.sm, color, fontFamily: F.sans, fontWeight: 500, textAlign: 'right' }}>{label}</span>
             </div>
           );

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { C, F, T } from '../design/tokens.js';
+import { TX } from '../design/text.js';
 import { geocodeAddress } from '../lib/geocodeAddress.js';
 
 const DEFAULT_CENTER = [43.6532, -79.3832]; // Toronto — same fallback as CreateCampaign's radius map
@@ -148,12 +149,12 @@ export function ScreenLocationPicker({ value, onChange }) {
 
       <div ref={mapRef} style={{ height: 240, borderRadius: 12, overflow: 'hidden', border: `1px solid ${C.border}` }} />
 
-      <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginTop: 6 }}>
+      <div style={{ ...TX.caption, marginTop: 6 }}>
         {value
           ? `Pinned at ${value.lat.toFixed(5)}, ${value.lng.toFixed(5)} — click the map or drag the pin to adjust.`
           : 'Click the map to drop a pin, search an address, or use your current location.'}
       </div>
-      {err && <div style={{ fontSize: T.xs, color: C.red, fontFamily: F.sans, marginTop: 4 }}>{err}</div>}
+      {err && <div style={{ fontSize: T.xs, color: C.redText, fontFamily: F.sans, marginTop: 4 }}>{err}</div>}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { C, F, T } from '../../design/tokens.js';
 
 // Small rounded status/role chip without the Badge dot.
 //   <Pill tone="green">Connected</Pill>   or   <Pill bg={…} color={…}>…</Pill>
-export const PILL_TONES = {
+const PILL_TONES = {
   neutral: { bg: C.surfaceAlt, color: C.textSub,   border: C.border },
   purple:  { bg: C.purpleSoft, color: C.purple,    border: C.purpleBorder },
   green:   { bg: C.greenSoft,  color: C.greenText, border: C.greenBorder },

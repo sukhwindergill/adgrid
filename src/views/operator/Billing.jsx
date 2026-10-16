@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { periodDelta, splitByPeriod } from '../../lib/periodDelta.js';
 import { useToast } from '../../components/primitives/Toast.jsx';
@@ -208,7 +209,7 @@ export function Billing() {
 
   if (error) {
     return (
-      <div style={{ padding: 24, textAlign: 'center', color: C.red, fontFamily: F.sans }}>{error}</div>
+      <div style={{ padding: 24, textAlign: 'center', color: C.redText, fontFamily: F.sans }}>{error}</div>
     );
   }
 
@@ -218,14 +219,14 @@ export function Billing() {
         actions={<a href="https://dashboard.stripe.com" target="_blank" rel="noreferrer"><Btn variant="secondary" size="sm">Stripe Dashboard ↗</Btn></a>} />
 
       {failedTransfersError && (
-        <div style={{ display: 'flex', gap: 8, padding: '12px 16px', marginBottom: 20, background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`, borderRadius: 8, fontSize: T.base, color: C.red, fontFamily: F.sans }}>
+        <div style={{ display: 'flex', gap: 8, padding: '12px 16px', marginBottom: 20, background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8, fontSize: T.base, color: C.redText, fontFamily: F.sans }}>
           <span style={{ flexShrink: 0 }}><IconWarning size={16} /></span>
           <span>Couldn't check for failed payouts — check your connection and try again.</span>
         </div>
       )}
 
       {failedTransfers.length > 0 && (
-        <div style={{ padding: '12px 16px', marginBottom: 20, background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`, borderRadius: 8, fontSize: T.base, color: C.red, fontFamily: F.sans }}>
+        <div style={{ padding: '12px 16px', marginBottom: 20, background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8, fontSize: T.base, color: C.redText, fontFamily: F.sans }}>
           <div style={{ display: 'flex', gap: 8, lineHeight: 1.6, marginBottom: 10 }}>
             <span style={{ flexShrink: 0 }}><IconWarning size={16} /></span>
             <span>
@@ -236,8 +237,8 @@ export function Billing() {
             </span>
           </div>
           {failedTransfers.map(t => (
-            <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '8px 0 8px 24px', borderTop: `1px solid ${C.redBorder ?? '#fecaca'}` }}>
-              <span style={{ color: C.text, fontFamily: F.sans, fontSize: T.base }}>
+            <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '8px 0 8px 24px', borderTop: `1px solid ${C.redBorder}` }}>
+              <span style={TX.body}>
                 {t.bookings?.advertiser_name ?? t.booking_id} — ${Number(t.amount).toLocaleString()} {t.currency?.toUpperCase()}
               </span>
               <Btn variant="danger" size="sm" disabled={retryingId === t.id} onClick={() => retryTransfer(t)}>
@@ -260,7 +261,7 @@ export function Billing() {
       {tab === 'overview' && (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
           <Card>
-            <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Revenue Split</div>
+            <div style={{ ...TX.title, marginBottom: 14 }}>Revenue Split</div>
             <div style={{ height: 8, borderRadius: 4, overflow: 'hidden', display: 'flex', marginBottom: 14 }}>
               <div style={{ width: `${ownerPct}%`, background: C.green }} />
               <div style={{ flex: 1, background: C.blue }} />
@@ -276,21 +277,21 @@ export function Billing() {
             ))}
           </Card>
           <Card>
-            <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Stripe Connect Balance</div>
+            <div style={{ ...TX.title, marginBottom: 14 }}>Stripe Connect Balance</div>
             {connectStatus !== 'active' ? (
-              <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans, lineHeight: 1.7 }}>
+              <div style={{ ...TX.bodySub, lineHeight: 1.7 }}>
                 Connect your bank account via Stripe to receive payouts.
                 Go to <strong>Screens</strong> → <strong>Connect Stripe</strong> to get started.
               </div>
             ) : (
               <>
                 {upcomingPayout ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', marginBottom: 14, background: C.amberSoft, borderRadius: 8, fontSize: T.base, color: C.text, fontFamily: F.sans }}>
-                    <span style={{ flexShrink: 0, color: C.amber }}><IconClock size={14} /></span>
+                  <div style={{ ...TX.body, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', marginBottom: 14, background: C.amberSoft, borderRadius: 8 }}>
+                    <span style={{ flexShrink: 0, color: C.amberText }}><IconClock size={14} /></span>
                     <span>Next payout — <strong>${Number(upcomingPayout.amount).toLocaleString()}</strong> arriving <strong>{upcomingPayout.arrival_date}</strong></span>
                   </div>
                 ) : (
-                  <div style={{ padding: '10px 12px', marginBottom: 14, background: C.surfaceAlt, borderRadius: 8, fontSize: T.base, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5 }}>
+                  <div style={{ ...TX.bodySub, padding: '10px 12px', marginBottom: 14, background: C.surfaceAlt, borderRadius: 8, lineHeight: 1.5 }}>
                     {lastPayout
                       ? <>No payout scheduled — payouts are on-demand. Last one landed <strong>{daysSinceLast}d ago</strong> (${Number(lastPayout.amount).toLocaleString()} on {lastPayout.arrival_date}).</>
                       : <>No payout scheduled — payouts are on-demand. Click below whenever you want available funds sent to your bank.</>}
@@ -299,7 +300,7 @@ export function Billing() {
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 16 }}>
                   {[['Available', `$${availableOut.toLocaleString()}`, C.green], ['Pending', `$${pendingIn.toLocaleString()}`, C.amber]].map(([l, v, c]) => (
                     <div key={l} style={{ padding: 14, background: C.surfaceAlt, borderRadius: 8 }}>
-                      <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginBottom: 4 }}>{l}</div>
+                      <div style={{ ...TX.caption, marginBottom: 4 }}>{l}</div>
                       <div style={{ fontSize: T.xxl, fontWeight: 700, color: c, fontFamily: F.mono }}>{v}</div>
                     </div>
                   ))}
@@ -319,17 +320,17 @@ export function Billing() {
         ) : stripeCharges.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
             <div style={{ color: C.textMuted, marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconCard size={28} /></div>
-            <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>No charges yet</div>
-            <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans }}>Charges appear here when campaigns are approved and paid</div>
+            <div style={{ ...TX.title, marginBottom: 4 }}>No charges yet</div>
+            <div style={TX.bodySub}>Charges appear here when campaigns are approved and paid</div>
           </div>
         ) : (
           <Table
             columns={[
-              { key: 'id',          label: 'Payment ID',   render: v => <span style={{ fontFamily: F.mono, fontSize: T.xs, color: C.textSub }}>{String(v).slice(0, 20)}…</span> },
+              { key: 'id',          label: 'Payment ID',   render: v => <span style={TX.mono}>{String(v).slice(0, 20)}…</span> },
               { key: 'description', label: 'Description',  render: v => v || '—' },
               { key: 'created',     label: 'Date',          render: v => <span style={{ fontFamily: F.mono, fontSize: T.xs }}>{new Date(v).toLocaleDateString()}</span> },
               { key: 'amount',      label: 'Gross',         render: v => <span style={{ fontWeight: 600, fontFamily: F.mono }}>${Number(v).toLocaleString()}</span> },
-              { key: 'fee',         label: 'Platform Fee',  render: v => <span style={{ color: C.blue, fontFamily: F.mono }}>${Number(v).toLocaleString()}</span> },
+              { key: 'fee',         label: 'Platform Fee',  render: v => <span style={{ color: C.blueText, fontFamily: F.mono }}>${Number(v).toLocaleString()}</span> },
               { key: 'status',      label: 'Status',        render: v => <Badge status={v} /> },
             ]}
             rows={stripeCharges} />
@@ -340,20 +341,20 @@ export function Billing() {
         connectStatus !== 'active' ? (
           <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
             <div style={{ color: C.textMuted, marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconBank size={28} /></div>
-            <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Bank account not connected</div>
-            <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans }}>Connect your Stripe account to enable payouts</div>
+            <div style={{ ...TX.title, marginBottom: 4 }}>Bank account not connected</div>
+            <div style={TX.bodySub}>Connect your Stripe account to enable payouts</div>
           </div>
         ) : payouts.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
             <div style={{ color: C.textMuted, marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconClock size={28} /></div>
-            <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>No payouts yet</div>
-            <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans }}>Your first payout will appear here once initiated</div>
+            <div style={{ ...TX.title, marginBottom: 4 }}>No payouts yet</div>
+            <div style={TX.bodySub}>Your first payout will appear here once initiated</div>
           </div>
         ) : (
           <Table
             columns={[
-              { key: 'id',           label: 'Payout ID',    render: v => <span style={{ fontFamily: F.mono, fontSize: T.xs, color: C.textSub }}>{v}</span> },
-              { key: 'amount',       label: 'Amount',       render: v => <span style={{ fontWeight: 600, color: C.green, fontFamily: F.mono }}>${Number(v).toLocaleString()}</span> },
+              { key: 'id',           label: 'Payout ID',    render: v => <span style={TX.mono}>{v}</span> },
+              { key: 'amount',       label: 'Amount',       render: v => <span style={{ fontWeight: 600, color: C.greenText, fontFamily: F.mono }}>${Number(v).toLocaleString()}</span> },
               { key: 'status',       label: 'Status',       render: v => <Badge status={v} /> },
               { key: 'arrival_date', label: 'Arrival Date', render: v => <span style={{ fontFamily: F.mono, fontSize: T.xs }}>{v}</span> },
             ]}
@@ -367,7 +368,7 @@ export function Billing() {
             <select
               value={taxYear}
               onChange={e => setTaxYear(Number(e.target.value))}
-              style={{ padding: '7px 12px', borderRadius: 8, border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: T.base, color: C.text, background: C.surface }}
+              style={{ ...TX.body, padding: '7px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: C.surface }}
             >
               {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(y => (
                 <option key={y} value={y}>{y}</option>
@@ -383,19 +384,19 @@ export function Billing() {
           {taxLoading ? (
             <SkeletonTable rows={5} cols={2} />
           ) : taxError ? (
-            <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, color: C.red, fontFamily: F.sans, fontSize: T.base }}>
+            <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, color: C.redText, fontFamily: F.sans, fontSize: T.base }}>
               Couldn't load {taxYear}'s payouts — check your connection and try again.
             </div>
           ) : taxSummary.total === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
               <div style={{ color: C.textMuted, marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconBank size={28} /></div>
-              <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>No paid payouts in {taxYear}</div>
-              <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans }}>Only payouts that have actually landed in your bank count toward this total.</div>
+              <div style={{ ...TX.title, marginBottom: 4 }}>No paid payouts in {taxYear}</div>
+              <div style={TX.bodySub}>Only payouts that have actually landed in your bank count toward this total.</div>
             </div>
           ) : (
             <>
               <div style={{ marginBottom: 16, padding: 16, background: C.surfaceAlt, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans }}>Total received in {taxYear}</span>
+                <span style={TX.bodySub}>Total received in {taxYear}</span>
                 <span style={{ fontSize: T.xxl, fontWeight: 700, color: C.text, fontFamily: F.mono }}>${taxSummary.total.toLocaleString()} {taxSummary.currency.toUpperCase()}</span>
               </div>
               <Table

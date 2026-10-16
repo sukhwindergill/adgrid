@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { C, F, SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
+import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { Btn } from '../primitives/Btn.jsx';
 import { CopyButton } from '../primitives/CopyButton.jsx';
 import { callPairing, isValidPairingCode, normalizePairingCode, PAIRING_CODE_LENGTH } from '../../lib/screenPairing.js';
-import { T } from '../../design/tokens.js';
+import { T, C, F } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 
 // Shared by the onboarding wizard's Setup step (ScreenOnboard.jsx) and the
 // screen detail page's Setup Guide tab (ScreenDetail.jsx).
@@ -46,7 +47,7 @@ function CodeBox({ label, value }) {
       )}
       <div style={{ position: 'relative' }}>
         <pre style={{
-          background: '#0a0a0a', borderRadius: 8, padding: '14px 16px',
+          background: C.text, borderRadius: 8, padding: '14px 16px',
           fontFamily: F.mono, fontSize: T.xs, color: '#a3e635',
           whiteSpace: 'pre', overflowX: 'auto', margin: 0,
         }}>{value}</pre>
@@ -58,7 +59,7 @@ function CodeBox({ label, value }) {
           style={{
             position: 'absolute', top: 8, right: 8,
             background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: 4, color: '#fff', fontSize: T.xs, padding: '3px 10px',
+            borderRadius: 4, color: C.white, fontSize: T.xs, padding: '3px 10px',
           }}
         />
       </div>
@@ -107,7 +108,7 @@ export function PairingCodeEntry({ screen, onPaired }) {
         padding: '14px 16px', borderRadius: 10, background: C.greenSoft, border: `1px solid ${C.greenBorder}`,
         fontSize: T.base, color: C.text, fontFamily: F.sans, lineHeight: 1.6,
       }}>
-        <strong style={{ color: C.green }}>Paired.</strong> {screen.name} will switch from the code to your ads
+        <strong style={{ color: C.greenText }}>Paired.</strong> {screen.name} will switch from the code to your ads
         within a few seconds. If it doesn't, check the screen is still on the pairing page.
         <div>
           <button type="button" onClick={() => { setCode(''); setState('idle'); }} style={{
@@ -121,7 +122,7 @@ export function PairingCodeEntry({ screen, onPaired }) {
 
   return (
     <form onSubmit={submit}>
-      <label htmlFor={`pair-code-${screen.id}`} style={{ display: 'block', fontSize: T.base, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 8 }}>
+      <label htmlFor={`pair-code-${screen.id}`} style={{ ...TX.strong, display: 'block', marginBottom: 8 }}>
         Enter pairing code
       </label>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -148,7 +149,7 @@ export function PairingCodeEntry({ screen, onPaired }) {
           {state === 'submitting' ? 'Pairing…' : 'Pair screen'}
         </Btn>
       </div>
-      {err && <div role="alert" style={{ fontSize: T.sm, color: C.red, fontFamily: F.sans, marginTop: 6 }}>{err}</div>}
+      {err && <div role="alert" style={{ ...TX.error, marginTop: 6 }}>{err}</div>}
     </form>
   );
 }
@@ -198,7 +199,7 @@ EOF`;
           <li>Type the code it shows into the box above.</li>
         </ol>
         <CodeBox label="Paste into the Pi's terminal" value={piSetup} />
-        <div style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.sans, lineHeight: 1.6, marginBottom: 16 }}>
+        <div style={{ ...TX.helperMuted, lineHeight: 1.6, marginBottom: 16 }}>
           Older Bookworm installs that still use Wayfire: switch to labwc first with{' '}
           <code style={kbd}>sudo raspi-config</code> → Advanced Options → Wayland → labwc, then run the commands.
         </div>
@@ -239,7 +240,7 @@ EOF`;
   return (
     <div>
       <div style={{ background: C.surfaceAlt, borderRadius: 10, padding: '16px 18px', marginBottom: 20 }}>
-        <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, marginBottom: 14 }}>
+        <div style={{ ...TX.bodySub, lineHeight: 1.6, marginBottom: 14 }}>
           On the screen, open <strong style={{ color: C.text, fontFamily: F.mono }}>{host}/pair</strong>. It shows a
           short code — type it here to connect the screen to <strong style={{ color: C.text }}>{screen.name}</strong>.
         </div>
@@ -248,7 +249,7 @@ EOF`;
 
       {howToOpen}
 
-      <details style={{ fontFamily: F.sans, fontSize: T.base, color: C.textSub, borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
+      <details style={{ ...TX.bodySub, borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
         <summary style={{ cursor: 'pointer', color: C.textMid, fontWeight: 500 }}>
           Advanced: use the full player URL instead
         </summary>

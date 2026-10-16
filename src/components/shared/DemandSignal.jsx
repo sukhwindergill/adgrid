@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { VENUE_TAXONOMY } from '../../lib/venueTypes.js';
 import { demandSignalMessage } from '../../lib/demandSignal.js';
 import { IconTrendUp } from '../icons.jsx';
@@ -40,8 +41,8 @@ export function DemandSignal({ city, venueCategory }) {
       background: active ? C.greenSoft : C.purpleSoft,
       border: `1px solid ${(active ? C.green : C.purple)}44`,
     }}>
-      <span style={{ color: active ? C.green : C.purple, flexShrink: 0, marginTop: 1 }}><IconTrendUp size={14} /></span>
-      <span style={{ fontSize: T.base, color: C.text, fontFamily: F.sans, lineHeight: 1.45 }}>{message.text}</span>
+      <span style={{ color: active ? C.greenText : C.purple, flexShrink: 0, marginTop: 1 }}><IconTrendUp size={14} /></span>
+      <span style={{ ...TX.body, lineHeight: 1.45 }}>{message.text}</span>
     </div>
   );
 }

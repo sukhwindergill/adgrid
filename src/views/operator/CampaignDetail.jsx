@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { C, F, T } from '../../design/tokens.js';
+import { C, F, T, SH } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { useToast } from '../../components/primitives/Toast.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
@@ -31,7 +32,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
   const [sharing, setSharing] = useState(false);
   const [editForm, setEditForm] = useState({ budget: campaign.budget, start: campaign.start, end: campaign.end });
   const [editingCreative, setEditingCreative] = useState(false);
-  const [creativeForm, setCreativeForm] = useState({ accent_color: campaign.color ?? '#7c3aed' });
+  const [creativeForm, setCreativeForm] = useState({ accent_color: campaign.color ?? C.purple });
   const [deliveryCheckRow, setDeliveryCheckRow] = useState(null);
   const [statusActionLoading, setStatusActionLoading] = useState(false);
   const c = campaign;
@@ -156,7 +157,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
             />
             <Btn variant="danger" size="sm" disabled={rejectLoading} onClick={confirmReject}>{rejectLoading ? '…' : 'Confirm Reject'}</Btn>
             <Btn variant="secondary" size="sm" onClick={() => { setRejecting(false); setRejectReason(''); setRejectErr(null); }}>Cancel</Btn>
-            {rejectErr && <span style={{ fontSize: T.xs, color: C.red, fontFamily: F.sans }}>{rejectErr}</span>}
+            {rejectErr && <span style={{ fontSize: T.xs, color: C.redText, fontFamily: F.sans }}>{rejectErr}</span>}
           </>
         ) : (
           <>
@@ -196,16 +197,16 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
 
       {c.status === 'pending_review' && (
         <div style={{ background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, fontFamily: F.sans }}>
-          <span style={{ color: C.amber, display: 'flex' }}><IconClock size={16} /></span>
+          <span style={{ color: C.amberText, display: 'flex' }}><IconClock size={16} /></span>
           <div>
-            <div style={{ fontSize: T.base, fontWeight: 600, color: C.amber }}>Awaiting Review</div>
+            <div style={{ fontSize: T.base, fontWeight: 600, color: C.amberText }}>Awaiting Review</div>
             <div style={{ fontSize: T.sm, color: C.textSub, marginTop: 1 }}>{canReview ? 'Review the creative and schedule below, then approve or reject.' : 'Your screen owner(s) are reviewing this campaign.'}</div>
           </div>
         </div>
       )}
       {c.status === 'rejected' && c.rejectReason && (
         <div style={{ background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontFamily: F.sans }}>
-          <div style={{ fontSize: T.base, fontWeight: 600, color: C.red, marginBottom: 2 }}>Rejected</div>
+          <div style={{ fontSize: T.base, fontWeight: 600, color: C.redText, marginBottom: 2 }}>Rejected</div>
           <div style={{ fontSize: T.sm, color: C.textSub }}>{c.rejectReason}</div>
         </div>
       )}
@@ -219,15 +220,15 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
 
       <Card style={{ marginBottom: 20, padding: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans }}>Budget Utilisation</div>
+          <div style={TX.title}>Budget Utilisation</div>
           <Badge status={c.status} />
         </div>
         <ProgressBar value={c.spent} max={c.budget} showLabel height={10} />
         <div style={{ display: 'flex', gap: 28, marginTop: 14 }}>
           {[['CPM', `$${cpm}`], ['Slot Share', c.slots + '%'], ['Ad Duration', c.duration + 's'], ['Schedule', scheduleLabel], ['Days', (c.days || []).join(', ')]].map(([l, v]) => (
             <div key={l}>
-              <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginBottom: 2 }}>{l}</div>
-              <div style={{ fontSize: T.base, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{v}</div>
+              <div style={{ ...TX.caption, marginBottom: 2 }}>{l}</div>
+              <div style={{ ...TX.body, fontWeight: 500 }}>{v}</div>
             </div>
           ))}
         </div>
@@ -247,7 +248,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
       {tab === 'overview' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
           <Card>
-            <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Impressions by Hour</div>
+            <div style={{ ...TX.title, marginBottom: 16 }}>Impressions by Hour</div>
             <div style={{ display: 'flex', gap: 2, alignItems: 'flex-end', height: 80, marginBottom: 8 }}>
               {hourly.map(({ h, v }) => (
                 <div key={h} title={`${String(h).padStart(2, '0')}:00`} style={{
@@ -262,7 +263,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
             </div>
           </Card>
           <Card>
-            <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Campaign Summary</div>
+            <div style={{ ...TX.title, marginBottom: 16 }}>Campaign Summary</div>
             {[['Advertiser', c.advertiser], ['Screen', c.screen], ['City', c.city], ['Category', c.category], ['Campaign ID', c.id], ['Start Date', c.start], ['End Date', c.end], ['Destination', c.destination || '—']].map(([l, v]) => (
               <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
                 <span style={{ fontSize: T.sm, color: C.textSub }}>{l}</span>
@@ -275,20 +276,20 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
 
       {tab === 'creative' && (
         <Card>
-          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Ad Creative</div>
+          <div style={{ ...TX.title, marginBottom: 16 }}>Ad Creative</div>
           <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 24, alignItems: 'start' }}>
             <CreativePreview campaign={c} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[['Headline', c.headline || '—'], ['Category', c.category], ['Accent Colour', c.color || '—'], ['QR Destination', c.destination || '—']].map(([l, v]) => (
                 <div key={l}>
-                  <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginBottom: 3 }}>{l}</div>
+                  <div style={{ ...TX.caption, marginBottom: 3 }}>{l}</div>
                   <div style={{ fontSize: T.base, color: C.text, fontFamily: l === 'Accent Colour' ? F.mono : F.sans, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}>
                     {l === 'Accent Colour' && <div style={{ width: 16, height: 16, borderRadius: 4, background: v, border: `1px solid ${C.border}`, flexShrink: 0 }} />}
                     {v}
                   </div>
                 </div>
               ))}
-              <Btn variant="secondary" size="sm" icon={<IconEdit size={13} />} style={{ alignSelf: 'flex-start' }} onClick={() => { setTab('creative'); setCreativeForm({ accent_color: c.color ?? '#7c3aed' }); setEditingCreative(true); }}>Edit Creative</Btn>
+              <Btn variant="secondary" size="sm" icon={<IconEdit size={13} />} style={{ alignSelf: 'flex-start' }} onClick={() => { setTab('creative'); setCreativeForm({ accent_color: c.color ?? C.purple }); setEditingCreative(true); }}>Edit Creative</Btn>
             </div>
           </div>
           {editingCreative && (
@@ -326,7 +327,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
       {tab === 'settings' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <Card>
-            <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Schedule</div>
+            <div style={{ ...TX.title, marginBottom: 16 }}>Schedule</div>
             {[['Days', (c.days || []).join(', ')], ['Time Window', scheduleLabel], ['Ad Duration', c.duration + 's per play'], ['Slot Share', c.slots + '% of airtime']].map(([l, v]) => (
               <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
                 <span style={{ fontSize: T.base, color: C.textSub }}>{l}</span>
@@ -335,14 +336,14 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
             ))}
           </Card>
           <Card>
-            <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Danger Zone</div>
+            <div style={{ ...TX.title, marginBottom: 16 }}>Danger Zone</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <Btn variant="danger" loading={statusActionLoading} onClick={() => runStatusAction(c.status === 'paused' ? 'resume' : 'pause')}>
                 {c.status === 'paused' ? '▶ Resume Campaign' : '⏸ Pause Campaign'}
               </Btn>
               <Btn variant="danger" loading={statusActionLoading} onClick={() => runStatusAction('cancel')}>✕ Cancel Campaign</Btn>
             </div>
-            <div style={{ marginTop: 12, fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, lineHeight: 1.6 }}>
+            <div style={{ ...TX.caption, marginTop: 12, lineHeight: 1.6 }}>
               Cancelling stops the campaign immediately. Unused budget will be reviewed for refund per your agreement.
             </div>
           </Card>
@@ -351,12 +352,12 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
 
       {editing && (
         <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+          position: 'fixed', inset: 0, background: C.overlay,
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
         }}>
           <div style={{
             background: C.surface, borderRadius: 14, padding: 28, width: 400,
-            fontFamily: F.sans, boxShadow: '0 24px 64px rgba(0,0,0,.5)',
+            fontFamily: F.sans, boxShadow: SH.modal,
           }}>
             <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, marginBottom: 20 }}>Edit Campaign</div>
             {[

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { supabase } from '../../lib/supabase.js';
 import { fetchScreenDemographics } from '../../lib/marketplace.js';
 
@@ -44,17 +45,17 @@ export function ScreenAnalyticsPanel({ screenId }) {
         data-testid="traffic-section"
         style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}
       >
-        <div style={{ fontFamily: F.sans, fontWeight: 600, fontSize: T.base, color: C.text, marginBottom: 8 }}>
+        <div style={{ ...TX.strong, marginBottom: 8 }}>
           Traffic — platform-verified
         </div>
         {trafficError ? (
-          <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.textMuted }}>Traffic data unavailable right now.</div>
+          <div style={TX.bodyMuted}>Traffic data unavailable right now.</div>
         ) : traffic ? (
           <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.textMid }}>
             ~{traffic.avgDaily} scans/day average, based on {traffic.sampleDays} days of measured data
           </div>
         ) : (
-          <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.textMuted }}>Loading…</div>
+          <div style={TX.bodyMuted}>Loading…</div>
         )}
       </div>
 
@@ -66,7 +67,7 @@ export function ScreenAnalyticsPanel({ screenId }) {
           Area estimate — not board-verified
         </div>
         {demo === null ? (
-          <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.textMuted }}>Loading…</div>
+          <div style={TX.bodyMuted}>Loading…</div>
         ) : demo.available ? (
           <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.textMid }}>
             Median age ~{demo.medianAge ?? '—'}, household income {INCOME_LABELS[demo.incomeBand] ?? '—'}
@@ -75,7 +76,7 @@ export function ScreenAnalyticsPanel({ screenId }) {
             </div>
           </div>
         ) : (
-          <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.textMuted }}>
+          <div style={TX.bodyMuted}>
             Demographic data not available for this location.
           </div>
         )}

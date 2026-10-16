@@ -4,8 +4,9 @@ import { useState } from 'react';
 // e.currentTarget.style. `hoverStyle` is merged over `style` while hovered.
 //   <Hover style={row} hoverStyle={{ background: C.bg }}>…</Hover>
 //   <Hover as="tr" …>
-export function Hover({ as: Tag = 'div', style, hoverStyle, disabled = false, onMouseEnter, onMouseLeave, children, ...rest }) {
+export function Hover({ as = 'div', style, hoverStyle, disabled = false, onMouseEnter, onMouseLeave, children, ...rest }) {
   const [hovered, setHovered] = useState(false);
+  const Tag = as;
   return (
     <Tag
       {...rest}

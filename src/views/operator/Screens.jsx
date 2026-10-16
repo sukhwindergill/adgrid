@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { C, F } from '../../lib/constants.js';
 import { SkeletonCard, SkeletonRow } from '../../components/primitives/Skeleton.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
@@ -14,7 +13,8 @@ import { VENUE_TAXONOMY } from '../../lib/venueTypes.js';
 import { healthSignal } from '../../lib/screenHealth.js';
 import { IconScreen } from '../../components/icons.jsx';
 import { BulkImportModal } from '../../components/screens/BulkImportModal.jsx';
-import { T } from '../../design/tokens.js';
+import { T, SH, C, F } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 
 function uptime(screen) {
   if (!screen.last_seen) return '—';
@@ -47,7 +47,7 @@ function ScreenCard({ screen, onClick }) {
   return (
     <Card style={{ padding: 0, transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'pointer', overflow: 'hidden' }}
       onClick={onClick}
-      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.1)'; }}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = SH.lift; }}
       onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
     >
       {/* Photo banner */}
@@ -64,8 +64,8 @@ function ScreenCard({ screen, onClick }) {
               style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: hs.dot, marginTop: 4, flexShrink: 0 }}
             />
             <div>
-              <div style={{ fontWeight: 600, color: C.text, fontFamily: F.sans, fontSize: T.md, lineHeight: 1.3 }}>{screen.name}</div>
-              <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+              <div style={{ ...TX.title, lineHeight: 1.3 }}>{screen.name}</div>
+              <div style={{ ...TX.caption, marginTop: 2 }}>
                 {screen.neighbourhood} · {screen.city}
                 {screen.environment && (
                   <span style={{ marginLeft: 6, color: C.textMuted }}>· {screen.environment === 'indoor' ? 'Indoor' : 'Outdoor'}</span>
@@ -92,7 +92,7 @@ function ScreenCard({ screen, onClick }) {
             {venueLabel && (
               <span style={{
                 fontSize: T.xs, fontWeight: 600, fontFamily: F.sans,
-                background: C.blueSoft, color: C.blue,
+                background: C.blueSoft, color: C.blueText,
                 padding: '2px 8px', borderRadius: 10,
               }}>{venueLabel}</span>
             )}
@@ -101,7 +101,7 @@ function ScreenCard({ screen, onClick }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 12 }}>
           <div>
-            <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>Impressions/mo</div>
+            <div style={TX.caption}>Impressions/mo</div>
             <div
               title={impressionsHint(screen) ?? undefined}
               style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.mono, marginTop: 2, cursor: impressionsHint(screen) ? 'help' : undefined }}
@@ -110,14 +110,14 @@ function ScreenCard({ screen, onClick }) {
             </div>
           </div>
           <div>
-            <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>CPM</div>
+            <div style={TX.caption}>CPM</div>
             <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.mono, marginTop: 2 }}>${screen.cpm?.toFixed(2) || '4.20'}</div>
           </div>
           <div>
-            <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>Uptime</div>
+            <div style={TX.caption}>Uptime</div>
             <div
               title={uptime(screen) === '—' ? uptimeHint(screen) : undefined}
-              style={{ fontSize: T.lg, fontWeight: 700, color: screen.status === 'live' ? C.green : C.textMuted, fontFamily: F.mono, marginTop: 2, cursor: uptime(screen) === '—' ? 'help' : undefined }}
+              style={{ fontSize: T.lg, fontWeight: 700, color: screen.status === 'live' ? C.greenText : C.textMuted, fontFamily: F.mono, marginTop: 2, cursor: uptime(screen) === '—' ? 'help' : undefined }}
             >
               {uptime(screen)}
             </div>
@@ -128,7 +128,7 @@ function ScreenCard({ screen, onClick }) {
           <div style={{ fontSize: T.xs, color: C.textSub, fontFamily: F.sans }}>
             {screen.campaigns} active campaign{screen.campaigns !== 1 ? 's' : ''}
           </div>
-          <div style={{ fontSize: T.sm, fontWeight: 600, color: C.green, fontFamily: F.mono }}>
+          <div style={{ fontSize: T.sm, fontWeight: 600, color: C.greenText, fontFamily: F.mono }}>
             {screen.revenue > 0 ? `$${screen.revenue.toLocaleString()}/mo` : ''}
           </div>
         </div>
@@ -208,10 +208,10 @@ export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelect
 
       {allScreens.some(s => s.lat == null || s.lon == null) && (
         <Card style={{ padding: 16, marginBottom: 20, borderLeft: `3px solid ${C.amber}` }}>
-          <div style={{ fontSize: T.base, fontWeight: 600, color: C.text, fontFamily: F.sans }}>
+          <div style={TX.strong}>
             {allScreens.filter(s => s.lat == null || s.lon == null).length} screen(s) missing coordinates
           </div>
-          <div style={{ fontSize: T.sm, color: C.textSub, fontFamily: F.sans, marginTop: 4 }}>
+          <div style={{ ...TX.helper, marginTop: 4 }}>
             Advertisers searching by radius cannot find these screens, and they are excluded from
             audience reach estimates. Add coordinates from each screen&apos;s settings.
           </div>
@@ -249,16 +249,16 @@ export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelect
           <div style={{ color: C.textMuted, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconScreen size={32} /></div>
           {isFiltered ? (
             <>
-              <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No screens match</div>
-              <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>
+              <div style={{ ...TX.titleLg, marginBottom: 6 }}>No screens match</div>
+              <div style={{ ...TX.bodySub, marginBottom: 20 }}>
                 No registered screens match {q ? `“${search}”` : `city “${filter}”`}. Try a different search or clear the filter.
               </div>
               <Btn variant="secondary" onClick={() => { setSearch(''); setFilter('All'); }}>Clear filters</Btn>
             </>
           ) : (
             <>
-              <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No screens registered yet</div>
-              <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>Register your first screen to start running campaigns on the network.</div>
+              <div style={{ ...TX.titleLg, marginBottom: 6 }}>No screens registered yet</div>
+              <div style={{ ...TX.bodySub, marginBottom: 20 }}>Register your first screen to start running campaigns on the network.</div>
               <Btn onClick={onStartOnboard}>+ Register Screen</Btn>
             </>
           )}

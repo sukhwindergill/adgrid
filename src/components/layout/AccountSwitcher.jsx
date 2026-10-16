@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { C, F, T } from '../../design/tokens.js';
+import { C, F, T, SH } from '../../design/tokens.js';
 
 function RoleBadge({ role }) {
   const colors = {
-    admin:   { bg: 'rgba(124,58,237,0.12)', color: '#7c3aed' },
+    admin:   { bg: 'rgba(124,58,237,0.12)', color: C.purple },
     manager: { bg: 'rgba(37,99,235,0.12)',  color: '#2563eb' },
     viewer:  { bg: 'rgba(107,114,128,0.12)', color: '#6b7280' },
   }
@@ -66,7 +66,7 @@ export function AccountSwitcher() {
           <div style={{
             position: 'absolute', top: 38, left: 0, minWidth: 220,
             background: C.surface, border: `1px solid ${C.border}`,
-            borderRadius: 12, boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+            borderRadius: 12, boxShadow: SH.pop,
             padding: '6px 0', zIndex: 200,
           }}>
             <button
@@ -83,7 +83,7 @@ export function AccountSwitcher() {
                 </div>
                 <div style={{ fontSize: T.xs, color: C.textMuted }}>Your account</div>
               </div>
-              {!activeAccount && <span style={{ fontSize: T.xs, color: C.blue }}>●</span>}
+              {!activeAccount && <span style={{ fontSize: T.xs, color: C.blueText }}>●</span>}
             </button>
 
             {grants.length > 0 && (
@@ -116,7 +116,7 @@ export function AccountSwitcher() {
                     </div>
                     <div style={{ marginTop: 2 }}><RoleBadge role={g.role} /></div>
                   </div>
-                  {isActive && <span style={{ fontSize: T.xs, color: C.blue }}>●</span>}
+                  {isActive && <span style={{ fontSize: T.xs, color: C.blueText }}>●</span>}
                 </button>
               )
             })}

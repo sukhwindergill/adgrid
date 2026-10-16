@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
@@ -59,7 +60,7 @@ function OperatorBookings({ operatorId }) {
 
   if (loadError) {
     return (
-      <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.red, padding: '24px 0' }}>
+      <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.redText, padding: '24px 0' }}>
         Couldn't load your bookings — check your connection and try again.
       </div>
     );
@@ -67,7 +68,7 @@ function OperatorBookings({ operatorId }) {
 
   if (bookings.length === 0) {
     return (
-      <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.textMuted, padding: '24px 0' }}>
+      <div style={{ ...TX.bodyMuted, padding: '24px 0' }}>
         None of your listings have been booked yet.
       </div>
     );
@@ -87,7 +88,7 @@ function OperatorBookings({ operatorId }) {
               <span style={{ color: C[payout.color] }}>{payout.label}</span>
               <span style={{
                 padding: '2px 8px', borderRadius: 999, fontWeight: 600,
-                color: b.status === 'cancelled' ? C.red : C.purple,
+                color: b.status === 'cancelled' ? C.redText : C.purple,
                 background: b.status === 'cancelled' ? C.redSoft : C.purpleSoft,
               }}>
                 {BOOKING_STATUS_LABEL[b.status] ?? b.status}
@@ -175,11 +176,11 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
         <>
           {!bundling && (
             <>
-              <div style={{ fontFamily: F.sans, fontSize: T.base, fontWeight: 600, color: C.text, marginBottom: 10 }}>
+              <div style={{ ...TX.strong, marginBottom: 10 }}>
                 Available to list
               </div>
               {availableScreens.length === 0 ? (
-                <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.textMuted, marginBottom: 24 }}>
+                <div style={{ ...TX.bodyMuted, marginBottom: 24 }}>
                   Every screen you own already has a live listing.
                 </div>
               ) : (
@@ -187,8 +188,8 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
                   {availableScreens.map(s => (
                     <Card key={s.id} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
                       <div>
-                        <div style={{ fontFamily: F.sans, fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 2 }}>{s.name}</div>
-                        <div style={{ fontFamily: F.sans, fontSize: T.sm, color: C.textMuted }}>
+                        <div style={{ ...TX.title, marginBottom: 2 }}>{s.name}</div>
+                        <div style={TX.helperMuted}>
                           {[s.neighbourhood, s.city].filter(Boolean).join(', ') || 'No location set'}
                         </div>
                       </div>
@@ -238,15 +239,15 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
               )}
             </div>
           )}
-          <div style={{ fontFamily: F.sans, fontSize: T.base, fontWeight: 600, color: C.text, marginBottom: 10 }}>
+          <div style={{ ...TX.strong, marginBottom: 10 }}>
             Your listings
           </div>
           {listingsError ? (
-            <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.red }}>
+            <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.redText }}>
               Couldn't load your listings — check your connection and try again.
             </div>
           ) : listings.length === 0 ? (
-            <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.textMuted }}>
+            <div style={TX.bodyMuted}>
               No listings yet — list a screen above to sell it as an exclusive placement.
             </div>
           ) : (

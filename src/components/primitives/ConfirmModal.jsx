@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from './Card.jsx';
 import { Btn } from './Btn.jsx';
 
@@ -52,7 +53,7 @@ export function ConfirmProvider({ children }) {
             <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.display, marginBottom: 8 }}>
               {state.title}
             </div>
-            <div style={{ fontSize: T.base, color: C.textSub, fontFamily: F.sans, marginBottom: 24, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+            <div style={{ ...TX.bodySub, marginBottom: 24, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
               {state.message}
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>

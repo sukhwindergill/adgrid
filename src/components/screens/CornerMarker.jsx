@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Btn } from '../primitives/Btn.jsx';
 import { validateQuadOrientation } from '../../lib/quadWarp.js';
 
@@ -107,17 +108,17 @@ export function CornerMarker({ photoUrl, initialCorners, onSave, onSkip }) {
       </div>
 
       {!valid && (
-        <div style={{ fontSize: T.sm, color: C.red, fontFamily: F.sans, marginTop: 8 }}>
+        <div style={{ ...TX.error, marginTop: 8 }}>
           Corners cross over each other — drag them so they form a simple, non-crossing shape around the screen.
         </div>
       )}
 
-      <div style={{ fontSize: T.sm, color: C.textSub, fontFamily: F.sans, marginTop: 8, marginBottom: 16 }}>
+      <div style={{ ...TX.helper, marginTop: 8, marginBottom: 16 }}>
         Drag each dot onto the actual edge of the screen in the photo.
       </div>
 
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-        <button type="button" onClick={onSkip} style={{ background: 'none', border: 'none', fontSize: T.sm, color: C.textMuted, cursor: 'pointer', fontFamily: F.sans }}>
+        <button type="button" onClick={onSkip} style={{ ...TX.helperMuted, background: 'none', border: 'none', cursor: 'pointer' }}>
           Skip — no clear screen edge
         </button>
         <div style={{ flex: 1 }} />

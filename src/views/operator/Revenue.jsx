@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { periodDelta, splitByPeriod } from '../../lib/periodDelta.js';
 import { computeFillRateTrend } from '../../lib/fillRateTrend.js';
@@ -205,8 +206,8 @@ export function Revenue({ operatorScreenIds = [] }) {
         } />
 
       {fillRateTrend.flagged && (
-        <div style={{ display: 'flex', gap: 8, padding: '12px 16px', marginBottom: 20, background: C.amberSoft, border: `1px solid ${C.amber}44`, borderRadius: 8, fontSize: T.base, color: C.text, fontFamily: F.sans, lineHeight: 1.5 }}>
-          <span style={{ flexShrink: 0, color: C.amber }}><IconScreen size={16} /></span>
+        <div style={{ ...TX.body, display: 'flex', gap: 8, padding: '12px 16px', marginBottom: 20, background: C.amberSoft, border: `1px solid ${C.amber}44`, borderRadius: 8, lineHeight: 1.5 }}>
+          <span style={{ flexShrink: 0, color: C.amberText }}><IconScreen size={16} /></span>
           <span>
             <strong>Fill rate dropped {Math.abs(fillRateTrend.deltaPts)} points</strong> — paid ads made up{' '}
             {Math.round(fillRateTrend.currentRate)}% of impressions in the last 30 days, down from{' '}
@@ -227,7 +228,7 @@ export function Revenue({ operatorScreenIds = [] }) {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <Card>
-          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Revenue Split</div>
+          <div style={{ ...TX.title, marginBottom: 16 }}>Revenue Split</div>
           <div style={{ height: 8, borderRadius: 4, overflow: 'hidden', display: 'flex', marginBottom: 16 }}>
             <div style={{ width: `${ownerPct}%`, background: C.green }} /><div style={{ flex: 1, background: C.blue }} />
           </div>
@@ -239,7 +240,7 @@ export function Revenue({ operatorScreenIds = [] }) {
           ))}
         </Card>
         <Card>
-          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>By City</div>
+          <div style={{ ...TX.title, marginBottom: 16 }}>By City</div>
           {cities.map(city => {
             const rev = filteredCampaigns.filter(c => c.city === city).reduce((a, c) => a + c.budget, 0);
             return (
@@ -256,11 +257,11 @@ export function Revenue({ operatorScreenIds = [] }) {
       </div>
       <Table
         columns={[
-          { key: 'advertiser', label: 'Campaign', render: (v, r) => <div><div style={{ fontWeight: 500, color: C.text, fontFamily: F.sans }}>{v}</div><div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans }}>{r.city}</div></div> },
+          { key: 'advertiser', label: 'Campaign', render: (v, r) => <div><div style={{ fontWeight: 500, color: C.text, fontFamily: F.sans }}>{v}</div><div style={TX.caption}>{r.city}</div></div> },
           { key: 'screen',   label: 'Screen' },
           { key: 'budget',   label: 'Gross',        render: v => <span style={{ fontWeight: 600, fontFamily: F.mono }}>${v.toLocaleString()}</span> },
-          { key: 'budget',   label: `Platform (${100 - ownerPct}%)`, render: v => <span style={{ color: C.blue, fontFamily: F.mono }}>${computeRevenueSplit(v, ownerRevenueShare).platform.toLocaleString()}</span> },
-          { key: 'budget',   label: `Owner (${ownerPct}%)`,  render: v => <span style={{ color: C.green, fontFamily: F.mono }}>${computeRevenueSplit(v, ownerRevenueShare).owner.toLocaleString()}</span> },
+          { key: 'budget',   label: `Platform (${100 - ownerPct}%)`, render: v => <span style={{ color: C.blueText, fontFamily: F.mono }}>${computeRevenueSplit(v, ownerRevenueShare).platform.toLocaleString()}</span> },
+          { key: 'budget',   label: `Owner (${ownerPct}%)`,  render: v => <span style={{ color: C.greenText, fontFamily: F.mono }}>${computeRevenueSplit(v, ownerRevenueShare).owner.toLocaleString()}</span> },
           { key: 'status',   label: 'Status',       render: v => <Badge status={v} /> },
         ]}
         rows={filteredCampaigns}

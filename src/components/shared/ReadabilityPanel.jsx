@@ -1,4 +1,5 @@
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../primitives/Card.jsx';
 import { CreativePreview } from './CreativePreview.jsx';
 
@@ -26,7 +27,7 @@ export function ReadabilityPanel({ campaign, score, issues = [], tiers = [] }) {
       {issues.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 14 }}>
           {issues.map(i => (
-            <span key={i.type} style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.sans }}>
+            <span key={i.type} style={TX.helperMuted}>
               ⚠ {i.message}
             </span>
           ))}

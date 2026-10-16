@@ -1,7 +1,6 @@
 import { useId } from 'react';
-import { C } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
-import { fieldStyle, useFieldFocus } from './Inp.jsx';
+import { fieldStyle, fieldFocusStyle, useFieldFocus } from './field.js';
 
 export const SelInput = ({ label, children, style = {}, id, onFocus, onBlur, ...p }) => {
   const autoId = useId();
@@ -13,7 +12,7 @@ export const SelInput = ({ label, children, style = {}, id, onFocus, onBlur, ...
       <select
         {...p}
         id={selectId}
-        style={{ ...fieldStyle, ...style, ...(focused ? { border: `1px solid ${C.purple}` } : null) }}
+        style={{ ...fieldStyle, ...style, ...(focused ? fieldFocusStyle : null) }}
         {...focusProps}
       >
         {children}

@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase.js'
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js'
 import { useToast } from '../../components/primitives/Toast.jsx'
 import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx'
 import { Btn } from '../../components/primitives/Btn.jsx'
 import { Badge } from '../../components/primitives/Badge.jsx'
@@ -79,27 +80,27 @@ export function AdvertiserVerificationQueue() {
       <Btn variant="ghost" onClick={() => navigate('/app')} style={{ marginBottom: 16, paddingLeft: 0 }}>
         ← Back
       </Btn>
-      <h1 style={{ fontSize: T.xxl, fontWeight: 700, color: C.text, fontFamily: F.display, marginBottom: 20 }}>
+      <h1 style={{ ...TX.pageTitle, marginBottom: 20 }}>
         Advertiser Verification Queue
       </h1>
 
       {loading ? (
-        <div style={{ color: C.textSub, fontFamily: F.sans, fontSize: T.base }}>Loading…</div>
+        <div style={TX.bodySub}>Loading…</div>
       ) : error ? (
-        <div style={{ color: C.red, fontFamily: F.sans, fontSize: T.base }}>Couldn't load the queue — check your connection and try again.</div>
+        <div style={{ color: C.redText, fontFamily: F.sans, fontSize: T.base }}>Couldn't load the queue — check your connection and try again.</div>
       ) : pending.length === 0 ? (
-        <div style={{ color: C.textSub, fontFamily: F.sans, fontSize: T.base, marginBottom: 32 }}>Nothing awaiting manual review.</div>
+        <div style={{ ...TX.bodySub, marginBottom: 32 }}>Nothing awaiting manual review.</div>
       ) : (
         <div style={{ marginBottom: 32 }}>
           {pending.map(v => (
             <Card key={v.id} style={{ marginBottom: 12, padding: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontSize: T.base, fontWeight: 600, color: C.text, fontFamily: F.sans }}>{v.company_name}</div>
-                  <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+                  <div style={TX.strong}>{v.company_name}</div>
+                  <div style={{ ...TX.caption, marginTop: 2 }}>
                     {v.profiles?.name ?? 'Unnamed advertiser'} · {v.profiles?.email}
                   </div>
-                  <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+                  <div style={{ ...TX.caption, marginTop: 2 }}>
                     Domain: {v.business_domain}{v.business_number ? ` · Business #: ${v.business_number}` : ''}
                   </div>
                 </div>
@@ -139,8 +140,8 @@ export function AdvertiserVerificationQueue() {
           {reviewed.map(v => (
             <Card key={v.id} style={{ marginBottom: 8, padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
               <div>
-                <div style={{ fontSize: T.base, color: C.text, fontFamily: F.sans }}>{v.company_name}</div>
-                <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+                <div style={TX.body}>{v.company_name}</div>
+                <div style={{ ...TX.caption, marginTop: 2 }}>
                   {v.profiles?.name ?? 'Unnamed advertiser'} · {v.profiles?.email}
                 </div>
               </div>

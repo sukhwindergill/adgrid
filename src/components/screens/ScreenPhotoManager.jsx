@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { C, F, T } from '../../design/tokens.js';
+import { C, F, T, SH } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { CornerMarker } from './CornerMarker.jsx';
 import { ErrorBanner } from '../primitives/ErrorBanner.jsx';
 
@@ -108,10 +109,10 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
 
   return (
     <div>
-      <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>
+      <div style={{ ...TX.title, marginBottom: 4 }}>
         Add photos of your screen
       </div>
-      <div style={{ fontSize: T.sm, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>
+      <div style={{ ...TX.helper, marginBottom: 12 }}>
         Advertisers use these to verify placement before booking, and can preview their ad on any photo with marked corners. Up to 4 photos.
       </div>
 
@@ -125,7 +126,7 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
               <button onClick={() => removePhoto(url)} style={{
                 position: 'absolute', top: 4, right: 4,
                 background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%',
-                width: 22, height: 22, color: '#fff', cursor: 'pointer', fontSize: T.md,
+                width: 22, height: 22, color: C.white, cursor: 'pointer', fontSize: T.md,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
               }}>×</button>
               <button
@@ -134,7 +135,7 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
                 style={{
                   position: 'absolute', bottom: 4, left: 4,
                   background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: 6,
-                  color: '#fff', cursor: 'pointer', fontSize: T.xs, fontFamily: F.sans, padding: '3px 7px',
+                  color: C.white, cursor: 'pointer', fontSize: T.xs, fontFamily: F.sans, padding: '3px 7px',
                 }}
               >
                 {frameFor(url) ? '✓ Corners' : '✏ Mark corners'}
@@ -159,10 +160,10 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
       )}
 
       {markingUrl && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
-          <div style={{ background: C.surface, borderRadius: 14, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', padding: 24, boxShadow: '0 24px 60px rgba(0,0,0,0.15)' }}>
+        <div style={{ position: 'fixed', inset: 0, background: C.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
+          <div style={{ background: C.surface, borderRadius: 14, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', padding: 24, boxShadow: SH.modal }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.sans }}>Mark the screen's corners</div>
+              <div style={TX.heading}>Mark the screen's corners</div>
               <button onClick={() => setMarkingUrl(null)} style={{ background: 'none', border: 'none', fontSize: T.xl, color: C.textMuted, cursor: 'pointer' }}>×</button>
             </div>
             <CornerMarker

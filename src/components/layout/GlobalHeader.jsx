@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { C, F, glass, T } from '../../design/tokens.js';
+import { C, F, glass, T, SH } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import NotificationBell from '../NotificationBell.jsx';
 import { AccountSwitcher } from './AccountSwitcher.jsx';
 
@@ -50,11 +51,11 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
             width: 34,
             height: 34,
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+            background: C.gradStrong,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#fff',
+            color: C.white,
             fontSize: T.sm,
             fontWeight: 600,
             fontFamily: F.sans,
@@ -78,16 +79,16 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
               background: C.surface,
               border: `1px solid ${C.border}`,
               borderRadius: 12,
-              boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+              boxShadow: SH.pop,
               padding: '8px 0',
               zIndex: 200,
             }}>
               {/* User info */}
               <div style={{ padding: '10px 16px', borderBottom: `1px solid ${C.border}` }}>
-                <div style={{ fontFamily: F.sans, fontSize: T.base, fontWeight: 600, color: C.text }}>
+                <div style={TX.strong}>
                   {user?.name || 'User'}
                 </div>
-                <div style={{ fontFamily: F.sans, fontSize: T.xs, color: C.textMuted, marginTop: 2 }}>
+                <div style={{ ...TX.caption, marginTop: 2 }}>
                   {user?.email}
                 </div>
               </div>
@@ -117,12 +118,12 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
                   <span>Demo mode</span>
                   <span style={{
                     display: 'inline-block', width: 30, height: 17, borderRadius: 999,
-                    background: demoMode ? '#7c3aed' : '#d4d4d4', position: 'relative', transition: 'background 0.15s',
+                    background: demoMode ? C.purple : C.borderDark, position: 'relative', transition: 'background 0.15s',
                     flexShrink: 0,
                   }}>
                     <span style={{
                       position: 'absolute', top: 2, left: demoMode ? 15 : 2, width: 13, height: 13,
-                      borderRadius: '50%', background: '#fff', transition: 'left 0.15s',
+                      borderRadius: '50%', background: C.white, transition: 'left 0.15s',
                     }} />
                   </span>
                 </button>
@@ -140,7 +141,7 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
                   border: 'none',
                   fontFamily: F.sans,
                   fontSize: T.base,
-                  color: C.red,
+                  color: C.redText,
                   cursor: 'pointer',
                 }}
                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.06)'}
