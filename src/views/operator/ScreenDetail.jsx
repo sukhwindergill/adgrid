@@ -8,6 +8,7 @@ import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { EmptyState } from '../../components/primitives/EmptyState.jsx';
 import { Chip } from '../../components/primitives/Chip.jsx';
 import { CopyButton } from '../../components/primitives/CopyButton.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
@@ -820,11 +821,8 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
           {cvLoading ? (
             <div style={{ ...TX.bodyMuted, padding: '48px 0', textAlign: 'center' }}>Loading CV data…</div>
           ) : cvEvents.length === 0 ? (
-            <div style={{ padding: '48px 24px', textAlign: 'center', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
-              <div style={{ color: C.textMuted, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconCamera size={28} /></div>
-              <div style={{ ...TX.titleLg, marginBottom: 6 }}>No CV data yet</div>
-              <div style={TX.bodySub}>Requires screen-agent with USB camera. See Setup Guide tab.</div>
-            </div>
+            <EmptyState size="lg" icon={<IconCamera size={28} />} title="No CV data yet"
+              description="Requires screen-agent with USB camera. See Setup Guide tab." />
           ) : (() => {
             const totalPeople  = cvEvents.reduce((a, e) => a + (e.people_count ?? 0), 0);
             const avgDwell     = cvEvents.length ? (cvEvents.reduce((a, e) => a + (e.avg_dwell_seconds ?? 0), 0) / cvEvents.length).toFixed(1) : '—';

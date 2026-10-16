@@ -4,6 +4,7 @@ import { C, F, T } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
+import { EmptyState } from '../../components/primitives/EmptyState.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
@@ -96,7 +97,7 @@ export function Audience() {
       </Card>
 
       {scans.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, marginBottom: 16 }}>
+        <EmptyState style={{ marginBottom: 16 }}>
           <div style={{ color: loadError ? C.redText : C.textMuted, marginBottom: 10, display: 'flex', justifyContent: 'center' }}><IconQr size={32} /></div>
           {loadError ? (
             <>
@@ -109,7 +110,7 @@ export function Audience() {
               <div style={TX.bodySub}>QR code scans will appear here once a campaign is live</div>
             </>
           )}
-        </div>
+        </EmptyState>
       )}
 
       {scans.length > 0 && (

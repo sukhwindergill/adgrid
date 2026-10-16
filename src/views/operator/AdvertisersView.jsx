@@ -7,6 +7,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useOperatorCampaignIds } from "../../hooks/useOperatorCampaignIds.js";
 import { PageHeader } from "../../components/primitives/PageHeader.jsx";
 import { Btn } from "../../components/primitives/Btn.jsx";
+import { Card } from "../../components/primitives/Card.jsx";
 import { Pill } from "../../components/primitives/Pill.jsx";
 import { Hover } from "../../components/primitives/Hover.jsx";
 import { Inp } from "../../components/primitives/Inp.jsx";
@@ -380,7 +381,7 @@ export default function AdvertisersView({ onImpersonate }) {
           <Btn variant="secondary" size="sm" onClick={() => setChecked(new Set())}>Clear</Btn>
         </div>
       )}
-      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
+      <Card style={{ padding: 0, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: T.base }}>
           <thead>
             <tr style={{ background: C.bg }}>
@@ -421,7 +422,7 @@ export default function AdvertisersView({ onImpersonate }) {
             )}
           </tbody>
         </table>
-      </div>
+      </Card>
       {selected && (
         <DetailPanel adv={selected} campaigns={selectedCampaigns} scans={selectedScans} onClose={() => setSelected(null)} onUpdated={updateAdv} onImpersonate={onImpersonate} />
       )}

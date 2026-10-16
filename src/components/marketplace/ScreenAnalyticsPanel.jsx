@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { C, F, T } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
+import { Card } from '../primitives/Card.jsx';
 import { supabase } from '../../lib/supabase.js';
 import { fetchScreenDemographics } from '../../lib/marketplace.js';
 
@@ -41,10 +42,7 @@ export function ScreenAnalyticsPanel({ screenId }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div
-        data-testid="traffic-section"
-        style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}
-      >
+      <Card data-testid="traffic-section" style={{ padding: 16 }}>
         <div style={{ ...TX.strong, marginBottom: 8 }}>
           Traffic — platform-verified
         </div>
@@ -57,7 +55,7 @@ export function ScreenAnalyticsPanel({ screenId }) {
         ) : (
           <div style={TX.bodyMuted}>Loading…</div>
         )}
-      </div>
+      </Card>
 
       <div
         data-testid="demographic-section"

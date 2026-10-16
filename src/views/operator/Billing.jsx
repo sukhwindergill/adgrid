@@ -16,6 +16,7 @@ import { Card } from '../../components/primitives/Card.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { EmptyState } from '../../components/primitives/EmptyState.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
 import { SkeletonRow, SkeletonTable } from '../../components/primitives/Skeleton.jsx';
@@ -318,11 +319,7 @@ export function Billing() {
         stripeChargesLoading ? (
           <SkeletonTable rows={5} cols={5} />
         ) : stripeCharges.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
-            <div style={{ color: C.textMuted, marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconCard size={28} /></div>
-            <div style={{ ...TX.title, marginBottom: 4 }}>No charges yet</div>
-            <div style={TX.bodySub}>Charges appear here when campaigns are approved and paid</div>
-          </div>
+          <EmptyState icon={<IconCard size={28} />} title="No charges yet" description="Charges appear here when campaigns are approved and paid" />
         ) : (
           <Table
             columns={[
@@ -339,17 +336,9 @@ export function Billing() {
 
       {tab === 'payouts' && (
         connectStatus !== 'active' ? (
-          <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
-            <div style={{ color: C.textMuted, marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconBank size={28} /></div>
-            <div style={{ ...TX.title, marginBottom: 4 }}>Bank account not connected</div>
-            <div style={TX.bodySub}>Connect your Stripe account to enable payouts</div>
-          </div>
+          <EmptyState icon={<IconBank size={28} />} title="Bank account not connected" description="Connect your Stripe account to enable payouts" />
         ) : payouts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
-            <div style={{ color: C.textMuted, marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconClock size={28} /></div>
-            <div style={{ ...TX.title, marginBottom: 4 }}>No payouts yet</div>
-            <div style={TX.bodySub}>Your first payout will appear here once initiated</div>
-          </div>
+          <EmptyState icon={<IconClock size={28} />} title="No payouts yet" description="Your first payout will appear here once initiated" />
         ) : (
           <Table
             columns={[
@@ -384,15 +373,12 @@ export function Billing() {
           {taxLoading ? (
             <SkeletonTable rows={5} cols={2} />
           ) : taxError ? (
-            <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, color: C.redText, fontFamily: F.sans, fontSize: T.base }}>
+            <EmptyState role="alert" style={{ color: C.redText, fontFamily: F.sans, fontSize: T.base }}>
               Couldn't load {taxYear}'s payouts — check your connection and try again.
-            </div>
+            </EmptyState>
           ) : taxSummary.total === 0 ? (
-            <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
-              <div style={{ color: C.textMuted, marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconBank size={28} /></div>
-              <div style={{ ...TX.title, marginBottom: 4 }}>No paid payouts in {taxYear}</div>
-              <div style={TX.bodySub}>Only payouts that have actually landed in your bank count toward this total.</div>
-            </div>
+            <EmptyState icon={<IconBank size={28} />} title={`No paid payouts in ${taxYear}`}
+              description="Only payouts that have actually landed in your bank count toward this total." />
           ) : (
             <>
               <div style={{ marginBottom: 16, padding: 16, background: C.surfaceAlt, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -5,6 +5,7 @@ import { TX } from '../../design/text.js';
 import { SkeletonRow, SkeletonCard } from '../../components/primitives/Skeleton.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { EmptyState } from '../../components/primitives/EmptyState.jsx';
 import { Chip } from '../../components/primitives/Chip.jsx';
 import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
@@ -327,8 +328,7 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
       </div>
 
       {shown.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '56px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
-          <div style={{ display: 'flex', justifyContent: 'center', color: C.textMuted, marginBottom: 12 }}><IconClipboard size={40} /></div>
+        <EmptyState size="lg" padding="56px 24px" icon={<IconClipboard size={40} />}>
           {totalCount === 0 && filter === 'all' && !search ? (
             <>
               <div style={{ ...TX.heading, marginBottom: 6 }}>
@@ -351,7 +351,7 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
               </div>
             </>
           )}
-        </div>
+        </EmptyState>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {Array.from(groupByCampaignId(shown).entries()).map(([groupId, groupBookings]) => {

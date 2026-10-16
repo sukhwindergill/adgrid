@@ -4,6 +4,7 @@ import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { EmptyState } from '../../components/primitives/EmptyState.jsx';
 import { Chip } from '../../components/primitives/Chip.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Inp } from '../../components/primitives/Inp.jsx';
@@ -237,8 +238,7 @@ export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelect
       </div>
 
       {shown.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
-          <div style={{ color: C.textMuted, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconScreen size={32} /></div>
+        <EmptyState size="lg" icon={<IconScreen size={32} />}>
           {isFiltered ? (
             <>
               <div style={{ ...TX.titleLg, marginBottom: 6 }}>No screens match</div>
@@ -254,7 +254,7 @@ export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelect
               <Btn onClick={onStartOnboard}>+ Register Screen</Btn>
             </>
           )}
-        </div>
+        </EmptyState>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>
           {shown.map(s => <ScreenCard key={s.id} screen={s} onClick={() => onSelectScreen && onSelectScreen(s.id)} />)}

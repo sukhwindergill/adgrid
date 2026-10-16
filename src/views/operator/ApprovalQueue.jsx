@@ -6,6 +6,7 @@ import { C, F, T } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { EmptyState } from '../../components/primitives/EmptyState.jsx';
 import { Hover } from '../../components/primitives/Hover.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
@@ -846,11 +847,9 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
       </Card>
 
       {totalPending === 0 ? (
-        <div className="fade-in" style={{ textAlign: 'center', padding: '64px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
-          <div style={{ fontSize: T.display, marginBottom: 12 }}>✓</div>
-          <div style={{ ...TX.titleLg, marginBottom: 6 }}>All clear</div>
-          <div style={TX.bodySub}>No campaigns are waiting for review.</div>
-        </div>
+        <EmptyState className="fade-in" size="lg" padding="64px 24px"
+          icon={<span style={{ fontSize: T.display, color: C.text }}>✓</span>}
+          title="All clear" description="No campaigns are waiting for review." />
       ) : (
         enriched.map((c, i) => (
           <MultiScreenCampaignCard
