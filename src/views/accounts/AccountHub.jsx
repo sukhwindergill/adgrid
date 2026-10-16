@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { supabase } from '../../lib/supabase.js'
 import { summarizeAccountBookings } from '../../lib/accountRollup.js'
-import { C, F } from '../../design/tokens.js'
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { useT } from '../../i18n/useT.js'
 
 function RoleBadge({ role }) {
@@ -15,7 +16,7 @@ function RoleBadge({ role }) {
   const s = colors[role] ?? colors.viewer
   return (
     <span style={{
-      padding: '2px 9px', borderRadius: 10, fontSize: 11, fontWeight: 600,
+      padding: '2px 9px', borderRadius: 10, fontSize: T.xs, fontWeight: 600,
       background: s.bg, color: s.color,
     }}>{t(`accounts.roles.${role}`)}</span>
   )
@@ -50,11 +51,11 @@ function AccountCard({ account, isCurrent, onClick, rollup }) {
             width: 40, height: 40, borderRadius: 10, flexShrink: 0,
             background: C.grad,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: F.sans,
+            color: C.white, fontSize: T.md, fontWeight: 700, fontFamily: F.sans,
           }}>{initials}</div>
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans }}>
+          <div style={TX.title}>
             {account.company_name || account.name || t('accounts.hub.unnamed')}
           </div>
           {account.role && (
@@ -64,21 +65,21 @@ function AccountCard({ account, isCurrent, onClick, rollup }) {
           )}
         </div>
         {isCurrent && (
-          <span style={{ fontSize: 11, color: C.purple, fontFamily: F.sans, fontWeight: 600 }}>{t('accounts.hub.active')}</span>
+          <span style={{ fontSize: T.xs, color: C.purple, fontFamily: F.sans, fontWeight: 600 }}>{t('accounts.hub.active')}</span>
         )}
       </div>
       {account.isOwn && (
-        <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>{t('accounts.hub.yours')}</div>
+        <div style={TX.helperMuted}>{t('accounts.hub.yours')}</div>
       )}
       {rollup && (
         <div style={{ display: 'flex', gap: 16, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{formatNumber(rollup.activeCampaigns)}</div>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{t('accounts.hub.activeCampaigns', { count: rollup.activeCampaigns })}</div>
+            <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{formatNumber(rollup.activeCampaigns)}</div>
+            <div style={TX.caption}>{t('accounts.hub.activeCampaigns', { count: rollup.activeCampaigns })}</div>
           </div>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{formatCurrency(rollup.spend, { minimumFractionDigits: 0 })}</div>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{t('accounts.hub.spend')}</div>
+            <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{formatCurrency(rollup.spend, { minimumFractionDigits: 0 })}</div>
+            <div style={TX.caption}>{t('accounts.hub.spend')}</div>
           </div>
         </div>
       )}
@@ -141,8 +142,8 @@ export function AccountHub({ onSelectAccount }) {
 
   return (
     <div style={{ padding: '48px 40px', maxWidth: 860, margin: '0 auto', fontFamily: F.sans }}>
-      <h1 style={{ fontSize: 26, fontWeight: 700, color: C.text, margin: '0 0 8px' }}>{t('accounts.hub.title')}</h1>
-      <p style={{ fontSize: 14, color: C.textSub, margin: '0 0 32px' }}>
+      <h1 style={{ fontSize: T.xxl, fontWeight: 700, color: C.text, margin: '0 0 8px' }}>{t('accounts.hub.title')}</h1>
+      <p style={{ fontSize: T.md, color: C.textSub, margin: '0 0 32px' }}>
         {t('accounts.hub.sub')}
       </p>
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { track } from '../../lib/analytics.js';
 import { IconEye, IconEyeOff } from '../../components/icons.jsx';
 import { useT } from '../../i18n/useT.js';
@@ -25,7 +26,7 @@ function DarkInp({ label, type, placeholder, value, onChange, onKeyDown, togglea
   const resolvedType = toggleable ? (visible ? 'text' : 'password') : type;
   return (
     <div>
-      <div style={{ fontSize: 12, fontWeight: 500, color: C.textSub, fontFamily: F.sans, marginBottom: 6 }}>{label}</div>
+      <div style={{ ...TX.helper, fontWeight: 500, marginBottom: 6 }}>{label}</div>
       <div style={{ position: 'relative' }}>
         <input
           type={resolvedType}
@@ -36,7 +37,7 @@ function DarkInp({ label, type, placeholder, value, onChange, onKeyDown, togglea
           style={{
             width: '100%', padding: toggleable ? '10px 40px 10px 12px' : '10px 12px', borderRadius: 8,
             border: `1px solid ${C.border}`, background: C.surface,
-            color: C.text, fontSize: 13, fontFamily: F.sans,
+            color: C.text, fontSize: T.base, fontFamily: F.sans,
             outline: 'none', boxSizing: 'border-box',
             transition: 'border-color 0.15s',
           }}
@@ -50,7 +51,7 @@ function DarkInp({ label, type, placeholder, value, onChange, onKeyDown, togglea
             aria-label={visible ? t('login.hidePassword') : t('login.showPassword')}
             style={{
               position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-              background: 'none', border: 'none', cursor: 'pointer', fontSize: 15,
+              background: 'none', border: 'none', cursor: 'pointer', fontSize: T.md,
               padding: 4, lineHeight: 1, borderRadius: 4,
             }}
             onFocus={e => e.target.style.outline = '2px solid #7B2FFF'}
@@ -67,7 +68,7 @@ function DarkInp({ label, type, placeholder, value, onChange, onKeyDown, togglea
 // Text-style links that are real buttons, so they're reachable by keyboard.
 const linkBtn = color => ({
   background: 'none', border: 'none', padding: 0, color, cursor: 'pointer',
-  fontSize: 13, fontFamily: F.sans,
+  fontSize: T.base, fontFamily: F.sans,
 });
 
 export function LoginPage() {
@@ -176,7 +177,7 @@ export function LoginPage() {
       <LanguageSwitcher style={{
         position: 'absolute', top: 20, right: 20, zIndex: 2,
         background: 'none', border: `1px solid ${C.border}`, borderRadius: 8, padding: '6px 12px',
-        color: C.textSub, fontSize: 13, fontFamily: F.sans, cursor: 'pointer',
+        color: C.textSub, fontSize: T.base, fontFamily: F.sans, cursor: 'pointer',
       }} />
 
       <div style={{ width: '100%', maxWidth: 380, padding: '0 20px', position: 'relative', zIndex: 1 }}>
@@ -186,9 +187,9 @@ export function LoginPage() {
             width: 36, height: 36, borderRadius: 9,
             background: 'linear-gradient(135deg, #B79CFF, #7B2FFF)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 800, fontSize: 16, color: '#fff',
+            fontWeight: 800, fontSize: T.lg, color: C.white,
           }}>A</div>
-          <span style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display }}>AdGrid</span>
+          <span style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display }}>AdGrid</span>
         </a>
 
         {/* Card */}
@@ -196,10 +197,10 @@ export function LoginPage() {
           background: C.surface, border: `1px solid ${C.border}`,
           borderRadius: 16, padding: 28, boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}>
-          <h1 style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 4, fontFamily: F.display }}>
+          <h1 style={{ fontSize: T.lg, fontWeight: 700, color: C.text, marginBottom: 4, fontFamily: F.display }}>
             {t(`login.title.${activeMode}`)}
           </h1>
-          <p style={{ fontSize: 13, color: C.textSub, marginBottom: 20, fontFamily: F.sans }}>
+          <p style={{ ...TX.bodySub, marginBottom: 20 }}>
             {activeMode === 'signup' ? t(`login.sub.${intent}`) : t(`login.sub.${activeMode}`)}
           </p>
 
@@ -213,7 +214,7 @@ export function LoginPage() {
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
                     padding: '10px 16px', borderRadius: 8, border: `1px solid ${C.border}`,
-                    background: C.surface, cursor: 'pointer', fontSize: 14, fontWeight: 500,
+                    background: C.surface, cursor: 'pointer', fontSize: T.md, fontWeight: 500,
                     color: C.text, fontFamily: F.sans, transition: 'background 0.15s',
                     opacity: oauthLoading === 'apple' ? 0.5 : 1,
                   }}
@@ -235,8 +236,8 @@ export function LoginPage() {
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
                     padding: '10px 16px', borderRadius: 8, border: `1px solid ${C.border}`,
-                    background: '#000', cursor: 'pointer', fontSize: 14, fontWeight: 500,
-                    color: '#fff', fontFamily: F.sans, transition: 'opacity 0.15s',
+                    background: C.black, cursor: 'pointer', fontSize: T.md, fontWeight: 500,
+                    color: C.white, fontFamily: F.sans, transition: 'opacity 0.15s',
                     opacity: oauthLoading === 'google' ? 0.5 : 1,
                   }}
                 >
@@ -250,7 +251,7 @@ export function LoginPage() {
               {/* Divider */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
                 <div style={{ flex: 1, height: 1, background: C.border }} />
-                <span style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>{t('login.or')}</span>
+                <span style={TX.helperMuted}>{t('login.or')}</span>
                 <div style={{ flex: 1, height: 1, background: C.border }} />
               </div>
             </>
@@ -258,7 +259,7 @@ export function LoginPage() {
 
           {(err || notice) && (
             <div role={err ? 'alert' : 'status'} style={{
-              padding: '9px 12px', borderRadius: 8, fontSize: 13, marginBottom: 14,
+              padding: '9px 12px', borderRadius: 8, fontSize: T.base, marginBottom: 14,
               background: err ? C.redSoft : C.greenSoft,
               border: `1px solid ${err ? C.redBorder : C.greenBorder}`,
               color: err ? '#b91c1c' : '#047857',
@@ -267,7 +268,7 @@ export function LoginPage() {
 
           {activeMode === 'signup' && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: C.textSub, fontFamily: F.sans, marginBottom: 6 }}>
+              <div style={{ ...TX.helper, fontWeight: 500, marginBottom: 6 }}>
                 {t('login.signingUpTo')}
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -281,7 +282,7 @@ export function LoginPage() {
                     onClick={() => setIntent(o.id)}
                     style={{
                       flex: 1, padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
-                      fontSize: 13, fontWeight: 500, fontFamily: F.sans, textAlign: 'center',
+                      fontSize: T.base, fontWeight: 500, fontFamily: F.sans, textAlign: 'center',
                       border: `1px solid ${intent === o.id ? C.purple : C.border}`,
                       background: intent === o.id ? C.purpleSoft : C.surface,
                       color: intent === o.id ? C.purple : C.textSub,
@@ -326,7 +327,7 @@ export function LoginPage() {
                 onChange={e => setTosChecked(e.target.checked)}
                 style={{ marginTop: 2, accentColor: C.purple, flexShrink: 0 }}
               />
-              <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5 }}>
+              <span style={{ ...TX.helper, lineHeight: 1.5 }}>
                 {tx('login.agree', {
                   terms: chunk => <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: C.purple }}>{chunk}</a>,
                   privacy: chunk => <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: C.purple }}>{chunk}</a>,
@@ -341,8 +342,8 @@ export function LoginPage() {
             style={{
               width: '100%', padding: '12px 20px', borderRadius: 8,
               background: loading ? C.borderDark : 'linear-gradient(135deg, #B79CFF, #7B2FFF)',
-              color: '#fff', border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
-              fontSize: 14, fontWeight: 600, fontFamily: F.sans,
+              color: C.white, border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
+              fontSize: T.md, fontWeight: 600, fontFamily: F.sans,
               transition: 'opacity 0.15s', opacity: loading ? 0.6 : 1,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
@@ -359,7 +360,7 @@ export function LoginPage() {
                 width: '100%', padding: '10px 20px', borderRadius: 8, marginTop: 10,
                 background: 'transparent', border: `1px solid ${C.border}`,
                 color: C.textSub, cursor: demoLoading ? 'not-allowed' : 'pointer',
-                fontSize: 13, fontWeight: 500, fontFamily: F.sans,
+                fontSize: T.base, fontWeight: 500, fontFamily: F.sans,
                 transition: 'border-color 0.15s, color 0.15s',
               }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = C.purple; e.currentTarget.style.color = C.text; }}
@@ -370,7 +371,7 @@ export function LoginPage() {
           )}
 
           {(activeMode === 'signin' || activeMode === 'signup') && (
-            <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12, color: C.textSub, fontFamily: F.sans }}>
+            <div style={{ ...TX.helper, marginTop: 14, textAlign: 'center' }}>
               {activeMode === 'signin' ? t('login.noAccount') : t('login.haveAccount')}
               <button
                 type="button"
@@ -383,7 +384,7 @@ export function LoginPage() {
           )}
 
           {activeMode === 'forgot' && (
-            <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12, color: C.textSub, fontFamily: F.sans }}>
+            <div style={{ ...TX.helper, marginTop: 14, textAlign: 'center' }}>
               <button type="button" onClick={() => { setMode('signin'); setErr(''); setNotice(''); }} style={{ ...linkBtn(C.purple), fontWeight: 500 }}>
                 {t('login.backToSignIn')}
               </button>

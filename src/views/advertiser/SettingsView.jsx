@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { C, F, SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
+import { SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
 import { AccessSettingsView } from '../accounts/AccessSettingsView.jsx';
 import { supabase } from "../../lib/supabase.js";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -8,6 +8,8 @@ import { Btn } from "../../components/primitives/Btn.jsx";
 import { EVENTS, normalizeChannelPrefs } from '../../lib/notificationPrefs.js';
 import { useT } from "../../i18n/useT.js";
 import { LOCALES } from "../../i18n/core.js";
+import { T, C, F } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 
 const TIMEZONES = [
   "UTC", "America/New_York", "America/Chicago", "America/Denver",
@@ -19,9 +21,9 @@ function TabBtn({ label, active, onClick }) {
   return (
     <button onClick={onClick} style={{
       padding: "8px 18px", borderRadius: 8, border: "none", cursor: "pointer",
-      fontFamily: F.sans, fontSize: 13, fontWeight: 500,
+      fontFamily: F.sans, fontSize: T.base, fontWeight: 500,
       background: active ? C.purple : "transparent",
-      color: active ? "#fff" : C.textSub,
+      color: active ? C.white : C.textSub,
       transition: "all 0.15s",
     }}
       onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
@@ -33,7 +35,7 @@ function TabBtn({ label, active, onClick }) {
 function Field({ label, children }) {
   return (
     <div style={{ marginBottom: 20 }}>
-      <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: C.text, marginBottom: 6 }}>
+      <label style={{ display: "block", fontSize: T.base, fontWeight: 500, color: C.text, marginBottom: 6 }}>
         {label}
       </label>
       {children}
@@ -51,7 +53,7 @@ function SettingsInput({ value, onChange, type = "text", readOnly, placeholder }
       placeholder={placeholder}
       style={{
         width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`,
-        borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text,
+        borderRadius: 8, fontFamily: F.sans, fontSize: T.base, color: C.text,
         background: readOnly ? C.bg : C.surface, boxSizing: "border-box",
         outline: 'none', transition: 'border-color 0.15s',
       }}
@@ -82,7 +84,7 @@ function Toggle({ checked, onChange }) {
     >
       <span style={{
         position: 'absolute', top: 3, left: checked ? 23 : 3,
-        width: 18, height: 18, borderRadius: '50%', background: '#fff',
+        width: 18, height: 18, borderRadius: '50%', background: C.white,
         transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
       }} />
     </button>
@@ -122,7 +124,7 @@ export function ProfileTab({ profile, onSaved }) {
       </Field>
       <Field label={t('settings.email')}>
         <SettingsInput value={profile?.email ?? ""} readOnly />
-        <div style={{ fontSize: 11, color: C.textMuted, marginTop: 4 }}>
+        <div style={{ fontSize: T.xs, color: C.textMuted, marginTop: 4 }}>
           {t('settings.changeEmailHint')}
         </div>
       </Field>
@@ -136,13 +138,13 @@ export function ProfileTab({ profile, onSaved }) {
         <select
           value={locale}
           onChange={(e) => setLocale(e.target.value)}
-          style={{ width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
+          style={{ ...TX.body, width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
           onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
           onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
         >
           {LOCALES.map((l) => <option key={l} value={l}>{t(`common.language.${l}`)}</option>)}
         </select>
-        <div style={{ fontSize: 11, color: C.textMuted, marginTop: 4 }}>
+        <div style={{ fontSize: T.xs, color: C.textMuted, marginTop: 4 }}>
           {t('settings.languageHint')}
         </div>
       </Field>
@@ -150,7 +152,7 @@ export function ProfileTab({ profile, onSaved }) {
         <select
           value={timezone}
           onChange={(e) => setTimezone(e.target.value)}
-          style={{ width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
+          style={{ ...TX.body, width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
           onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
           onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
         >
@@ -158,26 +160,26 @@ export function ProfileTab({ profile, onSaved }) {
         </select>
       </Field>
       <div>
-        <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>
+        <div style={{ ...TX.label, marginBottom: 6 }}>
           {t('settings.currency')}
         </div>
         <select
           value={currency}
           onChange={(e) => setCurrency(e.target.value)}
-          style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 13, fontFamily: F.sans, background: C.surface, color: C.text, outline: 'none', transition: 'border-color 0.15s' }}
+          style={{ ...TX.body, width: '100%', padding: '8px 10px', borderRadius: 8, border: `1px solid ${C.border}`, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
           onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
           onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
         >
           <option value="cad">{t('settings.cad')}</option>
           <option value="usd">{t('settings.usd')}</option>
         </select>
-        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 4 }}>
+        <div style={{ ...TX.caption, marginTop: 4 }}>
           {t('settings.currencyHint')}
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <SaveBtn onClick={save} saving={saving} />
-        {msg && <span style={{ fontSize: 13, color: msg.ok ? C.green : C.red }}>{msg.text}</span>}
+        {msg && <span style={{ fontSize: T.base, color: msg.ok ? C.greenText : C.redText }}>{msg.text}</span>}
       </div>
     </div>
   );
@@ -211,21 +213,21 @@ function BrandKitTab({ profile, onSaved }) {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <input type="color" value={brandColor1} onChange={(e) => setBrandColor1(e.target.value)}
             style={{ width: 40, height: 36, border: `1px solid ${C.border}`, borderRadius: 6, cursor: "pointer", padding: 2 }} />
-          <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.mono }}>{brandColor1}</span>
+          <span style={{ fontSize: T.sm, color: C.textSub, fontFamily: F.mono }}>{brandColor1}</span>
         </div>
       </Field>
       <Field label={t('settings.secondaryColour')}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <input type="color" value={brandColor2} onChange={(e) => setBrandColor2(e.target.value)}
             style={{ width: 40, height: 36, border: `1px solid ${C.border}`, borderRadius: 6, cursor: "pointer", padding: 2 }} />
-          <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.mono }}>{brandColor2}</span>
+          <span style={{ fontSize: T.sm, color: C.textSub, fontFamily: F.mono }}>{brandColor2}</span>
         </div>
       </Field>
       <Field label={t('settings.font')}>
         <select
           value={brandFont}
           onChange={(e) => setBrandFont(e.target.value)}
-          style={{ width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
+          style={{ ...TX.body, width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
           onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
           onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
         >
@@ -234,12 +236,12 @@ function BrandKitTab({ profile, onSaved }) {
           <option value="mono">{t('settings.fontMono')}</option>
         </select>
       </Field>
-      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: -8, marginBottom: 20 }}>
+      <div style={{ ...TX.caption, marginTop: -8, marginBottom: 20 }}>
         {t('settings.brandHint')}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <SaveBtn onClick={save} saving={saving} />
-        {msg && <span style={{ fontSize: 13, color: msg.ok ? C.green : C.red }}>{msg.text}</span>}
+        {msg && <span style={{ fontSize: T.base, color: msg.ok ? C.greenText : C.redText }}>{msg.text}</span>}
       </div>
     </div>
   );
@@ -291,7 +293,7 @@ export function SecurityTab() {
 
   return (
     <div style={{ maxWidth: 480 }}>
-      <div style={{ fontSize: 15, fontWeight: 600, color: C.text, marginBottom: 16 }}>{t('settings.changeEmail')}</div>
+      <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, marginBottom: 16 }}>{t('settings.changeEmail')}</div>
       <Field label={t('settings.newEmail')}>
         <SettingsInput type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder={t('settings.newEmailPlaceholder')} />
       </Field>
@@ -300,7 +302,7 @@ export function SecurityTab() {
       </div>
 
       <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 24 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: C.text, marginBottom: 16 }}>{t('settings.changePassword')}</div>
+        <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, marginBottom: 16 }}>{t('settings.changePassword')}</div>
         <Field label={t('settings.newPassword')}>
           <SettingsInput type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
         </Field>
@@ -309,7 +311,7 @@ export function SecurityTab() {
         </Field>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <SaveBtn onClick={changePassword} saving={pwSaving} label={t('settings.updatePassword')} />
-          {msg && <span style={{ fontSize: 13, color: msg.ok ? C.green : C.red }}>{msg.text}</span>}
+          {msg && <span style={{ fontSize: T.base, color: msg.ok ? C.greenText : C.redText }}>{msg.text}</span>}
         </div>
       </div>
     </div>
@@ -347,8 +349,8 @@ export function NotificationsTab({ profile }) {
     <div style={{ maxWidth: 560 }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 70px 70px", padding: "0 0 8px", borderBottom: `1px solid ${C.border}` }}>
         <span />
-        <span style={{ fontSize: 11, fontWeight: 600, color: C.textSub, textAlign: "center" }}>{t('settings.inApp')}</span>
-        <span style={{ fontSize: 11, fontWeight: 600, color: C.textSub, textAlign: "center" }}>{t('settings.emailChannel')}</span>
+        <span style={{ fontSize: T.xs, fontWeight: 600, color: C.textSub, textAlign: "center" }}>{t('settings.inApp')}</span>
+        <span style={{ fontSize: T.xs, fontWeight: 600, color: C.textSub, textAlign: "center" }}>{t('settings.emailChannel')}</span>
       </div>
       {items.map((item) => (
         <div key={item.key} style={{
@@ -356,8 +358,8 @@ export function NotificationsTab({ profile }) {
           padding: "16px 0", borderBottom: `1px solid ${C.border}`,
         }}>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 500, color: C.text }}>{tOr(`notif.${item.key}.label`, item.label)}</div>
-            <div style={{ fontSize: 12, color: C.textSub, marginTop: 2 }}>{tOr(`notif.${item.key}.desc`, item.desc)}</div>
+            <div style={{ fontSize: T.md, fontWeight: 500, color: C.text }}>{tOr(`notif.${item.key}.label`, item.label)}</div>
+            <div style={{ fontSize: T.sm, color: C.textSub, marginTop: 2 }}>{tOr(`notif.${item.key}.desc`, item.desc)}</div>
           </div>
           <div style={{ display: "flex", justifyContent: "center" }}>
             <Toggle checked={prefs[item.key].inApp} onChange={() => toggle(item.key, "inApp")} />
@@ -369,7 +371,7 @@ export function NotificationsTab({ profile }) {
       ))}
       <div style={{ marginTop: 20, display: "flex", gap: 12, alignItems: "center" }}>
         <SaveBtn onClick={save} saving={saving} />
-        {msg && <span style={{ fontSize: 13, color: msg.ok ? C.green : C.red }}>{msg.text}</span>}
+        {msg && <span style={{ fontSize: T.base, color: msg.ok ? C.greenText : C.redText }}>{msg.text}</span>}
       </div>
     </div>
   );
@@ -427,36 +429,36 @@ function TeamTab({ profile }) {
     setMembers((m) => m.filter((x) => x.id !== id));
   }
 
-  if (loading) return <div style={{ color: C.textSub, fontSize: 13 }}>{t('settings.loadingTeam')}</div>;
-  if (loadError) return <div style={{ color: C.red, fontSize: 13 }}>{t('settings.teamError')}</div>;
+  if (loading) return <div style={{ color: C.textSub, fontSize: T.base }}>{t('settings.loadingTeam')}</div>;
+  if (loadError) return <div style={{ color: C.redText, fontSize: T.base }}>{t('settings.teamError')}</div>;
 
   return (
     <div style={{ maxWidth: 560 }}>
       {members.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 12 }}>{t('settings.teamMembers')}</div>
+          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 12 }}>{t('settings.teamMembers')}</div>
           {members.map((m) => (
             <div key={m.id} style={{
               display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
               background: C.bg, borderRadius: 8, border: `1px solid ${C.border}`, marginBottom: 8,
             }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{m.user_profile?.name ?? m.user_profile?.email}</div>
-                <div style={{ fontSize: 12, color: C.textSub }}>{m.user_profile?.email}</div>
+                <div style={{ fontSize: T.base, fontWeight: 500, color: C.text }}>{m.user_profile?.name ?? m.user_profile?.email}</div>
+                <div style={{ fontSize: T.sm, color: C.textSub }}>{m.user_profile?.email}</div>
               </div>
               <span style={{
-                padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600,
+                padding: "2px 8px", borderRadius: 10, fontSize: T.xs, fontWeight: 600,
                 background: m.role === "admin" ? C.purpleLight : C.bg,
                 color: m.role === "admin" ? C.purple : C.textSub,
               }}>{['admin', 'manager', 'viewer'].includes(m.role) ? t(`accounts.roles.${m.role}`) : m.role}</span>
-              <Btn variant="ghost" size="sm" onClick={() => removeMember(m.id)} style={{ color: C.red }}>{t('common.remove')}</Btn>
+              <Btn variant="ghost" size="sm" onClick={() => removeMember(m.id)} style={{ color: C.redText }}>{t('common.remove')}</Btn>
             </div>
           ))}
         </div>
       )}
 
       <div style={{ borderTop: members.length > 0 ? `1px solid ${C.border}` : "none", paddingTop: members.length > 0 ? 20 : 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 12 }}>{t('settings.inviteTeammate')}</div>
+        <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 12 }}>{t('settings.inviteTeammate')}</div>
         <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
           <input
             type="email"
@@ -465,7 +467,7 @@ function TeamTab({ profile }) {
             onChange={(e) => setInviteEmail(e.target.value)}
             style={{
               flex: 1, padding: "9px 12px", border: `1px solid ${C.border}`,
-              borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text,
+              borderRadius: 8, fontFamily: F.sans, fontSize: T.base, color: C.text,
               outline: 'none', transition: 'border-color 0.15s',
             }}
             onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
@@ -476,7 +478,7 @@ function TeamTab({ profile }) {
             onChange={(e) => setInviteRole(e.target.value)}
             style={{
               padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8,
-              fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface,
+              fontFamily: F.sans, fontSize: T.base, color: C.text, background: C.surface,
               outline: 'none', transition: 'border-color 0.15s',
             }}
             onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
@@ -489,7 +491,7 @@ function TeamTab({ profile }) {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Btn onClick={invite}>{t('settings.sendInvite')}</Btn>
-          {msg && <span style={{ fontSize: 13, color: msg.ok ? C.green : C.red }}>{msg.text}</span>}
+          {msg && <span style={{ fontSize: T.base, color: msg.ok ? C.greenText : C.redText }}>{msg.text}</span>}
         </div>
       </div>
     </div>

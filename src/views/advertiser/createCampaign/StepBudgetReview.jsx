@@ -1,5 +1,6 @@
 // src/views/advertiser/createCampaign/StepBudgetReview.jsx
-import { C, F } from '../../../design/tokens.js';
+import { C, F, T } from '../../../design/tokens.js';
+import { TX } from '../../../design/text.js';
 import { Card } from '../../../components/primitives/Card.jsx';
 import { Inp } from '../../../components/primitives/Inp.jsx';
 import { Btn } from '../../../components/primitives/Btn.jsx';
@@ -67,12 +68,12 @@ export function StepBudgetReview({
   return (
     <div style={{ maxWidth: 640, margin: '0 auto' }}>
       <Card style={{ padding: 32 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 24px' }}>{t('create.budget.heading')}</h2>
+        <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 24px' }}>{t('create.budget.heading')}</h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {!houseAdMode && (
             <div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>{t('create.budget.budgetType')}</div>
+              <div style={{ ...TX.label, marginBottom: 8 }}>{t('create.budget.budgetType')}</div>
               <PillGroup
                 options={[{ value: 'total', label: t('create.budget.totalBudget') }, { value: 'daily', label: t('create.budget.dailyLimit') }]}
                 value={form.budget_mode}
@@ -95,14 +96,14 @@ export function StepBudgetReview({
 
           {!houseAdMode && isMulti && (
             <div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>{t('create.budget.appliesTo')}</div>
+              <div style={{ ...TX.label, marginBottom: 8 }}>{t('create.budget.appliesTo')}</div>
               <PillGroup
                 options={[{ value: 'unified', label: t('create.budget.wholeCampaign') }, { value: 'per_creative', label: t('create.budget.perCreative') }]}
                 value={form.budget_level}
                 onChange={v => setField('budget_level', v)}
               />
               {form.budget_level === 'per_creative' && (
-                <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 6 }}>
+                <div style={{ ...TX.caption, marginTop: 6 }}>
                   {t('create.budget.perCreativeHint')}
                 </div>
               )}
@@ -124,14 +125,14 @@ export function StepBudgetReview({
           )}
 
           {tooLow && (
-            <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: 12, color: C.amber, fontFamily: F.sans }}>
+            <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: T.sm, color: C.amberText, fontFamily: F.sans }}>
               <span style={{ flexShrink: 0 }}><IconWarning size={14} /></span>
               <span>{t('create.budget.tooLow')}</span>
             </div>
           )}
 
           {overCapScreens.length > 0 && (
-            <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: 12, color: C.amber, fontFamily: F.sans }}>
+            <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: T.sm, color: C.amberText, fontFamily: F.sans }}>
               <span style={{ flexShrink: 0 }}><IconWarning size={14} /></span>
               <span>{t('create.budget.overCap', { count: overCapScreens.length, total: matchedScreens.length, s: form.duration, names: nameList(overCapScreens), more: moreSuffix(overCapScreens) })}</span>
             </div>
@@ -143,7 +144,7 @@ export function StepBudgetReview({
           </div>
 
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>{t('create.budget.daysOfWeek')}</div>
+            <div style={{ ...TX.label, marginBottom: 8 }}>{t('create.budget.daysOfWeek')}</div>
             <PillGroup options={DAYS.map(d => ({ value: d, label: dayLabel(d) }))} value={form.schedule_days} onChange={v => setForm(s => ({
               ...s,
               schedule_days: v,
@@ -155,7 +156,7 @@ export function StepBudgetReview({
           </div>
 
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>{t('create.budget.playTimes')}</div>
+            <div style={{ ...TX.label, marginBottom: 8 }}>{t('create.budget.playTimes')}</div>
             <PillGroup
               options={[{ value: 'same', label: t('create.budget.sameTime') }, { value: 'different', label: t('create.budget.differentTimes') }]}
               value={form.dayparting ? 'different' : 'same'}
@@ -170,7 +171,7 @@ export function StepBudgetReview({
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {form.schedule_days.map(day => (
                 <div key={day} style={{ display: 'grid', gridTemplateColumns: '48px 1fr 1fr', gap: 10, alignItems: 'end' }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: C.textMid, fontFamily: F.sans, paddingBottom: 9 }}>{dayLabel(day)}</div>
+                  <div style={{ fontSize: T.sm, fontWeight: 600, color: C.textMid, fontFamily: F.sans, paddingBottom: 9 }}>{dayLabel(day)}</div>
                   <Inp type="time" value={form.dayparting[day]?.time_start ?? ''}
                     onChange={e => setField('dayparting', { ...form.dayparting, [day]: { ...form.dayparting[day], time_start: e.target.value } })} />
                   <Inp type="time" value={form.dayparting[day]?.time_end ?? ''}
@@ -202,7 +203,7 @@ export function StepBudgetReview({
           )}
 
           {categoryBlockedScreens.length > 0 && (
-            <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: 12, color: C.amber, fontFamily: F.sans }}>
+            <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: T.sm, color: C.amberText, fontFamily: F.sans }}>
               <span style={{ flexShrink: 0 }}><IconWarning size={14} /></span>
               <span>{t('create.budget.categoryBlocked', {
                 count: categoryBlockedScreens.length,
@@ -214,7 +215,7 @@ export function StepBudgetReview({
           )}
 
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>{t('create.budget.launchMode')}</div>
+            <div style={{ ...TX.label, marginBottom: 8 }}>{t('create.budget.launchMode')}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
                 { value: 'partial', title: t('create.budget.partialTitle'), desc: t('create.budget.partialDesc') },
@@ -226,8 +227,8 @@ export function StepBudgetReview({
                   background: form.start_when === opt.value ? C.purpleSoft : C.surface,
                   transition: 'all 0.15s',
                 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{opt.title}</div>
-                  <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, lineHeight: 1.4 }}>{opt.desc}</div>
+                  <div style={{ ...TX.strong, marginBottom: 2 }}>{opt.title}</div>
+                  <div style={{ ...TX.helper, lineHeight: 1.4 }}>{opt.desc}</div>
                 </button>
               ))}
             </div>
@@ -235,17 +236,17 @@ export function StepBudgetReview({
         </div>
 
         <div style={{ marginTop: 28, paddingTop: 20, borderTop: `1px solid ${C.border}` }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 16px' }}>{t('create.budget.review')}</h2>
+          <h2 style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 16px' }}>{t('create.budget.review')}</h2>
           {rows.map(([label, value]) => (
             <div key={label} style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.04em', minWidth: 80, paddingTop: 1 }}>{label}</div>
-              <div style={{ fontSize: 13, color: C.text, fontFamily: F.sans }}>{value}</div>
+              <div style={{ ...TX.caption, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', minWidth: 80, paddingTop: 1 }}>{label}</div>
+              <div style={TX.body}>{value}</div>
             </div>
           ))}
 
           {canChooseBilling && (
             <div style={{ marginTop: 16, marginBottom: 4, padding: '16px', background: C.bg, borderRadius: 10, border: `1px solid ${C.border}` }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>{t('create.budget.billTo')}</div>
+              <div style={{ ...TX.strong, marginBottom: 12 }}>{t('create.budget.billTo')}</div>
               {[
                 { value: 'client', label: t('create.budget.clientAccount'), desc: t('create.budget.clientDesc') },
                 { value: 'agency', label: t('create.budget.agencyAccount'), desc: t('create.budget.agencyDesc') },
@@ -253,8 +254,8 @@ export function StepBudgetReview({
                 <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, cursor: 'pointer' }}>
                   <input type="radio" name="billedTo" value={opt.value} checked={billedTo === opt.value} onChange={() => setBilledTo(opt.value)} />
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{opt.label}</div>
-                    <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans }}>{opt.desc}</div>
+                    <div style={{ ...TX.body, fontWeight: 500 }}>{opt.label}</div>
+                    <div style={TX.helper}>{opt.desc}</div>
                   </div>
                 </label>
               ))}
@@ -263,7 +264,7 @@ export function StepBudgetReview({
 
           {err && <ErrorBanner message={err} onDismiss={() => {}} />}
 
-          <Btn onClick={onSubmit} disabled={submitting} style={{ width: '100%', fontSize: 15, padding: '14px 24px', marginTop: 16 }}>
+          <Btn onClick={onSubmit} disabled={submitting} style={{ width: '100%', fontSize: T.md, padding: '14px 24px', marginTop: 16 }}>
             {submitting ? t('common.submitting') : houseAdMode ? t('create.budget.createHouseAd') : t('create.budget.submit')}
           </Btn>
         </div>

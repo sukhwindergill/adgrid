@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { C, F, SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
+import { SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
 import { useBreakpoint } from "../../lib/useBreakpoint.js";
 import { BrandIcon } from "../../components/shared/BrandIcon.jsx";
@@ -10,6 +10,8 @@ import { CopyButton } from "../../components/primitives/CopyButton.jsx";
 import { generatePostbackKey, hashPostbackKey } from "../../lib/postbackKey.js";
 import { generateApiKey, hashApiKey, apiKeyPrefix } from "../../lib/apiKey.js";
 import { useT } from "../../i18n/useT.js";
+import { T, C, F } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 
 // ─── Platform definitions ───────────────────────────────────────────────────
 
@@ -55,9 +57,9 @@ function StatusBadge({ connected }) {
   const { t } = useT();
   return (
     <span style={{
-      padding: "2px 9px", borderRadius: 12, fontSize: 11, fontWeight: 600,
+      padding: "2px 9px", borderRadius: 12, fontSize: T.xs, fontWeight: 600,
       background: connected ? C.greenSoft : C.surfaceAlt,
-      color: connected ? C.green : C.textSub,
+      color: connected ? C.greenText : C.textSub,
       border: `1px solid ${connected ? C.greenBorder : C.border}`,
     }}>
       {connected ? t('integ.connected') : t('integ.notConnected')}
@@ -69,9 +71,9 @@ function EventStatusBadge({ status }) {
   const { t } = useT();
   return (
     <span style={{
-      padding: "2px 9px", borderRadius: 12, fontSize: 11, fontWeight: 600,
+      padding: "2px 9px", borderRadius: 12, fontSize: T.xs, fontWeight: 600,
       background: status === "sent" ? C.greenSoft : C.redSoft,
-      color: status === "sent" ? C.green : C.red,
+      color: status === "sent" ? C.greenText : C.redText,
     }}>
       {status === "sent" ? t('integ.sent') : t('integ.failed')}
     </span>
@@ -151,10 +153,10 @@ function ConnectModal({ platform, existing, onClose, onSaved }) {
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
           <BrandIcon id={platform.id} size={16} />
           <div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: C.text, fontFamily: F.sans }}>
+            <div style={TX.heading}>
               {t('integ.connectTitle', { name: platform.name })}
             </div>
-            <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>
+            <div style={{ ...TX.helper, marginTop: 2 }}>
               {t(`integ.platformDesc.${platform.id}`)}
             </div>
           </div>
@@ -162,7 +164,7 @@ function ConnectModal({ platform, existing, onClose, onSaved }) {
 
         {platform.fields.map(f => (
           <div key={f.key} style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>
+            <label style={{ display: "block", fontSize: T.sm, fontWeight: 600, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>
               {t(`integ.fields.${f.key}`)}
             </label>
             <input
@@ -172,7 +174,7 @@ function ConnectModal({ platform, existing, onClose, onSaved }) {
               placeholder={f.placeholder}
               style={{
                 width: "100%", boxSizing: "border-box", padding: "9px 12px",
-                border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 13,
+                border: `1px solid ${C.border}`, borderRadius: 8, fontSize: T.base,
                 fontFamily: F.sans, color: C.text, outline: "none",
                 background: C.surface, transition: "border-color 0.15s",
               }}
@@ -183,17 +185,17 @@ function ConnectModal({ platform, existing, onClose, onSaved }) {
         ))}
 
         {error && (
-          <div style={{ padding: "10px 14px", background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8, fontSize: 13, color: C.red, fontFamily: F.sans, marginBottom: 16 }}>
+          <div style={{ padding: "10px 14px", background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8, fontSize: T.base, color: C.redText, fontFamily: F.sans, marginBottom: 16 }}>
             {error}
           </div>
         )}
 
         {testResult && (
           <div style={{
-            padding: "10px 14px", borderRadius: 8, fontSize: 13, fontFamily: F.sans, marginBottom: 16,
+            padding: "10px 14px", borderRadius: 8, fontSize: T.base, fontFamily: F.sans, marginBottom: 16,
             background: testResult === "ok" ? C.greenSoft : C.redSoft,
             border: `1px solid ${testResult === "ok" ? C.greenBorder : C.redBorder}`,
-            color: testResult === "ok" ? C.green : C.red,
+            color: testResult === "ok" ? C.greenText : C.redText,
           }}>
             {testResult === "ok" ? t('integ.testOk') : t('integ.testFail')}
           </div>
@@ -206,7 +208,7 @@ function ConnectModal({ platform, existing, onClose, onSaved }) {
         </div>
 
         <a href={platform.docsUrl} target="_blank" rel="noreferrer" style={{
-          display: "block", textAlign: "center", marginTop: 14, fontSize: 12,
+          display: "block", textAlign: "center", marginTop: 14, fontSize: T.sm,
           color: C.purple, fontFamily: F.sans, textDecoration: "none",
         }}>
           {t('integ.viewDocs', { name: platform.name })}
@@ -229,10 +231,10 @@ function PlatformCard({ platform, integration, eventCount, onConnect, onDisconne
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <BrandIcon id={platform.id} size={18} />
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.sans }}>
+            <div style={TX.heading}>
               {platform.name}
             </div>
-            <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>
+            <div style={{ ...TX.helper, marginTop: 2 }}>
               {platform.eventType}
             </div>
           </div>
@@ -240,14 +242,14 @@ function PlatformCard({ platform, integration, eventCount, onConnect, onDisconne
         <StatusBadge connected={connected} />
       </div>
 
-      <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5 }}>
+      <div style={{ ...TX.bodySub, lineHeight: 1.5 }}>
         {t(`integ.platformDesc.${platform.id}`)}
       </div>
 
       {connected && (
         <div style={{
           padding: "10px 14px", background: C.surfaceAlt, borderRadius: 8,
-          fontSize: 13, fontFamily: F.sans, color: C.textMid,
+          fontSize: T.base, fontFamily: F.sans, color: C.textMid,
         }}>
           {tx('integ.eventsFired', { count: eventCount, b: chunk => <span style={{ fontWeight: 600, color: C.text }}>{chunk}</span> })}
         </div>
@@ -302,17 +304,17 @@ function PostbackKeyCard({ hasKey, onGenerated }) {
 
   return (
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>{t('integ.postbackKey')}</div>
-      <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.5 }}>
+      <div style={{ ...TX.title, marginBottom: 4 }}>{t('integ.postbackKey')}</div>
+      <div style={{ ...TX.helper, marginBottom: 12, lineHeight: 1.5 }}>
         {tx('integ.postbackBody', { code: chunk => <code>{chunk}</code>, url: <code>{POSTBACK_URL}</code> })}
       </div>
       {newKey ? (
         <div style={{ padding: 12, background: C.surfaceAlt, borderRadius: 8, marginBottom: 12 }}>
-          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 6 }}>
+          <div style={{ ...TX.caption, marginBottom: 6 }}>
             {tx('integ.copyNow', { code: chunk => <code>{chunk}</code> })}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <code style={{ fontSize: 12, fontFamily: F.mono, color: C.text, wordBreak: "break-all" }}>{newKey}</code>
+            <code style={{ fontSize: T.sm, fontFamily: F.mono, color: C.text, wordBreak: "break-all" }}>{newKey}</code>
             <CopyButton value={newKey} label={t('integ.copy')} copiedLabel={t('integ.copied')} variant="ghost" size="sm" />
           </div>
         </div>
@@ -321,7 +323,7 @@ function PostbackKeyCard({ hasKey, onGenerated }) {
       ) : (
         <StatusBadge connected={false} />
       )}
-      {error && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginBottom: 8 }}>{error}</div>}
+      {error && <div style={{ ...TX.error, marginBottom: 8 }}>{error}</div>}
       <Btn variant="secondary" size="sm" onClick={generate} disabled={saving} style={{ marginTop: 12 }}>
         {saving ? t('integ.generating') : hasKey ? t('integ.regenerate') : t('integ.generate')}
       </Btn>
@@ -334,12 +336,12 @@ function PixelSnippetCard() {
   const snippet = `<img src="${PIXEL_URL}?adgrid_cid={{adgrid_cid}}&value=49.99" width="1" height="1" style="display:none" />`;
   return (
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>{t('integ.pixelTitle')}</div>
-      <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.5 }}>
+      <div style={{ ...TX.title, marginBottom: 4 }}>{t('integ.pixelTitle')}</div>
+      <div style={{ ...TX.helper, marginBottom: 12, lineHeight: 1.5 }}>
         {tx('integ.pixelBody', { code: chunk => <code>{chunk}</code>, cid: <code>{"{{adgrid_cid}}"}</code> })}
       </div>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: 12, background: C.surfaceAlt, borderRadius: 8 }}>
-        <code style={{ fontSize: 11, fontFamily: F.mono, color: C.text, wordBreak: "break-all", flex: 1 }}>{snippet}</code>
+        <code style={{ fontSize: T.xs, fontFamily: F.mono, color: C.text, wordBreak: "break-all", flex: 1 }}>{snippet}</code>
         <CopyButton value={snippet} label={t('integ.copy')} copiedLabel={t('integ.copied')} variant="ghost" size="sm" />
       </div>
     </div>
@@ -393,8 +395,8 @@ function PlatformSetupGuide() {
 
   return (
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>{t('integ.whereTitle')}</div>
-      <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 14, lineHeight: 1.5 }}>
+      <div style={{ ...TX.title, marginBottom: 4 }}>{t('integ.whereTitle')}</div>
+      <div style={{ ...TX.helper, marginBottom: 14, lineHeight: 1.5 }}>
         {t('integ.whereBody')}
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
@@ -406,24 +408,24 @@ function PlatformSetupGuide() {
               border: `1px solid ${platformId === p.id ? C.purple : C.border}`,
               background: platformId === p.id ? C.purpleSoft : C.surface,
               color: platformId === p.id ? C.purple : C.textSub,
-              fontSize: 12, fontWeight: 500, fontFamily: F.sans,
+              fontSize: T.sm, fontWeight: 500, fontFamily: F.sans,
             }}>
             <BrandIcon id={p.id === "ga4" ? "google" : p.id} size={12} />
             {p.name}
           </button>
         ))}
       </div>
-      <ol style={{ margin: "0 0 12px", paddingLeft: 20, fontFamily: F.sans, fontSize: 13, color: C.textSub, lineHeight: 1.9 }}>
+      <ol style={{ ...TX.bodySub, margin: "0 0 12px", paddingLeft: 20, lineHeight: 1.9 }}>
         {tList(`integ.guides.${platform.id}.steps`).map((s, i) => <li key={i}>{s}</li>)}
       </ol>
       {snippet && (
         <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: 12, background: C.surfaceAlt, borderRadius: 8, marginBottom: note ? 12 : 0 }}>
-          <pre style={{ margin: 0, fontSize: 11, fontFamily: F.mono, color: C.text, whiteSpace: "pre-wrap", wordBreak: "break-all", flex: 1 }}>{snippet}</pre>
+          <pre style={{ margin: 0, fontSize: T.xs, fontFamily: F.mono, color: C.text, whiteSpace: "pre-wrap", wordBreak: "break-all", flex: 1 }}>{snippet}</pre>
           <CopyButton value={snippet} label={t('integ.copy')} copiedLabel={t('integ.copied')} variant="ghost" size="sm" />
         </div>
       )}
       {note && (
-        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, lineHeight: 1.6 }}>{note}</div>
+        <div style={{ ...TX.caption, lineHeight: 1.6 }}>{note}</div>
       )}
     </div>
   );
@@ -456,15 +458,15 @@ function PromoCodesCard({ campaigns, promoCodes, onCreated }) {
 
   return (
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20 }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>{t('integ.promoTitle')}</div>
-      <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.5 }}>
+      <div style={{ ...TX.title, marginBottom: 4 }}>{t('integ.promoTitle')}</div>
+      <div style={{ ...TX.helper, marginBottom: 12, lineHeight: 1.5 }}>
         {tx('integ.promoBody', { code: chunk => <code>{chunk}</code> })}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 10, alignItems: "end", marginBottom: 16 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-          <label style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans }}>{t('integ.campaign')}</label>
+          <label style={TX.label}>{t('integ.campaign')}</label>
           <select value={campaignId} onChange={e => setCampaignId(e.target.value)}
-            style={{ padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 13, fontFamily: F.sans, color: C.text, background: C.surface }}>
+            style={{ ...TX.body, padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface }}>
             <option value="">{t('integ.select')}</option>
             {campaigns.map(c => <option key={c.id} value={c.id}>{c.campaign_name || c.id}</option>)}
           </select>
@@ -473,18 +475,18 @@ function PromoCodesCard({ campaigns, promoCodes, onCreated }) {
         <Inp label={t('integ.vanityPath')} placeholder={t('integ.vanityPlaceholder')} value={vanitySlug} onChange={e => setVanitySlug(e.target.value)} />
         <Btn onClick={create} disabled={saving || !campaignId || !code.trim()}>{saving ? t('integ.adding') : t('integ.add')}</Btn>
       </div>
-      {error && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginBottom: 12 }}>{error}</div>}
+      {error && <div style={{ ...TX.error, marginBottom: 12 }}>{error}</div>}
       {promoCodes.length === 0 ? (
-        <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>{t('integ.noPromo')}</div>
+        <div style={TX.helperMuted}>{t('integ.noPromo')}</div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {promoCodes.map(p => (
             <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", background: C.surfaceAlt, borderRadius: 8 }}>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.mono }}>{p.code}</div>
-                {p.vanity_path && <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>{p.vanity_path}</div>}
+                <div style={{ fontSize: T.sm, fontWeight: 600, color: C.text, fontFamily: F.mono }}>{p.code}</div>
+                {p.vanity_path && <div style={{ fontSize: T.xs, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>{p.vanity_path}</div>}
               </div>
-              <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{formatDate(p.created_at)}</div>
+              <div style={TX.caption}>{formatDate(p.created_at)}</div>
             </div>
           ))}
         </div>
@@ -585,22 +587,22 @@ function ApiKeysTab() {
   return (
     <div>
       <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>{t('integ.apiTitle')}</div>
-        <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.5 }}>
+        <div style={{ ...TX.title, marginBottom: 4 }}>{t('integ.apiTitle')}</div>
+        <div style={{ ...TX.helper, marginBottom: 12, lineHeight: 1.5 }}>
           {tx('integ.apiBody', { url: <code>{API_BASE_URL}</code> })}
         </div>
         {newKey ? (
           <div style={{ padding: 12, background: C.surfaceAlt, borderRadius: 8, marginBottom: 12 }}>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 6 }}>
+            <div style={{ ...TX.caption, marginBottom: 6 }}>
               {tx('integ.copyNow', { code: chunk => <code>{chunk}</code> })}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <code style={{ fontSize: 12, fontFamily: F.mono, color: C.text, wordBreak: "break-all" }}>{newKey}</code>
+              <code style={{ fontSize: T.sm, fontFamily: F.mono, color: C.text, wordBreak: "break-all" }}>{newKey}</code>
               <CopyButton value={newKey} label={t('integ.copy')} copiedLabel={t('integ.copied')} variant="ghost" size="sm" />
             </div>
           </div>
         ) : null}
-        {error && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginBottom: 8 }}>{error}</div>}
+        {error && <div style={{ ...TX.error, marginBottom: 8 }}>{error}</div>}
         <div style={{ display: "flex", gap: 10, alignItems: "end" }}>
           <Inp label={t('integ.keyName')} placeholder={t('integ.keyNamePlaceholder')} value={name} onChange={e => setName(e.target.value)} />
           <Btn variant="secondary" size="sm" onClick={generate} disabled={saving || !name.trim()}>{saving ? t('integ.generating') : t('integ.generateKey')}</Btn>
@@ -608,22 +610,22 @@ function ApiKeysTab() {
       </div>
 
       {keys.length === 0 ? (
-        <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>{t('integ.noKeys')}</div>
+        <div style={TX.helperMuted}>{t('integ.noKeys')}</div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {keys.map(k => (
             <div key={k.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: C.surfaceAlt, borderRadius: 8 }}>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.sans }}>
-                  {k.name} {k.revoked_at && <span style={{ color: C.red, fontWeight: 400 }}>{t('integ.revoked')}</span>}
+                <div style={{ fontSize: T.sm, fontWeight: 600, color: C.text, fontFamily: F.sans }}>
+                  {k.name} {k.revoked_at && <span style={{ color: C.redText, fontWeight: 400 }}>{t('integ.revoked')}</span>}
                 </div>
-                <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.mono, marginTop: 2 }}>{k.key_prefix}…</div>
-                <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>
+                <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.mono, marginTop: 2 }}>{k.key_prefix}…</div>
+                <div style={{ fontSize: T.xs, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>
                   {t('integ.created', { date: formatDate(k.created_at) })}{k.last_used_at ? t('integ.lastUsed', { date: formatDate(k.last_used_at) }) : ""}
                 </div>
               </div>
               {!k.revoked_at && (
-                <Btn variant="ghost" size="sm" onClick={() => revoke(k.id)} style={{ color: C.red }}>{t('integ.revoke')}</Btn>
+                <Btn variant="ghost" size="sm" onClick={() => revoke(k.id)} style={{ color: C.redText }}>{t('integ.revoke')}</Btn>
               )}
             </div>
           ))}
@@ -700,7 +702,7 @@ export default function AdvIntegrationsView() {
 
   const TAB_STYLE = (active) => ({
     padding: "8px 18px", borderRadius: 8, border: "none", cursor: "pointer",
-    fontFamily: F.sans, fontSize: 13, fontWeight: 600,
+    fontFamily: F.sans, fontSize: T.base, fontWeight: 600,
     background: active ? C.surface : "transparent",
     color: active ? C.text : C.textSub,
     boxShadow: active ? `0 1px 4px rgba(0,0,0,0.08)` : "none",
@@ -730,7 +732,7 @@ export default function AdvIntegrationsView() {
           onMouseEnter={e => { if (tab !== "events") e.currentTarget.style.background = C.surface; }}
           onMouseLeave={e => { if (tab !== "events") e.currentTarget.style.background = "transparent"; }}
         >
-          {t('integ.tabEvents')} {events.length > 0 && <span style={{ marginLeft: 6, padding: "1px 7px", background: C.purpleSoft, color: C.purple, borderRadius: 10, fontSize: 11 }}>{events.length}</span>}
+          {t('integ.tabEvents')} {events.length > 0 && <span style={{ marginLeft: 6, padding: "1px 7px", background: C.purpleSoft, color: C.purple, borderRadius: 10, fontSize: T.xs }}>{events.length}</span>}
         </button>
         <button style={TAB_STYLE(tab === "conversions")} onClick={() => setTab("conversions")}
           onMouseEnter={e => { if (tab !== "conversions") e.currentTarget.style.background = C.surface; }}
@@ -766,7 +768,7 @@ export default function AdvIntegrationsView() {
       {tab === "events" && (
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
           {events.length === 0 ? (
-            <div style={{ padding: 48, textAlign: "center", color: C.textSub, fontSize: 14 }}>
+            <div style={{ padding: 48, textAlign: "center", color: C.textSub, fontSize: T.md }}>
               {t('integ.noEvents')}
             </div>
           ) : (
@@ -775,7 +777,7 @@ export default function AdvIntegrationsView() {
                 <tr style={{ borderBottom: `1px solid ${C.border}`, background: C.surfaceAlt }}>
                   {["platform", "event", "scanId", "status", "time"].map(h => (
                     <th key={h} style={{
-                      padding: "11px 16px", textAlign: "left", fontSize: 11,
+                      padding: "11px 16px", textAlign: "left", fontSize: T.xs,
                       fontWeight: 600, color: C.textSub, fontFamily: F.sans,
                       letterSpacing: "0.05em", textTransform: "uppercase",
                     }}>{t(`integ.col.${h}`)}</th>
@@ -787,20 +789,20 @@ export default function AdvIntegrationsView() {
                   <tr key={e.id} style={{
                     borderBottom: i < events.length - 1 ? `1px solid ${C.border}` : "none",
                   }}>
-                    <td style={{ padding: "12px 16px", fontSize: 13, color: C.text, fontFamily: F.sans, fontWeight: 500 }}>
+                    <td style={{ ...TX.body, padding: "12px 16px", fontWeight: 500 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <BrandIcon id={e.platform} size={12} />
                         {PLATFORMS.find(p => p.id === e.platform)?.name ?? e.platform}
                       </div>
                     </td>
-                    <td style={{ padding: "12px 16px", fontSize: 13, color: C.textMid, fontFamily: F.sans }}>{e.event_type}</td>
-                    <td style={{ padding: "12px 16px", fontSize: 11, color: C.textSub, fontFamily: F.mono }}>
+                    <td style={{ padding: "12px 16px", fontSize: T.base, color: C.textMid, fontFamily: F.sans }}>{e.event_type}</td>
+                    <td style={{ ...TX.mono, padding: "12px 16px" }}>
                       {e.scan_id ? e.scan_id.slice(0, 8) + "…" : "—"}
                     </td>
                     <td style={{ padding: "12px 16px" }}>
                       <EventStatusBadge status={e.status} />
                     </td>
-                    <td style={{ padding: "12px 16px", fontSize: 12, color: C.textSub, fontFamily: F.sans }}>
+                    <td style={{ ...TX.helper, padding: "12px 16px" }}>
                       {formatDateTime(e.fired_at)}
                     </td>
                   </tr>

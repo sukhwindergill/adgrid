@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
@@ -15,7 +16,7 @@ function EmptyState({ text }) {
   return (
     <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
       <div style={{ color: C.textMuted, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconTagPrice size={32} /></div>
-      <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>{text}</div>
+      <div style={TX.bodySub}>{text}</div>
     </div>
   );
 }
@@ -56,15 +57,15 @@ function BrowseListings({ onSelectListing }) {
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
       {listings.map(l => (
         <Card key={l.id} onClick={() => onSelectListing(l.id)} style={{ padding: 16 }}>
-          <div style={{ fontFamily: F.sans, fontWeight: 600, fontSize: 15, color: C.text, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ ...TX.titleLg, display: 'flex', alignItems: 'center', gap: 8 }}>
             {formatCurrency(l.price_cents / 100, { decimals: 0 })}
             {l.is_bundle && (
-              <span style={{ fontSize: 11, fontWeight: 600, color: C.purple, background: C.purpleSoft, borderRadius: 999, padding: '2px 8px' }}>
+              <span style={{ fontSize: T.xs, fontWeight: 600, color: C.purple, background: C.purpleSoft, borderRadius: 999, padding: '2px 8px' }}>
                 {t('market.bundle')}
               </span>
             )}
           </div>
-          <div style={{ fontFamily: F.sans, fontSize: 12, color: C.textSub, marginTop: 4 }}>
+          <div style={{ ...TX.helper, marginTop: 4 }}>
             {formatDate(l.start_date)} – {formatDate(l.end_date)}
           </div>
         </Card>
@@ -112,18 +113,18 @@ function MyBookings({ onSelectListing }) {
           onClick={b.listing ? () => onSelectListing(b.listing.id) : undefined}
           style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, padding: 12 }}
         >
-          <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMid }}>
+          <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.textMid }}>
             {b.screen_name ?? t('market.screenUnavailable')}
             {b.listing?.is_bundle && <span style={{ color: C.purple, fontWeight: 600 }}> · {t('market.bundle')}</span>}
             {b.listing && <span> · {formatDate(b.listing.start_date)} – {formatDate(b.listing.end_date)}</span>}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: F.sans, fontSize: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: F.sans, fontSize: T.sm }}>
             <span style={{ color: C.textSub }}>
               {t('market.totalSuffix', { amount: formatCurrency((b.price_cents + b.platform_fee_cents) / 100) })}
             </span>
             <span style={{
               padding: '2px 8px', borderRadius: 999, fontWeight: 600,
-              color: b.status === 'cancelled' ? C.red : C.purple,
+              color: b.status === 'cancelled' ? C.redText : C.purple,
               background: b.status === 'cancelled' ? C.redSoft : C.purpleSoft,
             }}>
               {BOOKING_STATUSES.includes(b.status) ? t(`market.bookingStatus.${b.status}`) : b.status}

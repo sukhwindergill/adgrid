@@ -10,6 +10,7 @@ import {
   savePendingPairing,
 } from '../../lib/screenPairing.js';
 import { useT } from '../../i18n/useT.js';
+import { T, C } from '../../design/tokens.js';
 
 const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
@@ -121,7 +122,7 @@ export function PairScreen({ navigate = replaceLocation, pollIntervalMs = PAIR_P
 
   return (
     <div style={{
-      position: 'fixed', inset: 0, background: '#050a10', color: '#fff', fontFamily: FONT,
+      position: 'fixed', inset: 0, background: '#050a10', color: C.white, fontFamily: FONT,
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       padding: '5vh 5vw', textAlign: 'center', cursor: 'none',
     }}>
@@ -148,7 +149,7 @@ export function PairScreen({ navigate = replaceLocation, pollIntervalMs = PAIR_P
             {formatPairingCode(pairing.code)}
           </div>
           <div style={{ fontSize: 'clamp(14px, 1.6vw, 24px)', color: 'rgba(255,255,255,0.55)', marginTop: '4vh', lineHeight: 1.6, maxWidth: 1100 }}>
-            {tx('display.pair.howTo', { b: chunk => <strong style={{ color: '#fff' }}>{chunk}</strong>, host })}
+            {tx('display.pair.howTo', { b: chunk => <strong style={{ color: C.white }}>{chunk}</strong>, host })}
           </div>
           <div style={{ fontSize: 'clamp(12px, 1.2vw, 18px)', color: 'rgba(255,255,255,0.35)', marginTop: '2vh' }}>
             {t('display.pair.newCodeIn', { time: formatCountdown(pairing.expires_at, now) })}
@@ -157,7 +158,7 @@ export function PairScreen({ navigate = replaceLocation, pollIntervalMs = PAIR_P
       )}
 
       {phase === 'loading' && (
-        <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, textTransform: 'uppercase' }}>{t('display.pair.gettingCode')}</div>
+        <div style={{ fontSize: T.md, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, textTransform: 'uppercase' }}>{t('display.pair.gettingCode')}</div>
       )}
 
       {phase === 'offline' && (

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { usePageMeta } from '../../lib/usePageMeta.js';
 import { Breadcrumbs } from '../../components/shared/Breadcrumbs.jsx';
 import { useT } from '../../i18n/useT.js';
+import { T, C } from '../../design/tokens.js';
 
 const page = {
   minHeight: '100vh',
@@ -14,8 +15,8 @@ const page = {
   alignItems: 'center',
 };
 const inner = { maxWidth: 560, margin: '0 auto', width: '100%' };
-const h1 = { fontSize: 32, fontWeight: 700, color: '#fff', margin: '0 0 12px', textAlign: 'center' };
-const p = { fontSize: 15, lineHeight: 1.7, margin: '0 0 12px', textAlign: 'center' };
+const h1 = { fontSize: T.display, fontWeight: 700, color: C.white, margin: '0 0 12px', textAlign: 'center' };
+const p = { fontSize: T.lg, lineHeight: 1.7, margin: '0 0 12px', textAlign: 'center' };
 const promise = {
   ...p,
   marginTop: 24,
@@ -23,19 +24,19 @@ const promise = {
   background: 'rgba(123,47,255,0.1)',
   border: '1px solid rgba(123,47,255,0.3)',
   borderRadius: 10,
-  color: '#fff',
+  color: C.white,
 };
-const h2 = { fontSize: 13, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#B79CFF', margin: '36px 0 14px' };
+const h2 = { fontSize: T.base, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#B79CFF', margin: '36px 0 14px' };
 const list = { listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 10 };
 const item = {
   padding: '14px 16px', borderRadius: 10, background: 'rgba(255,255,255,0.03)',
-  border: '1px solid rgba(255,255,255,0.08)', fontSize: 14, lineHeight: 1.6,
+  border: '1px solid rgba(255,255,255,0.08)', fontSize: T.md, lineHeight: 1.6,
 };
-const itemTitle = { color: '#fff', fontWeight: 600, display: 'block', marginBottom: 2 };
+const itemTitle = { color: C.white, fontWeight: 600, display: 'block', marginBottom: 2 };
 const actions = { display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginTop: 32 };
 const btn = {
   display: 'inline-block', padding: '13px 26px', borderRadius: 8, border: 'none', cursor: 'pointer',
-  background: '#7B2FFF', color: '#fff', textDecoration: 'none', fontWeight: 600, fontSize: 15,
+  background: '#7B2FFF', color: C.white, textDecoration: 'none', fontWeight: 600, fontSize: T.lg,
   fontFamily: 'inherit',
 };
 const btnSecondary = { ...btn, background: 'transparent', border: '1px solid rgba(255,255,255,0.18)' };

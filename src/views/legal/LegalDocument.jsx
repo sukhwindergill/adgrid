@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { usePageMeta } from '../../lib/usePageMeta.js';
 import { Breadcrumbs } from '../../components/shared/Breadcrumbs.jsx';
 import { rich, useT } from '../../i18n/useT.js';
+import { T, C } from '../../design/tokens.js';
 
 // Shared renderer for the legal pages. Each page's text lives in the locale
 // catalogs under legal.<doc>: title, metaTitle, metaDescription, an array of
@@ -20,9 +21,9 @@ const page = {
   padding: '48px 24px',
 };
 const inner = { maxWidth: 760, margin: '0 auto' };
-const h1 = { fontSize: 32, fontWeight: 700, color: '#fff', margin: '0 0 8px' };
-const h2 = { fontSize: 20, fontWeight: 600, color: '#fff', margin: '32px 0 8px' };
-const legalP = { fontSize: 15, lineHeight: 1.7, margin: '0 0 12px' };
+const h1 = { fontSize: T.display, fontWeight: 700, color: C.white, margin: '0 0 8px' };
+const h2 = { fontSize: T.xl, fontWeight: 600, color: C.white, margin: '32px 0 8px' };
+const legalP = { fontSize: T.lg, lineHeight: 1.7, margin: '0 0 12px' };
 const linkStyle = { color: '#a78bfa' };
 
 const mail = address => <a href={`mailto:${address}`} style={linkStyle}>{address}</a>;

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { ScreenAnalyticsPanel } from '../../components/marketplace/ScreenAnalyticsPanel.jsx';
@@ -50,7 +51,7 @@ export function MarketplaceListingDetail({ listingId, onBack }) {
   if (loadError) return (
     <div style={{ padding: 24 }}>
       <Btn variant="ghost" onClick={onBack}>{t('market.detail.backToMarketplace')}</Btn>
-      <div style={{ fontFamily: F.sans, color: C.red, marginTop: 12 }}>{t('market.detail.loadError')}</div>
+      <div style={{ fontFamily: F.sans, color: C.redText, marginTop: 12 }}>{t('market.detail.loadError')}</div>
     </div>
   );
   if (!listing) return <div style={{ fontFamily: F.sans, color: C.textMuted, padding: 24 }}>{t('common.loading')}</div>;
@@ -67,7 +68,7 @@ export function MarketplaceListingDetail({ listingId, onBack }) {
       />
 
       {listing.is_bundle && (
-        <div style={{ fontFamily: F.sans, fontSize: 13, color: C.text, background: C.purpleSoft, borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>
+        <div style={{ ...TX.body, background: C.purpleSoft, borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>
           {bundleScreenNames === null
             ? t('market.detail.loadingScreens')
             : t('market.detail.screensIncluded', { count: bundleScreenNames.length, names: bundleScreenNames.join(', ') })}
@@ -76,31 +77,31 @@ export function MarketplaceListingDetail({ listingId, onBack }) {
 
       <ScreenAnalyticsPanel screenId={listing.screen_id} />
       {listing.is_bundle && bundleScreenNames && bundleScreenNames.length > 1 && (
-        <div style={{ fontFamily: F.sans, fontSize: 12, color: C.textMuted, marginTop: 6 }}>
+        <div style={{ ...TX.helperMuted, marginTop: 6 }}>
           {t('market.detail.primaryOnly')}
         </div>
       )}
 
-      <div style={{ marginTop: 20, fontFamily: F.sans, fontSize: 13, color: C.textSub }}>
+      <div style={{ ...TX.bodySub, marginTop: 20 }}>
         <div>
           {t('market.detail.total', { amount: formatCurrency(listing.price_cents / 100) })}
         </div>
       </div>
 
-      <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, fontFamily: F.sans, fontSize: 12, color: C.textSub }}>
+      <label style={{ ...TX.helper, display: 'flex', alignItems: 'center', gap: 6, marginTop: 12 }}>
         <input type="checkbox" checked={autoRenew} onChange={e => setAutoRenew(e.target.checked)} />
         {t('market.detail.autoRenew')}
       </label>
 
       <div style={{ marginTop: 12 }}>
         <Btn variant="primary" onClick={handleBook} loading={booking}>{t('market.detail.book')}</Btn>
-        <div style={{ marginTop: 6, fontFamily: F.sans, fontSize: 12, color: C.textSub }}>
+        <div style={{ ...TX.helper, marginTop: 6 }}>
           {t('market.detail.chargeNote')}
         </div>
       </div>
 
       <div style={{ marginTop: 24 }}>
-        <div style={{ fontFamily: F.sans, fontWeight: 600, fontSize: 13, color: C.text, marginBottom: 8 }}>
+        <div style={{ ...TX.strong, marginBottom: 8 }}>
           {t('market.detail.questions')}
         </div>
         <MarketplaceThread listingId={listing.id} operatorId={listing.operator_id} />

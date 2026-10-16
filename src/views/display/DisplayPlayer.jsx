@@ -5,6 +5,7 @@ import { getCreativeRenderPlan } from '../../lib/getCreativeRenderPlan.js';
 import { getSlideDurationMs } from '../../lib/getSlideDuration.js';
 import { loadPairedToken, savePairedToken } from '../../lib/screenPairing.js';
 import { useT } from '../../i18n/useT.js';
+import { T, C } from '../../design/tokens.js';
 
 const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
@@ -113,7 +114,7 @@ function CreativeSlide({ campaign, screenId }) {
       {/* Headline */}
       {showTextOverlay && (
         <div style={{
-          fontSize: 'clamp(32px, 6vw, 96px)', fontWeight: 800, color: '#fff',
+          fontSize: 'clamp(32px, 6vw, 96px)', fontWeight: 800, color: C.white,
           lineHeight: 1.05, maxWidth: '70%', marginBottom: 'clamp(16px, 2.5vw, 40px)',
           fontFamily: 'Georgia, serif', textShadow: '0 4px 24px rgba(0,0,0,0.5)',
         }}>
@@ -183,10 +184,10 @@ function InvalidTokenScreen({ screenToken }) {
   }, [fromPairing]);
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#050a10', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
-      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: 1, textTransform: 'uppercase' }}>
+      <div style={{ fontSize: T.base, color: 'rgba(255,255,255,0.4)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: 1, textTransform: 'uppercase' }}>
         {tr('display.tokenNotRecognised')}
       </div>
-      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif" }}>
+      <div style={{ fontSize: T.xs, color: 'rgba(255,255,255,0.2)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif" }}>
         {fromPairing
           ? tr('display.disconnected')
           : tr('display.checkUrl')}
@@ -393,7 +394,7 @@ export function DisplayPlayer({ screenToken }) {
   if (status === 'loading') {
     return (
       <div style={{ position: 'fixed', inset: 0, background: '#050a10', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: 2, textTransform: 'uppercase' }}>
+        <div style={{ fontSize: T.md, color: 'rgba(255,255,255,0.3)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: 2, textTransform: 'uppercase' }}>
           {t('display.connecting')}
         </div>
       </div>
@@ -436,7 +437,7 @@ export function DisplayPlayer({ screenToken }) {
           {campaigns.map((_, i) => (
             <div key={i} style={{
               width: i === currentIdx ? 24 : 6, height: 6, borderRadius: 3,
-              background: i === currentIdx ? '#fff' : 'rgba(255,255,255,0.25)',
+              background: i === currentIdx ? C.white : 'rgba(255,255,255,0.25)',
               transition: 'all 0.3s ease',
             }} />
           ))}

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { C, F } from '../../design/tokens.js'
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js'
 import { useT } from '../../i18n/useT.js'
 
@@ -84,23 +85,23 @@ export function GrantAccessModal({ onClose, onGranted }) {
     <>
       <div
         onClick={onClose}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 299 }}
+        style={{ position: 'fixed', inset: 0, background: C.overlay, zIndex: 299 }}
       />
       <div style={{
         position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
         background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20,
         padding: '32px 28px', width: 420, zIndex: 300,
       }}>
-        <h3 style={{ fontSize: 17, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 20px' }}>
+        <h3 style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 20px' }}>
           {t('accounts.grantModal.title')}
         </h3>
 
         {success ? (
           <>
-            <p style={{ fontSize: 14, color: C.green, fontFamily: F.sans, margin: '0 0 20px' }}>
+            <p style={{ fontSize: T.md, color: C.greenText, fontFamily: F.sans, margin: '0 0 20px' }}>
               {t('accounts.grantModal.sent', { email })}
             </p>
-            <button onClick={() => { onClose(); onGranted?.() }} style={{ padding: '9px 22px', borderRadius: 8, background: C.purple, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 13, cursor: 'pointer', transition: 'opacity 0.15s' }}
+            <button onClick={() => { onClose(); onGranted?.() }} style={{ padding: '9px 22px', borderRadius: 8, background: C.purple, color: C.white, border: 'none', fontFamily: F.sans, fontSize: T.base, cursor: 'pointer', transition: 'opacity 0.15s' }}
               onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
               onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
             >
@@ -110,7 +111,7 @@ export function GrantAccessModal({ onClose, onGranted }) {
         ) : (
           <>
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: C.text, marginBottom: 6, fontFamily: F.sans }}>
+              <label style={{ ...TX.body, display: 'block', fontWeight: 500, marginBottom: 6 }}>
                 {t('accounts.grantModal.email')}
               </label>
               <input
@@ -118,20 +119,20 @@ export function GrantAccessModal({ onClose, onGranted }) {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder={t('accounts.grantModal.emailPlaceholder')}
-                style={{ width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.15s' }}
+                style={{ ...TX.body, width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.15s' }}
                 onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
                 onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
               />
             </div>
 
             <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: C.text, marginBottom: 6, fontFamily: F.sans }}>
+              <label style={{ ...TX.body, display: 'block', fontWeight: 500, marginBottom: 6 }}>
                 {t('accounts.grantModal.role')}
               </label>
               <select
                 value={role}
                 onChange={e => setRole(e.target.value)}
-                style={{ width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
+                style={{ ...TX.body, width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
                 onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
                 onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
               >
@@ -141,16 +142,16 @@ export function GrantAccessModal({ onClose, onGranted }) {
               </select>
             </div>
 
-            {error && <p style={{ fontSize: 13, color: C.red, fontFamily: F.sans, margin: '0 0 12px' }}>{error}</p>}
+            {error && <p style={{ fontSize: T.base, color: C.redText, fontFamily: F.sans, margin: '0 0 12px' }}>{error}</p>}
 
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={onClose} style={{ flex: 1, padding: '9px', borderRadius: 8, background: 'transparent', border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 13, cursor: 'pointer', color: C.textSub, transition: 'background 0.15s' }}
+              <button onClick={onClose} style={{ ...TX.bodySub, flex: 1, padding: '9px', borderRadius: 8, background: 'transparent', border: `1px solid ${C.border}`, cursor: 'pointer', transition: 'background 0.15s' }}
                 onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
               >
                 {t('common.cancel')}
               </button>
-              <button onClick={submit} disabled={saving} style={{ flex: 1, padding: '9px', borderRadius: 8, background: C.purple, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, transition: 'opacity 0.15s' }}
+              <button onClick={submit} disabled={saving} style={{ flex: 1, padding: '9px', borderRadius: 8, background: C.purple, color: C.white, border: 'none', fontFamily: F.sans, fontSize: T.base, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, transition: 'opacity 0.15s' }}
                 onMouseEnter={e => { if (!saving) e.currentTarget.style.opacity = '0.9'; }}
                 onMouseLeave={e => { if (!saving) e.currentTarget.style.opacity = '1'; }}
               >

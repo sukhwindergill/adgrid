@@ -2,15 +2,16 @@ import { useState } from 'react';
 import { analyticsConfigured, getConsent, setConsent } from '../../lib/analytics.js';
 import { useT } from '../../i18n/useT.js';
 import { LegalDocument } from './LegalDocument.jsx';
+import { T, C } from '../../design/tokens.js';
 
 // Text lives in src/locales under legal.cookies. The fr-CA version still needs
 // review by a lawyer before it is relied on (see LegalDocument.jsx).
 
-const p = { fontSize: 15, lineHeight: 1.7, margin: '0 0 12px' };
+const p = { fontSize: T.lg, lineHeight: 1.7, margin: '0 0 12px' };
 
 const choiceBtn = {
-  padding: '9px 18px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer',
-  fontFamily: 'inherit', border: '1px solid rgba(255,255,255,0.25)', background: 'transparent', color: '#fff',
+  padding: '9px 18px', borderRadius: 8, fontSize: T.md, fontWeight: 600, cursor: 'pointer',
+  fontFamily: 'inherit', border: '1px solid rgba(255,255,255,0.25)', background: 'transparent', color: C.white,
 };
 
 // Lets visitors change or withdraw their analytics choice after the banner

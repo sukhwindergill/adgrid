@@ -1,7 +1,8 @@
 // src/views/advertiser/createCampaign/MediaUpload.jsx
 import { useState } from 'react';
 import { supabase } from '../../../lib/supabase.js';
-import { C, F } from '../../../design/tokens.js';
+import { C, F, T } from '../../../design/tokens.js';
+import { TX } from '../../../design/text.js';
 import { getMediaDimensions } from '../../../lib/mediaDimensions.js';
 import { useAuth } from '../../../context/AuthContext.jsx';
 import { useT } from '../../../i18n/useT.js';
@@ -43,10 +44,10 @@ export function MediaUpload({ form, setForm }) {
 
   return (
     <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: `1px solid ${C.border}` }}>
-      <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 4 }}>
+      <div style={{ ...TX.label, marginBottom: 4 }}>
         {t('create.media.label')} <span style={{ color: C.textMuted, fontWeight: 400 }}>{t('common.required')}</span>
       </div>
-      <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 10, lineHeight: 1.5 }}>
+      <div style={{ ...TX.helper, marginBottom: 10, lineHeight: 1.5 }}>
         {t('create.media.hint')}
       </div>
       {form.media_url ? (
@@ -57,8 +58,8 @@ export function MediaUpload({ form, setForm }) {
               : <img src={form.media_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
           </div>
           <div>
-            <div style={{ fontSize: 12, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>{form.media_type === 'video' ? t('create.media.videoUploaded') : t('create.media.imageUploaded')}</div>
-            <button type="button" onClick={clear} style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, padding: '4px 12px', fontSize: 12, color: C.textSub, cursor: 'pointer', fontFamily: F.sans, transition: 'background 0.15s' }}
+            <div style={{ fontSize: T.sm, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>{form.media_type === 'video' ? t('create.media.videoUploaded') : t('create.media.imageUploaded')}</div>
+            <button type="button" onClick={clear} style={{ ...TX.helper, background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, padding: '4px 12px', cursor: 'pointer', transition: 'background 0.15s' }}
               onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
             >{t('common.remove')}</button>
@@ -69,7 +70,7 @@ export function MediaUpload({ form, setForm }) {
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           border: `2px dashed ${C.border}`, borderRadius: 10, padding: '18px',
           cursor: uploading ? 'default' : 'pointer', background: C.surfaceAlt,
-          fontSize: 13, color: C.textSub, fontFamily: F.sans, transition: 'border-color 0.15s',
+          fontSize: T.base, color: C.textSub, fontFamily: F.sans, transition: 'border-color 0.15s',
         }}
           onMouseEnter={e => { if (!uploading) e.currentTarget.style.borderColor = C.purple; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; }}
@@ -79,7 +80,7 @@ export function MediaUpload({ form, setForm }) {
           {uploading ? t('common.uploading') : t('create.media.upload')}
         </label>
       )}
-      {err && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginTop: 8 }}>{err}</div>}
+      {err && <div style={{ ...TX.error, marginTop: 8 }}>{err}</div>}
     </div>
   );
 }

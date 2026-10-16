@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { C, F } from '../../../design/tokens.js';
+import { C, F, T } from '../../../design/tokens.js';
 import { useAuth } from '../../../context/AuthContext.jsx';
 import { useToast } from '../../../components/primitives/Toast.jsx';
 import { listTargetingTemplates, saveTargetingTemplate, deleteTargetingTemplate, applyTargetingTemplate } from '../../../lib/targetingTemplates.js';
@@ -56,7 +56,7 @@ export function SavedAudiencesBar({ form, onApply }) {
 
   return (
     <div style={{ marginBottom: 20, padding: '12px 14px', background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8 }}>
-      <div style={{ fontSize: 12, fontWeight: 600, color: C.textMid, fontFamily: F.sans, marginBottom: templates.length > 0 || nameInput !== null ? 8 : 0 }}>
+      <div style={{ fontSize: T.sm, fontWeight: 600, color: C.textMid, fontFamily: F.sans, marginBottom: templates.length > 0 || nameInput !== null ? 8 : 0 }}>
         {t('create.audiences.title')}
       </div>
 
@@ -68,12 +68,12 @@ export function SavedAudiencesBar({ form, onApply }) {
               border: `1px solid ${C.border}`, borderRadius: 20, background: C.surface,
             }}>
               <button onClick={() => onApply(applyTargetingTemplate(tpl))} style={{
-                background: 'none', border: 'none', cursor: 'pointer', fontSize: 12,
+                background: 'none', border: 'none', cursor: 'pointer', fontSize: T.sm,
                 color: C.text, fontFamily: F.sans, fontWeight: 500, padding: 0,
               }}>{tpl.name}</button>
               <button onClick={() => handleDelete(tpl.id, tpl.name)} aria-label={t('create.audiences.deleteLabel', { name: tpl.name })} style={{
                 background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted,
-                fontSize: 13, lineHeight: 1, padding: '0 2px',
+                fontSize: T.base, lineHeight: 1, padding: '0 2px',
               }}>✕</button>
             </div>
           ))}
@@ -83,7 +83,7 @@ export function SavedAudiencesBar({ form, onApply }) {
       {nameInput === null ? (
         <button onClick={() => setNameInput('')} style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
-          background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer',
+          background: 'none', border: 'none', fontSize: T.sm, color: C.purple, cursor: 'pointer',
           fontFamily: F.sans, padding: 0, fontWeight: 500,
         }}><IconBookmark size={13} /> {t('create.audiences.saveCurrent')}</button>
       ) : (
@@ -96,16 +96,16 @@ export function SavedAudiencesBar({ form, onApply }) {
             placeholder={t('create.audiences.placeholder')}
             style={{
               flex: 1, minWidth: 0, padding: '6px 10px', border: `1px solid ${C.border}`,
-              borderRadius: 6, fontSize: 12, fontFamily: F.sans, color: C.text,
+              borderRadius: 6, fontSize: T.sm, fontFamily: F.sans, color: C.text,
             }}
           />
           <button onClick={handleSave} disabled={saving || !nameInput.trim()} style={{
             padding: '6px 12px', borderRadius: 6, border: 'none', background: C.purple,
-            color: '#fff', fontSize: 12, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
+            color: C.white, fontSize: T.sm, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
             opacity: saving || !nameInput.trim() ? 0.6 : 1, whiteSpace: 'nowrap',
           }}>{saving ? t('common.saving') : t('common.save')}</button>
           <button onClick={() => setNameInput(null)} style={{
-            background: 'none', border: 'none', color: C.textMuted, fontSize: 12, cursor: 'pointer', fontFamily: F.sans,
+            background: 'none', border: 'none', color: C.textMuted, fontSize: T.sm, cursor: 'pointer', fontFamily: F.sans,
           }}>{t('common.cancel')}</button>
         </div>
       )}

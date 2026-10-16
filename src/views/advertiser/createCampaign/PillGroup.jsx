@@ -1,5 +1,5 @@
 // src/views/advertiser/createCampaign/PillGroup.jsx
-import { C, F } from '../../../design/tokens.js';
+import { C, F, T } from '../../../design/tokens.js';
 
 export function PillGroup({ options, value, onChange, multi = false }) {
   const vals = multi ? (value || []) : null;
@@ -21,7 +21,7 @@ export function PillGroup({ options, value, onChange, multi = false }) {
             border: `1px solid ${active ? C.purple : C.border}`,
             background: active ? C.purpleSoft : C.surface,
             color: active ? C.purple : C.textSub,
-            fontSize: 12, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
+            fontSize: T.sm, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
           }}
             onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
             onMouseLeave={e => { if (!active) e.currentTarget.style.background = C.surface; }}
