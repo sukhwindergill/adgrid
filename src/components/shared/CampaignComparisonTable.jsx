@@ -2,6 +2,7 @@ import { C, F, T } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { Card } from '../primitives/Card.jsx';
 import { Badge } from '../primitives/Badge.jsx';
+import { Btn } from '../primitives/Btn.jsx';
 
 // Side-by-side comparison for campaigns a media buyer selects from the list
 // — the list itself only ever showed one campaign's numbers at a time, with
@@ -39,8 +40,8 @@ export function CampaignComparisonTable({ campaigns, onRemove }) {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                     <span style={{ fontWeight: 600, color: C.text, fontFamily: F.sans }}>{c.advertiser}</span>
                     {onRemove && (
-                      <button onClick={() => onRemove(c.id)} aria-label={`Remove ${c.advertiser} from comparison`}
-                        style={{ border: 'none', background: 'none', color: C.textMuted, cursor: 'pointer', fontSize: T.md, lineHeight: 1, padding: 2 }}>✕</button>
+                      <Btn variant="unstyled" onClick={() => onRemove(c.id)} aria-label={`Remove ${c.advertiser} from comparison`}
+                        style={{ color: C.textMuted, fontSize: T.md, lineHeight: 1, padding: 2 }}>✕</Btn>
                     )}
                   </div>
                 </th>

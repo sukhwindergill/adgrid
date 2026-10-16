@@ -3,6 +3,8 @@ import { supabase } from '../../lib/supabase.js';
 import { C, F, T, SH } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { Btn } from '../primitives/Btn.jsx';
+import { Chip } from '../primitives/Chip.jsx';
+import { Modal } from '../primitives/Modal.jsx';
 import { Inp } from '../primitives/Inp.jsx';
 import { SelInput } from '../primitives/SelInput.jsx';
 import { OperatingHoursFields } from './OperatingHoursFields.jsx';
@@ -16,15 +18,9 @@ function FormatChips({ value, onChange }) {
       {FORMAT_OPTIONS.map(fmt => {
         const active = value.includes(fmt);
         return (
-          <button key={fmt} type="button" onClick={() => {
+          <Chip key={fmt} selected={active} onClick={() => {
             onChange(active ? value.filter(f => f !== fmt) : [...value, fmt]);
-          }} style={{
-            padding: '6px 12px', borderRadius: 16, cursor: 'pointer',
-            border: `1px solid ${active ? C.purple : C.border}`,
-            background: active ? C.purpleSoft : C.surface,
-            color: active ? C.purple : C.textSub,
-            fontSize: T.sm, fontFamily: F.sans,
-          }}>{fmt}</button>
+          }}>{fmt}</Chip>
         );
       })}
     </div>
@@ -87,12 +83,7 @@ export function EditScreenModal({ screen, onClose, onSaved }) {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: C.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
-      <div style={{ background: C.surface, borderRadius: 14, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto', padding: 28, boxShadow: SH.modal }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-          <div style={TX.heading}>Edit Screen</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: T.xl, color: C.textMuted, cursor: 'pointer' }}>×</button>
-        </div>
+    <Modal title="Edit Screen" onClose={onClose}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
           <Inp label="Screen Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
           <Inp label="Location / Address" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} />
@@ -135,7 +126,6 @@ export function EditScreenModal({ screen, onClose, onSaved }) {
           <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
           <Btn onClick={save} disabled={!form.name || saving}>{saving ? 'Saving…' : 'Save Changes'}</Btn>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

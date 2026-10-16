@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { C, F, T } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
-import { Card } from '../primitives/Card.jsx';
+import { Modal } from '../primitives/Modal.jsx';
 import { Btn } from '../primitives/Btn.jsx';
 import { CopyButton } from '../primitives/CopyButton.jsx';
 import { useToast } from '../primitives/Toast.jsx';
@@ -64,9 +64,8 @@ export function ShareReportModal({ campaignId, userId, audience = 'advertiser', 
   const urlFor = (token) => `${window.location.origin}/report/${token}`;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: C.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-      <Card style={{ padding: 24, width: 'min(560px, 92vw)', maxHeight: '80vh', overflowY: 'auto' }}>
-        <div style={{ ...TX.heading, marginBottom: 4 }}>Share this report</div>
+    <Modal title="Share this report" maxWidth={560} padding={24} zIndex={100} headerStyle={{ marginBottom: 4 }}
+      panelStyle={{ borderRadius: 12, border: `1px solid ${C.border}`, maxHeight: '80vh', boxShadow: 'none' }}>
         <div style={{ ...TX.helperMuted, marginBottom: 18 }}>
           Anyone with the link can view delivery results for this campaign — no sign-in, and no account or billing data.
           Links expire after {DEFAULT_DAYS} days and can be revoked at any time.
@@ -114,7 +113,6 @@ export function ShareReportModal({ campaignId, userId, audience = 'advertiser', 
         <div style={{ marginTop: 20, textAlign: 'right' }}>
           <Btn variant="secondary" onClick={onClose}>Close</Btn>
         </div>
-      </Card>
-    </div>
+    </Modal>
   );
 }

@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { C, F, T, SH } from '../../design/tokens.js';
+import { C, F, T, alpha } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { CornerMarker } from './CornerMarker.jsx';
 import { ErrorBanner } from '../primitives/ErrorBanner.jsx';
+import { Btn } from '../primitives/Btn.jsx';
+import { Modal } from '../primitives/Modal.jsx';
+
+// Small controls laid over a photo thumbnail.
+const photoOverlayBtn = { position: 'absolute', background: alpha(C.black, 0.6), color: C.white };
 
 // Owns a screen's photos (screen_photos) and the corner-marking overlay
 // that produces screen_photo_frames. Used both by the registration wizard
@@ -123,23 +128,19 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
           {photos.map((url, i) => (
             <div key={url} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden' }}>
               <img src={url} alt={`Screen photo ${i + 1}`} style={{ width: '100%', height: 100, objectFit: 'cover', display: 'block' }} />
-              <button onClick={() => removePhoto(url)} style={{
-                position: 'absolute', top: 4, right: 4,
-                background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%',
-                width: 22, height: 22, color: C.white, cursor: 'pointer', fontSize: T.md,
+              <Btn variant="unstyled" aria-label={`Remove photo ${i + 1}`} onClick={() => removePhoto(url)} style={{
+                ...photoOverlayBtn, top: 4, right: 4, borderRadius: '50%',
+                width: 22, height: 22, fontSize: T.md,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
-              }}>×</button>
-              <button
+              }}>×</Btn>
+              <Btn
+                variant="unstyled"
                 onClick={() => setMarkingUrl(url)}
                 title={frameFor(url) ? 'Edit corners' : 'Mark corners'}
-                style={{
-                  position: 'absolute', bottom: 4, left: 4,
-                  background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: 6,
-                  color: C.white, cursor: 'pointer', fontSize: T.xs, fontFamily: F.sans, padding: '3px 7px',
-                }}
+                style={{ ...photoOverlayBtn, bottom: 4, left: 4, borderRadius: 6, fontSize: T.xs, fontFamily: F.sans, padding: '3px 7px' }}
               >
                 {frameFor(url) ? '✓ Corners' : '✏ Mark corners'}
-              </button>
+              </Btn>
             </div>
           ))}
         </div>
@@ -160,21 +161,16 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
       )}
 
       {markingUrl && (
-        <div style={{ position: 'fixed', inset: 0, background: C.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
-          <div style={{ background: C.surface, borderRadius: 14, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', padding: 24, boxShadow: SH.modal }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <div style={TX.heading}>Mark the screen's corners</div>
-              <button onClick={() => setMarkingUrl(null)} style={{ background: 'none', border: 'none', fontSize: T.xl, color: C.textMuted, cursor: 'pointer' }}>×</button>
-            </div>
-            <CornerMarker
-              photoUrl={markingUrl}
-              initialCorners={frameFor(markingUrl)?.corners ?? null}
-              onSave={(corners) => saveFrame(markingUrl, corners)}
-              onSkip={() => setMarkingUrl(null)}
-            />
-          </div>
-        </div>
+        <Modal title="Mark the screen's corners" onClose={() => setMarkingUrl(null)} maxWidth={520} padding={24} headerStyle={{ marginBottom: 16 }}>
+          <CornerMarker
+            photoUrl={markingUrl}
+            initialCorners={frameFor(markingUrl)?.corners ?? null}
+            onSave={(corners) => saveFrame(markingUrl, corners)}
+            onSkip={() => setMarkingUrl(null)}
+          />
+        </Modal>
       )}
     </div>
   );
 }
+

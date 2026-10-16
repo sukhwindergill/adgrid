@@ -2,6 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { C, F, T } from '../design/tokens.js';
 import { TX } from '../design/text.js';
 import { geocodeAddress } from '../lib/geocodeAddress.js';
+import { Btn } from './primitives/Btn.jsx';
+import { Inp } from './primitives/Inp.jsx';
+
+const toolBtn = { padding: '8px 12px', color: C.textSub };
 
 const DEFAULT_CENTER = [43.6532, -79.3832]; // Toronto — same fallback as CreateCampaign's radius map
 
@@ -120,31 +124,22 @@ export function ScreenLocationPicker({ value, onChange }) {
   return (
     <div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-        <input
+        <Inp
           type="text"
           value={query}
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), search())}
           placeholder="Search an address…"
-          style={{
-            flex: 1, padding: '8px 10px', borderRadius: 8, border: `1px solid ${C.border}`,
-            fontFamily: F.sans, fontSize: T.sm, color: C.text, background: C.surface,
-          }}
+          aria-label="Search an address"
+          wrapperStyle={{ flex: 1 }}
+          style={{ padding: '8px 10px', fontSize: T.sm }}
         />
-        <button type="button" onClick={search} disabled={searching} style={{
-          padding: '8px 12px', borderRadius: 8, border: `1px solid ${C.border}`,
-          background: C.surface, color: C.textSub, fontFamily: F.sans, fontSize: T.sm,
-          cursor: searching ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap',
-        }}>
+        <Btn variant="secondary" size="sm" type="button" onClick={search} disabled={searching} style={toolBtn}>
           {searching ? 'Searching…' : 'Search'}
-        </button>
-        <button type="button" onClick={useMyLocation} disabled={locating} style={{
-          padding: '8px 12px', borderRadius: 8, border: `1px solid ${C.border}`,
-          background: C.surface, color: C.textSub, fontFamily: F.sans, fontSize: T.sm,
-          cursor: locating ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap',
-        }}>
+        </Btn>
+        <Btn variant="secondary" size="sm" type="button" onClick={useMyLocation} disabled={locating} style={toolBtn}>
           {locating ? 'Locating…' : '📍 Use my location'}
-        </button>
+        </Btn>
       </div>
 
       <div ref={mapRef} style={{ height: 240, borderRadius: 12, overflow: 'hidden', border: `1px solid ${C.border}` }} />

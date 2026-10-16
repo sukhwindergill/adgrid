@@ -4,7 +4,7 @@ import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { Btn } from '../primitives/Btn.jsx';
 import { CopyButton } from '../primitives/CopyButton.jsx';
 import { callPairing, isValidPairingCode, normalizePairingCode, PAIRING_CODE_LENGTH } from '../../lib/screenPairing.js';
-import { T, C, F } from '../../design/tokens.js';
+import { T, C, F, alpha } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 
 // Shared by the onboarding wizard's Setup step (ScreenOnboard.jsx) and the
@@ -48,7 +48,7 @@ function CodeBox({ label, value }) {
       <div style={{ position: 'relative' }}>
         <pre style={{
           background: C.text, borderRadius: 8, padding: '14px 16px',
-          fontFamily: F.mono, fontSize: T.xs, color: '#a3e635',
+          fontFamily: F.mono, fontSize: T.xs, color: C.terminalText,
           whiteSpace: 'pre', overflowX: 'auto', margin: 0,
         }}>{value}</pre>
         <CopyButton
@@ -58,7 +58,7 @@ function CodeBox({ label, value }) {
           variant="ghost"
           style={{
             position: 'absolute', top: 8, right: 8,
-            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+            background: alpha(C.white, 0.1), border: `1px solid ${alpha(C.white, 0.2)}`,
             borderRadius: 4, color: C.white, fontSize: T.xs, padding: '3px 10px',
           }}
         />
@@ -111,10 +111,9 @@ export function PairingCodeEntry({ screen, onPaired }) {
         <strong style={{ color: C.greenText }}>Paired.</strong> {screen.name} will switch from the code to your ads
         within a few seconds. If it doesn't, check the screen is still on the pairing page.
         <div>
-          <button type="button" onClick={() => { setCode(''); setState('idle'); }} style={{
-            background: 'none', border: 'none', padding: 0, marginTop: 6, fontSize: T.sm,
-            color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, textDecoration: 'underline',
-          }}>Pair another display to this screen</button>
+          <Btn variant="unstyled" type="button" onClick={() => { setCode(''); setState('idle'); }} style={{
+            marginTop: 6, fontSize: T.sm, color: C.textMuted, fontFamily: F.sans, textDecoration: 'underline',
+          }}>Pair another display to this screen</Btn>
         </div>
       </div>
     );

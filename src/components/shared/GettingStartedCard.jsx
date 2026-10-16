@@ -30,10 +30,9 @@ export function GettingStartedCard({ title = 'Get started', steps, storageKey, o
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 10 }}>
           <h2 style={{ margin: 0, fontFamily: F.display, fontSize: T.lg, fontWeight: 600, color: C.text }}>{title}</h2>
           <span style={TX.helperMuted}>{done} of {total} done</span>
-          <button type="button" onClick={dismiss}
-            style={{ ...TX.helperMuted, marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer' }}>
+          <Btn variant="unstyled" type="button" onClick={dismiss} style={{ ...TX.helperMuted, marginLeft: 'auto' }}>
             Hide
-          </button>
+          </Btn>
         </div>
 
         <div role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}

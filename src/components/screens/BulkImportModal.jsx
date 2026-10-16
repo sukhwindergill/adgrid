@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase.js';
 import { C, F, T, SH } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { Btn } from '../primitives/Btn.jsx';
+import { Modal } from '../primitives/Modal.jsx';
 import { downloadCsv } from '../../lib/csv.js';
 import { geocodeAddress } from '../../lib/geocodeAddress.js';
 import { parseScreenCsv, validateImportRow, buildScreenInsertPayload, IMPORT_CSV_COLUMNS } from '../../lib/screenCsvImport.js';
@@ -80,12 +81,7 @@ export function BulkImportModal({ onClose, onImported }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: C.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
-      <div style={{ background: C.surface, borderRadius: 14, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', padding: 28, boxShadow: SH.modal }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-          <div style={TX.heading}>Bulk Import Screens</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: T.xl, color: C.textMuted, cursor: 'pointer' }}>×</button>
-        </div>
+    <Modal title="Bulk Import Screens" onClose={onClose} maxWidth={640}>
 
         {phase === 'pick' && (
           <div>
@@ -134,7 +130,6 @@ export function BulkImportModal({ onClose, onImported }) {
             <Btn onClick={onClose}>Done</Btn>
           </div>
         )}
-      </div>
-    </div>
+    </Modal>
   );
 }

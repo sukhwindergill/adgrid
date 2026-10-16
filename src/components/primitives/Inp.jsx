@@ -3,12 +3,12 @@ import { C } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { fieldStyle, fieldFocusStyle, useFieldFocus } from './field.js';
 
-export const Inp = ({ label, hint, error, style = {}, id, onFocus, onBlur, ...p }) => {
+export const Inp = ({ label, hint, error, style = {}, wrapperStyle, id, onFocus, onBlur, ...p }) => {
   const autoId = useId();
   const inputId = id ?? autoId;
   const [focused, focusProps] = useFieldFocus({ onFocus, onBlur });
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, ...wrapperStyle }}>
       {label && <label htmlFor={inputId} style={TX.label}>{label}</label>}
       <input
         {...p}
@@ -27,12 +27,12 @@ export const Inp = ({ label, hint, error, style = {}, id, onFocus, onBlur, ...p 
 };
 
 // Multi-line counterpart of Inp.
-export const TextArea = ({ label, hint, style = {}, id, onFocus, onBlur, ...p }) => {
+export const TextArea = ({ label, hint, style = {}, wrapperStyle, id, onFocus, onBlur, ...p }) => {
   const autoId = useId();
   const inputId = id ?? autoId;
   const [focused, focusProps] = useFieldFocus({ onFocus, onBlur });
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, ...wrapperStyle }}>
       {label && <label htmlFor={inputId} style={TX.label}>{label}</label>}
       <textarea
         {...p}

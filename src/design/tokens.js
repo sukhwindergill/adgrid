@@ -63,7 +63,7 @@ export const BRAND = {
   stripe: '#635bff', stripeHover: '#5147e6',
   meta: '#0866FF',
   google: { blue: '#4285F4', green: '#34A853', yellow: '#FBBC05', red: '#EA4335' },
-  shopify: '#95BF47', shopifyDark: '#3D6B27',
+  shopify: '#95BF47', shopifyMid: '#5E8E3E', shopifyDark: '#3D6B27',
   salesforce: '#00A1E0',
   hubspot: '#FF7A59',
   klaviyo: '#00B2A9',

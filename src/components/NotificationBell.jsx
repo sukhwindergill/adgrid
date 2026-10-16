@@ -5,7 +5,9 @@ import {
   IconTarget, IconChart, IconDollar, IconTrendUp, IconParty, IconChat,
   IconWarning, IconClipboard, IconGlobe, IconClock,
 } from "./icons.jsx";
-import { T, SH, C, F } from '../design/tokens.js';
+import { T, C, F } from '../design/tokens.js';
+import { Btn } from './primitives/Btn.jsx';
+import { MenuPanel } from './primitives/Menu.jsx';
 
 const TYPE_ICONS = {
   campaign_approved: IconTarget,
@@ -109,14 +111,15 @@ export default function NotificationBell() {
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
-      <button
+      <Btn
+        variant="unstyled"
         onClick={() => setOpen((o) => !o)}
         aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
         aria-haspopup="true"
         aria-expanded={open}
         style={{
           width: 32, height: 32, borderRadius: "50%", border: `1px solid ${C.border}`,
-          background: C.surface, cursor: "pointer", display: "flex", alignItems: "center",
+          background: C.surface, display: "flex", alignItems: "center",
           justifyContent: "center", fontSize: T.md, position: "relative",
         }}
       >
@@ -124,7 +127,7 @@ export default function NotificationBell() {
         {unread > 0 && (
           <span style={{
             position: "absolute", top: -4, right: -4,
-            background: C.red, color: C.white, borderRadius: "50%",
+            background: C.redStrong, color: C.white, borderRadius: "50%",
             width: 16, height: 16, fontSize: T.xs, fontWeight: 700,
             display: "flex", alignItems: "center", justifyContent: "center",
             fontFamily: F.sans,
@@ -132,25 +135,19 @@ export default function NotificationBell() {
             {unread > 9 ? "9+" : unread}
           </span>
         )}
-      </button>
+      </Btn>
 
       {open && (
-        <div style={{
-          position: "absolute", top: 40, right: 0, width: 320,
-          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-          boxShadow: SH.pop, zIndex: 1000, overflow: "hidden",
-          fontFamily: F.sans,
-        }}>
+        <MenuPanel style={{ top: 40, right: 0, width: 320, zIndex: 1000, overflow: "hidden", fontFamily: F.sans }}>
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "12px 16px", borderBottom: `1px solid ${C.border}`,
           }}>
             <span style={{ fontSize: T.base, fontWeight: 600, color: C.text }}>Notifications</span>
             {unread > 0 && (
-              <button onClick={markAllRead} style={{
-                fontSize: T.xs, color: C.blueText, background: "none", border: "none",
-                cursor: "pointer", fontFamily: F.sans,
-              }}>Mark all read</button>
+              <Btn variant="link" size="xs" onClick={markAllRead} style={{ fontSize: T.xs, color: C.blueText, fontWeight: 400 }}>
+                Mark all read
+              </Btn>
             )}
           </div>
 
@@ -188,7 +185,7 @@ export default function NotificationBell() {
               )}
             </div>
           ))}
-        </div>
+        </MenuPanel>
       )}
     </div>
   );

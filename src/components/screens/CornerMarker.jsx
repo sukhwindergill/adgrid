@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { C, F, T } from '../../design/tokens.js';
+import { C, F, T, alpha } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { Btn } from '../primitives/Btn.jsx';
 import { validateQuadOrientation } from '../../lib/quadWarp.js';
@@ -87,7 +87,7 @@ export function CornerMarker({ photoUrl, initialCorners, onSave, onSkip }) {
         <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
           <polygon
             points={corners.map(([x, y]) => `${x * 100}%,${y * 100}%`).join(' ')}
-            fill="rgba(123,47,255,0.15)"
+            fill={alpha(C.purple, 0.15)}
             stroke={valid ? C.purple : C.red}
             strokeWidth={2}
           />
@@ -118,9 +118,9 @@ export function CornerMarker({ photoUrl, initialCorners, onSave, onSkip }) {
       </div>
 
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-        <button type="button" onClick={onSkip} style={{ ...TX.helperMuted, background: 'none', border: 'none', cursor: 'pointer' }}>
+        <Btn variant="unstyled" type="button" onClick={onSkip} style={TX.helperMuted}>
           Skip — no clear screen edge
-        </button>
+        </Btn>
         <div style={{ flex: 1 }} />
         <Btn onClick={() => onSave(corners)} disabled={!valid}>Save corners</Btn>
       </div>

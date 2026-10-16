@@ -10,6 +10,12 @@ import { supabase } from '../../lib/supabase.js';
 import { C, F, T } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { DISPUTE_REASONS, isValidDisputeReason } from '../../lib/disputeReasons.js';
+import { Btn } from '../primitives/Btn.jsx';
+import { Modal } from '../primitives/Modal.jsx';
+import { SelInput } from '../primitives/SelInput.jsx';
+import { TextArea } from '../primitives/Inp.jsx';
+
+const actionBtn = { padding: '9px 22px' };
 
 export function FileDisputeModal({ bookingId, advertiserId, onClose, onFiled }) {
   const [reasonCode, setReasonCode] = useState(DISPUTE_REASONS[0].value);
@@ -36,13 +42,8 @@ export function FileDisputeModal({ bookingId, advertiserId, onClose, onFiled }) 
   }
 
   return (
-    <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: C.overlay, zIndex: 299 }} />
-      <div style={{
-        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-        background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20,
-        padding: '32px 28px', width: 420, zIndex: 300,
-      }}>
+    <Modal onBackdropClick={onClose} label="Report a Problem" maxWidth={420} padding="32px 28px" zIndex={300}
+      panelStyle={{ borderRadius: 20, border: `1px solid ${C.border}` }}>
         <h3 style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 20px' }}>
           Report a Problem
         </h3>
@@ -52,54 +53,46 @@ export function FileDisputeModal({ bookingId, advertiserId, onClose, onFiled }) 
             <p style={{ fontSize: T.md, color: C.greenText, fontFamily: F.sans, margin: '0 0 20px' }}>
               ✓ We've received your report and will follow up by email.
             </p>
-            <button onClick={() => { onClose(); onFiled?.(); }} style={{ padding: '9px 22px', borderRadius: 8, background: C.purple, color: C.white, border: 'none', fontFamily: F.sans, fontSize: T.base, cursor: 'pointer' }}>
+            <Btn onClick={() => { onClose(); onFiled?.(); }} style={actionBtn}>
               Done
-            </button>
+            </Btn>
           </>
         ) : (
           <>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ ...TX.body, display: 'block', fontWeight: 500, marginBottom: 6 }}>
-                What happened?
-              </label>
-              <select
-                value={reasonCode}
-                onChange={e => setReasonCode(e.target.value)}
-                style={{ ...TX.body, width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: 'none' }}
-              >
-                {DISPUTE_REASONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-              </select>
-            </div>
+            <SelInput
+              label="What happened?"
+              value={reasonCode}
+              onChange={e => setReasonCode(e.target.value)}
+              wrapperStyle={{ marginBottom: 16 }}
+              style={{ width: '100%' }}
+            >
+              {DISPUTE_REASONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+            </SelInput>
 
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ ...TX.body, display: 'block', fontWeight: 500, marginBottom: 6 }}>
-                Details (optional)
-              </label>
-              <textarea
-                value={reasonText}
-                onChange={e => setReasonText(e.target.value)}
-                maxLength={2000}
-                rows={4}
-                placeholder="Anything that helps us look into it — dates, what you expected to see, etc."
-                style={{ ...TX.body, width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, boxSizing: 'border-box', outline: 'none', resize: 'vertical' }}
-              />
-            </div>
+            <TextArea
+              label="Details (optional)"
+              value={reasonText}
+              onChange={e => setReasonText(e.target.value)}
+              maxLength={2000}
+              rows={4}
+              placeholder="Anything that helps us look into it — dates, what you expected to see, etc."
+              wrapperStyle={{ marginBottom: 20 }}
+            />
 
             {error && (
-              <div style={{ fontSize: T.base, color: C.redText, fontFamily: F.sans, marginBottom: 14 }}>{error}</div>
+              <div role="alert" style={{ ...TX.error, fontSize: T.base, marginBottom: 14 }}>{error}</div>
             )}
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button onClick={onClose} style={{ ...TX.bodySub, padding: '9px 18px', borderRadius: 8, background: 'transparent', border: `1px solid ${C.border}`, cursor: 'pointer' }}>
+              <Btn variant="secondary" onClick={onClose} style={{ padding: '9px 18px', color: C.textSub }}>
                 Cancel
-              </button>
-              <button onClick={submit} disabled={saving} style={{ padding: '9px 22px', borderRadius: 8, background: C.purple, color: C.white, border: 'none', fontFamily: F.sans, fontSize: T.base, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1 }}>
+              </Btn>
+              <Btn onClick={submit} disabled={saving} style={actionBtn}>
                 {saving ? 'Submitting…' : 'Submit Report'}
-              </button>
+              </Btn>
             </div>
           </>
         )}
-      </div>
-    </>
+    </Modal>
   );
 }
