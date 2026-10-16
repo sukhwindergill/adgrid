@@ -14,6 +14,8 @@ import { Table } from '../../components/primitives/Table.jsx';
 import { UptimeGrid } from '../../components/shared/UptimeGrid.jsx';
 import { EditScreenModal } from '../../components/screens/EditScreenModal.jsx';
 import { ScreenPhotoManager } from '../../components/screens/ScreenPhotoManager.jsx';
+import { HardwareInstructions } from '../../components/screens/ScreenPairing.jsx';
+import { HARDWARE_OPTIONS } from '../../lib/screenPairing.js';
 import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { VENUE_TAXONOMY, COUNTRIES, STATE_LABEL, SCREEN_POSITION_OPTIONS } from '../../lib/venueTypes.js';
@@ -211,7 +213,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   const [tab, setTab] = useState('overview');
   const [cvEvents, setCvEvents] = useState([]);
   const [cvLoading, setCvLoading] = useState(false);
-  const [hwType, setHwType] = useState('kiosk');
+  const [hwType, setHwType] = useState(HARDWARE_OPTIONS[0]);
   const [downtime, setDowntime] = useState([]);
   const [connStatus, setConnStatus] = useState(null); // null | 'checking' | 'ok' | 'no_heartbeat' | 'needs_payout'
   const [reactivateError, setReactivateError] = useState(null);
@@ -879,81 +881,27 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
 
       {tab === 'setup' && screen && (
   <div>
-    {/* Token section */}
     <Card style={{ marginBottom: 16 }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Screen Token</div>
-      <div style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: 13, color: C.text, wordBreak: 'break-all', letterSpacing: '0.5px', marginBottom: 8 }}>
-        {screenToken}
+      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Connect a display</div>
+      {/* Hardware selector */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
+        {HARDWARE_OPTIONS.map(hw => (
+          <button key={hw} onClick={() => setHwType(hw)} style={{
+            padding: '7px 16px', borderRadius: 20, cursor: 'pointer',
+            border: `1px solid ${hwType === hw ? C.purple : C.border}`,
+            background: hwType === hw ? C.purpleSoft : C.surface,
+            color: hwType === hw ? C.purple : C.textSub,
+            fontSize: 12, fontWeight: 500, fontFamily: F.sans, transition: 'background 0.15s',
+          }}
+            onMouseEnter={e => { if (hwType !== hw) e.currentTarget.style.background = C.surfaceAlt; }}
+            onMouseLeave={e => { if (hwType !== hw) e.currentTarget.style.background = C.surface; }}
+          >{hw}</button>
+        ))}
       </div>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <CopyButton value={screenToken} label="Copy Token" size="sm" />
-        <CopyButton value={`${window.location.origin}/display/${screenToken}`} label="Copy Player URL" size="sm" />
-      </div>
+      <HardwareInstructions hardware={hwType} screen={{ ...screen, screen_token: screenToken }} />
     </Card>
 
-    {/* Hardware selector */}
-    <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
-      {[
-        { key: 'kiosk',  label: 'Browser Kiosk' },
-        { key: 'rpi',    label: 'Raspberry Pi 5' },
-        { key: 'minipc', label: 'Mini PC' },
-        { key: 'atv',    label: 'Android TV' },
-      ].map(h => (
-        <button key={h.key} onClick={() => setHwType(h.key)} style={{
-          padding: '7px 16px', borderRadius: 20, cursor: 'pointer',
-          border: `1px solid ${hwType === h.key ? C.purple : C.border}`,
-          background: hwType === h.key ? C.purpleSoft : C.surface,
-          color: hwType === h.key ? C.purple : C.textSub,
-          fontSize: 12, fontWeight: 500, fontFamily: F.sans, transition: 'background 0.15s',
-        }}
-          onMouseEnter={e => { if (hwType !== h.key) e.currentTarget.style.background = C.surfaceAlt; }}
-          onMouseLeave={e => { if (hwType !== h.key) e.currentTarget.style.background = C.surface; }}
-        >{h.label}</button>
-      ))}
-    </div>
-
-    {hwType === 'kiosk' && (
-      <Card style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Browser Kiosk Setup</div>
-        <ol style={{ paddingLeft: 20, fontFamily: F.sans, fontSize: 13, color: C.textSub, lineHeight: 2 }}>
-          <li>Open a Chromium-based browser on your display device.</li>
-          <li>Navigate to the player URL below.</li>
-          <li>Press <strong>F11</strong> (or Cmd+Ctrl+F on Mac) to enter fullscreen.</li>
-          <li>Enable auto-start in browser settings to launch on boot.</li>
-        </ol>
-        <div style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: 11, color: C.purple, wordBreak: 'break-all', marginTop: 12 }}>
-          {`${window.location.origin}/display/${screenToken}`}
-        </div>
-      </Card>
-    )}
-
-    {(hwType === 'rpi' || hwType === 'minipc') && (
-      <Card style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
-          {hwType === 'rpi' ? 'Raspberry Pi 5' : 'Mini PC'} — Kiosk Setup
-        </div>
-        <ol style={{ paddingLeft: 20, fontFamily: F.sans, fontSize: 13, color: C.textSub, lineHeight: 2 }}>
-          <li>Install Chromium: <code style={{ background: C.surfaceAlt, padding: '1px 5px', borderRadius: 3, fontFamily: F.mono, fontSize: 12 }}>sudo apt install chromium-browser</code></li>
-          <li>Test: run the command below in a terminal.</li>
-          <li>For autostart on boot, add the autostart snippet to <code style={{ background: C.surfaceAlt, padding: '1px 5px', borderRadius: 3, fontFamily: F.mono, fontSize: 12 }}>/etc/xdg/lxsession/LXDE-pi/autostart</code>.</li>
-        </ol>
-        <div style={{ background: '#0a0a0a', borderRadius: 8, padding: '12px 14px', fontFamily: F.mono, fontSize: 11, color: '#a3e635', whiteSpace: 'pre', overflowX: 'auto', marginTop: 12 }}>
-{`chromium-browser --noerrdialogs --kiosk \\
-  --disable-infobars --disable-restore-session-state \\
-  "${window.location.origin}/display/${screenToken}"`}
-        </div>
-        <div style={{ background: '#0a0a0a', borderRadius: 8, padding: '12px 14px', fontFamily: F.mono, fontSize: 11, color: '#a3e635', whiteSpace: 'pre', overflowX: 'auto', marginTop: 8 }}>
-{`# /etc/xdg/lxsession/LXDE-pi/autostart
-@xset s off
-@xset -dpms
-@xset s noblank
-@chromium-browser --noerrdialogs --kiosk --disable-infobars \\
-  "${window.location.origin}/display/${screenToken}"`}
-        </div>
-      </Card>
-    )}
-
-    {(hwType === 'rpi' || hwType === 'minipc') && (
+    {(hwType === 'Raspberry Pi 5' || hwType === 'Mini PC') && (
       <Card style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
           Audience Measurement Camera (optional)
@@ -988,23 +936,17 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       </Card>
     )}
 
-    {hwType === 'atv' && (
-      <Card style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Android TV Setup</div>
-        <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.6 }}>
-          There's no native AdGrid app for Android TV yet — use a kiosk browser app instead.
-        </div>
-        <ol style={{ paddingLeft: 20, fontFamily: F.sans, fontSize: 13, color: C.textSub, lineHeight: 2 }}>
-          <li>Install <strong>Fully Kiosk Browser</strong> from the Google Play Store on your Android TV.</li>
-          <li>Open it, go to Settings → Web Content → Start URL, and paste the player URL below.</li>
-          <li>Enable Settings → Other → Kiosk Mode and "Start on boot" so it auto-launches.</li>
-          <li>Restart the device to confirm it boots straight into the display.</li>
-        </ol>
-        <div style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: 11, color: C.purple, wordBreak: 'break-all', marginTop: 12 }}>
-          {`${window.location.origin}/display/${screenToken}`}
-        </div>
-      </Card>
-    )}
+    {/* Screen token -- the camera agent (screen-agent/.env) still needs it. */}
+    <Card style={{ marginBottom: 16 }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Screen Token</div>
+      <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, marginBottom: 12 }}>
+        Only needed for the audience camera agent or the advanced player URL. Keep it private — it authenticates your display.
+      </div>
+      <div style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: 13, color: C.text, wordBreak: 'break-all', letterSpacing: '0.5px', marginBottom: 8 }}>
+        {screenToken}
+      </div>
+      <CopyButton value={screenToken} label="Copy Token" size="sm" />
+    </Card>
 
     {/* Test connection — for a screen that isn't live yet, a successful
         heartbeat also attempts to go live (gated on Stripe Connect; see

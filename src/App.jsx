@@ -71,6 +71,7 @@ const AdvertiserVerificationView = lazy(() => import('./views/advertiser/Adverti
 const InviteAcceptPage = lazy(() => import('./views/invite/InviteAcceptPage.jsx').then(m => ({ default: m.InviteAcceptPage })));
 const ScreenInvitePage = lazy(() => import('./views/invite/ScreenInvitePage.jsx').then(m => ({ default: m.ScreenInvitePage })));
 const DisplayPlayer  = lazy(() => import('./views/display/DisplayPlayer.jsx').then(m => ({ default: m.DisplayPlayer })));
+const PairScreen     = lazy(() => import('./views/display/PairScreen.jsx').then(m => ({ default: m.PairScreen })));
 const MarketingHome  = lazy(() => import('./views/marketing/Home.jsx').then(m => ({ default: m.MarketingHome })));
 const NotFound       = lazy(() => import('./views/marketing/NotFound.jsx').then(m => ({ default: m.NotFound })));
 const PrivacyPolicy  = lazy(() => import('./views/legal/PrivacyPolicy.jsx').then(m => ({ default: m.PrivacyPolicy })));
@@ -687,6 +688,7 @@ export default function App() {
         <Route path="/thank-you" element={<ThankYou />} />
         <Route path="/screens" element={<PublicScreens />} />
         <Route path="/display/:token" element={<DisplayPlayerRoute />} />
+        <Route path="/pair" element={<ErrorBoundary fallback={() => <DisplayCrashFallback />}><PairScreen /></ErrorBoundary>} />
         <Route path="/report/:token" element={<CampaignReport />} />
         <Route path="/invite/screen/:token" element={<ScreenInvitePage />} />
         <Route path="/invite/:token" element={<InviteAcceptPage />} />
@@ -724,10 +726,10 @@ export default function App() {
 }
 
 // Skip-link + scroll-to-top + scroll-progress-bar, mounted for every route
-// except the unattended kiosk display player.
+// except the unattended kiosk display player and its /pair screen.
 function SiteChrome() {
   const location = useLocation();
-  if (location.pathname.startsWith('/display/')) return null;
+  if (location.pathname.startsWith('/display/') || location.pathname === '/pair') return null;
   return (
     <>
       <SkipLink />
