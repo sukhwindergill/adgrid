@@ -7,6 +7,7 @@ import { KPI } from '../../components/primitives/KPI.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { Hover } from '../../components/primitives/Hover.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { SkeletonKPI } from '../../components/primitives/Skeleton.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
@@ -79,14 +80,13 @@ function HourlyChart({ data }) {
   return (
     <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end', height: 64 }}>
       {data.map((v, i) => (
-        <div key={i} style={{
+        <Hover key={i} style={{
           flex: 1, height: `${Math.max(4, (v / max) * 100)}%`,
           background: C.purple, borderRadius: '2px 2px 0 0',
           opacity: 0.25, transition: 'opacity 0.15s', cursor: 'default',
         }}
           title={`${String(i).padStart(2, '0')}:00`}
-          onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-          onMouseLeave={e => e.currentTarget.style.opacity = '0.25'}
+          hoverStyle={{ opacity: 1 }}
         />
       ))}
     </div>
@@ -293,10 +293,7 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
             {active.slice(0, 5).map(c => {
               const pct = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
               return (
-                <Card key={c.id} style={{ padding: '16px 20px', transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'pointer' }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = SH.lift; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-                >
+                <Card key={c.id} lift style={{ padding: '16px 20px', transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'pointer' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                     <div>
                       <div style={TX.title}>{c.advertiser}</div>

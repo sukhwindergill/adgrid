@@ -6,6 +6,7 @@ import { C, F, T } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { Hover } from '../../components/primitives/Hover.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
@@ -381,12 +382,11 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
                   : [];
 
                 return (
-                  <div key={row.screen_id} style={{
+                  <Hover key={row.screen_id} style={{
                     display: 'flex', flexDirection: 'column', gap: 6,
                     padding: 6, margin: -6, borderRadius: 8, transition: 'background-color 150ms ease',
                   }}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = C.surfaceAlt}
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                    hoverStyle={{ backgroundColor: C.surfaceAlt }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <div style={{ flex: 1, minWidth: 120 }}>
@@ -424,7 +424,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
                         <IconWarning size={10} /> Creative may not fit ({fitChecks[0].reasons.map(r => REASON_LABEL[r] ?? r).join(', ')})
                       </span>
                     )}
-                  </div>
+                  </Hover>
                 );
               })}
             </div>
@@ -448,12 +448,12 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
           <div style={{ ...TX.error, fontWeight: 600, marginBottom: 8 }}>Select a reason for rejection:</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
             {REJECT_REASONS.map(r => (
-              <button key={r} type="button" onClick={() => setRejectReason(r)} style={{
-                padding: '5px 12px', borderRadius: 20, cursor: 'pointer', fontSize: T.sm, fontFamily: F.sans,
-                border: `1px solid ${rejectReason === r ? C.red : C.redBorder}`,
-                background: rejectReason === r ? C.red : 'transparent',
+              <Btn variant="unstyled" key={r} type="button" aria-pressed={rejectReason === r} onClick={() => setRejectReason(r)} style={{
+                padding: '5px 12px', borderRadius: 20, fontSize: T.sm, fontFamily: F.sans,
+                border: `1px solid ${rejectReason === r ? C.redStrong : C.redBorder}`,
+                background: rejectReason === r ? C.redStrong : 'transparent',
                 color: rejectReason === r ? C.white : C.redText,
-              }}>{r}</button>
+              }}>{r}</Btn>
             ))}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -836,13 +836,13 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
             )}
           </div>
         </div>
-        <button type="button" onClick={toggleAutoApprove} disabled={togglingAuto} style={{
-          padding: '6px 16px', borderRadius: 20, cursor: 'pointer',
+        <Btn variant="unstyled" type="button" aria-pressed={autoApprove} onClick={toggleAutoApprove} disabled={togglingAuto} style={{
+          padding: '6px 16px', borderRadius: 20,
           border: `1px solid ${autoApprove ? C.green : C.border}`,
           background: autoApprove ? C.greenSoft : C.surface,
           color: autoApprove ? C.greenText : C.textSub,
           fontSize: T.sm, fontWeight: 600, fontFamily: F.sans, flexShrink: 0,
-        }}>{togglingAuto ? '…' : autoApprove ? 'ON' : 'OFF'}</button>
+        }}>{togglingAuto ? '…' : autoApprove ? 'ON' : 'OFF'}</Btn>
       </Card>
 
       {totalPending === 0 ? (

@@ -14,6 +14,7 @@ import { Card } from '../../components/primitives/Card.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { Table } from '../../components/primitives/Table.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { Chip } from '../../components/primitives/Chip.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { SkeletonRow, SkeletonTable } from '../../components/primitives/Skeleton.jsx';
@@ -190,16 +191,9 @@ export function Revenue({ operatorScreenIds = [] }) {
         actions={
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {[[30, '30d'], [90, '90d'], [365, '365d'], [null, 'All']].map(([d, label]) => (
-              <button key={label} onClick={() => setPeriod(d)} style={{
-                padding: '5px 12px', borderRadius: 8, fontSize: T.sm, cursor: 'pointer',
-                border: `1px solid ${period === d ? C.purple : C.border}`,
-                background: period === d ? C.purpleSoft : C.surface,
-                color: period === d ? C.purple : C.textSub, fontFamily: F.sans, fontWeight: 500,
-                transition: 'background 0.15s',
-              }}
-                onMouseEnter={e => { if (period !== d) e.currentTarget.style.background = C.surfaceAlt; }}
-                onMouseLeave={e => { if (period !== d) e.currentTarget.style.background = C.surface; }}
-              >{label}</button>
+              <Chip key={label} selected={period === d} onClick={() => setPeriod(d)} style={{
+                padding: '5px 12px', borderRadius: 8, fontWeight: 500, transition: 'background 0.15s',
+              }}>{label}</Chip>
             ))}
             <Btn variant="secondary" size="sm" onClick={() => downloadCsv(revenueToCsv(filteredCampaigns, ownerRevenueShare), 'adgrid-revenue.csv')}>↓ Export Report</Btn>
           </div>

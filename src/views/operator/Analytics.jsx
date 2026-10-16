@@ -14,9 +14,21 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { BenchmarkRow } from '../../components/shared/BenchmarkRow.jsx';
 import { useOperatorCampaignIds } from '../../hooks/useOperatorCampaignIds.js';
+import { Btn } from '../../components/primitives/Btn.jsx';
+import { Chip } from '../../components/primitives/Chip.jsx';
+import { Hover } from '../../components/primitives/Hover.jsx';
+import { Inp } from '../../components/primitives/Inp.jsx';
+import { SelInput } from '../../components/primitives/SelInput.jsx';
+import { Notice } from '../../components/primitives/Notice.jsx';
+
+const toolbarField = { padding: '6px 10px', borderRadius: 8, fontSize: T.sm, transition: 'border-color 0.15s' };
+const filterSelect = { ...TX.body, padding: '6px 10px', transition: 'border-color 0.15s' };
+const toolbarCard = { display: 'flex', alignItems: 'center', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 };
 import { normalizeBooking } from '../../lib/normalizeBooking.js';
 
 const RECENT_CAMPAIGNS_LIMIT = 50;
+
+const bannerNotice = { padding: '12px 16px', marginBottom: 20, fontSize: T.base };
 
 const EMPTY_HOURLY = Array(24).fill(0);
 const EMPTY_DAY    = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
@@ -27,16 +39,13 @@ function HeatmapGrid({ data }) {
   return (
     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
       {data.map((v, i) => (
-        <div key={i} title={`${String(i).padStart(2, '0')}:00 — ${v} people`} style={{
+        <Hover key={i} title={`${String(i).padStart(2, '0')}:00 — ${v} people`} hoverStyle={{ transform: 'scale(1.15)' }} style={{
           width: 36, height: 36, borderRadius: 6, background: v === 0 ? C.surfaceAlt : C.purple,
           opacity: v === 0 ? 1 : 0.20 + (v / max) * 0.80,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: T.xs, fontFamily: F.mono, color: v / max > 0.4 ? C.white : C.textMuted,
           cursor: 'default', transition: 'transform 0.15s',
-        }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-        >{i}</div>
+        }}>{i}</Hover>
       ))}
     </div>
   );
@@ -255,18 +264,13 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', gap: 4 }}>
               {[7, 30, 90].map(d => (
-                <button key={d} onClick={() => { setPeriod(d); setCustomFrom(''); setCustomTo(''); }} style={{
-                  padding: '5px 12px', borderRadius: 8, fontSize: T.sm, cursor: 'pointer',
-                  border: `1px solid ${period === d ? C.purple : C.border}`,
-                  background: period === d ? C.purpleSoft : C.surface,
-                  color: period === d ? C.purple : C.textSub, fontFamily: F.sans, fontWeight: 500, transition: 'background 0.15s',
-                }}
-                  onMouseEnter={e => { if (period !== d) e.currentTarget.style.background = C.surfaceAlt; }}
-                  onMouseLeave={e => { if (period !== d) e.currentTarget.style.background = C.surface; }}
-                >{d}d</button>
+                <Chip key={d} selected={period === d} onClick={() => { setPeriod(d); setCustomFrom(''); setCustomTo(''); }} style={{
+                  padding: '5px 12px', borderRadius: 8, fontWeight: 500, transition: 'background 0.15s',
+                }}>{d}d</Chip>
               ))}
             </div>
-            <select
+            <SelInput
+              aria-label="Date range"
               value={period === 'custom' ? 'custom' : period}
               onChange={e => setPeriod(e.target.value === 'custom' ? 'custom' : Number(e.target.value))}
               style={{
@@ -278,95 +282,56 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
                 backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center',
                 transition: 'border-color 0.15s',
               }}
-              onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-              onBlur={e => { e.currentTarget.style.borderColor = period === 'custom' ? C.purple : C.border; }}
             >
               <option value="custom">Custom…</option>
-            </select>
+            </SelInput>
           </div>
         }
       />
 
       {period === 'custom' && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '12px 16px', background: C.surface, border: `1px solid ${C.border}`,
-          borderRadius: 12, marginBottom: 16,
-        }}>
+        <div style={{ ...toolbarCard, gap: 8, padding: '12px 16px', marginBottom: 16 }}>
           <span style={{ ...TX.helper, fontWeight: 600 }}>Date range:</span>
-          <input
-            type="date"
-            value={customFrom}
-            onChange={e => setCustomFrom(e.target.value)}
-            style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: T.sm, fontFamily: F.sans, background: C.surface, color: C.text, outline: 'none', transition: 'border-color 0.15s' }}
-            onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-            onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-          />
+          <Inp type="date" aria-label="From date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} style={{ ...toolbarField, width: 'auto' }} />
           <span style={TX.helper}>to</span>
-          <input
-            type="date"
-            value={customTo}
-            onChange={e => setCustomTo(e.target.value)}
-            style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: T.sm, fontFamily: F.sans, background: C.surface, color: C.text, outline: 'none', transition: 'border-color 0.15s' }}
-            onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-            onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-          />
+          <Inp type="date" aria-label="To date" value={customTo} onChange={e => setCustomTo(e.target.value)} style={{ ...toolbarField, width: 'auto' }} />
         </div>
       )}
 
       {!hasReal && !loading && loadError && (
-        <div style={{
-          padding: '12px 16px', background: C.redSoft, border: `1px solid ${C.redBorder}`,
-          borderRadius: 8, marginBottom: 20, fontSize: T.base, color: C.redText, fontFamily: F.sans,
-        }}>
+        <Notice tone="error" style={bannerNotice}>
           Couldn't load verified impression data — check your connection and try again. Showing estimated data below in the meantime.
-        </div>
+        </Notice>
       )}
 
       {!hasReal && !loading && !loadError && (
-        <div style={{
-          padding: '12px 16px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`,
-          borderRadius: 8, marginBottom: 20, fontSize: T.base, color: C.amberText, fontFamily: F.sans,
-        }}>
+        <Notice tone="warning" style={bannerNotice}>
           No impression data yet — connect a Screen Agent to start tracking verified impressions. Showing estimated data below.
-        </div>
+        </Notice>
       )}
 
       {/* Filter bar */}
-      <div style={{
-        display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap',
-        padding: '14px 16px', background: C.surface, border: `1px solid ${C.border}`,
-        borderRadius: 12, marginBottom: 24,
-      }}>
+      <div style={{ ...toolbarCard, gap: 12, flexWrap: 'wrap', padding: '14px 16px', marginBottom: 24 }}>
         <span style={{ ...TX.helper, fontWeight: 600 }}>Filter by:</span>
-        <select value={filters.gender} onChange={e => setFilters(f => ({ ...f, gender: e.target.value }))}
-          style={{ ...TX.body, padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-        >
+        <SelInput aria-label="Gender" value={filters.gender} onChange={e => setFilters(f => ({ ...f, gender: e.target.value }))} style={filterSelect}>
           <option value="">All Genders</option>
           <option value="Female">Female</option>
           <option value="Male">Male</option>
-        </select>
-        <select value={filters.age} onChange={e => setFilters(f => ({ ...f, age: e.target.value }))}
-          style={{ ...TX.body, padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-        >
+        </SelInput>
+        <SelInput aria-label="Age" value={filters.age} onChange={e => setFilters(f => ({ ...f, age: e.target.value }))} style={filterSelect}>
           <option value="">All Ages</option>
           <option value="18-24">18–24</option>
           <option value="25-34">25–34</option>
           <option value="35-44">35–44</option>
           <option value="45-54">45–54</option>
           <option value="55+">55+</option>
-        </select>
-        <button onClick={() => setFilters({ gender: '', age: '' })}
-          style={{ ...TX.bodySub, padding: '6px 14px', background: 'none', border: `1px solid ${C.border}`, borderRadius: 8, cursor: 'pointer', transition: 'background 0.15s' }}
-          onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+        </SelInput>
+        <Btn variant="secondary" onClick={() => setFilters({ gender: '', age: '' })}
+          style={{ ...TX.bodySub, padding: '6px 14px', background: 'none', boxShadow: 'none' }}
+          hoverStyle={{ background: C.surfaceAlt }}
         >
           Reset
-        </button>
+        </Btn>
         {hasReal && (
           <span style={{ marginLeft: 'auto', fontSize: T.xs, color: C.greenText, fontFamily: F.sans, fontWeight: 600 }}>
             ✓ Verified impressions

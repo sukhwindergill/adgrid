@@ -85,7 +85,7 @@ export const SH = {
   lift:  '0 8px 25px rgba(0,0,0,0.1)',
   pop:   '0 8px 30px rgba(0,0,0,0.12)', // dropdowns, popovers
   modal: '0 24px 60px rgba(0,0,0,0.15)',
-  drawer: '-8px 0 32px rgba(0,0,0,0.12)',
+  drawer: '-8px 0 32px rgba(0,0,0,0.08)',
   sheet: '0 -8px 24px rgba(0,0,0,0.08)',
   knob:  '0 1px 3px rgba(0,0,0,0.2)', // switch knobs
   focus: '0 0 0 3px rgba(123,47,255,0.35)',

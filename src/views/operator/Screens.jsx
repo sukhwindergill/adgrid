@@ -4,6 +4,7 @@ import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { Chip } from '../../components/primitives/Chip.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
@@ -45,10 +46,8 @@ function ScreenCard({ screen, onClick }) {
     (screen.venue_category ? VENUE_TAXONOMY[screen.venue_category]?.label : null);
 
   return (
-    <Card style={{ padding: 0, transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'pointer', overflow: 'hidden' }}
+    <Card lift style={{ padding: 0, transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'pointer', overflow: 'hidden' }}
       onClick={onClick}
-      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = SH.lift; }}
-      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
     >
       {/* Photo banner */}
       {firstPhoto && (
@@ -230,16 +229,9 @@ export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelect
           onChange={e => setSearch(e.target.value)} style={{ minWidth: 240, width: 320, maxWidth: '100%' }} />
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {cities.map(c => (
-            <button key={c} onClick={() => setFilter(c)} style={{
-              padding: '6px 14px', borderRadius: 20, cursor: 'pointer',
-              border: `1px solid ${filter === c ? C.purple : C.border}`,
-              background: filter === c ? C.purpleSoft : C.surface,
-              color: filter === c ? C.purple : C.textSub,
-              fontSize: T.sm, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
-            }}
-              onMouseEnter={e => { if (filter !== c) e.currentTarget.style.background = C.surfaceAlt; }}
-              onMouseLeave={e => { if (filter !== c) e.currentTarget.style.background = C.surface; }}
-            >{c}</button>
+            <Chip key={c} selected={filter === c} onClick={() => setFilter(c)} style={{
+              padding: '6px 14px', borderRadius: 20, fontWeight: 500, transition: 'all 0.15s',
+            }}>{c}</Chip>
           ))}
         </div>
       </div>

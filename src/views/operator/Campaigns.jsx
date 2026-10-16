@@ -5,6 +5,9 @@ import { TX } from '../../design/text.js';
 import { SkeletonRow, SkeletonCard } from '../../components/primitives/Skeleton.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { Chip } from '../../components/primitives/Chip.jsx';
+import { Inp } from '../../components/primitives/Inp.jsx';
+import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { scopedBookings, applyBookingSearch } from '../../lib/bookingsQuery.js';
@@ -303,30 +306,23 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ display: 'flex', gap: 4 }}>
           {STATUS_TABS.map(([v, l]) => (
-            <button key={v} onClick={() => setFilter(v)} style={{
-              padding: '6px 14px', borderRadius: 20,
-              border: `1px solid ${filter === v ? C.purple : C.border}`,
-              background: filter === v ? C.purpleSoft : C.surface,
-              color: filter === v ? C.purple : C.textSub,
-              fontSize: T.sm, fontWeight: 500, cursor: 'pointer', fontFamily: F.sans, transition: 'all 0.15s',
-            }}
-              onMouseEnter={e => { if (filter !== v) e.currentTarget.style.background = C.surfaceAlt; }}
-              onMouseLeave={e => { if (filter !== v) e.currentTarget.style.background = C.surface; }}
-            >{l}</button>
+            <Chip key={v} selected={filter === v} onClick={() => setFilter(v)} style={{
+              padding: '6px 14px', borderRadius: 20, fontWeight: 500, transition: 'all 0.15s',
+            }}>{l}</Chip>
           ))}
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input
+          <Inp
             type="search"
             value={searchInput}
             onChange={e => setSearchInput(e.target.value)}
             placeholder="Search campaigns…"
             aria-label="Search campaigns"
-            style={{ padding: '6px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: T.sm, fontFamily: F.sans, color: C.text, background: C.surface, outline: 'none', minWidth: isMobile ? 0 : 200, opacity: rowsLoading ? 0.7 : 1 }}
+            style={{ padding: '6px 12px', fontSize: T.sm, minWidth: isMobile ? 0 : 200, opacity: rowsLoading ? 0.7 : 1 }}
           />
-          <select value={city} onChange={e => setCity(e.target.value)} style={{ padding: '6px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: T.sm, fontFamily: F.sans, color: C.textMid, background: C.surface, outline: 'none' }}>
+          <SelInput aria-label="Filter by city" value={city} onChange={e => setCity(e.target.value)} style={{ padding: '6px 12px', fontSize: T.sm, color: C.textMid }}>
             {cities.map(c => <option key={c}>{c}</option>)}
-          </select>
+          </SelInput>
         </div>
       </div>
 

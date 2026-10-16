@@ -1,9 +1,10 @@
 import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
-import { C, F, T } from '../../design/tokens.js';
+import { C, F, T, alpha } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { Hover } from '../../components/primitives/Hover.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { ApproveBtn } from '../../lib/campaignActions.jsx';
 import { pluralize } from '../../lib/pluralize.js';
@@ -21,7 +22,7 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
   const toast = useToast();
 
   return (
-    <div
+    <Hover
       onClick={e => { if (e.defaultPrevented) return; compareMode ? onToggleCompare?.(c.id) : setDetail(c); }}
       style={{
         background: isPending ? C.amberSoft : C.surface,
@@ -29,8 +30,8 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
         borderRadius: 12, padding: '16px 20px', cursor: 'pointer', transition: 'all 0.15s',
         display: 'flex', alignItems: 'flex-start', gap: 12,
       }}
-      onMouseEnter={e => { if (!compareMode) { e.currentTarget.style.borderColor = isPending ? C.amber : C.purpleBorder; e.currentTarget.style.boxShadow = '0 4px 12px rgba(124,58,237,0.08)'; } }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = compareMode && compareSelected ? C.purple : isPending ? C.amberBorder : C.border; e.currentTarget.style.boxShadow = 'none'; }}
+      hoverStyle={{ border: `1px solid ${isPending ? C.amber : C.purpleBorder}`, boxShadow: `0 4px 12px ${alpha(C.purple, 0.08)}` }}
+      disabled={compareMode}
     >
       {compareMode && (
         <input
@@ -110,6 +111,6 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
           <Badge status={badgeStatus} />
         )}
       </div>
-    </div>
+    </Hover>
   );
 }

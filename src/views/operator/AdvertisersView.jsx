@@ -7,6 +7,11 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useOperatorCampaignIds } from "../../hooks/useOperatorCampaignIds.js";
 import { PageHeader } from "../../components/primitives/PageHeader.jsx";
 import { Btn } from "../../components/primitives/Btn.jsx";
+import { Pill } from "../../components/primitives/Pill.jsx";
+import { Hover } from "../../components/primitives/Hover.jsx";
+import { Inp } from "../../components/primitives/Inp.jsx";
+import { SelInput } from "../../components/primitives/SelInput.jsx";
+import { Modal, CloseButton } from "../../components/primitives/Modal.jsx";
 import { T, SH, C, F } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 
@@ -29,29 +34,25 @@ async function callManageAdvertiser(action, payload) {
 }
 
 function StatusBadge({ status }) {
-  const styles = {
-    active: { bg: C.greenSoft, color: C.green },
-    suspended: { bg: C.redSoft, color: C.red },
-  };
-  const s = styles[status] ?? styles.active;
   return (
-    <span style={{ padding: "2px 9px", borderRadius: 12, fontSize: T.xs, fontWeight: 600, background: s.bg, color: s.color, textTransform: "capitalize" }}>
+    <Pill tone={status === "suspended" ? "red" : "green"} style={{ textTransform: "capitalize" }}>
       {status ?? "active"}
-    </span>
+    </Pill>
   );
 }
 
-function Modal({ title, onClose, children }) {
+function ActionModal({ title, onClose, children }) {
   return (
-    <div style={{ position: "fixed", inset: 0, background: C.overlay, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <div style={{ background: C.surface, borderRadius: 16, padding: 28, width: 400, maxWidth: "calc(100vw - 32px)", boxShadow: SH.modal, fontFamily: F.sans }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, marginBottom: 20 }}>{title}</div>
-        {children}
-        <Btn variant="secondary" size="sm" style={{ marginTop: 16 }} onClick={onClose}>Cancel</Btn>
-      </div>
-    </div>
+    <Modal title={title} onBackdropClick={onClose} maxWidth={400} zIndex={1000} panelStyle={{ borderRadius: 16 }}>
+      {children}
+      <Btn variant="secondary" size="sm" style={{ marginTop: 16 }} onClick={onClose}>Cancel</Btn>
+    </Modal>
   );
 }
+
+const statTile = { background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px" };
+const amountField = { fontSize: T.md, transition: "border-color 0.15s" };
+const td = { padding: "12px 16px" };
 
 function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate }) {
   const toast = useToast();
@@ -119,22 +120,20 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
   }
 
   return (
-    <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: 520, maxWidth: "100vw", background: C.surface, borderLeft: `1px solid ${C.border}`, boxShadow: "-8px 0 32px rgba(0,0,0,0.08)", zIndex: 200, display: "flex", flexDirection: "column", fontFamily: F.sans }}>
+    <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: 520, maxWidth: "100vw", background: C.surface, borderLeft: `1px solid ${C.border}`, boxShadow: SH.drawer, zIndex: 200, display: "flex", flexDirection: "column", fontFamily: F.sans }}>
       <div style={{ padding: "20px 24px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text }}>{adv.name}</div>
           <div style={{ fontSize: T.base, color: C.textSub }}>{adv.email} · {adv.company_name ?? "No company"}</div>
         </div>
         <StatusBadge status={adv.status} />
-        <button onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", fontSize: T.xl, color: C.textSub }}>✕</button>
+        <CloseButton onClick={onClose} style={{ color: C.textSub }} />
       </div>
 
       <div style={{ display: "flex", padding: "0 24px", borderBottom: `1px solid ${C.border}` }}>
         {["overview", "billing", "actions"].map((t) => (
-          <button key={t} onClick={() => setTab(t)} style={{ padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontFamily: F.sans, fontSize: T.base, fontWeight: tab === t ? 600 : 400, color: tab === t ? C.purple : C.textSub, textTransform: "capitalize", borderBottom: tab === t ? `2px solid ${C.purple}` : "2px solid transparent", transition: "color 0.15s" }}
-            onMouseEnter={e => { if (tab !== t) e.currentTarget.style.color = C.text; }}
-            onMouseLeave={e => { if (tab !== t) e.currentTarget.style.color = C.textSub; }}
-          >{t}</button>
+          <Btn variant="unstyled" key={t} onClick={() => setTab(t)} hoverStyle={tab === t ? undefined : { color: C.text }} style={{ padding: "12px 16px", fontFamily: F.sans, fontSize: T.base, fontWeight: tab === t ? 600 : 400, color: tab === t ? C.purple : C.textSub, textTransform: "capitalize", borderBottom: tab === t ? `2px solid ${C.purple}` : "2px solid transparent", transition: "color 0.15s" }}
+          >{t}</Btn>
         ))}
       </div>
 
@@ -148,7 +147,7 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
                 { label: "Total Scans", value: scans.length },
                 { label: "Credits", value: `$${(adv.credits ?? 0).toFixed(2)}` },
               ].map(({ label, value }) => (
-                <div key={label} style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px" }}>
+                <div key={label} style={statTile}>
                   <div style={{ fontSize: T.sm, color: C.textSub }}>{label}</div>
                   <div style={{ fontSize: T.xxl, fontWeight: 700, color: C.text, marginTop: 4 }}>{value}</div>
                 </div>
@@ -180,11 +179,11 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
               </div>
             </div>
             <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
-              <div style={{ flex: 1, background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px" }}>
+              <div style={{ ...statTile, flex: 1 }}>
                 <div style={{ fontSize: T.sm, color: C.textSub }}>Total Spend</div>
                 <div style={{ fontSize: T.xxl, fontWeight: 700, color: C.text }}>${totalSpend.toLocaleString()}</div>
               </div>
-              <div style={{ flex: 1, background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px" }}>
+              <div style={{ ...statTile, flex: 1 }}>
                 <div style={{ fontSize: T.sm, color: C.textSub }}>Credits Balance</div>
                 <div style={{ fontSize: T.xxl, fontWeight: 700, color: C.text }}>${(adv.credits ?? 0).toFixed(2)}</div>
               </div>
@@ -219,31 +218,25 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
       </div>
 
       {modal === "credits" && (
-        <Modal title="Add Credits" onClose={() => setModal(null)}>
-          <input type="number" min="0" step="0.01" value={creditsAmount} onChange={(e) => setCreditsAmount(e.target.value)} placeholder="50.00"
-            style={{ width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: T.md, marginBottom: 12, boxSizing: "border-box", outline: "none", transition: "border-color 0.15s" }}
-            onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-            onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-          />
+        <ActionModal title="Add Credits" onClose={() => setModal(null)}>
+          <Inp type="number" min="0" step="0.01" value={creditsAmount} onChange={(e) => setCreditsAmount(e.target.value)} placeholder="50.00"
+            aria-label="Credit amount" wrapperStyle={{ marginBottom: 12 }} style={amountField} />
           <Btn variant="success" onClick={addCredits} loading={saving}>Add Credits</Btn>
-        </Modal>
+        </ActionModal>
       )}
       {modal === "rate" && (
-        <Modal title="Set Custom CPM Rate" onClose={() => setModal(null)}>
+        <ActionModal title="Set Custom CPM Rate" onClose={() => setModal(null)}>
           <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 10 }}>Leave blank to use default rate.</div>
-          <input type="number" min="0" step="0.01" value={rateAmount} onChange={(e) => setRateAmount(e.target.value)} placeholder="e.g. 12.50"
-            style={{ width: "100%", padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: T.md, marginBottom: 12, boxSizing: "border-box", outline: "none", transition: "border-color 0.15s" }}
-            onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-            onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-          />
+          <Inp type="number" min="0" step="0.01" value={rateAmount} onChange={(e) => setRateAmount(e.target.value)} placeholder="e.g. 12.50"
+            aria-label="CPM rate" wrapperStyle={{ marginBottom: 12 }} style={amountField} />
           <Btn onClick={saveRate} loading={saving}>Save Rate</Btn>
-        </Modal>
+        </ActionModal>
       )}
       {modal === "suspend" && (
-        <Modal title="Suspend Account?" onClose={() => setModal(null)}>
+        <ActionModal title="Suspend Account?" onClose={() => setModal(null)}>
           <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 16 }}>{adv.name}'s campaigns will be paused and they will lose access to the platform.</div>
           <Btn variant="danger" onClick={() => updateStatus("suspended")} loading={saving}>Yes, Suspend</Btn>
-        </Modal>
+        </ActionModal>
       )}
     </div>
   );
@@ -370,20 +363,14 @@ export default function AdvertisersView({ onImpersonate }) {
     <div style={{ maxWidth: 1100 }}>
       <PageHeader title="Advertisers" subtitle="Every advertiser on your network — spend, status, and account actions" />
       <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
-        <input placeholder="Search name, email, company…" value={search} onChange={(e) => setSearch(e.target.value)}
-          style={{ ...TX.body, flex: 1, padding: "9px 14px", border: `1px solid ${C.border}`, borderRadius: 8, outline: "none", transition: "border-color 0.15s" }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-        />
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-          style={{ ...TX.body, padding: "9px 14px", border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, outline: "none", transition: "border-color 0.15s" }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-        >
+        <Inp placeholder="Search name, email, company…" aria-label="Search advertisers" value={search} onChange={(e) => setSearch(e.target.value)}
+          wrapperStyle={{ flex: 1 }} style={{ padding: "9px 14px", transition: "border-color 0.15s" }} />
+        <SelInput aria-label="Filter by status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+          style={{ padding: "9px 14px", transition: "border-color 0.15s" }}>
           <option value="all">All statuses</option>
           <option value="active">Active</option>
           <option value="suspended">Suspended</option>
-        </select>
+        </SelInput>
       </div>
       {checked.size > 0 && (
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", marginBottom: 12, background: C.purpleSoft, border: `1px solid ${C.purpleBorder}`, borderRadius: 10 }}>
@@ -411,21 +398,20 @@ export default function AdvertisersView({ onImpersonate }) {
               const spend = advCamps.reduce((s, c) => s + (c.budget ?? 0), 0);
               const active = advCamps.filter((c) => c.status === "active").length;
               return (
-                <tr key={a.id} onClick={() => setSelected(a)} style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer", background: selected?.id === a.id ? C.purpleSoft : "transparent", transition: "background 0.15s" }}
-                  onMouseEnter={e => { if (selected?.id !== a.id) e.currentTarget.style.background = C.surfaceAlt; }}
-                  onMouseLeave={e => { if (selected?.id !== a.id) e.currentTarget.style.background = "transparent"; }}
+                <Hover as="tr" key={a.id} onClick={() => setSelected(a)} style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer", background: selected?.id === a.id ? C.purpleSoft : "transparent", transition: "background 0.15s" }}
+                  hoverStyle={{ background: C.surfaceAlt }} disabled={selected?.id === a.id}
                 >
-                  <td style={{ padding: "12px 16px" }} onClick={(e) => e.stopPropagation()}>
+                  <td style={td} onClick={(e) => e.stopPropagation()}>
                     <input type="checkbox" checked={checked.has(a.id)} onChange={() => toggleChecked(a.id)} />
                   </td>
-                  <td style={{ padding: "12px 16px", fontWeight: 500, color: C.text }}>{a.name ?? "—"}</td>
-                  <td style={{ padding: "12px 16px", color: C.textSub }}>{a.email}</td>
-                  <td style={{ padding: "12px 16px", color: C.textSub }}>{a.company_name ?? "—"}</td>
-                  <td style={{ padding: "12px 16px" }}><StatusBadge status={a.status} /></td>
-                  <td style={{ padding: "12px 16px", color: C.text }}>${spend.toLocaleString()}</td>
-                  <td style={{ padding: "12px 16px", color: C.text }}>{active}</td>
-                  <td style={{ padding: "12px 16px", color: C.textSub, fontSize: T.sm }}>{a.created_at ? new Date(a.created_at).toLocaleDateString() : "—"}</td>
-                </tr>
+                  <td style={{ ...td, fontWeight: 500, color: C.text }}>{a.name ?? "—"}</td>
+                  <td style={{ ...td, color: C.textSub }}>{a.email}</td>
+                  <td style={{ ...td, color: C.textSub }}>{a.company_name ?? "—"}</td>
+                  <td style={td}><StatusBadge status={a.status} /></td>
+                  <td style={{ ...td, color: C.text }}>${spend.toLocaleString()}</td>
+                  <td style={{ ...td, color: C.text }}>{active}</td>
+                  <td style={{ ...td, color: C.textSub, fontSize: T.sm }}>{a.created_at ? new Date(a.created_at).toLocaleDateString() : "—"}</td>
+                </Hover>
               );
             })}
             {filtered.length === 0 && (

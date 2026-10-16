@@ -7,6 +7,8 @@ import { KPI } from '../../components/primitives/KPI.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { Inp } from '../../components/primitives/Inp.jsx';
+import { Modal } from '../../components/primitives/Modal.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
 import { supabase } from '../../lib/supabase.js';
@@ -139,17 +141,14 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {rejecting ? (
           <>
-            <input
+            <Inp
               autoFocus
               value={rejectReason}
               onChange={e => setRejectReason(e.target.value)}
               placeholder="Reason for rejection…"
-              style={{
-                padding: '5px 10px', borderRadius: 6, border: `1px solid ${C.border}`,
-                fontFamily: F.sans, fontSize: T.sm, width: 220, outline: 'none', transition: 'border-color 0.15s',
-              }}
-              onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-              onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
+              aria-label="Reason for rejection"
+              wrapperStyle={{ width: 220 }}
+              style={{ padding: '5px 10px', borderRadius: 6, fontSize: T.sm, transition: 'border-color 0.15s' }}
               onKeyDown={e => {
                 if (e.key === 'Enter') confirmReject();
                 if (e.key === 'Escape') { setRejecting(false); setRejectReason(''); setRejectErr(null); }
@@ -351,33 +350,20 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
       )}
 
       {editing && (
-        <div style={{
-          position: 'fixed', inset: 0, background: C.overlay,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-        }}>
-          <div style={{
-            background: C.surface, borderRadius: 14, padding: 28, width: 400,
-            fontFamily: F.sans, boxShadow: SH.modal,
-          }}>
-            <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, marginBottom: 20 }}>Edit Campaign</div>
+        <Modal title="Edit Campaign" maxWidth={400} zIndex={1000}>
             {[
               { label: 'Budget ($)', key: 'budget', type: 'number' },
               { label: 'Start Date', key: 'start', type: 'date' },
               { label: 'End Date', key: 'end', type: 'date' },
             ].map(({ label, key, type }) => (
               <div key={key} style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: T.sm, color: C.textSub, marginBottom: 4 }}>{label}</div>
-                <input
+                <label htmlFor={`edit-${key}`} style={{ display: 'block', fontSize: T.sm, color: C.textSub, marginBottom: 4 }}>{label}</label>
+                <Inp
+                  id={`edit-${key}`}
                   type={type}
                   value={editForm[key]}
                   onChange={e => setEditForm(f => ({ ...f, [key]: type === 'number' ? Number(e.target.value) : e.target.value }))}
-                  style={{
-                    width: '100%', padding: '8px 12px', borderRadius: 8,
-                    border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: T.base,
-                    outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s',
-                  }}
-                  onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-                  onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
+                  style={{ padding: '8px 12px', boxSizing: 'border-box', transition: 'border-color 0.15s' }}
                 />
               </div>
             ))}
@@ -394,8 +380,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
                 setEditing(false);
               }}>Save Changes</Btn>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {sharing && (
