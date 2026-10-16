@@ -45,7 +45,7 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
             <div style={{ fontWeight: 600, color: C.text, fontFamily: F.sans }}>{c.advertiser}</div>
-            {isPending && <span style={{ fontSize: 10, background: C.amber, color: '#fff', padding: '1px 6px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>REVIEW</span>}
+            {isPending && <span style={{ fontSize: 11, background: C.amber, color: '#fff', padding: '1px 6px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>REVIEW</span>}
           </div>
           <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.category} · {screenCount} {pluralize(screenCount, 'screen')} · {displayCity}</div>
         </div>
@@ -55,15 +55,15 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
             <span style={{ fontSize: 12, color: C.textMuted, fontFamily: F.mono }}>${c.budget.toLocaleString()}</span>
           </div>
           <ProgressBar value={c.spent} max={c.budget} height={4} />
-          <div style={{ fontSize: 10, color: pct > 90 ? C.red : pct > 70 ? C.amber : C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{pct}% used</div>
+          <div style={{ fontSize: 11, color: pct > 90 ? C.red : pct > 70 ? C.amber : C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{pct}% used</div>
         </div>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontFamily: F.mono, fontSize: 14, fontWeight: 600, color: C.text }}>{(c.impressions / 1000).toFixed(1)}K</div>
-          <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>impressions</div>
+          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>impressions</div>
         </div>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontFamily: F.mono, fontSize: 14, fontWeight: 600, color: C.purple }}>{c.scans}</div>
-          <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>scans</div>
+          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>scans</div>
         </div>
         <div style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub, whiteSpace: 'nowrap' }}>{c.start} →<br />{c.end}</div>
         {isPending && canReview ? (

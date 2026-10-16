@@ -83,7 +83,7 @@ const ThankYou       = lazy(() => import('./views/legal/ThankYou.jsx').then(m =>
 const PublicScreens  = lazy(() => import('./views/public/PublicScreens.jsx').then(m => ({ default: m.PublicScreens })));
 
 import { C, F } from './design/tokens.js';
-import { Skeleton } from './components/ui/Skeleton.jsx';
+import { Skeleton } from './components/primitives/Skeleton.jsx';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

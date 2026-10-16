@@ -41,7 +41,7 @@ export function DemandSignal({ city, venueCategory }) {
       border: `1px solid ${(active ? C.green : C.purple)}44`,
     }}>
       <span style={{ color: active ? C.green : C.purple, flexShrink: 0, marginTop: 1 }}><IconTrendUp size={14} /></span>
-      <span style={{ fontSize: 12.5, color: C.text, fontFamily: F.sans, lineHeight: 1.45 }}>{message.text}</span>
+      <span style={{ fontSize: 13, color: C.text, fontFamily: F.sans, lineHeight: 1.45 }}>{message.text}</span>
     </div>
   );
 }

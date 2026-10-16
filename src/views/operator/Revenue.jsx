@@ -15,7 +15,7 @@ import { Table } from '../../components/primitives/Table.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
-import { SkeletonRow, SkeletonTable } from '../../components/ui/Skeleton.jsx';
+import { SkeletonRow, SkeletonTable } from '../../components/primitives/Skeleton.jsx';
 import { IconDollar, IconBank, IconScreen } from '../../components/icons.jsx';
 
 function revenueToCsv(rows, ownerRevenueShare) {

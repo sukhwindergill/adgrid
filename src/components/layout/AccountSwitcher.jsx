@@ -12,7 +12,7 @@ function RoleBadge({ role }) {
   const s = colors[role] ?? colors.viewer
   return (
     <span style={{
-      padding: '2px 7px', borderRadius: 8, fontSize: 10, fontWeight: 600,
+      padding: '2px 7px', borderRadius: 8, fontSize: 11, fontWeight: 600,
       textTransform: 'capitalize', background: s.bg, color: s.color,
     }}>{role}</span>
   )
@@ -57,7 +57,7 @@ export function AccountSwitcher() {
           {currentName}
         </span>
         {activeAccount && <RoleBadge role={activeAccount.role} />}
-        <span style={{ color: C.textMuted, fontSize: 10 }}>▾</span>
+        <span style={{ color: C.textMuted, fontSize: 11 }}>▾</span>
       </button>
 
       {open && (
@@ -83,7 +83,7 @@ export function AccountSwitcher() {
                 </div>
                 <div style={{ fontSize: 11, color: C.textMuted }}>Your account</div>
               </div>
-              {!activeAccount && <span style={{ fontSize: 10, color: C.blue }}>●</span>}
+              {!activeAccount && <span style={{ fontSize: 11, color: C.blue }}>●</span>}
             </button>
 
             {grants.length > 0 && (
@@ -116,7 +116,7 @@ export function AccountSwitcher() {
                     </div>
                     <div style={{ marginTop: 2 }}><RoleBadge role={g.role} /></div>
                   </div>
-                  {isActive && <span style={{ fontSize: 10, color: C.blue }}>●</span>}
+                  {isActive && <span style={{ fontSize: 11, color: C.blue }}>●</span>}
                 </button>
               )
             })}

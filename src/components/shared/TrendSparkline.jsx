@@ -40,7 +40,7 @@ export function TrendSparkline({ data, color = C.purple, formatValue = v => v.to
         )}
         {last && <circle cx={last.x} cy={last.y} r="2.2" fill={color} />}
       </svg>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontFamily: F.sans, fontSize: 10, color: C.textMuted }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontFamily: F.sans, fontSize: 11, color: C.textMuted }}>
         <span>{data[0]?.day}</span>
         <span style={{ fontFamily: F.mono, fontWeight: 600, color: C.text, fontVariantNumeric: 'tabular-nums' }}>
           {formatValue(values[values.length - 1] ?? 0)}

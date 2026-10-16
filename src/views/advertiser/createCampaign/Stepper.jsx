@@ -16,7 +16,7 @@ export function Stepper({ step, labels, onCancel }) {
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
         {labels.map((l, i) => (
-          <div key={l} style={{ fontSize: 10, fontFamily: F.sans, color: i <= step ? C.purple : C.textMuted, fontWeight: i === step ? 600 : 400 }}>{l}</div>
+          <div key={l} style={{ fontSize: 11, fontFamily: F.sans, color: i <= step ? C.purple : C.textMuted, fontWeight: i === step ? 600 : 400 }}>{l}</div>
         ))}
       </div>
     </div>

@@ -83,7 +83,7 @@ export function ScreenPickerCard({ screen, selected, onToggle, creative, isFavor
           {screen.city}{screen.environment ? ` · ${screen.environment === 'indoor' ? 'Indoor' : 'Outdoor'}` : ''}
         </div>
         {venueLabel && (
-          <span style={{ display: 'inline-block', marginTop: 6, fontSize: 10, fontWeight: 600, background: C.blueSoft, color: C.blue, padding: '1px 7px', borderRadius: 10, fontFamily: F.sans }}>
+          <span style={{ display: 'inline-block', marginTop: 6, fontSize: 11, fontWeight: 600, background: C.blueSoft, color: C.blue, padding: '1px 7px', borderRadius: 10, fontFamily: F.sans }}>
             {venueLabel}
           </span>
         )}

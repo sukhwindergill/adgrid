@@ -3,7 +3,7 @@ import QRCode from 'react-qr-code';
 import { supabase } from '../../lib/supabase.js';
 import { buildScreenInviteShareText } from '../../lib/screenInviteShareText.js';
 import { C, F, SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
-import { Skeleton } from '../../components/ui/Skeleton.jsx';
+import { Skeleton } from '../../components/primitives/Skeleton.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
@@ -866,7 +866,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
                           background: d.count > 0 ? C.purple : C.border,
                           transition: 'height 0.2s',
                         }} title={`${d.key}: ${d.count}`} />
-                        <div style={{ fontSize: 9, color: C.textMuted, fontFamily: F.sans }}>{d.key.slice(5)}</div>
+                        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{d.key.slice(5)}</div>
                       </div>
                     ))}
                   </div>

@@ -140,7 +140,7 @@ export function SignalsView({ operatorScreenIds = [], screens = [] }) {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: 22, fontWeight: 800, color: scoreColor(c.score), fontFamily: F.mono, lineHeight: 1 }}>{c.score}</div>
-                  <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>/100</div>
+                  <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>/100</div>
                 </div>
               </div>
               <ProgressBar value={c.score} max={100} height={4} color={scoreColor(c.score)} />

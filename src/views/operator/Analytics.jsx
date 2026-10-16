@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { SkeletonRow, Skeleton } from '../../components/ui/Skeleton.jsx';
+import { SkeletonRow, Skeleton } from '../../components/primitives/Skeleton.jsx';
 import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
@@ -30,7 +30,7 @@ function HeatmapGrid({ data }) {
           width: 36, height: 36, borderRadius: 6, background: v === 0 ? C.surfaceAlt : C.purple,
           opacity: v === 0 ? 1 : 0.20 + (v / max) * 0.80,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 9, fontFamily: F.mono, color: v / max > 0.4 ? '#fff' : C.textMuted,
+          fontSize: 11, fontFamily: F.mono, color: v / max > 0.4 ? '#fff' : C.textMuted,
           cursor: 'default', transition: 'transform 0.15s',
         }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
@@ -47,9 +47,9 @@ function DayBars({ data }) {
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', height: 80 }}>
       {Object.entries(data).map(([day, v]) => (
         <div key={day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-          <div style={{ fontSize: 10, fontFamily: F.mono, color: C.textMuted }}>{v}</div>
+          <div style={{ fontSize: 11, fontFamily: F.mono, color: C.textMuted }}>{v}</div>
           <div style={{ width: '100%', height: `${(v / max) * 60}px`, background: C.purple, borderRadius: '3px 3px 0 0', opacity: 0.7, minHeight: 4 }} />
-          <div style={{ fontSize: 10, fontFamily: F.sans, color: C.textMuted }}>{day}</div>
+          <div style={{ fontSize: 11, fontFamily: F.sans, color: C.textMuted }}>{day}</div>
         </div>
       ))}
     </div>
@@ -399,7 +399,7 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
         <Card>
           <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>
             {hasReal ? 'People by Hour' : 'Scans by Hour'}
-            {!hasReal && <span style={{ fontSize: 10, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>(estimated)</span>}
+            {!hasReal && <span style={{ fontSize: 11, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>(estimated)</span>}
           </div>
           <HeatmapGrid data={hourlyData} />
           <div style={{ marginTop: 10, fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>Hover a block to see count · Darker = more activity</div>
@@ -407,7 +407,7 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
         <Card>
           <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>
             {hasReal ? 'People by Day of Week' : 'Scans by Day of Week'}
-            {!hasReal && <span style={{ fontSize: 10, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>(estimated)</span>}
+            {!hasReal && <span style={{ fontSize: 11, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>(estimated)</span>}
           </div>
           <DayBars data={dailyData} />
         </Card>
@@ -417,7 +417,7 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20, marginBottom: 20 }}>
         <Card>
           <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Gender Split</div>
-          {!hasReal && <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, marginBottom: 12 }}>estimated</div>}
+          {!hasReal && <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 12 }}>estimated</div>}
           {[['Female', femalePct, '#ec4899'], ['Male', malePct, C.blue]].map(([g, pct, col]) => (
             <div key={g} style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -433,15 +433,15 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
 
         <Card>
           <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Age Distribution</div>
-          {!hasReal && <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, marginBottom: 8 }}>estimated</div>}
+          {!hasReal && <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 8 }}>estimated</div>}
           <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 80, marginBottom: 8 }}>
             {ageData.map(([label, pct]) => {
               const maxPct = Math.max(...ageData.map(d => d[1]), 1);
               return (
                 <div key={label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                  <div style={{ fontSize: 9, fontFamily: F.mono, color: C.textMuted }}>{pct}%</div>
+                  <div style={{ fontSize: 11, fontFamily: F.mono, color: C.textMuted }}>{pct}%</div>
                   <div style={{ width: '100%', height: `${(pct / maxPct) * 60}px`, background: C.purple, opacity: 0.7, borderRadius: '2px 2px 0 0', minHeight: 3 }} />
-                  <div style={{ fontSize: 9, fontFamily: F.sans, color: C.textMuted, whiteSpace: 'nowrap' }}>{label}</div>
+                  <div style={{ fontSize: 11, fontFamily: F.sans, color: C.textMuted, whiteSpace: 'nowrap' }}>{label}</div>
                 </div>
               );
             })}
@@ -480,7 +480,7 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
         <Card>
           <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>
             24h Activity Pattern
-            {!hasReal && <span style={{ fontSize: 10, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>(estimated)</span>}
+            {!hasReal && <span style={{ fontSize: 11, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>(estimated)</span>}
           </div>
           <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end', height: 80, marginBottom: 8 }}>
             {hourlyData.map((v, h) => {
@@ -496,7 +496,7 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
               );
             })}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.textMuted, fontFamily: F.mono }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.textMuted, fontFamily: F.mono }}>
             {['00:00', '06:00', '12:00', '18:00', '23:00'].map(t => <span key={t}>{t}</span>)}
           </div>
         </Card>

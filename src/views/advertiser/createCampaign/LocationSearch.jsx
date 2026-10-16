@@ -128,7 +128,7 @@ export function LocationSearch({ options, value, onSelect, placeholder = 'Search
                 }}
               >
                 <span style={{
-                  flexShrink: 0, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em',
+                  flexShrink: 0, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em',
                   padding: '2px 6px', borderRadius: 4, background: bc.bg, color: bc.fg,
                 }}>
                   {d.badge}

@@ -125,7 +125,7 @@ export default function NotificationBell() {
           <span style={{
             position: "absolute", top: -4, right: -4,
             background: C.red, color: "#fff", borderRadius: "50%",
-            width: 16, height: 16, fontSize: 9, fontWeight: 700,
+            width: 16, height: 16, fontSize: 11, fontWeight: 700,
             display: "flex", alignItems: "center", justifyContent: "center",
             fontFamily: F.sans,
           }}>
@@ -181,7 +181,7 @@ export default function NotificationBell() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 2 }}>{n.title}</div>
                 <div style={{ fontSize: 11, color: C.textSub, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.body}</div>
-                <div style={{ fontSize: 10, color: C.textMuted, marginTop: 3 }}>{timeAgo(n.created_at)}</div>
+                <div style={{ fontSize: 11, color: C.textMuted, marginTop: 3 }}>{timeAgo(n.created_at)}</div>
               </div>
               {!n.read && (
                 <div style={{ width: 7, height: 7, borderRadius: "50%", background: C.blue, flexShrink: 0, marginTop: 4 }} />

@@ -139,7 +139,7 @@ export function AdvertiserVerificationQueue() {
           {reviewed.map(v => (
             <Card key={v.id} style={{ marginBottom: 8, padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
               <div>
-                <div style={{ fontSize: 12.5, color: C.text, fontFamily: F.sans }}>{v.company_name}</div>
+                <div style={{ fontSize: 13, color: C.text, fontFamily: F.sans }}>{v.company_name}</div>
                 <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
                   {v.profiles?.name ?? 'Unnamed advertiser'} · {v.profiles?.email}
                 </div>

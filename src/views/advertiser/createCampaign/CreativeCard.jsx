@@ -233,7 +233,7 @@ export function CreativeCard({
                 {Object.keys(QR_CORNER_PRESETS).map(corner => (
                   <button key={corner} type="button" onClick={() => snapQrTo(corner)} style={{
                     flex: 1, padding: '6px 4px', borderRadius: 6, border: `1px solid ${C.border}`,
-                    background: C.surface, color: C.textSub, fontSize: 10, fontFamily: F.sans, cursor: 'pointer', textTransform: 'capitalize',
+                    background: C.surface, color: C.textSub, fontSize: 11, fontFamily: F.sans, cursor: 'pointer', textTransform: 'capitalize',
                     transition: 'background 0.15s',
                   }}
                     onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}

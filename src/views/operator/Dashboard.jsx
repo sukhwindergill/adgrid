@@ -241,7 +241,7 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
         <div style={{ marginTop: 20 }}>
           <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 6 }}>Impressions by hour (today)</div>
           <HourlyChart data={hourlyData} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.textMuted, fontFamily: F.mono, marginTop: 4 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.textMuted, fontFamily: F.mono, marginTop: 4 }}>
             {['00:00', '06:00', '12:00', '18:00', '23:00'].map(t => <span key={t}>{t}</span>)}
           </div>
         </div>
@@ -307,13 +307,13 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 10 }}>
                     {[['Budget', `$${c.budget.toLocaleString()}`], ['Spent', `$${c.spent.toLocaleString()}`], ['Impressions', `${(c.impressions / 1000).toFixed(1)}K`], ['Scans', c.scans]].map(([l, v]) => (
                       <div key={l}>
-                        <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>{l}</div>
+                        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{l}</div>
                         <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.mono, marginTop: 2 }}>{v}</div>
                       </div>
                     ))}
                   </div>
                   <ProgressBar value={c.spent} max={c.budget} height={4} />
-                  <div style={{ fontSize: 10, color: pct > 90 ? C.red : pct > 70 ? C.amber : C.textMuted, fontFamily: F.sans, marginTop: 3 }}>{pct}% used</div>
+                  <div style={{ fontSize: 11, color: pct > 90 ? C.red : pct > 70 ? C.amber : C.textMuted, fontFamily: F.sans, marginTop: 3 }}>{pct}% used</div>
                 </Card>
               );
             })}
@@ -386,7 +386,7 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
                 <div style={{ display: 'flex', gap: 16 }}>
                   {[['Revenue', `$${(s.revenue ?? 0).toLocaleString()}`], ['Impr.', `${((s.impressions ?? 0) / 1000).toFixed(0)}K`], ['Campaigns', s.campaigns]].map(([l, v]) => (
                     <div key={l}>
-                      <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>{l}</div>
+                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{l}</div>
                       <div style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.mono }}>{v}</div>
                     </div>
                   ))}

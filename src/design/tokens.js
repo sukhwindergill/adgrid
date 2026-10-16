@@ -26,6 +26,19 @@ export const C = {
   blue:  '#3b82f6', blueSoft:  '#eff6ff', blueBorder:  '#bfdbfe', blueLight: '#eff6ff',
 };
 
+// Type scale. Use these instead of ad-hoc pixel sizes. 11 is the floor and
+// is for badges, eyebrows and table captions only; body text is 13-14.
+export const T = {
+  xs: 11,   // badges, eyebrows, captions
+  sm: 12,   // secondary labels, helper text
+  base: 13, // default UI text
+  md: 14,   // emphasized body, buttons
+  lg: 16,   // card titles
+  xl: 20,   // section headings
+  xxl: 24,  // page titles
+  display: 32, // KPI numbers, hero figures
+};
+
 export const F = {
   // Body/UI text — a real system sans, not a display font stretched over paragraphs.
   sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",

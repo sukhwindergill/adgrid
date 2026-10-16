@@ -17,7 +17,7 @@ import { Table } from '../../components/primitives/Table.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
-import { SkeletonRow, SkeletonTable } from '../../components/ui/Skeleton.jsx';
+import { SkeletonRow, SkeletonTable } from '../../components/primitives/Skeleton.jsx';
 import { useOperatorBilling } from '../../hooks/useOperatorBilling.js';
 import { IconDollar, IconClock, IconWarning, IconCard, IconBank } from '../../components/icons.jsx';
 
@@ -237,7 +237,7 @@ export function Billing() {
           </div>
           {failedTransfers.map(t => (
             <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '8px 0 8px 24px', borderTop: `1px solid ${C.redBorder ?? '#fecaca'}` }}>
-              <span style={{ color: C.text, fontFamily: F.sans, fontSize: 12.5 }}>
+              <span style={{ color: C.text, fontFamily: F.sans, fontSize: 13 }}>
                 {t.bookings?.advertiser_name ?? t.booking_id} — ${Number(t.amount).toLocaleString()} {t.currency?.toUpperCase()}
               </span>
               <Btn variant="danger" size="sm" disabled={retryingId === t.id} onClick={() => retryTransfer(t)}>
@@ -285,12 +285,12 @@ export function Billing() {
             ) : (
               <>
                 {upcomingPayout ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', marginBottom: 14, background: C.amberSoft, borderRadius: 8, fontSize: 12.5, color: C.text, fontFamily: F.sans }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', marginBottom: 14, background: C.amberSoft, borderRadius: 8, fontSize: 13, color: C.text, fontFamily: F.sans }}>
                     <span style={{ flexShrink: 0, color: C.amber }}><IconClock size={14} /></span>
                     <span>Next payout — <strong>${Number(upcomingPayout.amount).toLocaleString()}</strong> arriving <strong>{upcomingPayout.arrival_date}</strong></span>
                   </div>
                 ) : (
-                  <div style={{ padding: '10px 12px', marginBottom: 14, background: C.surfaceAlt, borderRadius: 8, fontSize: 12.5, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5 }}>
+                  <div style={{ padding: '10px 12px', marginBottom: 14, background: C.surfaceAlt, borderRadius: 8, fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5 }}>
                     {lastPayout
                       ? <>No payout scheduled — payouts are on-demand. Last one landed <strong>{daysSinceLast}d ago</strong> (${Number(lastPayout.amount).toLocaleString()} on {lastPayout.arrival_date}).</>
                       : <>No payout scheduled — payouts are on-demand. Click below whenever you want available funds sent to your bank.</>}

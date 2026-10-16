@@ -257,7 +257,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
                 }} />
               ))}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.textMuted, fontFamily: F.mono }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.textMuted, fontFamily: F.mono }}>
               {['00:00', '06:00', '12:00', '18:00', '23:00'].map(t => <span key={t}>{t}</span>)}
             </div>
           </Card>

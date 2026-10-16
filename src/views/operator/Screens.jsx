@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { C, F } from '../../lib/constants.js';
-import { SkeletonCard, SkeletonRow } from '../../components/ui/Skeleton.jsx';
+import { SkeletonCard, SkeletonRow } from '../../components/primitives/Skeleton.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
@@ -90,7 +90,7 @@ function ScreenCard({ screen, onClick }) {
             )}
             {venueLabel && (
               <span style={{
-                fontSize: 10, fontWeight: 600, fontFamily: F.sans,
+                fontSize: 11, fontWeight: 600, fontFamily: F.sans,
                 background: C.blueSoft, color: C.blue,
                 padding: '2px 8px', borderRadius: 10,
               }}>{venueLabel}</span>
@@ -100,7 +100,7 @@ function ScreenCard({ screen, onClick }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 12 }}>
           <div>
-            <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>Impressions/mo</div>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>Impressions/mo</div>
             <div
               title={impressionsHint(screen) ?? undefined}
               style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono, marginTop: 2, cursor: impressionsHint(screen) ? 'help' : undefined }}
@@ -109,11 +109,11 @@ function ScreenCard({ screen, onClick }) {
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>CPM</div>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>CPM</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono, marginTop: 2 }}>${screen.cpm?.toFixed(2) || '4.20'}</div>
           </div>
           <div>
-            <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>Uptime</div>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>Uptime</div>
             <div
               title={uptime(screen) === '—' ? uptimeHint(screen) : undefined}
               style={{ fontSize: 15, fontWeight: 700, color: screen.status === 'live' ? C.green : C.textMuted, fontFamily: F.mono, marginTop: 2, cursor: uptime(screen) === '—' ? 'help' : undefined }}

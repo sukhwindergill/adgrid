@@ -85,7 +85,7 @@ export function FileDisputeModal({ bookingId, advertiserId, onClose, onFiled }) 
             </div>
 
             {error && (
-              <div style={{ fontSize: 12.5, color: C.red, fontFamily: F.sans, marginBottom: 14 }}>{error}</div>
+              <div style={{ fontSize: 13, color: C.red, fontFamily: F.sans, marginBottom: 14 }}>{error}</div>
             )}
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>

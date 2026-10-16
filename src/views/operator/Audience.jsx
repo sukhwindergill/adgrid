@@ -9,7 +9,7 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
-import { SkeletonTable, SkeletonRow } from '../../components/ui/Skeleton.jsx';
+import { SkeletonTable, SkeletonRow } from '../../components/primitives/Skeleton.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { IconQr, IconMail, IconGlobe } from '../../components/icons.jsx';
 

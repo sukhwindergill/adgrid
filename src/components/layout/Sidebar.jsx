@@ -140,7 +140,7 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
             borderRadius: 7,
             background: '#f59e0b',
             color: '#fff',
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: 700,
             display: 'flex',
             alignItems: 'center',

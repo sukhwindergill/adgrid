@@ -455,11 +455,11 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
                         <div style={{ fontSize: 11, fontWeight: 500, color: C.text, fontFamily: F.mono }}>${c.spent.toLocaleString()} / ${c.budget.toLocaleString()}</div>
                       </div>
                       <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 10, color: C.textSub, fontFamily: F.sans, marginBottom: 4 }}>Impressions</div>
+                        <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginBottom: 4 }}>Impressions</div>
                         <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{(c.impressions / 1000).toFixed(1)}K</div>
                       </div>
                       <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 10, color: C.textSub, fontFamily: F.sans, marginBottom: 4 }}>Scans</div>
+                        <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginBottom: 4 }}>Scans</div>
                         <div style={{ fontSize: 16, fontWeight: 700, color: C.purple, fontFamily: F.mono }}>{c.scans}</div>
                       </div>
                     </div>
@@ -502,11 +502,11 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{(c.impressions / 1000).toFixed(1)}K</div>
-                      <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>impressions</div>
+                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>impressions</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: 18, fontWeight: 700, color: C.purple, fontFamily: F.mono }}>{c.scans}</div>
-                      <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>scans</div>
+                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>scans</div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                       <Badge status={displayStatus} />

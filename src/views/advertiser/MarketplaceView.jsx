@@ -3,7 +3,7 @@ import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Tabs } from '../../components/primitives/Tabs.jsx';
-import { SkeletonCard, SkeletonRow } from '../../components/ui/Skeleton.jsx';
+import { SkeletonCard, SkeletonRow } from '../../components/primitives/Skeleton.jsx';
 import { fetchActiveListings, fetchAdvertiserBookings } from '../../lib/marketplace.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { IconTagPrice } from '../../components/icons.jsx';

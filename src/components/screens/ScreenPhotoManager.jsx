@@ -134,7 +134,7 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
                 style={{
                   position: 'absolute', bottom: 4, left: 4,
                   background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: 6,
-                  color: '#fff', cursor: 'pointer', fontSize: 10, fontFamily: F.sans, padding: '3px 7px',
+                  color: '#fff', cursor: 'pointer', fontSize: 11, fontFamily: F.sans, padding: '3px 7px',
                 }}
               >
                 {frameFor(url) ? '✓ Corners' : '✏ Mark corners'}

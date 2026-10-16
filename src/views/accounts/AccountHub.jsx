@@ -71,11 +71,11 @@ function AccountCard({ account, isCurrent, onClick, rollup }) {
         <div style={{ display: 'flex', gap: 16, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
           <div>
             <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{rollup.activeCampaigns}</div>
-            <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>active campaign{rollup.activeCampaigns === 1 ? '' : 's'}</div>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>active campaign{rollup.activeCampaigns === 1 ? '' : 's'}</div>
           </div>
           <div>
             <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono }}>${rollup.spend.toLocaleString()}</div>
-            <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>spend to date</div>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>spend to date</div>
           </div>
         </div>
       )}

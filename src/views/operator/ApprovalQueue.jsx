@@ -263,7 +263,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
           {campaign.advertiser_name || campaign.advertiser}
           {isAdvertiserVerified && <Badge status="verified">Verified</Badge>}
         </span>
-        <span style={{ fontSize: 10, background: C.amber, color: '#fff', padding: '2px 8px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>PENDING</span>
+        <span style={{ fontSize: 11, background: C.amber, color: '#fff', padding: '2px 8px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>PENDING</span>
         <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>{campaign.category}</span>
         <span style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{timeAgo(campaign.created_at)}</span>
       </div>
@@ -304,7 +304,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
           borderRight: isMobile ? 'none' : `1px solid ${C.border}`,
           borderBottom: isMobile ? `1px solid ${C.border}` : 'none',
         }}>
-          <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Creative Preview</div>
+          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Creative Preview</div>
           <CreativePreview campaign={campaign} />
           <ReadabilityPanel campaign={campaign} score={readability.score} issues={readability.issues} tiers={readabilityTiers} />
         </div>
@@ -318,7 +318,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
               ['You earn', earned || '—'],
             ].map(([l, v]) => (
               <div key={l}>
-                <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{l}</div>
+                <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{l}</div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: l === 'You earn' ? C.purple : C.text, fontFamily: F.mono, marginTop: 2 }}>{v}</div>
               </div>
             ))}
@@ -375,7 +375,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <div style={{ flex: 1, minWidth: 120 }}>
                         <div style={{ fontSize: 12, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{screen?.name || row.screen_id}</div>
-                        {health && <span style={{ fontSize: 10, color: health.color, fontFamily: F.sans, display: 'inline-flex', alignItems: 'center', gap: 3 }}><IconWarning size={10} /> {health.label}</span>}
+                        {health && <span style={{ fontSize: 11, color: health.color, fontFamily: F.sans, display: 'inline-flex', alignItems: 'center', gap: 3 }}><IconWarning size={10} /> {health.label}</span>}
                       </div>
                       <Btn size="sm" onClick={() => approveScreen(row.screen_id)} disabled={acting}>✓ Approve</Btn>
                       <Btn variant="danger" size="sm" onClick={() => setRejectScreenId(row.screen_id)} disabled={acting}>✗ Reject</Btn>
@@ -399,7 +399,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
                     )}
 
                     {screenCreatives.length === 0 && fitChecks[0]?.status === 'mismatch' && (
-                      <span style={{ fontSize: 10, color: C.amber, fontFamily: F.sans, paddingLeft: 4, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                      <span style={{ fontSize: 11, color: C.amber, fontFamily: F.sans, paddingLeft: 4, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                         <IconWarning size={10} /> Creative may not fit ({fitChecks[0].reasons.map(r => REASON_LABEL[r] ?? r).join(', ')})
                       </span>
                     )}

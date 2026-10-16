@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { C, F } from '../../design/tokens.js';
-import { SkeletonRow, SkeletonCard } from '../../components/ui/Skeleton.jsx';
+import { SkeletonRow, SkeletonCard } from '../../components/primitives/Skeleton.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
@@ -373,11 +373,11 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
                   <div style={{ display: 'flex', gap: 20 }}>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontFamily: F.mono, fontSize: 13, fontWeight: 600, color: C.text }}>{(rollup.impressions / 1000).toFixed(1)}K</div>
-                      <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>impressions</div>
+                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>impressions</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontFamily: F.mono, fontSize: 13, fontWeight: 600, color: C.purple }}>{rollup.scans}</div>
-                      <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>scans</div>
+                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>scans</div>
                     </div>
                   </div>
                 </div>

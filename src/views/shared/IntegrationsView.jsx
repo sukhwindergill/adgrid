@@ -193,7 +193,7 @@ export function IntegrationsView() {
               <BrandIcon id={p.id} size={16} />
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans }}>{p.name}</div>
-                <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>{p.category}</div>
+                <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{p.category}</div>
               </div>
             </div>
           </Card>

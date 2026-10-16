@@ -74,7 +74,7 @@ function TimelineBar({ campaigns }) {
         })}
         <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${nowPct}%`, width: 2, background: C.red, opacity: 0.8 }} />
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: C.textMuted, fontFamily: F.mono }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.textMuted, fontFamily: F.mono }}>
         {HOUR_LABELS.filter((_, i) => i % 6 === 0).map((l, i) => <span key={i}>{l}</span>)}
       </div>
     </div>
@@ -168,10 +168,10 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
                   {nowLive ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                       <div style={{ width: 10, height: 10, borderRadius: 2, background: nowLive.color || C.purple, flexShrink: 0 }} />
-                      <span style={{ fontSize: 10, color: C.textSub, fontFamily: F.sans, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nowLive.advertiser}</span>
+                      <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nowLive.advertiser}</span>
                     </div>
                   ) : (
-                    <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>{s.campaigns.length} campaign{s.campaigns.length !== 1 ? 's' : ''}</div>
+                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{s.campaigns.length} campaign{s.campaigns.length !== 1 ? 's' : ''}</div>
                   )}
                 </div>
               );
@@ -219,7 +219,7 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
                         </div>
                         <div style={{ textAlign: 'right', flexShrink: 0 }}>
                           <Badge status={c.status} />
-                          <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.mono, marginTop: 3 }}>{c.start}</div>
+                          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.mono, marginTop: 3 }}>{c.start}</div>
                         </div>
                       </div>
                     ))}

@@ -131,7 +131,7 @@ export function OperatorVerificationQueue() {
           {reviewed.map(op => (
             <Card key={op.id} style={{ marginBottom: 8, padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
               <div>
-                <div style={{ fontSize: 12.5, color: C.text, fontFamily: F.sans }}>{op.name ?? 'Unnamed operator'}</div>
+                <div style={{ fontSize: 13, color: C.text, fontFamily: F.sans }}>{op.name ?? 'Unnamed operator'}</div>
                 <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{op.email}</div>
               </div>
               <Badge status={op.verification_status === 'rejected' ? 'rejected' : 'approved'}>
