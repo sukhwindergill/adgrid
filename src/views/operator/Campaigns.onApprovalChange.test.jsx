@@ -17,16 +17,16 @@ const bookingRow = {
 // General-purpose query-shape-aware mock: Campaigns.jsx now owns its own
 // scoped `bookings` fetch (see PR "server-side pagination for
 // Campaigns.jsx") instead of receiving a `campaigns` prop, so this has to
-// answer the real query shapes -- campaign_screens (for the
-// useOperatorCampaignIds hook), bookings (paginated list + active count),
-// campaign_screens again (per-row screen data), and campaigns (parent
-// names) -- rather than one flat response.
+// answer the real query shapes -- the operator_bookings RPC (paginated
+// list + active count), campaign_screens (per-row screen data), and
+// campaigns (parent names) -- rather than one flat response.
 function makeQuery(state, resolve) {
   const builder = {
-    select: (cols, opts) => { state.selectCols = cols; state.selectOpts = opts; return builder; },
+    select: (cols, opts) => { state.selectCols = cols; state.selectOpts = opts ?? state.selectOpts; return builder; },
     update: (payload) => { state.updatePayload = payload; return builder; },
     in: (col, vals) => { state.filters[col] = { op: 'in', vals }; return builder; },
     eq: (col, val) => { state.filters[col] = { op: 'eq', val }; return builder; },
+    or: (expr) => { state.or = expr; return builder; },
     order: () => builder,
     range: () => builder,
     then: (onFulfilled, onRejected) => Promise.resolve(resolve(state)).then(onFulfilled, onRejected),
@@ -35,10 +35,8 @@ function makeQuery(state, resolve) {
 }
 
 function respond(state) {
-  const { table, selectOpts, filters, updatePayload } = state;
+  const { table, selectOpts, updatePayload } = state;
   if (table === 'campaign_screens') {
-    // useOperatorCampaignIds: screen_id -> campaign_id
-    if (filters.screen_id) return { data: [{ campaign_id: 'camp-1' }], error: null };
     // per-row screen data (fetchCampaignScreens on the loaded page)
     return { data: [], error: null };
   }
@@ -51,6 +49,13 @@ function respond(state) {
   return { data: [], error: null };
 }
 
+// Operator-side bookings come from the operator_bookings RPC (scoped in
+// SQL via campaign_screens), answered like a `bookings` read.
+const rpcMock = vi.fn((fn, args, opts) => {
+  const state = { table: 'bookings', rpc: fn, rpcArgs: args, filters: {}, selectCols: null, selectOpts: opts };
+  return makeQuery(state, respond);
+});
+
 const fromMock = vi.fn((table) => {
   const state = { table, filters: {}, selectCols: null, selectOpts: null, updatePayload: null };
   return makeQuery(state, respond);
@@ -59,6 +64,7 @@ const fromMock = vi.fn((table) => {
 vi.mock('../../lib/supabase.js', () => ({
   supabase: {
     from: (...args) => fromMock(...args),
+    rpc: (...args) => rpcMock(...args),
     auth: { getSession: () => Promise.resolve({ data: { session: { access_token: 'tok' } } }) },
   },
 }));

@@ -21,11 +21,9 @@ function chain(resolveValue) {
 
 vi.mock('../../lib/supabase.js', () => ({
   supabase: {
-    from: vi.fn((table) => {
-      if (table === 'campaign_screens') return chain({ data: [{ campaign_id: 'c1' }] }); // useOperatorCampaignIds
-      if (table === 'bookings') return chain({ data: [activeBooking] });
-      return chain({ data: [] });
-    }),
+    from: vi.fn(() => chain({ data: [] })),
+    // Operator bookings are scoped server-side by the operator_bookings RPC.
+    rpc: vi.fn((fn) => (fn === 'operator_bookings' ? chain({ data: [activeBooking] }) : chain({ data: [] }))),
     auth: { getSession: vi.fn(() => Promise.resolve({ data: { session: { access_token: 'tok' } } })) },
   },
 }));

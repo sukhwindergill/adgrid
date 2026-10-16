@@ -23,6 +23,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { listDrafts, deleteDraft } from '../../lib/campaignDrafts.js';
 import { DraftsCard } from './createCampaign/DraftsCard.jsx';
 import { normalizeBooking } from '../../lib/normalizeBooking.js';
+import { BOOKING_LIST_COLUMNS } from '../../lib/bookingsQuery.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { advertiserSteps } from '../../lib/gettingStarted.js';
 import { awaitingPayment } from '../../lib/unpaidCampaigns.js';
@@ -116,7 +117,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
 
   useEffect(() => {
     if (!advertiserId) return;
-    supabase.from('bookings').select('*')
+    supabase.from('bookings').select(BOOKING_LIST_COLUMNS)
       .eq('advertiser_id', advertiserId)
       .order('created_at', { ascending: false })
       .limit(RECENT_CAMPAIGNS_LIMIT)
