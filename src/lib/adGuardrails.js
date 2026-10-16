@@ -1,3 +1,4 @@
+import { t } from '../i18n/core.js';
 // Buy-side guardrails (gap analysis G23): frequency caps, competitive
 // separation and operator category exclusions.
 //
@@ -50,7 +51,7 @@ export function parseFrequencyCap(input) {
   if (raw === '') return { value: null, error: null };
   const n = Number(raw);
   if (!Number.isInteger(n) || n < 1 || n > MAX_FREQUENCY_CAP) {
-    return { value: null, error: `Frequency cap must be a whole number from 1 to ${MAX_FREQUENCY_CAP}, or blank for no cap.` };
+    return { value: null, error: t('create.budget.frequencyError', { max: String(MAX_FREQUENCY_CAP) }) };
   }
   return { value: n, error: null };
 }

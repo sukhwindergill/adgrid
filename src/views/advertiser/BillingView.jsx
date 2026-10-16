@@ -8,6 +8,7 @@ import { IconCard, IconWarning } from "../../components/icons.jsx";
 import { defaultCardExpiryWarning } from "../../lib/cardExpiry.js";
 import { PageHeader } from "../../components/primitives/PageHeader.jsx";
 import { Btn } from "../../components/primitives/Btn.jsx";
+import { useT } from "../../i18n/useT.js";
 
 const STATUS_COLORS = {
   paid: { bg: C.greenSoft, color: C.green },
@@ -16,18 +17,17 @@ const STATUS_COLORS = {
   void: { bg: C.surfaceAlt, color: C.textMuted },
 };
 
-const REASON_LABEL = {
-  screen_offline: "Screen was offline",
-  underdelivered: "Screen under-delivered",
-};
+const REASONS = ["screen_offline", "underdelivered"];
+const INVOICE_STATUSES = ["paid", "open", "failed", "void", "draft", "uncollectible"];
 
 function Badge({ status }) {
+  const { t } = useT();
   const style = STATUS_COLORS[status] ?? STATUS_COLORS.void;
   return (
     <span style={{
       padding: "2px 9px", borderRadius: 12, fontSize: 11, fontWeight: 600,
       background: style.bg, color: style.color, textTransform: "capitalize",
-    }}>{status}</span>
+    }}>{INVOICE_STATUSES.includes(status) ? t(`billing.invoiceStatus.${status}`) : status}</span>
   );
 }
 
@@ -40,6 +40,7 @@ function useDeliveryCredits() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const toast = useToast();
+  const { t } = useT();
 
   useEffect(() => {
     let cancelled = false;
@@ -84,14 +85,14 @@ function useDeliveryCredits() {
         // themselves rather than hiding real balances over a display-only
         // failure.
         console.error("Failed to load campaign names for delivery credits:", bookingsErr.message);
-        toast.error("Couldn't load campaign names for some delivery credits.");
+        toast.error(t('billing.namesError'));
       }
       const byId = Object.fromEntries((bookings ?? []).map(b => [b.id, b]));
 
       setRows(recon.map(r => ({
         ...r,
-        campaignName: byId[r.campaign_id]?.campaign_name ?? "Campaign",
-        screenName: byId[r.campaign_id]?.screen_name ?? "Screen",
+        campaignName: byId[r.campaign_id]?.campaign_name ?? t('billing.campaignFallback'),
+        screenName: byId[r.campaign_id]?.screen_name ?? t('billing.screenFallback'),
       })));
       setLoading(false);
     })();
@@ -118,6 +119,8 @@ export default function BillingView() {
   const [pmBusyId, setPmBusyId] = useState(null);
   const toast = useToast();
   const confirm = useConfirm();
+  const { t, tx, formatCurrency, formatMoney, formatDate } = useT();
+  const cardName = pm => `${pm.brand} ···· ${pm.last4}`;
 
   async function load() {
     setLoading(true);
@@ -130,7 +133,7 @@ export default function BillingView() {
     });
 
     if (!res.ok) {
-      setError("Failed to load billing data.");
+      setError(t('billing.loadFailed'));
       setLoading(false);
       return;
     }
@@ -149,7 +152,7 @@ export default function BillingView() {
         body: JSON.stringify({ returnUrl: window.location.href.split("?")[0] }),
       });
       const body = await res.json();
-      if (!res.ok || !body.url) throw new Error(body.error ?? "Failed to start setup");
+      if (!res.ok || !body.url) throw new Error(body.error ?? t('billing.setupFailed'));
       window.location.href = body.url;
     } catch (e) {
       toast.error(e.message);
@@ -159,14 +162,14 @@ export default function BillingView() {
 
   async function callManagePaymentMethod(action, paymentMethodId) {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { toast.error("Session expired. Please log in again."); return false; }
+    if (!session) { toast.error(t('billing.sessionExpired')); return false; }
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/manage-payment-method`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
       body: JSON.stringify({ action, payment_method_id: paymentMethodId }),
     });
     const body = await res.json().catch(() => ({}));
-    if (!res.ok) { toast.error(body?.error ?? "Failed to update payment method."); return false; }
+    if (!res.ok) { toast.error(body?.error ?? t('billing.pmUpdateFailed')); return false; }
     return true;
   }
 
@@ -175,15 +178,15 @@ export default function BillingView() {
     const ok = await callManagePaymentMethod("set_default", pm.id);
     setPmBusyId(null);
     if (!ok) return;
-    toast.success(`${pm.brand} ···· ${pm.last4} is now your default payment method.`);
+    toast.success(t('billing.nowDefault', { card: cardName(pm) }));
     load();
   }
 
   async function removeMethod(pm) {
     const ok = await confirm({
-      title: "Remove payment method?",
-      message: `Remove ${pm.brand} ···· ${pm.last4} from your account?${pm.isDefault ? " This is your current default — future charges will need a different method on file." : ""}`,
-      confirmLabel: "Remove",
+      title: t('billing.removeTitle'),
+      message: t('billing.removeMessage', { card: cardName(pm) }) + (pm.isDefault ? t('billing.removeDefaultWarning') : ""),
+      confirmLabel: t('common.remove'),
       danger: true,
     });
     if (!ok) return;
@@ -191,7 +194,7 @@ export default function BillingView() {
     const removed = await callManagePaymentMethod("detach", pm.id);
     setPmBusyId(null);
     if (!removed) return;
-    toast.success(`${pm.brand} ···· ${pm.last4} removed.`);
+    toast.success(t('billing.removed', { card: cardName(pm) }));
     load();
   }
 
@@ -200,7 +203,7 @@ export default function BillingView() {
     const params = new URLSearchParams(window.location.search);
     const setup = params.get("setup");
     if (setup === "success") {
-      toast.success("Payment method added successfully.");
+      toast.success(t('billing.added'));
       window.history.replaceState({}, "", window.location.pathname);
     } else if (setup === "cancelled") {
       window.history.replaceState({}, "", window.location.pathname);
@@ -209,19 +212,19 @@ export default function BillingView() {
   }, []);
 
   if (loading) return (
-    <div style={{ padding: 40, fontFamily: F.sans, color: C.textSub }}>Loading billing…</div>
+    <div style={{ padding: 40, fontFamily: F.sans, color: C.textSub }}>{t('billing.loading')}</div>
   );
 
   if (error) return (
     <div style={{ padding: 40, fontFamily: F.sans }}>
       <div style={{ color: C.red, marginBottom: 12 }}>{error}</div>
-      <Btn onClick={() => load()}>Retry</Btn>
+      <Btn onClick={() => load()}>{t('billing.retry')}</Btn>
     </div>
   );
 
   return (
     <div style={{ maxWidth: 900 }}>
-      <PageHeader title="Billing" subtitle="Payment methods, invoices, and delivery credits" />
+      <PageHeader title={t('billing.title')} subtitle={t('billing.subtitle')} />
 
       {accountCredit > 0 && (
         <div style={{
@@ -230,13 +233,13 @@ export default function BillingView() {
           padding: "16px 24px", marginBottom: 24,
         }}>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: C.green, marginBottom: 2 }}>Account Credit</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.green, marginBottom: 2 }}>{t('billing.accountCredit')}</div>
             <div style={{ fontSize: 12, color: C.textSub }}>
-              Applied automatically to your next charge. Comes from delivery shortfalls credited below.
+              {t('billing.creditHint')}
             </div>
           </div>
           <div style={{ fontSize: 26, fontWeight: 700, color: C.green, fontFamily: F.mono }}>
-            ${accountCredit.toFixed(2)}
+            {formatCurrency(accountCredit)}
           </div>
         </div>
       )}
@@ -253,11 +256,10 @@ export default function BillingView() {
           }}>
             <span style={{ flexShrink: 0, color: C.amber }}><IconWarning size={16} /></span>
             <span>
-              {warning.status === "expired" ? (
-                <><strong>Your default card has expired</strong> ({pm.brand} ···· {pm.last4}, expired {pm.expMonth}/{pm.expYear}).</>
-              ) : (
-                <><strong>Your default card expires soon</strong> — {pm.brand} ···· {pm.last4} expires {pm.expMonth}/{pm.expYear}, in {warning.daysUntil} day{warning.daysUntil === 1 ? "" : "s"}.</>
-              )} Update it below so a running campaign doesn't pause mid-flight when the next charge fails.
+              {warning.status === "expired"
+                ? tx('billing.cardExpired', { b: chunk => <strong>{chunk}</strong>, card: cardName(pm), exp: `${pm.expMonth}/${pm.expYear}` })
+                : tx('billing.cardExpiring', { b: chunk => <strong>{chunk}</strong>, card: cardName(pm), exp: `${pm.expMonth}/${pm.expYear}`, count: warning.daysUntil })}
+              {t('billing.updateBelow')}
             </span>
           </div>
         );
@@ -268,10 +270,10 @@ export default function BillingView() {
         padding: "20px 24px", marginBottom: 24,
       }}>
         <div style={{ fontSize: 15, fontWeight: 600, color: C.text, marginBottom: 16 }}>
-          Payment Methods
+          {t('billing.paymentMethods')}
         </div>
         {data.paymentMethods.length === 0 ? (
-          <div style={{ color: C.textMuted, fontSize: 13 }}>No payment methods on file.</div>
+          <div style={{ color: C.textMuted, fontSize: 13 }}>{t('billing.noMethods')}</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {data.paymentMethods.map((pm) => (
@@ -285,22 +287,22 @@ export default function BillingView() {
                   {pm.brand} ···· {pm.last4}
                 </span>
                 <span style={{ fontSize: 13, color: C.textSub }}>
-                  Expires {pm.expMonth}/{pm.expYear}
+                  {t('billing.expires', { exp: `${pm.expMonth}/${pm.expYear}` })}
                 </span>
                 {pm.isDefault && (
                   <span style={{
                     fontSize: 11, fontWeight: 600, color: C.purple, background: C.purpleSoft,
                     padding: "2px 8px", borderRadius: 10,
-                  }}>Default</span>
+                  }}>{t('billing.default')}</span>
                 )}
                 <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
                   {!pm.isDefault && (
                     <Btn variant="secondary" size="sm" onClick={() => setDefault(pm)} disabled={pmBusyId === pm.id}>
-                      {pmBusyId === pm.id ? "…" : "Set as default"}
+                      {pmBusyId === pm.id ? "…" : t('billing.setDefault')}
                     </Btn>
                   )}
                   <Btn variant="secondary" size="sm" onClick={() => removeMethod(pm)} disabled={pmBusyId === pm.id} style={{ color: C.red }}>
-                    {pmBusyId === pm.id ? "…" : "Remove"}
+                    {pmBusyId === pm.id ? "…" : t('common.remove')}
                   </Btn>
                 </div>
               </div>
@@ -310,10 +312,10 @@ export default function BillingView() {
         <div style={{ marginTop: 16 }}>
           {data.portalUrl ? (
             <a href={data.portalUrl} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>
-              <Btn>+ Add Payment Method →</Btn>
+              <Btn>{t('billing.addMethodPortal')}</Btn>
             </a>
           ) : (
-            <Btn onClick={startSetup} loading={setupLoading}>+ Add Payment Method</Btn>
+            <Btn onClick={startSetup} loading={setupLoading}>{t('billing.addMethod')}</Btn>
           )}
         </div>
       </div>
@@ -323,19 +325,19 @@ export default function BillingView() {
         overflow: "hidden",
       }}>
         <div style={{ padding: "14px 24px", borderBottom: `1px solid ${C.border}`, fontSize: 15, fontWeight: 600, color: C.text }}>
-          Invoice History
+          {t('billing.invoiceHistory')}
         </div>
         {data.invoices.length === 0 ? (
           <div style={{ padding: "32px 24px", color: C.textMuted, fontSize: 13 }}>
-            No invoices yet.
+            {t('billing.noInvoices')}
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 500 }}>
             <thead>
               <tr style={{ background: C.bg }}>
-                {["Date", "Description", "Amount", "Status", "PDF"].map((h) => (
-                  <th key={h} style={{ padding: "10px 20px", textAlign: "left", color: C.textSub, fontWeight: 500, borderBottom: `1px solid ${C.border}` }}>{h}</th>
+                {["date", "description", "amount", "status", "pdf"].map((h) => (
+                  <th key={h} style={{ padding: "10px 20px", textAlign: "left", color: C.textSub, fontWeight: 500, borderBottom: `1px solid ${C.border}` }}>{t(`billing.col.${h}`)}</th>
                 ))}
               </tr>
             </thead>
@@ -343,17 +345,17 @@ export default function BillingView() {
               {data.invoices.map((inv) => (
                 <tr key={inv.id} style={{ borderBottom: `1px solid ${C.border}` }}>
                   <td style={{ padding: "12px 20px", color: C.text, fontFamily: F.mono, fontSize: 12 }}>
-                    {new Date(inv.date * 1000).toLocaleDateString()}
+                    {formatDate(new Date(inv.date * 1000))}
                   </td>
                   <td style={{ padding: "12px 20px", color: C.text }}>{inv.description}</td>
                   <td style={{ padding: "12px 20px", color: C.text, fontWeight: 600 }}>
-                    ${inv.amount.toFixed(2)} {inv.currency.toUpperCase()}
+                    {formatMoney(inv.amount, inv.currency)}
                   </td>
                   <td style={{ padding: "12px 20px" }}><Badge status={inv.status} /></td>
                   <td style={{ padding: "12px 20px" }}>
                     {inv.pdf ? (
                       <a href={inv.pdf} target="_blank" rel="noreferrer" style={{ color: C.purple, fontSize: 12 }}>
-                        Download
+                        {t('billing.download')}
                       </a>
                     ) : "—"}
                   </td>
@@ -370,7 +372,7 @@ export default function BillingView() {
           background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 12,
           padding: "14px 24px", marginTop: 24, fontSize: 13, color: C.red,
         }}>
-          Couldn't load your delivery credits — try refreshing. If this keeps happening, contact support.
+          {t('billing.creditsError')}
         </div>
       )}
 
@@ -380,26 +382,26 @@ export default function BillingView() {
           overflow: "hidden", marginTop: 24,
         }}>
           <div style={{ padding: "14px 24px", borderBottom: `1px solid ${C.border}`, fontSize: 15, fontWeight: 600, color: C.text }}>
-            Delivery Credits
+            {t('billing.deliveryCredits')}
           </div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 560 }}>
               <thead>
                 <tr style={{ background: C.bg }}>
-                  {["Day", "Campaign", "Screen", "Reason", "Credited"].map((h) => (
-                    <th key={h} style={{ padding: "10px 20px", textAlign: "left", color: C.textSub, fontWeight: 500, borderBottom: `1px solid ${C.border}` }}>{h}</th>
+                  {["day", "campaign", "screen", "reason", "credited"].map((h) => (
+                    <th key={h} style={{ padding: "10px 20px", textAlign: "left", color: C.textSub, fontWeight: 500, borderBottom: `1px solid ${C.border}` }}>{t(`billing.col.${h}`)}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {creditRows.map((r) => (
                   <tr key={`${r.campaign_id}-${r.screen_id}-${r.day}`} style={{ borderBottom: `1px solid ${C.border}` }}>
-                    <td style={{ padding: "12px 20px", color: C.text, fontFamily: F.mono, fontSize: 12 }}>{r.day}</td>
+                    <td style={{ padding: "12px 20px", color: C.text, fontFamily: F.mono, fontSize: 12 }}>{formatDate(r.day)}</td>
                     <td style={{ padding: "12px 20px", color: C.text }}>{r.campaignName}</td>
                     <td style={{ padding: "12px 20px", color: C.text }}>{r.screenName}</td>
-                    <td style={{ padding: "12px 20px", color: C.textSub }}>{REASON_LABEL[r.reason] ?? r.reason}</td>
+                    <td style={{ padding: "12px 20px", color: C.textSub }}>{REASONS.includes(r.reason) ? t(`billing.reason.${r.reason}`) : r.reason}</td>
                     <td style={{ padding: "12px 20px", color: C.green, fontWeight: 600, fontFamily: F.mono }}>
-                      +${Number(r.credit_amount).toFixed(2)} {String(r.currency ?? "CAD").toUpperCase()}
+                      +{formatMoney(r.credit_amount, r.currency ?? "CAD")}
                     </td>
                   </tr>
                 ))}

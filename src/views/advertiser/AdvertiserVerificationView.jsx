@@ -8,6 +8,7 @@ import { C, F } from '../../design/tokens.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
+import { useT } from '../../i18n/useT.js';
 
 const ALLOWED_DOC_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
 const MAX_DOC_MB = 10;
@@ -17,6 +18,7 @@ export function AdvertiserVerificationView() {
   const navigate = useNavigate();
   const toast = useToast();
   const { user, profile } = useAuth();
+  const { t } = useT();
   const [latest, setLatest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [companyName, setCompanyName] = useState('');
@@ -43,15 +45,15 @@ export function AdvertiserVerificationView() {
 
   const handleDocFile = (file) => {
     if (!file) return;
-    if (!ALLOWED_DOC_TYPES.includes(file.type)) { setDocErr('Use JPG, PNG, or PDF.'); return; }
-    if (file.size > MAX_DOC_MB * 1024 * 1024) { setDocErr(`File too large — max ${MAX_DOC_MB} MB.`); return; }
+    if (!ALLOWED_DOC_TYPES.includes(file.type)) { setDocErr(t('verify.badType')); return; }
+    if (file.size > MAX_DOC_MB * 1024 * 1024) { setDocErr(t('verify.tooLarge', { max: MAX_DOC_MB })); return; }
     setDocErr(null);
     setDocFile(file);
   };
 
   const submit = async () => {
     if (!companyName.trim() || !businessDomain.trim()) {
-      toast.error('Company name and business domain are required.');
+      toast.error(t('verify.required'));
       return;
     }
     setSubmitting(true);
@@ -75,7 +77,7 @@ export function AdvertiserVerificationView() {
     };
 
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { cleanupOrphan(); toast.error('Session expired. Please log in again.'); setSubmitting(false); return; }
+    if (!session) { cleanupOrphan(); toast.error(t('verify.sessionExpired')); setSubmitting(false); return; }
 
     let res;
     try {
@@ -87,7 +89,7 @@ export function AdvertiserVerificationView() {
     } catch {
       cleanupOrphan();
       setSubmitting(false);
-      toast.error('Network error — please try again.');
+      toast.error(t('verify.network'));
       return;
     }
     const body = await res.json().catch(() => ({}));
@@ -95,10 +97,10 @@ export function AdvertiserVerificationView() {
 
     if (!res.ok) {
       cleanupOrphan();
-      toast.error(body?.error ?? 'Submission failed.');
+      toast.error(body?.error ?? t('verify.failed'));
       return;
     }
-    toast.success(body.tier === 'domain_match' ? 'Verified!' : 'Submitted for review.');
+    toast.success(body.tier === 'domain_match' ? t('verify.verified') : t('verify.submitted'));
     refresh();
   };
 
@@ -107,56 +109,56 @@ export function AdvertiserVerificationView() {
   return (
     <div style={{ maxWidth: 520, margin: '0 auto', padding: '40px 20px' }}>
       <Btn variant="ghost" onClick={() => navigate('/app/settings')} style={{ marginBottom: 16, paddingLeft: 0 }}>
-        ← Back
+        {t('verify.back')}
       </Btn>
       <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, fontFamily: F.display, marginBottom: 20 }}>
-        Business Verification
+        {t('verify.title')}
       </h1>
 
       {profile?.is_verified_advertiser ? (
         <Card style={{ padding: 16, marginBottom: 20 }}>
-          <Badge status="active">Verified advertiser</Badge>
+          <Badge status="active">{t('verify.verifiedBadge')}</Badge>
           <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginTop: 8 }}>
-            Operators see a verified badge on your campaigns and may auto-approve your work.
+            {t('verify.verifiedBody')}
           </div>
         </Card>
       ) : latest?.status === 'pending_manual' ? (
         <Card style={{ padding: 16, marginBottom: 20 }}>
-          <Badge status="pending">Under review</Badge>
+          <Badge status="pending">{t('verify.reviewBadge')}</Badge>
           <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginTop: 8 }}>
-            We're reviewing your submission. You'll be notified once it's decided.
+            {t('verify.reviewBody')}
           </div>
         </Card>
       ) : (
         <>
           {latest?.status === 'rejected' && (
             <Card style={{ padding: 16, marginBottom: 20, borderColor: C.redBorder }}>
-              <Badge status="rejected">Rejected</Badge>
+              <Badge status="rejected">{t('verify.rejectedBadge')}</Badge>
               {latest.rejection_reason && (
                 <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginTop: 8 }}>{latest.rejection_reason}</div>
               )}
-              <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginTop: 8 }}>You can resubmit below.</div>
+              <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginTop: 8 }}>{t('verify.resubmit')}</div>
             </Card>
           )}
 
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>Company name</div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>{t('verify.companyName')}</div>
             <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)}
               style={{ width: '100%', padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.sans, fontSize: 13 }} />
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>Business domain</div>
-            <input type="text" placeholder="acme.com" value={businessDomain} onChange={e => setBusinessDomain(e.target.value)}
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>{t('verify.domain')}</div>
+            <input type="text" placeholder={t('verify.domainPlaceholder')} value={businessDomain} onChange={e => setBusinessDomain(e.target.value)}
               style={{ width: '100%', padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.sans, fontSize: 13 }} />
             <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 4 }}>
-              Matches your company email domain? You're verified instantly. Free email addresses (Gmail, Outlook, etc.) go to manual review.
+              {t('verify.domainHint')}
             </div>
           </div>
 
           <div style={{ marginBottom: 14 }}>
             <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>
-              Business number <span style={{ color: C.textMuted, fontWeight: 400 }}>(optional)</span>
+              {t('verify.businessNumber')} <span style={{ color: C.textMuted, fontWeight: 400 }}>{t('common.optional')}</span>
             </div>
             <input type="text" value={businessNumber} onChange={e => setBusinessNumber(e.target.value)}
               style={{ width: '100%', padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.sans, fontSize: 13 }} />
@@ -164,7 +166,7 @@ export function AdvertiserVerificationView() {
 
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>
-              Business license/registration doc <span style={{ color: C.textMuted, fontWeight: 400 }}>(optional — if domain doesn't match)</span>
+              {t('verify.doc')} <span style={{ color: C.textMuted, fontWeight: 400 }}>{t('verify.docOptional')}</span>
             </div>
             <input type="file" accept="image/jpeg,image/png,application/pdf" onChange={e => handleDocFile(e.target.files?.[0])} />
             {docFile && <div style={{ fontSize: 12, color: C.text, fontFamily: F.sans, marginTop: 6 }}>{docFile.name}</div>}
@@ -172,7 +174,7 @@ export function AdvertiserVerificationView() {
           </div>
 
           <Btn variant="primary" disabled={submitting} onClick={submit}>
-            {submitting ? 'Submitting…' : 'Submit for verification'}
+            {submitting ? t('common.submitting') : t('verify.submit')}
           </Btn>
         </>
       )}

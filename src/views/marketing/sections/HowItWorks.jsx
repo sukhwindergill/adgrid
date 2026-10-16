@@ -1,22 +1,9 @@
 import { useReveal } from './useReveal.js';
+import { useT } from '../../../i18n/useT.js';
 
 const TRACKS = [
-  {
-    label: 'For screen operators',
-    steps: [
-      ['Connect your screen', 'Pair any display in minutes. No proprietary hardware to buy.'],
-      ['Set your rules', 'Floor price and operating hours. You approve every ad before it plays, or auto-approve advertisers you trust.'],
-      ['Get paid', 'Automatic payouts for every second of ad time sold. Track earnings per screen.'],
-    ],
-  },
-  {
-    label: 'For advertisers',
-    steps: [
-      ['Choose your venues', 'Filter by neighbourhood, venue type, and daily foot traffic.'],
-      ['Set budget and schedule', 'Transparent per-slot pricing. No minimums, no long-term contracts.'],
-      ['Measure what happens', 'Live playback logs and QR scan tracking for every campaign.'],
-    ],
-  },
+  { id: 'operators', steps: ['connect', 'rules', 'paid'] },
+  { id: 'advertisers', steps: ['venues', 'budget', 'measure'] },
 ];
 
 function FlowDiagram() {
@@ -34,27 +21,28 @@ function FlowDiagram() {
 }
 
 export function HowItWorks() {
+  const { t } = useT();
   const [ref, on] = useReveal();
   return (
     <section className="sec light" id="how" ref={ref}>
       <div className="inner" style={{ textAlign: 'center' }}>
         <div className={`rv ${on ? 'on' : ''}`}>
-          <div className="eyebrow">How it works</div>
-          <h2 className="sec-h">Two sides, one marketplace</h2>
+          <div className="eyebrow">{t('marketing.how.eyebrow')}</div>
+          <h2 className="sec-h">{t('marketing.how.heading')}</h2>
           <div className={on ? 'flow-on' : ''}>
             <FlowDiagram />
           </div>
         </div>
         <div className="tracks" style={{ textAlign: 'left' }}>
           {TRACKS.map((track, ti) => (
-            <div className={`track rv d${ti + 1} ${on ? 'on' : ''}`} key={track.label}>
-              <div className="t-label">{track.label}</div>
+            <div className={`track rv d${ti + 1} ${on ? 'on' : ''}`} key={track.id}>
+              <div className="t-label">{t(`marketing.how.${track.id}Label`)}</div>
               {track.steps.map((step, i) => {
-                const [h, p] = step;
+                const base = `marketing.how.${track.id === 'operators' ? 'operatorSteps' : 'advertiserSteps'}.${step}`;
                 return (
-                  <div className="step" key={h}>
+                  <div className="step" key={step}>
                     <div className="n">{i + 1}</div>
-                    <div><h4>{h}</h4><p>{p}</p></div>
+                    <div><h4>{t(`${base}.h`)}</h4><p>{t(`${base}.p`)}</p></div>
                   </div>
                 );
               })}

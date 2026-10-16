@@ -3,11 +3,15 @@ import { useState } from 'react';
 import { C, F } from '../../../design/tokens.js';
 import { AdRenderPreviewModal } from '../../../components/shared/AdRenderPreviewModal.jsx';
 import { IconEye } from '../../../components/icons.jsx';
+import { useT } from '../../../i18n/useT.js';
 
 export function ScreenPickerCard({ screen, selected, onToggle, creative, isFavorited, onToggleFavorite }) {
+  const { t, tOr, formatNumber } = useT();
   const [showPreview, setShowPreview] = useState(false);
   const firstPhoto = screen.screen_photos?.[0];
-  const venueLabel = screen.venue_subtype || screen.venue_category;
+  const venueLabel = screen.venue_subtype
+    ? tOr(`venue.subtype.${screen.venue_subtype}`, screen.venue_subtype)
+    : screen.venue_category && tOr(`venue.category.${screen.venue_category}`, screen.venue_category);
   const isSelected = selected.includes(screen.id);
 
   const markedPhotos = (screen.screen_photo_frames ?? []).filter(f => screen.screen_photos?.includes(f.url));
@@ -28,7 +32,7 @@ export function ScreenPickerCard({ screen, selected, onToggle, creative, isFavor
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onToggleFavorite(screen.id); }}
-          title={isFavorited ? 'Remove from favorites' : 'Save as favorite'}
+          title={isFavorited ? t('create.picker.unfavorite') : t('create.picker.favorite')}
           style={{
             position: 'absolute', top: 6, left: 6, zIndex: 1,
             width: 24, height: 24, borderRadius: '50%', border: 'none',
@@ -47,7 +51,7 @@ export function ScreenPickerCard({ screen, selected, onToggle, creative, isFavor
               type="button"
               onClick={(e) => { e.stopPropagation(); if (hasCreativeMedia) setShowPreview(true); }}
               disabled={!hasCreativeMedia}
-              title={hasCreativeMedia ? 'Preview your ad on this screen' : 'Upload your creative to preview'}
+              title={hasCreativeMedia ? t('create.picker.previewOn') : t('create.picker.previewNeedsCreative')}
               style={{
                 position: 'absolute', bottom: 6, right: 6,
                 display: 'inline-flex', alignItems: 'center', gap: 4,
@@ -57,7 +61,7 @@ export function ScreenPickerCard({ screen, selected, onToggle, creative, isFavor
                 cursor: hasCreativeMedia ? 'pointer' : 'not-allowed',
               }}
             >
-              <IconEye size={12} /> Preview
+              <IconEye size={12} /> {t('common.preview')}
             </button>
           )}
         </div>
@@ -80,7 +84,7 @@ export function ScreenPickerCard({ screen, selected, onToggle, creative, isFavor
           </div>
         </div>
         <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
-          {screen.city}{screen.environment ? ` · ${screen.environment === 'indoor' ? 'Indoor' : 'Outdoor'}` : ''}
+          {screen.city}{screen.environment ? ` · ${screen.environment === 'indoor' ? t('common.env.indoor') : t('common.env.outdoor')}` : ''}
         </div>
         {venueLabel && (
           <span style={{ display: 'inline-block', marginTop: 6, fontSize: 11, fontWeight: 600, background: C.blueSoft, color: C.blue, padding: '1px 7px', borderRadius: 10, fontFamily: F.sans }}>
@@ -88,7 +92,7 @@ export function ScreenPickerCard({ screen, selected, onToggle, creative, isFavor
           </span>
         )}
         <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 4 }}>
-          ~{screen.impressions > 0 ? `${(screen.impressions / 1000).toFixed(0)}K impr/mo` : 'No data yet'}
+          {screen.impressions > 0 ? t('create.picker.imprPerMonth', { k: formatNumber(Math.round(screen.impressions / 1000)) }) : t('create.picker.noData')}
         </div>
       </div>
 

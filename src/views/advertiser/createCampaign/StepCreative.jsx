@@ -8,14 +8,15 @@ import { ScreenPickerCard } from './ScreenPickerCard.jsx';
 import { CreativeCard } from './CreativeCard.jsx';
 import { unassignedScreenIds, splitScreenIdsByOrientation, makeBlankCreative } from '../../../lib/creativeAssignment.js';
 import { VENUE_TAXONOMY } from '../../../lib/venueTypes.js';
-import { pluralize } from '../../../lib/pluralize.js';
 import { useAuth } from '../../../context/AuthContext.jsx';
 import { useAdvertiserScreenFavorites } from '../../../hooks/useAdvertiserScreenFavorites.js';
 import { useAdvertiserRecentScreens } from '../../../hooks/useAdvertiserRecentScreens.js';
+import { useT } from '../../../i18n/useT.js';
 
 const BLANK_CREATIVE = makeBlankCreative;
 
 export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavailable = false, houseAdMode = false }) {
+  const { t, formatNumber } = useT();
   const [showFilters, setShowFilters] = useState(false);
   const [screenTab, setScreenTab] = useState('all');
   const { user } = useAuth();
@@ -127,22 +128,22 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
           onMouseEnter={e => { if (!showFilters) e.currentTarget.style.background = C.surfaceAlt; }}
           onMouseLeave={e => { if (!showFilters) e.currentTarget.style.background = C.surface; }}
         >
-          Refine screens {showFilters ? '▲' : '▼'}
+          {t('create.creativeStep.refine')} {showFilters ? '▲' : '▼'}
         </button>
         {showFilters && (
           <div style={{ marginBottom: 16, padding: 16, background: C.surfaceAlt, borderRadius: 10, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>Environment</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>{t('create.targeting.environment')}</div>
               <PillGroup
-                options={[{ value: 'any', label: 'Any' }, { value: 'indoor', label: 'Indoor' }, { value: 'outdoor', label: 'Outdoor' }]}
+                options={[{ value: 'any', label: t('common.env.any') }, { value: 'indoor', label: t('common.env.indoor') }, { value: 'outdoor', label: t('common.env.outdoor') }]}
                 value={form.env_filter}
                 onChange={v => setForm(s => ({ ...s, env_filter: v }))}
               />
             </div>
-            <SelInput label="Venue Category" value={form.venue_filter} onChange={e => setForm(s => ({ ...s, venue_filter: e.target.value }))}>
-              <option value="">Any venue type</option>
-              {Object.entries(VENUE_TAXONOMY).map(([key, { label }]) => (
-                <option key={key} value={key}>{label}</option>
+            <SelInput label={t('create.targeting.venueCategory')} value={form.venue_filter} onChange={e => setForm(s => ({ ...s, venue_filter: e.target.value }))}>
+              <option value="">{t('create.targeting.anyVenue')}</option>
+              {Object.keys(VENUE_TAXONOMY).map(key => (
+                <option key={key} value={key}>{t(`venue.category.${key}`)}</option>
               ))}
             </SelInput>
           </div>
@@ -150,29 +151,29 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: 0 }}>Screens</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: 0 }}>{t('create.creativeStep.screens')}</h2>
             <div style={{ fontSize: 12, color: C.purple, fontFamily: F.sans, marginTop: 4 }}>
-              {form.selected_screen_ids.length} of {matchedScreens.length} selected · ~{(totalImpr / 1000).toFixed(0)}K impressions/mo
+              {t('create.creativeStep.selectedSummary', { selected: form.selected_screen_ids.length, total: matchedScreens.length, k: formatNumber(Math.round(totalImpr / 1000)) })}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={selectAll} style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans, transition: 'opacity 0.15s' }}
               onMouseEnter={e => { e.currentTarget.style.opacity = '0.75'; }}
               onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-            >Select all</button>
+            >{t('create.creativeStep.selectAll')}</button>
             <button onClick={deselectAll} style={{ background: 'none', border: 'none', fontSize: 12, color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s' }}
               onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
               onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-            >Deselect all</button>
+            >{t('create.creativeStep.deselectAll')}</button>
           </div>
         </div>
 
         <div style={{ marginBottom: 14 }}>
           <PillGroup
             options={[
-              { value: 'all', label: `All matching (${matchedScreens.length})` },
-              { value: 'favorites', label: `Favorites (${favoriteScreens.length})` },
-              { value: 'recent', label: `Recent (${recentScreens.length})` },
+              { value: 'all', label: t('create.creativeStep.tabAll', { count: matchedScreens.length }) },
+              { value: 'favorites', label: t('create.creativeStep.tabFavorites', { count: favoriteScreens.length }) },
+              { value: 'recent', label: t('create.creativeStep.tabRecent', { count: recentScreens.length }) },
             ]}
             value={screenTab}
             onChange={setScreenTab}
@@ -182,12 +183,12 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
         {visibleScreens.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '32px 24px', color: C.textSub, fontFamily: F.sans, fontSize: 13 }}>
             {screenTab === 'favorites'
-              ? 'No favorites yet — star a board below to save it here.'
+              ? t('create.creativeStep.emptyFavorites')
               : screenTab === 'recent'
-              ? 'No boards from past campaigns yet.'
+              ? t('create.creativeStep.emptyRecent')
               : presetScreenUnavailable
-              ? 'This screen is no longer available. Contact AdGrid support for help.'
-              : 'No screens match your filters. Try widening your area or removing filters.'}
+              ? t('create.creativeStep.presetUnavailable')
+              : t('create.creativeStep.noMatch')}
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, marginBottom: 28 }}>
@@ -205,11 +206,15 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
           </div>
         )}
 
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 16px' }}>Creative{isMulti ? 's' : ''}</h2>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 16px' }}>{isMulti ? t('create.creativeStep.creatives') : t('create.creativeStep.creative')}</h2>
 
         {unassigned.length > 0 && (
           <div style={{ marginBottom: 16, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: 12, color: C.amber, fontFamily: F.sans }}>
-            {unassigned.length} of {form.selected_screen_ids.length} {pluralize(form.selected_screen_ids.length, 'screen')} aren't assigned to a creative yet — they'll show the first creative above by default.
+            {t('create.creativeStep.unassigned', {
+              count: unassigned.length,
+              total: form.selected_screen_ids.length,
+              screens: t('create.creativeStep.screenWord', { count: form.selected_screen_ids.length }),
+            })}
           </div>
         )}
 
@@ -234,7 +239,7 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
             onMouseEnter={e => { e.currentTarget.style.background = C.purpleSoft; e.currentTarget.style.borderColor = C.purple; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.borderColor = C.border; }}
           >
-            + Add another creative
+            {t('create.creativeStep.addCreative')}
           </button>
         )}
       </Card>

@@ -2,16 +2,17 @@ import { useRef, useState } from 'react';
 import { useReveal } from './useReveal.js';
 import { estimateMonthlyEarnings, ESTIMATE_ASSUMPTIONS } from '../../../lib/earningsEstimate.js';
 import { track } from '../../../lib/analytics.js';
+import { useT } from '../../../i18n/useT.js';
 
 const FILL_OPTIONS = [
-  [0.25, 'Quiet', '25% of ad spots booked'],
-  [0.5, 'Typical', '50% of ad spots booked'],
-  [0.75, 'Busy', '75% of ad spots booked'],
+  [0.25, 'quiet'],
+  [0.5, 'typical'],
+  [0.75, 'busy'],
 ];
 
-const fmt = n => `$${n.toLocaleString('en-CA')}`;
-
 export function EarningsCalculator({ onOperatorSignup }) {
+  const { t, formatCurrency, formatNumber, formatPercent } = useT();
+  const fmt = n => formatCurrency(n, { decimals: 0 });
   const [ref, on] = useReveal();
   const [screens, setScreens] = useState(1);
   const [dailyVisitors, setDailyVisitors] = useState(400);
@@ -31,36 +32,35 @@ export function EarningsCalculator({ onOperatorSignup }) {
       <div className="inner">
         <div className={`calc rv ${on ? 'on' : ''}`}>
           <div>
-            <div className="eyebrow">Earnings calculator</div>
-            <h2 className="sec-h">What could your screen earn?</h2>
+            <div className="eyebrow">{t('marketing.calc.eyebrow')}</div>
+            <h2 className="sec-h">{t('marketing.calc.heading')}</h2>
             <p className="sec-sub">
-              Move the sliders to match your venue. You keep {Math.round(ownerShare * 100)}% of
-              what advertisers pay.
+              {t('marketing.calc.sub', { share: formatPercent(ownerShare) })}
             </p>
 
             <div className="calc-field">
-              <label htmlFor="calc-screens">Screens <strong>{screens}</strong></label>
+              <label htmlFor="calc-screens">{t('marketing.calc.screens')} <strong>{screens}</strong></label>
               <input id="calc-screens" type="range" min="1" max="20" step="1"
                 value={screens} onChange={e => touched(setScreens)(Number(e.target.value))} />
             </div>
 
             <div className="calc-field">
               <label htmlFor="calc-visitors">
-                Visitors per day, per screen <strong>{dailyVisitors.toLocaleString('en-CA')}</strong>
+                {t('marketing.calc.visitors')} <strong>{formatNumber(dailyVisitors)}</strong>
               </label>
               <input id="calc-visitors" type="range" min="50" max="3000" step="50"
                 value={dailyVisitors} onChange={e => touched(setDailyVisitors)(Number(e.target.value))} />
             </div>
 
             <fieldset className="calc-field calc-fill">
-              <legend>How much ad time gets booked</legend>
+              <legend>{t('marketing.calc.fillLegend')}</legend>
               <div className="calc-seg">
-                {FILL_OPTIONS.map(([value, label, title]) => (
-                  <button key={value} type="button" title={title}
+                {FILL_OPTIONS.map(([value, key]) => (
+                  <button key={value} type="button" title={t(`marketing.calc.fill.${key}.title`)}
                     aria-pressed={fillRate === value}
                     className={fillRate === value ? 'on' : ''}
                     onClick={() => touched(setFillRate)(value)}>
-                    {label}
+                    {t(`marketing.calc.fill.${key}.label`)}
                   </button>
                 ))}
               </div>
@@ -68,13 +68,12 @@ export function EarningsCalculator({ onOperatorSignup }) {
           </div>
 
           <div className="calc-result" aria-live="polite">
-            <div className="calc-result-lbl">Estimated monthly payout</div>
+            <div className="calc-result-lbl">{t('marketing.calc.resultLabel')}</div>
             <div className="calc-result-num">{fmt(operator)}</div>
-            <div className="calc-result-sub">{fmt(operator * 12)} a year</div>
-            <button className="btn-p" onClick={onOperatorSignup}>List your screens</button>
+            <div className="calc-result-sub">{t('marketing.calc.perYear', { amount: fmt(operator * 12) })}</div>
+            <button className="btn-p" onClick={onOperatorSignup}>{t('marketing.cta.listScreens')}</button>
             <p className="calc-note">
-              Estimate only, not a guarantee. Assumes each visitor sees {adSpotsPerLoop} ad spots
-              at a ${cpm} CPM. Real earnings depend on your floor price, hours and demand in your area.
+              {t('marketing.calc.note', { spots: adSpotsPerLoop, cpm: fmt(cpm) })}
             </p>
           </div>
         </div>

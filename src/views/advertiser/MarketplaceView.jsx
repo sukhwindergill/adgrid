@@ -7,13 +7,9 @@ import { SkeletonCard, SkeletonRow } from '../../components/primitives/Skeleton.
 import { fetchActiveListings, fetchAdvertiserBookings } from '../../lib/marketplace.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { IconTagPrice } from '../../components/icons.jsx';
+import { useT } from '../../i18n/useT.js';
 
-const BOOKING_STATUS_LABEL = {
-  confirmed: 'Confirmed',
-  active: 'Active',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-};
+const BOOKING_STATUSES = ['confirmed', 'active', 'completed', 'cancelled'];
 
 function EmptyState({ text }) {
   return (
@@ -25,6 +21,7 @@ function EmptyState({ text }) {
 }
 
 function BrowseListings({ onSelectListing }) {
+  const { t, formatCurrency, formatDate } = useT();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -48,11 +45,11 @@ function BrowseListings({ onSelectListing }) {
   }
 
   if (error) {
-    return <EmptyState text="Couldn't load listings — check your connection and try again." />;
+    return <EmptyState text={t('market.listingsError')} />;
   }
 
   if (listings.length === 0) {
-    return <EmptyState text="No exclusive listings available right now." />;
+    return <EmptyState text={t('market.noListings')} />;
   }
 
   return (
@@ -60,15 +57,15 @@ function BrowseListings({ onSelectListing }) {
       {listings.map(l => (
         <Card key={l.id} onClick={() => onSelectListing(l.id)} style={{ padding: 16 }}>
           <div style={{ fontFamily: F.sans, fontWeight: 600, fontSize: 15, color: C.text, display: 'flex', alignItems: 'center', gap: 8 }}>
-            ${(l.price_cents / 100).toFixed(0)}
+            {formatCurrency(l.price_cents / 100, { decimals: 0 })}
             {l.is_bundle && (
               <span style={{ fontSize: 11, fontWeight: 600, color: C.purple, background: C.purpleSoft, borderRadius: 999, padding: '2px 8px' }}>
-                Bundle
+                {t('market.bundle')}
               </span>
             )}
           </div>
           <div style={{ fontFamily: F.sans, fontSize: 12, color: C.textSub, marginTop: 4 }}>
-            {l.start_date} – {l.end_date}
+            {formatDate(l.start_date)} – {formatDate(l.end_date)}
           </div>
         </Card>
       ))}
@@ -78,6 +75,7 @@ function BrowseListings({ onSelectListing }) {
 
 function MyBookings({ onSelectListing }) {
   const { user } = useAuth();
+  const { t, formatCurrency, formatDate } = useT();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -99,11 +97,11 @@ function MyBookings({ onSelectListing }) {
   }
 
   if (error) {
-    return <EmptyState text="Couldn't load your bookings — check your connection and try again." />;
+    return <EmptyState text={t('market.bookingsError')} />;
   }
 
   if (bookings.length === 0) {
-    return <EmptyState text="You haven't booked any exclusive placements yet." />;
+    return <EmptyState text={t('market.noBookings')} />;
   }
 
   return (
@@ -115,20 +113,20 @@ function MyBookings({ onSelectListing }) {
           style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, padding: 12 }}
         >
           <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMid }}>
-            {b.screen_name ?? 'Screen unavailable'}
-            {b.listing?.is_bundle && <span style={{ color: C.purple, fontWeight: 600 }}> · Bundle</span>}
-            {b.listing && <span> · {b.listing.start_date} – {b.listing.end_date}</span>}
+            {b.screen_name ?? t('market.screenUnavailable')}
+            {b.listing?.is_bundle && <span style={{ color: C.purple, fontWeight: 600 }}> · {t('market.bundle')}</span>}
+            {b.listing && <span> · {formatDate(b.listing.start_date)} – {formatDate(b.listing.end_date)}</span>}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: F.sans, fontSize: 12 }}>
             <span style={{ color: C.textSub }}>
-              ${((b.price_cents + b.platform_fee_cents) / 100).toFixed(2)} total
+              {t('market.totalSuffix', { amount: formatCurrency((b.price_cents + b.platform_fee_cents) / 100) })}
             </span>
             <span style={{
               padding: '2px 8px', borderRadius: 999, fontWeight: 600,
               color: b.status === 'cancelled' ? C.red : C.purple,
               background: b.status === 'cancelled' ? C.redSoft : C.purpleSoft,
             }}>
-              {BOOKING_STATUS_LABEL[b.status] ?? b.status}
+              {BOOKING_STATUSES.includes(b.status) ? t(`market.bookingStatus.${b.status}`) : b.status}
             </span>
           </div>
         </Card>
@@ -138,13 +136,14 @@ function MyBookings({ onSelectListing }) {
 }
 
 export function MarketplaceView({ onSelectListing }) {
+  const { t } = useT();
   const [tab, setTab] = useState('browse');
 
   return (
     <div>
-      <PageHeader title="Marketplace" subtitle="Exclusive placements booked outright, outside the open auction" />
+      <PageHeader title={t('market.title')} subtitle={t('market.subtitle')} />
       <Tabs
-        tabs={[{ id: 'browse', label: 'Browse' }, { id: 'bookings', label: 'My Bookings' }]}
+        tabs={[{ id: 'browse', label: t('market.tabBrowse') }, { id: 'bookings', label: t('market.tabBookings') }]}
         active={tab}
         onChange={setTab}
       />

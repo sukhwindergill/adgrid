@@ -7,16 +7,18 @@ import { C, F } from '../../../design/tokens.js';
 import { Card } from '../../../components/primitives/Card.jsx';
 import { Btn } from '../../../components/primitives/Btn.jsx';
 import { timeAgo } from '../../../lib/timeAgo.js';
+import { useT } from '../../../i18n/useT.js';
 
-const STEP_LABELS = ['Targeting', 'Creative', 'Budget & Schedule'];
+const STEP_KEYS = ['targeting', 'creative', 'budget'];
 
 export function DraftsCard({ drafts, onResume, onDelete }) {
+  const { t } = useT();
   if (drafts.length === 0) return null;
 
   return (
     <Card style={{ padding: 20, marginBottom: 24 }}>
       <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>
-        Continue a draft
+        {t('create.drafts.title')}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {drafts.map(d => (
@@ -29,18 +31,18 @@ export function DraftsCard({ drafts, onResume, onDelete }) {
             }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans }}>{d.name}</div>
               <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
-                {STEP_LABELS[d.step] || STEP_LABELS[0]} · saved {timeAgo(d.updated_at)}
+                {t('create.drafts.saved', { step: t(`create.steps.${STEP_KEYS[d.step] || STEP_KEYS[0]}`), ago: timeAgo(d.updated_at) })}
               </div>
             </button>
-            <Btn variant="secondary" size="sm" onClick={() => onResume(d.id)}>Resume</Btn>
+            <Btn variant="secondary" size="sm" onClick={() => onResume(d.id)}>{t('create.drafts.resume')}</Btn>
             <button
               onClick={() => onDelete(d.id)}
-              aria-label={`Delete draft ${d.name}`}
+              aria-label={t('create.drafts.deleteLabel', { name: d.name })}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted, fontSize: 12, fontFamily: F.sans, padding: '6px 4px', transition: 'color 0.15s' }}
               onMouseEnter={e => { e.currentTarget.style.color = C.red; }}
               onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
             >
-              Delete
+              {t('common.delete')}
             </button>
           </div>
         ))}

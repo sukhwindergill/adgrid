@@ -1,35 +1,41 @@
 import { useReveal } from './useReveal.js';
 import { IconTrend, IconShield, IconChart, IconBolt } from './icons.jsx';
+import { useT } from '../../../i18n/useT.js';
 
 const CARDS = [
-  [IconTrend, 'Dynamic pricing', 'Set a floor price and let demand move it up. Event nights and rush hours price themselves.'],
-  [IconShield, 'Full approval control', 'Approve or reject every ad. Set operating hours. Optionally auto-approve verified advertisers.'],
-  [IconChart, 'Real-time analytics', 'Fill rate, revenue trends, and playback proof, per screen, per day.'],
-  [IconBolt, 'No lock-in', 'Connect in minutes. No long-term contracts, no upfront costs.'],
+  [IconTrend, 'pricing'],
+  [IconShield, 'control'],
+  [IconChart, 'analytics'],
+  [IconBolt, 'lockin'],
 ];
 
 export function OperatorsSection({ onOperatorSignup }) {
+  const { t } = useT();
   const [ref, on] = useReveal();
   return (
     <section className="sec lcard-bg" id="operators" ref={ref}>
       <div className="inner">
         <div className={`sticky-split rv ${on ? 'on' : ''}`}>
           <div className="sticky-col">
-            <img src="/marketing/venue-barbershop.jpg" alt="Digital ad screen on a barbershop counter"
+            <img src="/marketing/venue-barbershop.jpg" alt={t('marketing.operators.imgAlt')}
               loading="lazy" width="1600" height="1073" />
           </div>
           <div className="scroll-col">
-            <div className="eyebrow">For operators</div>
-            <h2 className="sec-h">Your screens. Your rules. New revenue.</h2>
-            <p className="sec-sub">Turn idle screen time into income without giving up control of what plays in your venue.</p>
+            <div className="eyebrow">{t('marketing.operators.eyebrow')}</div>
+            <h2 className="sec-h">{t('marketing.operators.heading')}</h2>
+            <p className="sec-sub">{t('marketing.operators.sub')}</p>
             <div className="card-grid">
               {CARDS.map(card => {
-                const [Icon, h, p] = card;
-                return <div className="f-card" key={h}><Icon /><h3>{h}</h3><p>{p}</p></div>;
+                const [Icon, key] = card;
+                return (
+                  <div className="f-card" key={key}>
+                    <Icon /><h3>{t(`marketing.operators.cards.${key}.h`)}</h3><p>{t(`marketing.operators.cards.${key}.p`)}</p>
+                  </div>
+                );
               })}
             </div>
             <div style={{ marginTop: 32 }}>
-              <button className="btn-p" onClick={onOperatorSignup}>List your screens</button>
+              <button className="btn-p" onClick={onOperatorSignup}>{t('marketing.cta.listScreens')}</button>
             </div>
           </div>
         </div>

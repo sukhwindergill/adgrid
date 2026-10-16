@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useReveal } from './useReveal.js';
-import { FAQS } from './faqData.js';
+import { getFaqs } from './faqData.js';
+import { useT } from '../../../i18n/useT.js';
 
 function FaqItem({ id, q, a, open, onToggle }) {
   return (
@@ -15,6 +16,8 @@ function FaqItem({ id, q, a, open, onToggle }) {
 }
 
 export function Faq() {
+  const { t, locale } = useT();
+  const FAQS = getFaqs(locale);
   const [ref, on] = useReveal();
   const [openIdx, setOpenIdx] = useState(0);
 
@@ -41,12 +44,12 @@ export function Faq() {
       <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
       <div className={`inner rv ${on ? 'on' : ''}`} style={{ maxWidth: 760 }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div className="eyebrow">FAQ</div>
-          <h2 className="sec-h">Questions, answered</h2>
+          <div className="eyebrow">{t('marketing.faq.eyebrow')}</div>
+          <h2 className="sec-h">{t('marketing.faq.heading')}</h2>
         </div>
         <div className="faq-list">
           {FAQS.map(([q, a], i) => (
-            <FaqItem key={q} id={`faq-${i}`} q={q} a={a} open={openIdx === i}
+            <FaqItem key={i} id={`faq-${i}`} q={q} a={a} open={openIdx === i}
               onToggle={() => setOpenIdx(openIdx === i ? -1 : i)} />
           ))}
         </div>

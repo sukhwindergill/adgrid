@@ -8,10 +8,10 @@ import { supabase } from '../../../lib/supabase.js';
 import { C, F } from '../../../design/tokens.js';
 import { VENUE_TAXONOMY } from '../../../lib/venueTypes.js';
 import { topPerformingProfile } from '../../../lib/screenRecommendation.js';
-
-const ENV_LABEL = { indoor: 'Indoor', outdoor: 'Outdoor' };
+import { useT } from '../../../i18n/useT.js';
 
 export function TopScreensInsight({ pastCampaignIds, allScreens, currentVenueFilter, currentEnvFilter, onApply }) {
+  const { t, tx } = useT();
   const [profile, setProfile] = useState(null);
   const [dismissed, setDismissed] = useState(false);
 
@@ -34,8 +34,8 @@ export function TopScreensInsight({ pastCampaignIds, allScreens, currentVenueFil
   // Already filtered to exactly this profile -- nothing new to suggest.
   if (currentVenueFilter === profile.venue_category && currentEnvFilter === profile.environment) return null;
 
-  const venueLabel = VENUE_TAXONOMY[profile.venue_category]?.label ?? profile.venue_category;
-  const envLabel = ENV_LABEL[profile.environment] ?? profile.environment;
+  const venueLabel = VENUE_TAXONOMY[profile.venue_category] ? t(`venue.category.${profile.venue_category}`) : profile.venue_category;
+  const envLabel = ['indoor', 'outdoor'].includes(profile.environment) ? t(`common.env.${profile.environment}`) : profile.environment;
 
   return (
     <div style={{
@@ -43,7 +43,7 @@ export function TopScreensInsight({ pastCampaignIds, allScreens, currentVenueFil
       borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
     }}>
       <span style={{ fontSize: 12, color: C.text, fontFamily: F.sans, lineHeight: 1.4 }}>
-        Your past campaigns scanned best on <strong>{venueLabel} · {envLabel}</strong> screens.
+        {tx('create.insight.body', { b: chunk => <strong>{chunk}</strong>, profile: `${venueLabel} · ${envLabel}` })}
       </span>
       <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
         <button onClick={() => onApply(profile)} style={{
@@ -52,8 +52,8 @@ export function TopScreensInsight({ pastCampaignIds, allScreens, currentVenueFil
         }}
           onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
           onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-        >Apply filter</button>
-        <button onClick={() => setDismissed(true)} aria-label="Dismiss" style={{
+        >{t('create.insight.apply')}</button>
+        <button onClick={() => setDismissed(true)} aria-label={t('common.dismiss')} style={{
           background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted, fontSize: 14, padding: '0 4px', transition: 'color 0.15s',
         }}
           onMouseEnter={e => { e.currentTarget.style.color = C.text; }}

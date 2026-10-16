@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
-import { FAQS } from './faqData.js';
+import { getFaqs } from './faqData.js';
+import { useT } from '../../../i18n/useT.js';
 
-const SECTION_ENTRIES = [
-  { id: 'how', title: 'How it works', text: 'List your screens or book a campaign, real-time pricing, self-serve, no long-term contracts.' },
-  { id: 'operators', title: 'For operators', text: 'List your digital screens, set your own prices, approve every ad before it airs.' },
-  { id: 'advertisers', title: 'For advertisers', text: 'Book real out-of-home ad campaigns on local screens in minutes, no minimums.' },
-];
+const SECTION_IDS = ['how', 'operators', 'advertisers'];
 
 // Each FAQ gets its own anchor id (`faq-<i>`) instead of sharing 'faq', so a
 // search result scrolls to — and can auto-expand — the specific question
 // matched, rather than just the top of the FAQ section.
-const FAQ_ENTRIES = FAQS.map(([q, a], i) => ({ id: `faq-${i}`, title: q, text: a, key: `faq-${i}` }));
-
-const INDEX = [...SECTION_ENTRIES, ...FAQ_ENTRIES];
+function buildIndex(t, locale) {
+  const sections = SECTION_IDS.map(id => ({
+    id,
+    title: t(`marketing.search.sections.${id}.title`),
+    text: t(`marketing.search.sections.${id}.text`),
+  }));
+  const faqs = getFaqs(locale).map(([q, a], i) => ({ id: `faq-${i}`, title: q, text: a, key: `faq-${i}` }));
+  return [...sections, ...faqs];
+}
 
 function matches(entry, query) {
   const q = query.toLowerCase();
@@ -20,6 +23,7 @@ function matches(entry, query) {
 }
 
 export function SiteSearch({ onScrollTo }) {
+  const { t, locale } = useT();
   const [query, setQuery] = useState('');
   const [closed, setClosed] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -27,7 +31,7 @@ export function SiteSearch({ onScrollTo }) {
   const inputRef = useRef(null);
   const optionRefs = useRef([]);
 
-  const results = query.trim().length === 0 ? [] : INDEX.filter(e => matches(e, query));
+  const results = query.trim().length === 0 ? [] : buildIndex(t, locale).filter(e => matches(e, query));
   const isOpen = !closed && query.trim().length > 0;
 
   // Dismiss on outside click.
@@ -92,7 +96,7 @@ export function SiteSearch({ onScrollTo }) {
       <input
         ref={inputRef}
         type="text"
-        placeholder="Search…"
+        placeholder={t('marketing.search.placeholder')}
         value={query}
         onChange={onChange}
         onKeyDown={onKeyDown}
@@ -107,7 +111,7 @@ export function SiteSearch({ onScrollTo }) {
       {isOpen && (
         <div id="site-search-listbox" role="listbox" className="site-search-listbox">
           {results.length === 0 ? (
-            <div className="site-search-empty">No results</div>
+            <div className="site-search-empty">{t('marketing.search.noResults')}</div>
           ) : (
             results.map((r, i) => (
               <button

@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { C, F } from '../../lib/constants.js'
+import { useT } from '../../i18n/useT.js'
 
 export function TeamClientRoles() {
   const { user } = useAuth()
+  const { t } = useT()
   const [members, setMembers]         = useState([])
   const [clients, setClients]         = useState([])
   const [selected, setSelected]       = useState(null)
@@ -63,19 +65,19 @@ export function TeamClientRoles() {
     setSaving(false)
   }
 
-  if (loading) return <p style={{ fontFamily: F.sans, fontSize: 13, color: C.textSub }}>Loading…</p>
-  if (loadError) return <p style={{ fontFamily: F.sans, fontSize: 13, color: C.red }}>Couldn't load your team and client accounts — check your connection and try again.</p>
+  if (loading) return <p style={{ fontFamily: F.sans, fontSize: 13, color: C.textSub }}>{t('common.loading')}</p>
+  if (loadError) return <p style={{ fontFamily: F.sans, fontSize: 13, color: C.red }}>{t('accounts.team.loadError')}</p>
   if (clients.length === 0) return (
     <p style={{ fontFamily: F.sans, fontSize: 13, color: C.textSub }}>
-      No client accounts yet. Ask a client to grant you access first.
+      {t('accounts.team.noClients')}
     </p>
   )
 
   return (
     <div style={{ maxWidth: 620, display: 'flex', gap: 20 }}>
       <div style={{ width: 200, flexShrink: 0 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontFamily: F.sans, marginBottom: 10 }}>Team</div>
-        {members.length === 0 && <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>No team members yet.</p>}
+        <div style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontFamily: F.sans, marginBottom: 10 }}>{t('accounts.team.team')}</div>
+        {members.length === 0 && <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>{t('accounts.team.noMembers')}</p>}
         {members.map(m => (
           <button
             key={m.id}
@@ -90,18 +92,18 @@ export function TeamClientRoles() {
             onMouseLeave={e => { if (selected?.id !== m.id) e.currentTarget.style.background = 'transparent'; }}
           >
             <div style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{m.user_profile?.name || m.user_profile?.email}</div>
-            <div style={{ fontSize: 11, color: C.textMuted }}>{m.role}</div>
+            <div style={{ fontSize: 11, color: C.textMuted }}>{t(`accounts.roles.${m.role}`)}</div>
           </button>
         ))}
       </div>
 
       <div style={{ flex: 1 }}>
         {!selected ? (
-          <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, paddingTop: 8 }}>Select a team member to manage their client access.</p>
+          <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, paddingTop: 8 }}>{t('accounts.team.selectMember')}</p>
         ) : (
           <>
             <div style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontFamily: F.sans, marginBottom: 10 }}>
-              Client Access for {selected.user_profile?.name || selected.user_profile?.email}
+              {t('accounts.team.clientAccessFor', { name: selected.user_profile?.name || selected.user_profile?.email })}
             </div>
             {clients.map(g => {
               const current = clientRoles.find(r => r.client_account_id === g.account_id)
@@ -112,10 +114,10 @@ export function TeamClientRoles() {
                 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 500, color: C.text, fontFamily: F.sans }}>
-                      {g.account?.company_name || g.account?.name || 'Client Account'}
+                      {g.account?.company_name || g.account?.name || t('accounts.team.clientAccount')}
                     </div>
                     <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>
-                      Org grant: {g.role}
+                      {t('accounts.team.orgGrant', { role: t(`accounts.roles.${g.role}`) })}
                     </div>
                   </div>
                   <select
@@ -126,10 +128,10 @@ export function TeamClientRoles() {
                     onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
                     onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
                   >
-                    <option value="none">No access</option>
-                    <option value="viewer">Viewer</option>
-                    <option value="manager">Manager</option>
-                    <option value="admin">Admin</option>
+                    <option value="none">{t('accounts.team.noAccess')}</option>
+                    <option value="viewer">{t('accounts.roles.viewer')}</option>
+                    <option value="manager">{t('accounts.roles.manager')}</option>
+                    <option value="admin">{t('accounts.roles.admin')}</option>
                   </select>
                 </div>
               )

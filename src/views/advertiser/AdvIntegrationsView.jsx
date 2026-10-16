@@ -9,6 +9,7 @@ import { Inp } from "../../components/primitives/Inp.jsx";
 import { CopyButton } from "../../components/primitives/CopyButton.jsx";
 import { generatePostbackKey, hashPostbackKey } from "../../lib/postbackKey.js";
 import { generateApiKey, hashApiKey, apiKeyPrefix } from "../../lib/apiKey.js";
+import { useT } from "../../i18n/useT.js";
 
 // ─── Platform definitions ───────────────────────────────────────────────────
 
@@ -16,10 +17,9 @@ const PLATFORMS = [
   {
     id: "meta",
     name: "Meta Conversions API",
-    description: "Send scan events as ViewContent conversions to your Meta Pixel via server-side CAPI.",
     fields: [
-      { key: "pixel_id", label: "Pixel ID", placeholder: "123456789012345", type: "text" },
-      { key: "access_token", label: "System User Access Token", placeholder: "EAAx…", type: "password" },
+      { key: "pixel_id", placeholder: "123456789012345", type: "text" },
+      { key: "access_token", placeholder: "EAAx…", type: "password" },
     ],
     eventType: "ViewContent",
     docsUrl: "https://developers.facebook.com/docs/marketing-api/conversions-api",
@@ -27,13 +27,12 @@ const PLATFORMS = [
   {
     id: "google",
     name: "Google Ads",
-    description: "Import scan conversions into Google Ads for attribution and ROAS measurement.",
     fields: [
-      { key: "conversion_id", label: "Conversion ID", placeholder: "AW-000000000", type: "text" },
-      { key: "conversion_label", label: "Conversion Label", placeholder: "abc123XYZ", type: "text" },
-      { key: "customer_id", label: "Customer ID", placeholder: "123-456-7890", type: "text" },
-      { key: "developer_token", label: "Developer Token", placeholder: "dTk…", type: "password" },
-      { key: "refresh_token", label: "OAuth Refresh Token", placeholder: "1//0g…", type: "password" },
+      { key: "conversion_id", placeholder: "AW-000000000", type: "text" },
+      { key: "conversion_label", placeholder: "abc123XYZ", type: "text" },
+      { key: "customer_id", placeholder: "123-456-7890", type: "text" },
+      { key: "developer_token", placeholder: "dTk…", type: "password" },
+      { key: "refresh_token", placeholder: "1//0g…", type: "password" },
     ],
     eventType: "Conversion",
     docsUrl: "https://developers.google.com/google-ads/api/docs/conversions/upload-clicks",
@@ -41,10 +40,9 @@ const PLATFORMS = [
   {
     id: "shopify",
     name: "Shopify",
-    description: "POST scan events to your Shopify store via webhook for customer journey tracking.",
     fields: [
-      { key: "webhook_url", label: "Webhook URL", placeholder: "https://yourstore.myshopify.com/webhooks/adgrid", type: "text" },
-      { key: "secret", label: "Webhook Secret (optional)", placeholder: "whsec_…", type: "password" },
+      { key: "webhook_url", placeholder: "https://yourstore.myshopify.com/webhooks/adgrid", type: "text" },
+      { key: "secret", placeholder: "whsec_…", type: "password" },
     ],
     eventType: "scan.created",
     docsUrl: "https://shopify.dev/docs/apps/webhooks",
@@ -54,6 +52,7 @@ const PLATFORMS = [
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
 function StatusBadge({ connected }) {
+  const { t } = useT();
   return (
     <span style={{
       padding: "2px 9px", borderRadius: 12, fontSize: 11, fontWeight: 600,
@@ -61,24 +60,26 @@ function StatusBadge({ connected }) {
       color: connected ? C.green : C.textSub,
       border: `1px solid ${connected ? C.greenBorder : C.border}`,
     }}>
-      {connected ? "Connected" : "Not connected"}
+      {connected ? t('integ.connected') : t('integ.notConnected')}
     </span>
   );
 }
 
 function EventStatusBadge({ status }) {
+  const { t } = useT();
   return (
     <span style={{
       padding: "2px 9px", borderRadius: 12, fontSize: 11, fontWeight: 600,
       background: status === "sent" ? C.greenSoft : C.redSoft,
       color: status === "sent" ? C.green : C.red,
     }}>
-      {status === "sent" ? "Sent" : "Failed"}
+      {status === "sent" ? t('integ.sent') : t('integ.failed')}
     </span>
   );
 }
 
 function ConnectModal({ platform, existing, onClose, onSaved }) {
+  const { t } = useT();
   const [fields, setFields] = useState(() => {
     const init = {};
     platform.fields.forEach(f => { init[f.key] = existing?.config?.[f.key] ?? ""; });
@@ -151,10 +152,10 @@ function ConnectModal({ platform, existing, onClose, onSaved }) {
           <BrandIcon id={platform.id} size={16} />
           <div>
             <div style={{ fontSize: 17, fontWeight: 700, color: C.text, fontFamily: F.sans }}>
-              Connect {platform.name}
+              {t('integ.connectTitle', { name: platform.name })}
             </div>
             <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>
-              {platform.description}
+              {t(`integ.platformDesc.${platform.id}`)}
             </div>
           </div>
         </div>
@@ -162,7 +163,7 @@ function ConnectModal({ platform, existing, onClose, onSaved }) {
         {platform.fields.map(f => (
           <div key={f.key} style={{ marginBottom: 16 }}>
             <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>
-              {f.label}
+              {t(`integ.fields.${f.key}`)}
             </label>
             <input
               type={f.type}
@@ -194,21 +195,21 @@ function ConnectModal({ platform, existing, onClose, onSaved }) {
             border: `1px solid ${testResult === "ok" ? C.greenBorder : C.redBorder}`,
             color: testResult === "ok" ? C.green : C.red,
           }}>
-            {testResult === "ok" ? "Test event sent successfully." : "Test failed — check your credentials."}
+            {testResult === "ok" ? t('integ.testOk') : t('integ.testFail')}
           </div>
         )}
 
         <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-          <Btn onClick={handleSave} loading={saving} style={{ flex: 1 }}>Save & Connect</Btn>
-          <Btn variant="secondary" onClick={handleTest} loading={testing}>Test</Btn>
-          <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
+          <Btn onClick={handleSave} loading={saving} style={{ flex: 1 }}>{t('integ.saveConnect')}</Btn>
+          <Btn variant="secondary" onClick={handleTest} loading={testing}>{t('integ.test')}</Btn>
+          <Btn variant="secondary" onClick={onClose}>{t('common.cancel')}</Btn>
         </div>
 
         <a href={platform.docsUrl} target="_blank" rel="noreferrer" style={{
           display: "block", textAlign: "center", marginTop: 14, fontSize: 12,
           color: C.purple, fontFamily: F.sans, textDecoration: "none",
         }}>
-          View {platform.name} docs →
+          {t('integ.viewDocs', { name: platform.name })}
         </a>
       </div>
     </div>
@@ -216,6 +217,7 @@ function ConnectModal({ platform, existing, onClose, onSaved }) {
 }
 
 function PlatformCard({ platform, integration, eventCount, onConnect, onDisconnect }) {
+  const { t, tx } = useT();
   const connected = !!integration;
 
   return (
@@ -239,7 +241,7 @@ function PlatformCard({ platform, integration, eventCount, onConnect, onDisconne
       </div>
 
       <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5 }}>
-        {platform.description}
+        {t(`integ.platformDesc.${platform.id}`)}
       </div>
 
       {connected && (
@@ -247,16 +249,16 @@ function PlatformCard({ platform, integration, eventCount, onConnect, onDisconne
           padding: "10px 14px", background: C.surfaceAlt, borderRadius: 8,
           fontSize: 13, fontFamily: F.sans, color: C.textMid,
         }}>
-          <span style={{ fontWeight: 600, color: C.text }}>{eventCount}</span> events fired
+          {tx('integ.eventsFired', { count: eventCount, b: chunk => <span style={{ fontWeight: 600, color: C.text }}>{chunk}</span> })}
         </div>
       )}
 
       <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
         <Btn variant={connected ? "secondary" : "primary"} onClick={onConnect} style={{ flex: 1 }}>
-          {connected ? "Edit" : "Connect"}
+          {connected ? t('integ.edit') : t('integ.connect')}
         </Btn>
         {connected && (
-          <Btn variant="danger" onClick={onDisconnect}>Disconnect</Btn>
+          <Btn variant="danger" onClick={onDisconnect}>{t('integ.disconnect')}</Btn>
         )}
       </div>
     </div>
@@ -275,6 +277,7 @@ const PIXEL_URL = `${SUPABASE_FUNCTIONS_URL}/conversion-pixel`;
 const POSTBACK_URL = `${SUPABASE_FUNCTIONS_URL}/conversion-postback`;
 
 function PostbackKeyCard({ hasKey, onGenerated }) {
+  const { t, tx } = useT();
   const [newKey, setNewKey] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -299,18 +302,18 @@ function PostbackKeyCard({ hasKey, onGenerated }) {
 
   return (
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Postback key</div>
+      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>{t('integ.postbackKey')}</div>
       <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.5 }}>
-        Report conversions from your own backend (e.g. an order-webhook handler) with a signed <code>POST</code> to <code>{POSTBACK_URL}</code>. More reliable than a client-side pixel -- survives ad blockers and doesn't depend on the buyer's browser.
+        {tx('integ.postbackBody', { code: chunk => <code>{chunk}</code>, url: <code>{POSTBACK_URL}</code> })}
       </div>
       {newKey ? (
         <div style={{ padding: 12, background: C.surfaceAlt, borderRadius: 8, marginBottom: 12 }}>
           <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 6 }}>
-            Copy this now -- it won't be shown again. Send it as <code>Authorization: Bearer &lt;key&gt;</code>.
+            {tx('integ.copyNow', { code: chunk => <code>{chunk}</code> })}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <code style={{ fontSize: 12, fontFamily: F.mono, color: C.text, wordBreak: "break-all" }}>{newKey}</code>
-            <CopyButton value={newKey} label="Copy" copiedLabel="✓ Copied" variant="ghost" size="sm" />
+            <CopyButton value={newKey} label={t('integ.copy')} copiedLabel={t('integ.copied')} variant="ghost" size="sm" />
           </div>
         </div>
       ) : hasKey ? (
@@ -320,23 +323,24 @@ function PostbackKeyCard({ hasKey, onGenerated }) {
       )}
       {error && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginBottom: 8 }}>{error}</div>}
       <Btn variant="secondary" size="sm" onClick={generate} disabled={saving} style={{ marginTop: 12 }}>
-        {saving ? "Generating…" : hasKey ? "Regenerate key" : "Generate key"}
+        {saving ? t('integ.generating') : hasKey ? t('integ.regenerate') : t('integ.generate')}
       </Btn>
     </div>
   );
 }
 
 function PixelSnippetCard() {
+  const { t, tx } = useT();
   const snippet = `<img src="${PIXEL_URL}?adgrid_cid={{adgrid_cid}}&value=49.99" width="1" height="1" style="display:none" />`;
   return (
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Conversion pixel</div>
+      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>{t('integ.pixelTitle')}</div>
       <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.5 }}>
-        Drop this on your order-confirmation / thank-you page. Replace <code>{"{{adgrid_cid}}"}</code> with the value your site captured from the AdGrid link click (URL param or cookie), or use <code>promo_code=</code> instead for someone who never scanned.
+        {tx('integ.pixelBody', { code: chunk => <code>{chunk}</code>, cid: <code>{"{{adgrid_cid}}"}</code> })}
       </div>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: 12, background: C.surfaceAlt, borderRadius: 8 }}>
         <code style={{ fontSize: 11, fontFamily: F.mono, color: C.text, wordBreak: "break-all", flex: 1 }}>{snippet}</code>
-        <CopyButton value={snippet} label="Copy" copiedLabel="✓ Copied" variant="ghost" size="sm" />
+        <CopyButton value={snippet} label={t('integ.copy')} copiedLabel={t('integ.copied')} variant="ghost" size="sm" />
       </div>
     </div>
   );
@@ -356,73 +360,42 @@ function PixelSnippetCard() {
 const SETUP_GUIDES = [
   {
     id: "shopify", name: "Shopify",
-    steps: [
-      "Go to Settings → Checkout in your Shopify admin.",
-      "Scroll to Order status page → Additional scripts.",
-      "Paste the pixel snippet below and Save.",
-    ],
-    note: "Additional Scripts is being retired for Shopify Plus stores in favor of the Web Pixels API/Customer Events -- if yours is already migrated, use the Postback key above from your order-webhook handler instead; it doesn't depend on this page at all.",
     snippet: (pixelUrl) => `<img src="${pixelUrl}?adgrid_cid={{ landing_site_ref }}&value={{ checkout.total_price | money_without_currency }}" width="1" height="1" style="display:none" />`,
   },
   {
     id: "woocommerce", name: "WooCommerce",
-    steps: [
-      "Install a lightweight snippet plugin (e.g. \"Code Snippets\") -- avoids editing your theme's functions.php directly.",
-      "Add a new PHP snippet hooked to woocommerce_thankyou, running on the order-received page only.",
-      "Echo the pixel img tag below, filling in the order total from $order->get_total().",
-    ],
-    note: "Prefer the Postback key instead if you're comfortable with a webhook -- WooCommerce's built-in Order created webhook can POST straight to the postback URL server-side, which survives ad blockers and doesn't touch your theme at all.",
     snippet: (pixelUrl) => `add_action('woocommerce_thankyou', function ($order_id) {\n  $order = wc_get_order($order_id);\n  $cid = isset($_COOKIE['adgrid_cid']) ? esc_attr($_COOKIE['adgrid_cid']) : '';\n  if (!$cid) return;\n  echo '<img src="${pixelUrl}?adgrid_cid=' . $cid . '&value=' . esc_attr($order->get_total()) . '" width="1" height="1" style="display:none" />';\n});`,
   },
   {
     id: "bigcommerce", name: "BigCommerce",
-    steps: [
-      "Go to Storefront → Script Manager in your BigCommerce admin.",
-      "Create a new script: Location footer, Page Order confirmation only.",
-      "Paste the pixel snippet below and Save.",
-    ],
-    note: null,
     snippet: (pixelUrl) => `<img src="${pixelUrl}?adgrid_cid={{ADGRID_CID}}&value={{checkout.grand_total}}" width="1" height="1" style="display:none" />`,
   },
   {
     id: "squarespace", name: "Squarespace",
-    steps: [
-      "Go to Settings → Advanced → Code Injection.",
-      "Paste the pixel snippet below into the Order Confirmation Page field.",
-    ],
-    note: "Code Injection on the order confirmation page requires a Squarespace Commerce (Advanced) plan -- on a lower plan, use the Promo codes path below instead: print a code on the creative and report it via the Postback key from wherever you already track orders.",
     snippet: (pixelUrl) => `<img src="${pixelUrl}?adgrid_cid={{ADGRID_CID}}&value={{ORDER_TOTAL}}" width="1" height="1" style="display:none" />`,
   },
   {
     id: "wordpress", name: "WordPress",
-    steps: [
-      "Install a header/footer plugin (e.g. \"WPCode\" or \"Insert Headers and Footers\").",
-      "Add the pixel snippet below, scoped to your thank-you / confirmation page only (not sitewide).",
-    ],
-    note: "For a signup or lead-gen site without an order total, drop ?value= entirely -- the conversion still counts, just without a reported dollar amount.",
     snippet: (pixelUrl) => `<img src="${pixelUrl}?adgrid_cid={{ADGRID_CID}}" width="1" height="1" style="display:none" />`,
   },
   {
     id: "ga4", name: "Google Analytics",
-    steps: [
-      "Nothing to install -- every AdGrid QR scan already lands on your site with utm_source=adgrid&utm_medium=ooh&utm_campaign=<campaign id> (scan-redirect appends these automatically).",
-      "In GA4: Reports → Acquisition → Traffic acquisition, then filter Session source / medium to adgrid / ooh.",
-    ],
-    note: "This shows scan-driven traffic, not conversions -- pair it with the pixel/postback above (on one of the platforms to the left) to see which of that traffic actually converted.",
     snippet: null,
   },
 ];
 
 function PlatformSetupGuide() {
+  const { t, tList } = useT();
   const [platformId, setPlatformId] = useState(SETUP_GUIDES[0].id);
   const platform = SETUP_GUIDES.find(p => p.id === platformId);
   const snippet = platform.snippet ? platform.snippet(PIXEL_URL) : null;
+  const note = t(`integ.guides.${platform.id}.note`);
 
   return (
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Where do I put this?</div>
+      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>{t('integ.whereTitle')}</div>
       <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 14, lineHeight: 1.5 }}>
-        Same pixel, same postback key above -- just the exact steps for where your site actually puts it.
+        {t('integ.whereBody')}
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
         {SETUP_GUIDES.map(p => (
@@ -441,22 +414,23 @@ function PlatformSetupGuide() {
         ))}
       </div>
       <ol style={{ margin: "0 0 12px", paddingLeft: 20, fontFamily: F.sans, fontSize: 13, color: C.textSub, lineHeight: 1.9 }}>
-        {platform.steps.map((s, i) => <li key={i}>{s}</li>)}
+        {tList(`integ.guides.${platform.id}.steps`).map((s, i) => <li key={i}>{s}</li>)}
       </ol>
       {snippet && (
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: 12, background: C.surfaceAlt, borderRadius: 8, marginBottom: platform.note ? 12 : 0 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: 12, background: C.surfaceAlt, borderRadius: 8, marginBottom: note ? 12 : 0 }}>
           <pre style={{ margin: 0, fontSize: 11, fontFamily: F.mono, color: C.text, whiteSpace: "pre-wrap", wordBreak: "break-all", flex: 1 }}>{snippet}</pre>
-          <CopyButton value={snippet} label="Copy" copiedLabel="✓ Copied" variant="ghost" size="sm" />
+          <CopyButton value={snippet} label={t('integ.copy')} copiedLabel={t('integ.copied')} variant="ghost" size="sm" />
         </div>
       )}
-      {platform.note && (
-        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, lineHeight: 1.6 }}>{platform.note}</div>
+      {note && (
+        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, lineHeight: 1.6 }}>{note}</div>
       )}
     </div>
   );
 }
 
 function PromoCodesCard({ campaigns, promoCodes, onCreated }) {
+  const { t, tx, formatDate } = useT();
   const [campaignId, setCampaignId] = useState("");
   const [code, setCode] = useState("");
   const [vanitySlug, setVanitySlug] = useState("");
@@ -482,26 +456,26 @@ function PromoCodesCard({ campaigns, promoCodes, onCreated }) {
 
   return (
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20 }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Promo codes &amp; vanity URLs</div>
+      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>{t('integ.promoTitle')}</div>
       <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.5 }}>
-        For people who see the ad but never scan -- print a code or short link on the creative and report it as a conversion by <code>promo_code</code> instead of <code>adgrid_cid</code>.
+        {tx('integ.promoBody', { code: chunk => <code>{chunk}</code> })}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 10, alignItems: "end", marginBottom: 16 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-          <label style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans }}>Campaign</label>
+          <label style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans }}>{t('integ.campaign')}</label>
           <select value={campaignId} onChange={e => setCampaignId(e.target.value)}
             style={{ padding: "9px 12px", border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 13, fontFamily: F.sans, color: C.text, background: C.surface }}>
-            <option value="">Select…</option>
+            <option value="">{t('integ.select')}</option>
             {campaigns.map(c => <option key={c.id} value={c.id}>{c.campaign_name || c.id}</option>)}
           </select>
         </div>
-        <Inp label="Promo code" placeholder="SEEONSCREEN10" value={code} onChange={e => setCode(e.target.value)} />
-        <Inp label="Vanity path (optional)" placeholder="e.g. summer-sale" value={vanitySlug} onChange={e => setVanitySlug(e.target.value)} />
-        <Btn onClick={create} disabled={saving || !campaignId || !code.trim()}>{saving ? "Adding…" : "+ Add"}</Btn>
+        <Inp label={t('integ.promoCode')} placeholder="SEEONSCREEN10" value={code} onChange={e => setCode(e.target.value)} />
+        <Inp label={t('integ.vanityPath')} placeholder={t('integ.vanityPlaceholder')} value={vanitySlug} onChange={e => setVanitySlug(e.target.value)} />
+        <Btn onClick={create} disabled={saving || !campaignId || !code.trim()}>{saving ? t('integ.adding') : t('integ.add')}</Btn>
       </div>
       {error && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginBottom: 12 }}>{error}</div>}
       {promoCodes.length === 0 ? (
-        <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>No promo codes yet.</div>
+        <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>{t('integ.noPromo')}</div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {promoCodes.map(p => (
@@ -510,7 +484,7 @@ function PromoCodesCard({ campaigns, promoCodes, onCreated }) {
                 <div style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.mono }}>{p.code}</div>
                 {p.vanity_path && <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>{p.vanity_path}</div>}
               </div>
-              <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{new Date(p.created_at).toLocaleDateString()}</div>
+              <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{formatDate(p.created_at)}</div>
             </div>
           ))}
         </div>
@@ -520,6 +494,7 @@ function PromoCodesCard({ campaigns, promoCodes, onCreated }) {
 }
 
 function ConversionTrackingTab() {
+  const { t } = useT();
   const [hasKey, setHasKey] = useState(false);
   const [campaigns, setCampaigns] = useState([]);
   const [promoCodes, setPromoCodes] = useState([]);
@@ -541,7 +516,7 @@ function ConversionTrackingTab() {
 
   useEffect(() => { load(); }, []);
 
-  if (loading) return <div style={{ padding: 20, fontFamily: F.sans, color: C.textSub }}>Loading…</div>;
+  if (loading) return <div style={{ padding: 20, fontFamily: F.sans, color: C.textSub }}>{t('common.loading')}</div>;
 
   return (
     <div>
@@ -562,6 +537,7 @@ function ConversionTrackingTab() {
 const API_BASE_URL = `${SUPABASE_FUNCTIONS_URL}/api-campaigns/v1`;
 
 function ApiKeysTab() {
+  const { t, tx, formatDate } = useT();
   const [keys, setKeys] = useState([]);
   const [newKey, setNewKey] = useState(null);
   const [name, setName] = useState("");
@@ -604,50 +580,50 @@ function ApiKeysTab() {
     load();
   }
 
-  if (loading) return <div style={{ padding: 20, fontFamily: F.sans, color: C.textSub }}>Loading…</div>;
+  if (loading) return <div style={{ padding: 20, fontFamily: F.sans, color: C.textSub }}>{t('common.loading')}</div>;
 
   return (
     <div>
       <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>API Keys</div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>{t('integ.apiTitle')}</div>
         <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 12, lineHeight: 1.5 }}>
-          Manage campaigns programmatically at <code>{API_BASE_URL}</code>. A key can list, create, edit (before payment), submit for payment, cancel, and read delivery for your own campaigns only.
+          {tx('integ.apiBody', { url: <code>{API_BASE_URL}</code> })}
         </div>
         {newKey ? (
           <div style={{ padding: 12, background: C.surfaceAlt, borderRadius: 8, marginBottom: 12 }}>
             <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 6 }}>
-              Copy this now -- it won't be shown again. Send it as <code>Authorization: Bearer &lt;key&gt;</code>.
+              {tx('integ.copyNow', { code: chunk => <code>{chunk}</code> })}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <code style={{ fontSize: 12, fontFamily: F.mono, color: C.text, wordBreak: "break-all" }}>{newKey}</code>
-              <CopyButton value={newKey} label="Copy" copiedLabel="✓ Copied" variant="ghost" size="sm" />
+              <CopyButton value={newKey} label={t('integ.copy')} copiedLabel={t('integ.copied')} variant="ghost" size="sm" />
             </div>
           </div>
         ) : null}
         {error && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginBottom: 8 }}>{error}</div>}
         <div style={{ display: "flex", gap: 10, alignItems: "end" }}>
-          <Inp label="Key name" placeholder="e.g. Media buying tool" value={name} onChange={e => setName(e.target.value)} />
-          <Btn variant="secondary" size="sm" onClick={generate} disabled={saving || !name.trim()}>{saving ? "Generating…" : "+ Generate key"}</Btn>
+          <Inp label={t('integ.keyName')} placeholder={t('integ.keyNamePlaceholder')} value={name} onChange={e => setName(e.target.value)} />
+          <Btn variant="secondary" size="sm" onClick={generate} disabled={saving || !name.trim()}>{saving ? t('integ.generating') : t('integ.generateKey')}</Btn>
         </div>
       </div>
 
       {keys.length === 0 ? (
-        <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>No API keys yet.</div>
+        <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>{t('integ.noKeys')}</div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {keys.map(k => (
             <div key={k.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: C.surfaceAlt, borderRadius: 8 }}>
               <div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.sans }}>
-                  {k.name} {k.revoked_at && <span style={{ color: C.red, fontWeight: 400 }}>(revoked)</span>}
+                  {k.name} {k.revoked_at && <span style={{ color: C.red, fontWeight: 400 }}>{t('integ.revoked')}</span>}
                 </div>
                 <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.mono, marginTop: 2 }}>{k.key_prefix}…</div>
                 <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>
-                  Created {new Date(k.created_at).toLocaleDateString()}{k.last_used_at ? ` · last used ${new Date(k.last_used_at).toLocaleDateString()}` : ""}
+                  {t('integ.created', { date: formatDate(k.created_at) })}{k.last_used_at ? t('integ.lastUsed', { date: formatDate(k.last_used_at) }) : ""}
                 </div>
               </div>
               {!k.revoked_at && (
-                <Btn variant="ghost" size="sm" onClick={() => revoke(k.id)} style={{ color: C.red }}>Revoke</Btn>
+                <Btn variant="ghost" size="sm" onClick={() => revoke(k.id)} style={{ color: C.red }}>{t('integ.revoke')}</Btn>
               )}
             </div>
           ))}
@@ -661,6 +637,7 @@ function ApiKeysTab() {
 
 export default function AdvIntegrationsView() {
   const { isMobile } = useBreakpoint();
+  const { t, formatDateTime } = useT();
   const [tab, setTab] = useState("platforms");
   const [integrations, setIntegrations] = useState([]);
   const [events, setEvents] = useState([]);
@@ -731,12 +708,12 @@ export default function AdvIntegrationsView() {
   });
 
   if (loading) return (
-    <div style={{ padding: 40, fontFamily: F.sans, color: C.textSub }}>Loading integrations…</div>
+    <div style={{ padding: 40, fontFamily: F.sans, color: C.textSub }}>{t('integ.loading')}</div>
   );
 
   return (
     <div style={{ maxWidth: 960 }}>
-      <PageHeader title="Integrations" subtitle="Connect ad platforms to receive scan events as server-side conversions" />
+      <PageHeader title={t('integ.title')} subtitle={t('integ.subtitle')} />
 
       {/* Tabs */}
       <div style={{
@@ -747,25 +724,25 @@ export default function AdvIntegrationsView() {
           onMouseEnter={e => { if (tab !== "platforms") e.currentTarget.style.background = C.surface; }}
           onMouseLeave={e => { if (tab !== "platforms") e.currentTarget.style.background = "transparent"; }}
         >
-          Platforms
+          {t('integ.tabPlatforms')}
         </button>
         <button style={TAB_STYLE(tab === "events")} onClick={() => setTab("events")}
           onMouseEnter={e => { if (tab !== "events") e.currentTarget.style.background = C.surface; }}
           onMouseLeave={e => { if (tab !== "events") e.currentTarget.style.background = "transparent"; }}
         >
-          Event Log {events.length > 0 && <span style={{ marginLeft: 6, padding: "1px 7px", background: C.purpleSoft, color: C.purple, borderRadius: 10, fontSize: 11 }}>{events.length}</span>}
+          {t('integ.tabEvents')} {events.length > 0 && <span style={{ marginLeft: 6, padding: "1px 7px", background: C.purpleSoft, color: C.purple, borderRadius: 10, fontSize: 11 }}>{events.length}</span>}
         </button>
         <button style={TAB_STYLE(tab === "conversions")} onClick={() => setTab("conversions")}
           onMouseEnter={e => { if (tab !== "conversions") e.currentTarget.style.background = C.surface; }}
           onMouseLeave={e => { if (tab !== "conversions") e.currentTarget.style.background = "transparent"; }}
         >
-          Conversion Tracking
+          {t('integ.tabConversions')}
         </button>
         <button style={TAB_STYLE(tab === "api-keys")} onClick={() => setTab("api-keys")}
           onMouseEnter={e => { if (tab !== "api-keys") e.currentTarget.style.background = C.surface; }}
           onMouseLeave={e => { if (tab !== "api-keys") e.currentTarget.style.background = "transparent"; }}
         >
-          API Keys
+          {t('integ.tabApi')}
         </button>
       </div>
 
@@ -790,18 +767,18 @@ export default function AdvIntegrationsView() {
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
           {events.length === 0 ? (
             <div style={{ padding: 48, textAlign: "center", color: C.textSub, fontSize: 14 }}>
-              No events yet. Connect a platform and trigger a scan to see events here.
+              {t('integ.noEvents')}
             </div>
           ) : (
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ borderBottom: `1px solid ${C.border}`, background: C.surfaceAlt }}>
-                  {["Platform", "Event", "Scan ID", "Status", "Time"].map(h => (
+                  {["platform", "event", "scanId", "status", "time"].map(h => (
                     <th key={h} style={{
                       padding: "11px 16px", textAlign: "left", fontSize: 11,
                       fontWeight: 600, color: C.textSub, fontFamily: F.sans,
                       letterSpacing: "0.05em", textTransform: "uppercase",
-                    }}>{h}</th>
+                    }}>{t(`integ.col.${h}`)}</th>
                   ))}
                 </tr>
               </thead>
@@ -824,7 +801,7 @@ export default function AdvIntegrationsView() {
                       <EventStatusBadge status={e.status} />
                     </td>
                     <td style={{ padding: "12px 16px", fontSize: 12, color: C.textSub, fontFamily: F.sans }}>
-                      {new Date(e.fired_at).toLocaleString()}
+                      {formatDateTime(e.fired_at)}
                     </td>
                   </tr>
                 ))}

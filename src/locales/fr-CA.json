@@ -1,0 +1,1718 @@
+{
+  "common": {
+    "language": {
+      "other": "English",
+      "switchTo": "View the site in English",
+      "label": "Langue",
+      "en": "English",
+      "fr-CA": "Français"
+    },
+    "brand": "AdGrid",
+    "optional": "(facultatif)",
+    "loading": "Chargement…",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "back": "Retour",
+    "next": "Suivant",
+    "continue": "Continuer",
+    "retry": "Réessayer",
+    "genericError": "Une erreur s'est produite. Veuillez réessayer.",
+    "timeAgo": {
+      "justNow": "à l'instant",
+      "minutes": "il y a {count} min",
+      "hours": "il y a {count} h",
+      "days": "il y a {count} j"
+    },
+    "days": {
+      "short": {
+        "Mon": "lun.",
+        "Tue": "mar.",
+        "Wed": "mer.",
+        "Thu": "jeu.",
+        "Fri": "ven.",
+        "Sat": "sam.",
+        "Sun": "dim."
+      }
+    },
+    "env": {
+      "any": "Tous",
+      "indoor": "Intérieur",
+      "outdoor": "Extérieur"
+    },
+    "screensCount": {
+      "one": "{count} écran",
+      "other": "{count} écrans"
+    },
+    "remove": "Retirer",
+    "delete": "Supprimer",
+    "dismiss": "Fermer",
+    "preview": "Aperçu",
+    "submitting": "Envoi en cours…",
+    "uploading": "Téléversement…",
+    "required": "(obligatoire)",
+    "andMore": " et {count} autres"
+  },
+  "marketing": {
+    "meta": {
+      "title": "AdGrid | La place de marché de l'affichage extérieur au Canada",
+      "description": "AdGrid est la place de marché libre-service qui relie les exploitants d'écrans numériques canadiens aux annonceurs locaux. Tarifs en temps réel et plein contrôle des deux côtés."
+    },
+    "nav": {
+      "forOperators": "Exploitants",
+      "forAdvertisers": "Annonceurs",
+      "howItWorks": "Comment ça marche",
+      "faq": "FAQ",
+      "screens": "Écrans",
+      "signIn": "Se connecter",
+      "getStarted": "Commencer",
+      "openMenu": "Ouvrir le menu",
+      "closeMenu": "Fermer le menu"
+    },
+    "cta": {
+      "listScreens": "Inscrire vos écrans",
+      "bookCampaign": "Réserver une campagne"
+    },
+    "notFound": {
+      "metaTitle": "Page introuvable | AdGrid",
+      "metaDescription": "La page que vous cherchez n'existe pas ou a été déplacée.",
+      "heading": "Page introuvable",
+      "body": "La page que vous cherchez n'existe pas ou a été déplacée. Remettons-vous sur la bonne voie.",
+      "home": "Retour à l'accueil",
+      "faq": "Consulter la FAQ"
+    },
+    "marketBand": "<strong>L'affichage extérieur au Canada est un marché d'un milliard de dollars,</strong> et il s'achète encore surtout par courriel, par téléphone et en PDF. AdGrid le met en ligne.",
+    "proof": {
+      "heading": "Des écrans là où les gens passent vraiment du temps",
+      "venues": {
+        "gyms": "Centres sportifs",
+        "cafes": "Cafés",
+        "salons": "Salons de coiffure et barbiers",
+        "clinics": "Cliniques",
+        "transit": "Transport en commun",
+        "retail": "Commerce de détail",
+        "hotels": "Hôtels",
+        "campuses": "Campus"
+      },
+      "slides": {
+        "retail": {
+          "alt": "Écran publicitaire numérique dans un magasin",
+          "caption": "Commerce de détail : écran en magasin"
+        },
+        "transit": {
+          "alt": "Écran publicitaire numérique dans un abribus",
+          "caption": "Transport en commun : écran d'abribus"
+        },
+        "clinic": {
+          "alt": "Écran publicitaire numérique dans la salle d'attente d'une clinique",
+          "caption": "Cliniques : écran de salle d'attente"
+        },
+        "hotel": {
+          "alt": "Écran publicitaire numérique dans le hall d'un hôtel",
+          "caption": "Hôtels : écran de hall"
+        },
+        "campus": {
+          "alt": "Écran publicitaire numérique dans un corridor de campus universitaire",
+          "caption": "Campus : écran d'aire commune"
+        }
+      }
+    },
+    "carousel": {
+      "prev": "Diapositive précédente",
+      "next": "Diapositive suivante",
+      "goTo": "Aller à la diapositive {n}"
+    },
+    "advertisers": {
+      "eyebrow": "Pour les annonceurs",
+      "heading": "Une portée locale que vous pouvez vraiment mesurer",
+      "sub": "Affichez votre marque sur de vrais écrans dans les quartiers où vivent vos clients, et voyez exactement ce qu'elle a donné.",
+      "imgAlt": "Écran en vitrine d'un café diffusant une publicité avec un code QR",
+      "cards": {
+        "local": {
+          "h": "Ciblage hyperlocal",
+          "p": "Choisissez les lieux précis que vos clients fréquentent déjà, à l'échelle du pâté de maisons."
+        },
+        "pricing": {
+          "h": "Tarifs transparents",
+          "p": "Voyez le prix par créneau avant de réserver. Ne payez que le temps diffusé."
+        },
+        "scans": {
+          "h": "Mesure à chaque balayage",
+          "p": "Chaque campagne reçoit un code QR unique. Suivez les balayages par écran et par heure."
+        },
+        "fast": {
+          "h": "En ondes en quelques jours",
+          "p": "Téléversez votre création, faites-la approuver, c'est parti. Sans agence ni appel d'offres."
+        }
+      }
+    },
+    "operators": {
+      "eyebrow": "Pour les exploitants",
+      "heading": "Vos écrans. Vos règles. De nouveaux revenus.",
+      "sub": "Transformez le temps d'écran inutilisé en revenus sans perdre le contrôle de ce qui joue dans votre établissement.",
+      "imgAlt": "Écran publicitaire numérique sur le comptoir d'un barbier",
+      "cards": {
+        "pricing": {
+          "h": "Tarification dynamique",
+          "p": "Fixez un prix plancher et laissez la demande le faire monter. Les soirs d'événement et les heures de pointe se tarifent tout seuls."
+        },
+        "control": {
+          "h": "Contrôle total des approbations",
+          "p": "Approuvez ou refusez chaque publicité. Fixez vos heures d'ouverture. Approuvez automatiquement les annonceurs vérifiés, si vous le souhaitez."
+        },
+        "analytics": {
+          "h": "Analytique en temps réel",
+          "p": "Taux de remplissage, tendances des revenus et preuves de diffusion, par écran et par jour."
+        },
+        "lockin": {
+          "h": "Aucun engagement",
+          "p": "Connectez-vous en quelques minutes. Pas de contrat à long terme ni de frais initiaux."
+        }
+      }
+    },
+    "hero": {
+      "eyebrow": "La place de marché canadienne de l'affichage extérieur",
+      "heading": "Les écrans d'ici. Les marques d'ici. <accent>Une seule place de marché.</accent>",
+      "sub": "La place de marché libre-service où les exploitants d'écrans canadiens vendent du temps d'antenne publicitaire et où les annonceurs locaux l'achètent. Tarifs en temps réel, aucun minimum, plein contrôle des deux côtés.",
+      "liveNow": "Écrans actifs en ce moment",
+      "cities": "Toronto et Vancouver",
+      "launchCities": "Villes de lancement",
+      "venueCategories": "Catégories de lieux",
+      "imgAlt": "Écran publicitaire numérique installé dans un centre sportif"
+    },
+    "how": {
+      "eyebrow": "Comment ça marche",
+      "heading": "Deux côtés, une place de marché",
+      "operatorsLabel": "Pour les exploitants d'écrans",
+      "advertisersLabel": "Pour les annonceurs",
+      "operatorSteps": {
+        "connect": {
+          "h": "Connectez votre écran",
+          "p": "Jumelez n'importe quel écran en quelques minutes. Aucun matériel propriétaire à acheter."
+        },
+        "rules": {
+          "h": "Fixez vos règles",
+          "p": "Prix plancher et heures d'ouverture. Vous approuvez chaque publicité avant sa diffusion, ou approuvez automatiquement les annonceurs de confiance."
+        },
+        "paid": {
+          "h": "Soyez payé",
+          "p": "Versements automatiques pour chaque seconde de temps publicitaire vendue. Suivez vos revenus par écran."
+        }
+      },
+      "advertiserSteps": {
+        "venues": {
+          "h": "Choisissez vos lieux",
+          "p": "Filtrez par quartier, type de lieu et achalandage quotidien."
+        },
+        "budget": {
+          "h": "Fixez budget et calendrier",
+          "p": "Prix par créneau transparent. Aucun minimum, aucun contrat à long terme."
+        },
+        "measure": {
+          "h": "Mesurez les résultats",
+          "p": "Journaux de diffusion en direct et suivi des balayages QR pour chaque campagne."
+        }
+      }
+    },
+    "calc": {
+      "eyebrow": "Calculateur de revenus",
+      "heading": "Combien votre écran pourrait-il rapporter?",
+      "sub": "Ajustez les curseurs selon votre établissement. Vous gardez {share} de ce que paient les annonceurs.",
+      "screens": "Écrans",
+      "visitors": "Visiteurs par jour, par écran",
+      "fillLegend": "Part du temps publicitaire réservée",
+      "fill": {
+        "quiet": {
+          "label": "Calme",
+          "title": "25 % des créneaux réservés"
+        },
+        "typical": {
+          "label": "Typique",
+          "title": "50 % des créneaux réservés"
+        },
+        "busy": {
+          "label": "Achalandé",
+          "title": "75 % des créneaux réservés"
+        }
+      },
+      "resultLabel": "Versement mensuel estimé",
+      "perYear": "{amount} par année",
+      "note": "Estimation seulement, sans garantie. Suppose que chaque visiteur voit {spots} publicités à un CPM de {cpm}. Les revenus réels dépendent de votre prix plancher, de vos heures et de la demande dans votre secteur."
+    },
+    "showcase": {
+      "eyebrow": "Le produit",
+      "heading": "Un tableau de bord pour chaque côté de la place de marché",
+      "disclaimer": "Exemple illustratif : lieux et revenus fictifs.",
+      "operators": {
+        "kpiScreens": "Écrans actifs",
+        "kpiFill": "Taux de remplissage",
+        "kpiMonth": "Ce mois-ci",
+        "rowGym": "Centre sportif, Kitsilano",
+        "rowCafe": "Café, Queen Ouest",
+        "rowClinic": "Salle d'attente de clinique",
+        "caption": "Inscrivez votre inventaire, fixez vos prix planchers, approuvez chaque publicité et suivez vos revenus par écran."
+      },
+      "advertisers": {
+        "kpiActive": "Campagnes actives",
+        "kpiPlays": "Diffusions aujourd'hui",
+        "kpiScans": "Balayages QR",
+        "rowCoffee": "Lancement d'un café au centre-ville",
+        "rowClass": "Promo de cours de fin de semaine",
+        "rowOpenHouse": "Portes ouvertes de quartier",
+        "plays": {
+          "one": "{count} diffusion",
+          "other": "{count} diffusions"
+        },
+        "caption": "Choisissez vos lieux, fixez un budget, téléversez votre création et suivez diffusions et balayages en direct."
+      }
+    },
+    "search": {
+      "placeholder": "Rechercher…",
+      "noResults": "Aucun résultat",
+      "sections": {
+        "how": {
+          "title": "Comment ça marche",
+          "text": "Inscrivez vos écrans ou réservez une campagne : tarifs en temps réel, libre-service, aucun contrat à long terme."
+        },
+        "operators": {
+          "title": "Pour les exploitants",
+          "text": "Inscrivez vos écrans numériques, fixez vos propres prix, approuvez chaque publicité avant sa diffusion."
+        },
+        "advertisers": {
+          "title": "Pour les annonceurs",
+          "text": "Réservez de vraies campagnes d'affichage extérieur sur des écrans locaux en quelques minutes, sans minimum."
+        }
+      }
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "heading": "Vos questions, nos réponses",
+      "items": {
+        "cities": {
+          "q": "Dans quelles villes AdGrid est-il offert?",
+          "a": "Nous lançons à Toronto et à Vancouver, et d'autres villes canadiennes suivront à mesure que des exploitants se joindront à nous. Si vous êtes ailleurs, inscrivez-vous à la liste d'attente ci-dessous : nous vous contacterons quand nous arriverons chez vous."
+        },
+        "screens": {
+          "q": "Quels écrans peuvent devenir des écrans AdGrid?",
+          "a": "Tout écran numérique à l'horizontale relié à Internet : écran commercial, téléviseur inutilisé ou affichage numérique existant. Connectez-le en quelques minutes avec notre lecteur léger; aucun matériel propriétaire à acheter."
+        },
+        "payouts": {
+          "q": "Quelle part AdGrid prend-il, et comment fonctionnent les versements?",
+          "a": "Vous gardez 70 % de ce que paient les annonceurs pour chaque écran inscrit; AdGrid garde 30 %. Les versements sont automatiques par Stripe Connect, selon le calendrier affiché dans votre tableau de bord. Pas de facturation, pas de relances."
+        },
+        "contract": {
+          "q": "Dois-je signer un contrat ou payer quoi que ce soit d'avance?",
+          "a": "Non. L'inscription de vos écrans est gratuite et sans contrat à long terme; mettez votre inventaire en pause ou retirez-le en tout temps."
+        },
+        "control": {
+          "q": "Quel contrôle ai-je sur ce qui joue sur mon écran?",
+          "a": "Un contrôle total. Approuvez ou refusez chaque publicité avant sa diffusion, et fixez vos heures d'ouverture pour que les publicités ne jouent que lorsque votre établissement est ouvert. Si vous le souhaitez, les publicités des annonceurs vérifiés peuvent être approuvées automatiquement."
+        },
+        "minimum": {
+          "q": "Y a-t-il une dépense minimale pour les annonceurs?",
+          "a": "Aucun minimum et aucun contrat à long terme. Vous voyez le prix exact par créneau avant de réserver, et vous ne payez que le temps réellement diffusé."
+        },
+        "proof": {
+          "q": "Comment savoir si ma campagne a vraiment été diffusée?",
+          "a": "Chaque campagne comprend des journaux de diffusion qui prouvent où et quand votre publicité a joué, ainsi qu'un code QR unique pour suivre les balayages par écran et par heure."
+        },
+        "cancel": {
+          "q": "Que se passe-t-il si j'annule une campagne?",
+          "a": "Si vous annulez avant toute impression, vous êtes remboursé en entier dans un délai de 5 à 10 jours ouvrables. Une fois les impressions commencées, les frais sont définitifs."
+        }
+      }
+    },
+    "waitlist": {
+      "heading": "Soyez avisé quand nous arriverons dans votre ville",
+      "joiningAs": "Je m'inscris en tant que",
+      "roleOperator": "J'ai des écrans",
+      "roleAdvertiser": "Je veux annoncer",
+      "operator": {
+        "eyebrow": "Vos écrans sont hors de Toronto ou de Vancouver?",
+        "sub": "Nous sommes actifs à Toronto et à Vancouver et ajoutons des villes à mesure que des exploitants se joignent à nous. Dites-nous où sont vos écrans et nous vous contacterons à notre lancement dans votre région.",
+        "company": "Nom de l'entreprise ou de l'établissement",
+        "companyPlaceholder": "Nom de votre entreprise ou de votre réseau",
+        "submit": "Rejoindre la liste d'attente des exploitants"
+      },
+      "advertiser": {
+        "eyebrow": "Vous voulez annoncer hors de Toronto ou de Vancouver?",
+        "sub": "Nous sommes actifs à Toronto et à Vancouver et ajoutons des villes à mesure que des écrans s'y connectent. Dites-nous où vous voulez annoncer et nous vous contacterons quand des écrans y seront offerts.",
+        "company": "Nom de l'entreprise",
+        "companyPlaceholder": "L'entreprise que vous voulez annoncer",
+        "submit": "Rejoindre la liste d'attente des annonceurs"
+      },
+      "name": "Nom complet",
+      "namePlaceholder": "Marie Tremblay",
+      "email": "Courriel professionnel",
+      "emailPlaceholder": "marie@votreentreprise.com",
+      "city": "Ville",
+      "cityPlaceholder": "Choisissez une ville…",
+      "cityToronto": "Toronto",
+      "cityVancouver": "Vancouver",
+      "cityOther": "Autre ville canadienne",
+      "cityMultiple": "Plusieurs villes",
+      "screens": "Nombre d'écrans",
+      "screensPlaceholder": "Choisissez une fourchette…",
+      "screensNotYet": "Pas encore installés",
+      "source": "Comment avez-vous entendu parler d'AdGrid?",
+      "submitting": "Envoi en cours…",
+      "error": "Une erreur s'est produite. Veuillez réessayer.",
+      "privacy": "Nous vous répondrons dans un délai de 2 jours ouvrables. En soumettant ce formulaire, vous acceptez notre <privacy>Politique de confidentialité</privacy>. Nous ne communiquerons jamais vos renseignements."
+    },
+    "footer": {
+      "tagline": "La place de marché libre-service de l'affichage numérique extérieur au Canada.",
+      "platform": "Plateforme",
+      "account": "Compte",
+      "legal": "Mentions légales",
+      "joinWaitlist": "Rejoindre la liste d'attente",
+      "privacy": "Politique de confidentialité",
+      "terms": "Conditions d'utilisation",
+      "cookies": "Politique relative aux témoins",
+      "refunds": "Politique de remboursement",
+      "madeIn": "Fait au Canada"
+    }
+  },
+  "legal": {
+    "home": "Accueil",
+    "lastUpdated": "Dernière mise à jour : {date}",
+    "privacy": {
+      "metaTitle": "Politique de confidentialité | AdGrid",
+      "metaDescription": "Comment AdGrid recueille, utilise et protège les données des annonceurs, des exploitants d'écrans et des visiteurs du site.",
+      "title": "Politique de confidentialité",
+      "sections": [
+        {
+          "h": "Qui nous sommes",
+          "p": [
+            "AdGrid Inc. (« AdGrid », « nous ») exploite une plateforme d'affichage numérique extérieur qui met en relation des annonceurs et des propriétaires d'écrans, actuellement à Toronto et à Vancouver. Notre adresse officielle peut être obtenue à legal@adgrid.io. AdGrid est établie au Canada et traite les renseignements personnels conformément à la <em>Loi sur la protection des renseignements personnels et les documents électroniques</em> (LPRPDE) fédérale.",
+            "<strong>Responsable de la protection des renseignements personnels :</strong> la personne désignée par AdGrid à ce titre est responsable de notre conformité à la LPRPDE et constitue le premier point de contact pour toute question, préoccupation ou plainte concernant la façon dont nous traitons vos renseignements personnels : {privacyEmail}."
+          ]
+        },
+        {
+          "h": "Données recueillies et raisons",
+          "p": [
+            "Conformément à la LPRPDE, nous ne recueillons des renseignements personnels qu'à des fins déterminées, à votre connaissance et avec votre consentement (implicite lorsque vous créez un compte, ou exprès lorsque nous l'indiquons ci-dessous). Chaque catégorie ci-dessous précise pourquoi nous recueillons ces renseignements; nous ne les utilisons à aucune autre fin sans vous le demander d'abord.",
+            "<strong>Titulaires de compte (annonceurs et exploitants d'écrans) :</strong> nom, adresse courriel, nom de l'entreprise et renseignements de facturation, recueillis à la création de votre compte afin de vous identifier, de gérer votre compte et de traiter les paiements. Les renseignements de paiement sont traités et conservés par Stripe. AdGrid ne conserve jamais les numéros de carte complets.",
+            "<strong>Télémétrie des écrans :</strong> l'état en ligne ou hors ligne d'un écran, la campagne diffusée à un moment donné et l'horodatage périodique des signaux de présence.",
+            "<strong>Caméra facultative de mesure d'auditoire :</strong> certains exploitants activent, dans leur établissement, une caméra complémentaire qui estime de façon anonyme la taille et la composition globales de l'auditoire. Toute la détection de visages et l'estimation de l'âge et du genre s'effectuent sur l'appareil, à l'écran; les images brutes de la caméra ne sont jamais conservées ni transmises. Seules des statistiques globales et anonymisées pour chaque intervalle d'environ 30 secondes (nombre approximatif de personnes, temps d'arrêt, indice d'attention et nombre de personnes par tranche d'âge et par genre) sont envoyées à AdGrid. Nous ne recevons jamais d'images, de vidéos, de gabarits biométriques ni aucune donnée permettant d'identifier une personne, et les écrans ne suivent pas une même personne d'une visite à l'autre. Les exploitants qui activent cette fonction sont tenus, par contrat, d'afficher dans l'établissement un avis visible indiquant que des analyses d'auditoire anonymes sont effectuées.",
+            "<strong>Balayages de codes QR :</strong> lorsqu'une personne balaie le code QR d'une publicité, nous enregistrons un événement de balayage contenant l'horodatage, l'identifiant de la campagne et l'identifiant de l'écran, puis nous la redirigeons vers l'adresse de destination de l'annonceur. Nous n'installons aucun témoin de suivi sur le site de destination et ne recevons aucune donnée sur ce que fait la personne après la redirection.",
+            "<strong>Données d'utilisation :</strong> journaux de serveur standards (adresse IP, type de navigateur, pages consultées) conservés jusqu'à 90 jours à des fins de sécurité et de débogage.",
+            "<strong>Analytique de produit (seulement si vous y consentez) :</strong> si vous choisissez « Accepter » dans notre bandeau sur les témoins, nous enregistrons la façon dont le site et l'application sont utilisés afin de repérer les points de blocage et de les améliorer. Cela comprend les pages consultées, le type de navigateur et d'appareil, l'emplacement approximatif déduit de votre adresse IP et quelques événements de produit : l'inscription à la liste d'attente, l'envoi du formulaire d'inscription, l'utilisation du calculateur de revenus et la progression ou la soumission dans le créateur de campagnes. Une fois que vous êtes connecté, ces événements sont liés à l'identifiant de votre compte AdGrid, jamais à votre nom ni à votre courriel. Nous n'enregistrons ni votre écran, ni vos frappes au clavier, ni ce que vous saisissez dans les formulaires. Si vous choisissez « Essentiels seulement », ou si vous ne répondez pas, rien de cela n'est recueilli. Vous pouvez modifier votre choix en tout temps sur la page de notre <cookies>Politique relative aux témoins</cookies>.",
+            "<strong>Messages de la place de marché :</strong> lorsqu'un annonceur et un exploitant d'écrans échangent des messages au sujet d'une offre d'emplacement exclusif dans la place de marché d'AdGrid, nous conservons le contenu des messages, l'expéditeur et l'horodatage afin que les deux parties puissent voir la conversation. Nous ne lisons ni n'utilisons ce contenu à d'autres fins que sa transmission et, s'il y a lieu, le traitement d'une demande de soutien.",
+            "<strong>Liste d'attente et formulaires de contact :</strong> si vous vous inscrivez à notre liste d'attente (comme exploitant d'écrans ou comme annonceur) ou si vous communiquez avec nous, nous recueillons le nom, le courriel, l'entreprise, la ville et les autres renseignements que vous fournissez, afin de répondre à votre demande et de faire un suivi concernant votre intégration. Nous ne communiquons pas ces renseignements à des tiers et ne les utilisons qu'à cette fin."
+          ]
+        },
+        {
+          "h": "Utilisation de vos données",
+          "p": [
+            "Nous utilisons les données de compte pour fournir le service AdGrid, traiter les paiements, envoyer des courriels transactionnels (approbations de campagnes, reçus de paiement, avis de versement) et répondre aux demandes de soutien. Si vous consentez à l'analytique de produit, nous utilisons ces données uniquement pour comprendre et améliorer le site Web et l'application d'AdGrid. Nous ne vendons pas de données personnelles à des tiers et ne les utilisons pas à des fins de publicité comportementale."
+          ]
+        },
+        {
+          "h": "Conservation des données",
+          "p": [
+            "Les données de compte (y compris les messages de la place de marché) sont conservées pendant toute la durée de votre compte et pendant 90 jours après sa suppression, puis supprimées de façon définitive. La télémétrie des écrans, les enregistrements de signaux de présence et les statistiques globales de mesure d'auditoire sont conservés 12 mois, puis supprimés automatiquement. Les événements de balayage QR et les enregistrements de conversion (provenant de notre pixel de conversion ou d'un postback serveur) sont conservés 24 mois pour soutenir l'analyse des campagnes, puis supprimés automatiquement. Les données d'analytique de produit (si vous y avez consenti) sont conservées 12 mois, puis supprimées. Stripe conserve les dossiers de paiement de façon indépendante, selon sa propre politique de confidentialité."
+          ]
+        },
+        {
+          "h": "Vos droits",
+          "p": [
+            "Si vous vous trouvez au Canada, dans l'Union européenne ou au Royaume-Uni, vous avez le droit d'accéder à vos données personnelles, de les faire corriger ou supprimer, et de retirer votre consentement lorsque le traitement repose sur celui-ci. Pour exercer l'un de ces droits, écrivez à notre responsable de la protection des renseignements personnels à {privacyEmail}. Nous vous répondrons dans un délai de 30 jours, comme l'exige la LPRPDE.",
+            "Si vous n'êtes pas satisfait de la façon dont nous avons traité votre demande ou vos renseignements personnels, vous pouvez déposer une plainte auprès du <opc>Commissariat à la protection de la vie privée du Canada</opc>, l'organisme fédéral chargé de faire appliquer la LPRPDE."
+          ]
+        },
+        {
+          "h": "Témoins et technologies semblables",
+          "p": [
+            "AdGrid n'installe aucun témoin (cookie). Votre session de connexion est conservée dans le stockage local de votre navigateur, uniquement pour vous garder connecté, et n'est jamais communiquée à des tiers. Si vous consentez à l'analytique de produit, notre fournisseur d'analytique conserve aussi un identifiant aléatoire dans le stockage local de votre navigateur afin de distinguer les visites. Nous n'utilisons ni témoins publicitaires ni traceurs intersites. Les détails se trouvent dans notre <cookies>Politique relative aux témoins</cookies>."
+          ]
+        },
+        {
+          "h": "Services de tiers",
+          "p": [
+            "Nous utilisons Stripe pour le traitement des paiements, Supabase pour la base de données et l'authentification, et Resend pour les courriels transactionnels. Si vous consentez à l'analytique de produit, ces données sont traitées par PostHog, Inc. Chaque service est régi par sa propre politique de confidentialité et sa propre entente de traitement des données.",
+            "<strong>Stockage hors du Canada :</strong> certains de ces fournisseurs, dont PostHog, stockent des données sur des serveurs situés aux États-Unis. Les renseignements qui y sont stockés sont assujettis aux lois de ce pays et peuvent être accessibles à ses autorités. Nous exigeons de chaque fournisseur qu'il protège vos renseignements selon une norme comparable à celle de la LPRPDE."
+          ]
+        },
+        {
+          "h": "Modifications de la présente politique",
+          "p": [
+            "Nous pouvons mettre à jour la présente politique à l'occasion. Les titulaires de compte seront avisés par courriel de toute modification importante au moins 14 jours avant son entrée en vigueur."
+          ]
+        },
+        {
+          "h": "Nous joindre",
+          "p": [
+            "Pour toute question sur la confidentialité ou toute demande relative à vos données : {privacyEmail}"
+          ]
+        }
+      ],
+      "seeAlso": "Consultez aussi nos <terms>Conditions d'utilisation</terms> et notre <cookies>Politique relative aux témoins</cookies>."
+    },
+    "terms": {
+      "metaTitle": "Conditions d'utilisation | AdGrid",
+      "metaDescription": "Les conditions qui régissent l'utilisation de la place de marché d'affichage numérique extérieur d'AdGrid.",
+      "title": "Conditions d'utilisation",
+      "sections": [
+        {
+          "h": "1. Acceptation",
+          "p": [
+            "En créant un compte ou en utilisant AdGrid, vous acceptez les présentes conditions d'utilisation (les « Conditions »). Si vous utilisez AdGrid au nom d'une entreprise, vous déclarez être autorisé à lier cette entreprise aux présentes Conditions."
+          ]
+        },
+        {
+          "h": "2. Le service",
+          "p": [
+            "AdGrid fournit une plateforme de place de marché qui met en relation des annonceurs (les « Annonceurs ») souhaitant diffuser de la publicité numérique et des propriétaires et exploitants d'écrans (les « Exploitants ») qui rendent des écrans d'affichage disponibles sur le réseau. AdGrid n'est pas partie aux ententes publicitaires conclues entre Annonceurs et Exploitants, au-delà de la facilitation du processus de réservation et de paiement. AdGrid offre également une place de marché où les Exploitants peuvent proposer des écrans précis pour un emplacement exclusif sur une période choisie, et où Annonceurs et Exploitants peuvent échanger des messages au sujet d'une offre avant la réservation. La réservation dans la place de marché n'accepte pas encore de paiement; lorsqu'une offre est indiquée comme réservable, les mêmes conditions relatives au contenu, au paiement et à l'approbation prévues aux présentes s'appliquent."
+          ]
+        },
+        {
+          "h": "3. Utilisation acceptable",
+          "p": [
+            "Vous ne devez pas utiliser AdGrid pour : enfreindre une loi ou un règlement applicable; porter atteinte à la propriété intellectuelle, à la vie privée ou à d'autres droits de tiers; transmettre des logiciels malveillants ou du code nuisible; tenter d'obtenir un accès non autorisé à toute partie de la plateforme; extraire des données par moissonnage ou de façon systématique; ou contourner une limite de débit, un contrôle d'accès ou une mesure de sécurité. Les messages de la place de marché ne doivent pas servir à harceler, à solliciter des affaires hors de la plateforme en contravention des présentes Conditions, ni à partager du contenu qui contreviendrait à l'article 4 s'il était soumis comme création publicitaire."
+          ]
+        },
+        {
+          "h": "4. Règles relatives au contenu des annonceurs",
+          "p": [
+            "Les Annonceurs sont seuls responsables de tout le contenu créatif qu'ils soumettent. Le contenu ne doit pas être illégal, trompeur, diffamatoire, obscène ou discriminatoire. Les catégories réglementées (alcool, jeux de hasard, cannabis, produits financiers, allégations santé) nécessitent une approbation préalable et doivent respecter toutes les normes publicitaires applicables. AdGrid se réserve le droit de refuser ou de retirer tout contenu, à sa discrétion et sans remboursement, si ce contenu contrevient aux présentes règles ou à la loi applicable.",
+            "Chaque Exploitant peut fixer ses propres restrictions de contenu pour ses écrans. Une campagne approuvée par AdGrid peut tout de même être refusée par un Exploitant; le paiement n'est prélevé qu'après l'approbation de l'Exploitant (ou l'approbation automatique, lorsqu'elle est configurée)."
+          ]
+        },
+        {
+          "h": "5. Paiements et remboursements",
+          "p": [
+            "Vous autorisez AdGrid à porter le budget complet de la campagne au mode de paiement choisi lorsque vous soumettez la campagne pour paiement. Une campagne n'est diffusée sur un écran donné qu'une fois que a) le paiement a été prélevé et b) l'Exploitant (ou le paramètre d'approbation automatique de l'écran) a approuvé votre contenu; tant que ces deux conditions ne sont pas remplies, aucune impression n'est diffusée. Tous les frais sont traités par Stripe et ne sont pas remboursables, sauf si une campagne est annulée avant toute impression, auquel cas un remboursement complet est effectué dans un délai de 5 à 10 jours ouvrables. AdGrid déduit des frais de plateforme des versements aux Exploitants, comme le prévoient les conditions applicables aux Exploitants."
+          ]
+        },
+        {
+          "h": "6. Responsabilités des exploitants",
+          "p": [
+            "Les Exploitants sont responsables de garder leurs écrans en ligne, de diffuser fidèlement les campagnes approuvées et d'entretenir tout matériel nécessaire au fonctionnement du lecteur d'affichage AdGrid. Les Exploitants reçoivent leurs versements par Stripe Connect, selon le calendrier affiché dans leur tableau de bord, déduction faite des frais de plateforme d'AdGrid."
+          ]
+        },
+        {
+          "h": "7. Limitation de responsabilité",
+          "p": [
+            "Dans toute la mesure permise par la loi applicable, la responsabilité totale d'AdGrid à l'égard de toute réclamation découlant des présentes Conditions ou du service, ou s'y rapportant, est limitée au plus élevé des montants suivants : a) les sommes que vous avez versées à AdGrid au cours des 3 mois précédant la réclamation ou b) 100 $ CA. AdGrid n'est pas responsable des dommages indirects, accessoires, spéciaux, consécutifs ou punitifs, y compris la perte de profits, même si elle a été avisée de leur possibilité."
+          ]
+        },
+        {
+          "h": "8. Exclusion de garanties",
+          "p": [
+            "La plateforme AdGrid est fournie « telle quelle », sans garantie d'aucune sorte. Nous ne garantissons pas que le service sera ininterrompu ou exempt d'erreurs, ni qu'une campagne donnée atteindra une portée, un nombre d'impressions ou un résultat commercial précis."
+          ]
+        },
+        {
+          "h": "9. Droit applicable",
+          "p": [
+            "Les présentes Conditions sont régies par les lois de la province de l'Ontario et les lois fédérales du Canada qui s'y appliquent, sans égard aux règles de conflit de lois. Les différends seront tranchés par les tribunaux de l'Ontario, au Canada."
+          ]
+        },
+        {
+          "h": "10. Modifications",
+          "p": [
+            "Nous pouvons mettre à jour les présentes Conditions à l'occasion. Nous aviserons les titulaires de compte par courriel au moins 14 jours avant l'entrée en vigueur de toute modification importante. L'utilisation continue du service après la date d'entrée en vigueur constitue une acceptation."
+          ]
+        },
+        {
+          "h": "11. Nous joindre",
+          "p": [
+            "Questions sur les présentes Conditions : {legalEmail}"
+          ]
+        }
+      ],
+      "seeAlso": "Consultez aussi notre <privacy>Politique de confidentialité</privacy> et notre <refunds>Politique de remboursement</refunds>."
+    },
+    "cookies": {
+      "metaTitle": "Politique relative aux témoins | AdGrid",
+      "metaDescription": "Comment AdGrid utilise les témoins et les technologies de stockage semblables.",
+      "title": "Politique relative aux témoins",
+      "sections": [
+        {
+          "h": "En bref",
+          "p": [
+            "AdGrid n'installe pas de témoins (cookies). Nous utilisons le stockage du navigateur pour vous garder connecté et, seulement si vous acceptez, l'analytique de produit pour comprendre comment les gens utilisent le site. Nous n'utilisons ni témoins publicitaires, ni pixels de suivi, ni traceurs intersites."
+          ]
+        },
+        {
+          "h": "Ce que nous utilisons au lieu de témoins",
+          "p": [
+            "<strong>Stockage local (strictement nécessaire) :</strong> lorsque vous vous connectez, votre jeton de session est conservé dans le stockage local de votre navigateur pour que vous restiez connecté d'une visite à l'autre. Cette valeur n'est jamais transmise à des tiers et est effacée lorsque vous vous déconnectez ou effacez les données de votre navigateur.",
+            "<strong>Analytique de produit (facultative, désactivée sauf si vous acceptez) :</strong> si vous choisissez « Accepter » dans notre bandeau sur les témoins, PostHog, notre fournisseur d'analytique, conserve un identifiant aléatoire dans le stockage local de votre navigateur et enregistre les pages consultées et quelques événements de produit, comme le décrit notre <privacy>Politique de confidentialité</privacy>. Si vous choisissez « Essentiels seulement », ou si vous ne répondez pas, le script d'analytique n'est pas chargé du tout.",
+            "Nous n'utilisons ni pixels de suivi, ni témoins publicitaires, ni scripts d'enregistrement de session, ni aucune technologie de suivi intersites. Si l'établissement d'un exploitant d'écrans utilise la caméra facultative de mesure d'auditoire anonyme décrite dans notre <privacy>Politique de confidentialité</privacy>, celle-ci fonctionne entièrement sur l'appareil, à l'écran, sans aucun témoin ni stockage dans le navigateur."
+          ]
+        },
+        {
+          "h": "Services de tiers",
+          "p": [
+            "Les services de paiement (Stripe), de base de données et d'authentification (Supabase) et de courriels transactionnels (Resend) peuvent installer leurs propres témoins ou utiliser leur propre stockage strictement nécessaires lorsque vous interagissez directement avec leurs pages de paiement ou de connexion hébergées. Ceux-ci sont régis par la politique relative aux témoins et la politique de confidentialité de chaque fournisseur, et non par AdGrid."
+          ]
+        },
+        {
+          "h": "Votre choix",
+          "slot": "analyticsChoice"
+        },
+        {
+          "h": "Si cela change",
+          "p": [
+            "Si nous ajoutons tout autre stockage non essentiel, par exemple à des fins publicitaires, nous mettrons cette page à jour et vous demanderons votre consentement avant de l'utiliser."
+          ]
+        },
+        {
+          "h": "Nous joindre",
+          "p": [
+            "Questions sur la présente politique : {privacyEmail}"
+          ]
+        }
+      ],
+      "seeAlso": "Consultez aussi notre <privacy>Politique de confidentialité</privacy> et nos <terms>Conditions d'utilisation</terms>.",
+      "choice": {
+        "unavailable": "L'analytique de produit est actuellement désactivée pour tout le monde; il n'y a donc rien à choisir.",
+        "status": "L'analytique de produit est <strong>{state}</strong> dans ce navigateur.",
+        "on": "activée",
+        "off": "désactivée",
+        "turnOn": "Activer",
+        "turnOff": "Désactiver"
+      }
+    },
+    "refunds": {
+      "metaTitle": "Politique de remboursement | AdGrid",
+      "metaDescription": "Dans quels cas AdGrid rembourse les campagnes publicitaires réservées sur la plateforme.",
+      "title": "Politique de remboursement",
+      "sections": [
+        {
+          "h": "Quand une campagne est remboursable",
+          "p": [
+            "Le budget complet de la campagne est porté à votre carte lorsque vous soumettez une campagne pour paiement. Une campagne n'est diffusée qu'une fois que a) le paiement a été prélevé et b) l'Exploitant de l'écran a approuvé votre création, ou que l'écran est réglé en approbation automatique. Si une campagne est annulée, par vous ou parce qu'un Exploitant refuse votre contenu, avant qu'une impression ait été diffusée sur cet écran, vous recevez un remboursement complet du montant facturé pour cet écran."
+          ]
+        },
+        {
+          "h": "Quand une campagne n'est pas remboursable",
+          "p": [
+            "Dès qu'une campagne a commencé à diffuser des impressions sur un écran, la partie du budget déjà dépensée sur cet écran n'est pas remboursable. Le contenu retiré par AdGrid pour non-respect des règles d'utilisation acceptable ou des règles relatives au contenu des annonceurs prévues dans nos <terms>Conditions d'utilisation</terms> n'est pas remboursé."
+          ]
+        },
+        {
+          "h": "Comment les remboursements sont effectués",
+          "p": [
+            "Les remboursements admissibles sont versés sur votre mode de paiement d'origine, par Stripe, dans un délai de 5 à 10 jours ouvrables suivant leur approbation. Nous n'accordons pas de remboursement sous forme de crédit au compte, sauf si vous le demandez."
+          ]
+        },
+        {
+          "h": "Versements aux exploitants",
+          "p": [
+            "Lorsqu'un remboursement est effectué pour une campagne qui n'avait encore diffusé aucune impression, aucun versement n'est généré pour l'Exploitant à l'égard de ce montant. Les remboursements n'entraînent pas la récupération d'un versement déjà payé à un Exploitant pour des impressions réellement diffusées."
+          ]
+        },
+        {
+          "h": "Demander un remboursement",
+          "p": [
+            "Écrivez à {billingEmail} en indiquant l'identifiant de votre campagne. Nous répondons dans un délai de 2 jours ouvrables."
+          ]
+        }
+      ],
+      "seeAlso": "La présente politique fait partie de nos <terms>Conditions d'utilisation</terms> et doit être lue avec celles-ci."
+    },
+    "thankYou": {
+      "metaTitle": "Merci | AdGrid",
+      "metaDescription": "Vous êtes inscrit à la liste d'attente d'AdGrid. Nous vous contacterons à mesure que nous accueillerons des exploitants et des annonceurs dans votre ville.",
+      "breadcrumb": "Merci",
+      "heading": "Vous êtes sur la liste.",
+      "promise": "Nous vous répondrons dans un délai de 2 jours ouvrables.",
+      "whileYouWait": "En attendant",
+      "backHome": "Retour à l'accueil",
+      "share": "Faire connaître AdGrid",
+      "copied": "Lien copié",
+      "operator": {
+        "intro": "Nous vous contacterons à mesure que nous intégrerons des écrans dans votre ville. Voici comment prendre une longueur d'avance.",
+        "steps": {
+          "screen": {
+            "title": "Choisissez votre écran",
+            "body": "Tout écran à l'horizontale relié à Internet fait l'affaire : écran commercial, téléviseur inutilisé ou affichage existant."
+          },
+          "traffic": {
+            "title": "Évaluez votre achalandage",
+            "body": "Un nombre approximatif de visiteurs par jour, par écran, est le seul chiffre dont vous aurez besoin à la configuration. C'est ce que verront les annonceurs."
+          },
+          "earnings": {
+            "title": "Estimez vos revenus",
+            "body": "Essayez le <calc>calculateur de revenus</calc> avec vos chiffres."
+          }
+        },
+        "shareText": "Vous connaissez un établissement qui a un écran? AdGrid verse aux exploitants 70 % de ce que dépensent les annonceurs."
+      },
+      "advertiser": {
+        "intro": "Nous vous contacterons dès que des écrans seront actifs dans votre ville. Voici comment être prêt à réserver dès le premier jour.",
+        "steps": {
+          "artwork": {
+            "title": "Préparez votre visuel",
+            "body": "Une image ou une courte vidéo à l'horizontale de 1920 × 1080. Chaque écran indique ses spécifications exactes au moment de la réservation."
+          },
+          "qr": {
+            "title": "Prévoyez de la place pour un code QR",
+            "body": "Chaque campagne reçoit un code QR traçable pour suivre les balayages par écran et par heure."
+          },
+          "local": {
+            "title": "Pensez local",
+            "body": "Choisissez les quartiers et les types de lieux que vos clients fréquentent vraiment : centres sportifs, cafés, salons."
+          }
+        },
+        "shareText": "Vous connaissez un propriétaire d'établissement qui a un écran? Il peut en tirer des revenus avec AdGrid."
+      }
+    }
+  },
+  "venue": {
+    "category": {
+      "food_drink": "Restauration et bars",
+      "fitness": "Mise en forme et bien-être",
+      "retail": "Commerce de détail",
+      "transport": "Transport",
+      "healthcare": "Santé",
+      "hospitality": "Hébergement",
+      "education": "Éducation",
+      "entertainment": "Divertissement",
+      "other": "Autre"
+    },
+    "fallback": "Lieu",
+    "subtype": {
+      "Café": "Café",
+      "Restaurant": "Restaurant",
+      "Bar": "Bar",
+      "Fast Food": "Restauration rapide",
+      "Bakery": "Boulangerie",
+      "Gym": "Centre sportif",
+      "Yoga Studio": "Studio de yoga",
+      "Spa": "Spa",
+      "Barber / Salon": "Barbier / salon de coiffure",
+      "Clothing": "Vêtements",
+      "Electronics": "Électronique",
+      "Supermarket": "Supermarché",
+      "Pharmacy": "Pharmacie",
+      "Convenience": "Dépanneur",
+      "Bus Stop": "Arrêt d'autobus",
+      "Train Station": "Gare",
+      "Airport": "Aéroport",
+      "Metro / Tube": "Métro",
+      "GP / Clinic": "Clinique médicale",
+      "Hospital": "Hôpital",
+      "Dentist": "Dentiste",
+      "Hotel": "Hôtel",
+      "Co-working Space": "Espace de cotravail",
+      "University": "Université",
+      "School": "École",
+      "Library": "Bibliothèque",
+      "Cinema": "Cinéma",
+      "Events Venue": "Salle d'événements",
+      "Sports Venue": "Installation sportive"
+    },
+    "stateWord": {
+      "CA": "Province",
+      "GB": "Région",
+      "US": "État",
+      "AU": "État",
+      "default": "État"
+    }
+  },
+  "public": {
+    "screens": {
+      "metaTitle": "Annoncez sur des écrans à Toronto et à Vancouver | AdGrid",
+      "metaDescription": "Des écrans numériques dans des centres sportifs, des cafés, des salons et plus encore à Toronto et à Vancouver. Voyez où ils se trouvent et combien ils coûtent, puis réservez sans dépense minimale.",
+      "eyebrow": "Le réseau AdGrid",
+      "heading": "Des écrans là où vos clients se trouvent déjà",
+      "sub": "Des écrans numériques dans des centres sportifs, des cafés, des salons et d'autres commerces de quartier. Les propriétaires approuvent chaque publicité, et chaque campagne reçoit un code QR pour que vous voyiez ce qu'elle vous a rapporté.",
+      "loading": "Chargement des écrans…",
+      "screensLive": {
+        "one": "écran actif",
+        "other": "écrans actifs"
+      },
+      "cities": {
+        "one": "ville",
+        "other": "villes"
+      },
+      "perThousand": "par 1 000 visionnements",
+      "fromPerThousand": "À partir de {price} par 1 000 visionnements",
+      "mapLabel": "Carte de l'emplacement approximatif des écrans",
+      "approxNote": "Les cercles indiquent des secteurs approximatifs. Les lieux exacts s'affichent une fois inscrit.",
+      "venueTypes": "Types de lieux",
+      "onboarding": "Nous accueillons des établissements à Toronto et à Vancouver",
+      "soonBody": "La carte publique apparaîtra lorsqu'assez d'écrans seront actifs. Créez un compte gratuit pour voir, prix à l'appui, ce qui est réservable près de votre entreprise dès aujourd'hui.",
+      "book": "Réserver une campagne",
+      "list": "Inscrire votre écran"
+    },
+    "report": {
+      "unavailable": "Ce lien de rapport n'est plus disponible",
+      "loadError": "Impossible de charger ce rapport",
+      "loading": "Chargement du rapport…",
+      "print": "Imprimer / Enregistrer en PDF",
+      "exportCsv": "Exporter en CSV",
+      "eyebrow": "Rapport de campagne AdGrid",
+      "day": "Jour",
+      "plays": "Diffusions",
+      "impressions": "Impressions",
+      "scans": "Balayages",
+      "qrScans": "Balayages QR",
+      "basis": "Base",
+      "playsSub": "preuve de diffusion vérifiée",
+      "scansSub": "robots et doublons exclus",
+      "basisLabel": {
+        "measured": "mesurées par caméra",
+        "mixed": "en partie mesurées, en partie modélisées",
+        "modelled": "modélisées",
+        "none": "aucune diffusion pour l'instant"
+      },
+      "basisShort": {
+        "measured": "mesurée",
+        "mixed": "mixte",
+        "modelled": "modélisée",
+        "none": "aucune"
+      },
+      "health": "Qualité de diffusion : <strong>{pct}</strong> des diffusions prévues confirmées",
+      "offline": {
+        "one": " · {count} jour où un écran était hors ligne",
+        "other": " · {count} jours où un écran était hors ligne"
+      },
+      "noDelivery": "Aucune diffusion n'a encore été enregistrée pour cette campagne."
+    }
+  },
+  "invite": {
+    "operator": {
+      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères.",
+      "sessionExpired": "Votre session a expiré. Veuillez cliquer de nouveau sur le lien d'invitation.",
+      "expired": "Cette invitation a expiré.",
+      "alreadyUsed": "Cette invitation a déjà été utilisée.",
+      "emailMismatch": "Cette invitation a été envoyée à une autre adresse courriel. Déconnectez-vous et utilisez le lien du courriel d'invitation.",
+      "finishError": "Une erreur s'est produite à la fin de la configuration. Réessayez.",
+      "invalidLink": "Ce lien d'invitation n'est pas valide.",
+      "expiredAsk": "Cette invitation a expiré. Demandez au responsable de la plateforme de vous en envoyer une nouvelle.",
+      "backToSignIn": "Retour à la connexion",
+      "heading": "Choisissez votre mot de passe",
+      "sub": "Choisissez un mot de passe pour terminer la configuration de votre compte d'exploitant.",
+      "password": "Mot de passe",
+      "submit": "Enregistrer le mot de passe et continuer"
+    },
+    "screen": {
+      "errorTitle": "Une erreur s'est produite lors du chargement de cette invitation",
+      "errorBody": "Il s'agit probablement d'un problème de connexion temporaire. Réessayez.",
+      "invalidTitle": "Ce lien d'invitation n'est pas valide",
+      "invalidBody": "Il a peut-être été mal saisi. Vous pouvez tout de même découvrir AdGrid directement.",
+      "goToAdGrid": "Aller sur AdGrid →",
+      "usedTitle": "Cette invitation a déjà été utilisée",
+      "usedBody": "Quelqu'un a déjà réservé cet écran au moyen de ce lien. Vous pouvez tout de même vous inscrire directement.",
+      "signUp": "S'inscrire →",
+      "invitedTo": "Vous êtes invité à annoncer sur",
+      "getStarted": "Commencer →"
+    }
+  },
+  "accounts": {
+    "roles": {
+      "admin": "Administrateur",
+      "manager": "Gestionnaire",
+      "viewer": "Lecteur"
+    },
+    "roleLower": {
+      "admin": "administrateur",
+      "manager": "gestionnaire",
+      "viewer": "lecteur"
+    },
+    "grantStatus": {
+      "pending": "en attente",
+      "active": "actif",
+      "revoked": "révoqué"
+    },
+    "activity": {
+      "someone": "Quelqu'un",
+      "grant_created": "{who} a été invité comme {role}",
+      "access_accepted": "{who} a accepté l'accès comme {role}",
+      "access_revoked": "L'accès de {who} a été révoqué (était {role})",
+      "role_changed": "Le rôle de {who} est passé à {role}",
+      "other": "{who} — {action}"
+    },
+    "accept": {
+      "invalidLink": "Lien d'invitation non valide.",
+      "notFound": "Invitation introuvable ou déjà utilisée.",
+      "alreadyAccepted": "Cette invitation a déjà été acceptée.",
+      "revoked": "Cette invitation a été révoquée.",
+      "loading": "Chargement de l'invitation…",
+      "anAccount": "un compte",
+      "someone": "Quelqu'un",
+      "errorTitle": "Erreur d'invitation",
+      "goHome": "Retour à l'accueil",
+      "acceptedTitle": "Invitation acceptée",
+      "redirecting": "Redirection vers vos comptes…",
+      "invitedTitle": "Vous avez reçu une invitation",
+      "signInPrompt": "Connectez-vous pour voir votre invitation et l'accepter.",
+      "google": "Continuer avec Google",
+      "email": "Se connecter par courriel",
+      "youreInvited": "Vous êtes invité",
+      "hasGiven": "<b>{grantor}</b> vous a donné un accès <b>{role}</b> à",
+      "decline": "Refuser",
+      "acceptInvite": "Accepter l'invitation"
+    },
+    "access": {
+      "heading": "Qui a accès à votre compte",
+      "grant": "Donner accès",
+      "loadError": "Impossible de charger les accès. Vérifiez votre connexion et réessayez.",
+      "empty": "Personne n'a encore accès à votre compte.",
+      "unknown": "Inconnu",
+      "revoke": "Révoquer",
+      "activity": "Activité",
+      "activityError": "Impossible de charger l'activité. Vérifiez votre connexion et réessayez.",
+      "activityEmpty": "Aucun changement d'accès sur votre compte pour l'instant."
+    },
+    "team": {
+      "loadError": "Impossible de charger votre équipe et vos comptes clients. Vérifiez votre connexion et réessayez.",
+      "noClients": "Aucun compte client pour l'instant. Demandez d'abord à un client de vous donner accès.",
+      "team": "Équipe",
+      "noMembers": "Aucun membre d'équipe pour l'instant.",
+      "selectMember": "Sélectionnez un membre de l'équipe pour gérer ses accès aux clients.",
+      "clientAccessFor": "Accès aux clients de {name}",
+      "clientAccount": "Compte client",
+      "orgGrant": "Accès de l'organisation : {role}",
+      "noAccess": "Aucun accès"
+    },
+    "grantModal": {
+      "enterEmail": "Entrez une adresse courriel.",
+      "noAccount": "Aucun compte AdGrid n'est associé à ce courriel.",
+      "self": "Vous ne pouvez pas vous donner accès à vous-même.",
+      "duplicate": "Ce compte a déjà accordé un accès à cet utilisateur.",
+      "title": "Donner accès au compte",
+      "sent": "✓ Invitation envoyée à {email}",
+      "done": "Terminé",
+      "email": "Adresse courriel",
+      "emailPlaceholder": "agence@exemple.com",
+      "role": "Rôle",
+      "roleViewer": "Lecteur — lecture seule",
+      "roleManager": "Gestionnaire — créer et modifier des campagnes",
+      "roleAdmin": "Administrateur — accès complet",
+      "sending": "Envoi…",
+      "send": "Envoyer l'invitation"
+    },
+    "hub": {
+      "unnamed": "Compte sans nom",
+      "active": "Actif",
+      "yours": "Votre compte",
+      "activeCampaigns": {
+        "one": "campagne active",
+        "other": "campagnes actives"
+      },
+      "spend": "dépenses à ce jour",
+      "title": "Comptes",
+      "sub": "Sélectionnez un compte à gérer. Vous pouvez en changer en tout temps depuis l'en-tête."
+    }
+  },
+  "login": {
+    "hidePassword": "Masquer le mot de passe",
+    "showPassword": "Afficher le mot de passe",
+    "invalidEmail": "Entrez une adresse courriel valide.",
+    "resetSent": "Vérifiez votre boîte de réception : si un compte existe pour ce courriel, un lien de réinitialisation est en route.",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères.",
+    "passwordUpdated": "Mot de passe mis à jour. Vous pouvez maintenant vous connecter.",
+    "acceptTerms": "Veuillez accepter les conditions d'utilisation et la politique de confidentialité pour continuer.",
+    "confirmEmail": "Consultez vos courriels pour confirmer votre compte.",
+    "homeLabel": "Accueil AdGrid",
+    "title": {
+      "forgot": "Réinitialiser votre mot de passe",
+      "reset": "Choisir un nouveau mot de passe",
+      "signin": "Se connecter à AdGrid",
+      "signup": "Créer votre compte"
+    },
+    "sub": {
+      "forgot": "Entrez votre courriel et nous vous enverrons un lien de réinitialisation.",
+      "reset": "Choisissez un nouveau mot de passe pour votre compte.",
+      "signin": "Bon retour. Reprenez là où vous en étiez.",
+      "operator": "Inscrivez vos écrans et commencez à tirer des revenus du temps publicitaire inutilisé.",
+      "advertiser": "Affichez votre entreprise sur des écrans dans les quartiers que vous desservez."
+    },
+    "redirecting": "Redirection…",
+    "google": "Continuer avec Google",
+    "apple": "Continuer avec Apple",
+    "or": "ou",
+    "signingUpTo": "Je m'inscris pour",
+    "intentAdvertiser": "Lancer des campagnes publicitaires",
+    "intentOperator": "Inscrire mes écrans",
+    "fullName": "Nom complet",
+    "namePlaceholder": "Votre nom",
+    "email": "Courriel",
+    "emailPlaceholder": "vous@entreprise.com",
+    "password": "Mot de passe",
+    "newPassword": "Nouveau mot de passe",
+    "forgotPassword": "Mot de passe oublié?",
+    "agree": "J'accepte les <terms>conditions d'utilisation</terms> et la <privacy>politique de confidentialité</privacy>",
+    "pleaseWait": "Veuillez patienter…",
+    "submit": {
+      "forgot": "Envoyer le lien →",
+      "reset": "Mettre à jour le mot de passe →",
+      "signin": "Se connecter →",
+      "signup": "Créer le compte →"
+    },
+    "signingIn": "Connexion…",
+    "tryDemo": "▶ Essayer la démo",
+    "noAccount": "Vous n'avez pas de compte? ",
+    "haveAccount": "Vous avez déjà un compte? ",
+    "signUp": "S'inscrire",
+    "signIn": "Se connecter",
+    "backToSignIn": "Retour à la connexion"
+  },
+  "display": {
+    "scanToLearn": "Balayez pour en savoir plus",
+    "noCampaigns": "Aucune campagne active prévue",
+    "tokenNotRecognised": "Jeton d'écran non reconnu",
+    "disconnected": "Cet écran a été déconnecté. Affichage d'un nouveau code de jumelage…",
+    "checkUrl": "Vérifiez l'adresse et reconnectez l'écran depuis votre tableau de bord AdGrid.",
+    "connecting": "Connexion…",
+    "privacyNotice": "Écran publicitaire AdGrid. Les balayages de codes QR sont enregistrés de façon anonyme.",
+    "privacyLink": "Politique de confidentialité ↗",
+    "pair": {
+      "instruction": "Entrez ce code dans votre tableau de bord AdGrid pour connecter cet écran",
+      "codeLabel": "Code de jumelage {code}",
+      "howTo": "Sur votre téléphone ou votre ordinateur, connectez-vous à <b>{host}</b>, ouvrez le <b>Guide d'installation</b> de votre écran et choisissez <b>Entrer un code de jumelage</b>.",
+      "newCodeIn": "Nouveau code dans {time} · cette page se met à jour toute seule",
+      "gettingCode": "Obtention d'un code de jumelage…",
+      "offline": "Impossible de joindre AdGrid pour le moment.",
+      "offlineHint": "Vérifiez la connexion Internet de cet écran; il continuera de réessayer.",
+      "paired": "Jumelé — démarrage de votre écran…"
+    }
+  },
+  "categories": {
+    "Food & Beverage": "Alimentation et boissons",
+    "Fashion & Retail": "Mode et commerce de détail",
+    "Finance & Banking": "Finance et services bancaires",
+    "Health & Fitness": "Santé et mise en forme",
+    "Entertainment": "Divertissement",
+    "Technology": "Technologie",
+    "Travel & Tourism": "Voyages et tourisme",
+    "Automotive": "Automobile",
+    "Real Estate": "Immobilier",
+    "Alcohol": "Alcool",
+    "Cannabis": "Cannabis",
+    "Gambling": "Jeux de hasard"
+  },
+  "create": {
+    "steps": {
+      "targeting": "Ciblage",
+      "creative": "Création",
+      "budget": "Budget et calendrier"
+    },
+    "stepper": {
+      "stepOf": "Étape {step} sur {total}"
+    },
+    "drafts": {
+      "title": "Reprendre un brouillon",
+      "saved": "{step} · enregistré {ago}",
+      "resume": "Reprendre",
+      "deleteLabel": "Supprimer le brouillon {name}"
+    },
+    "insight": {
+      "body": "Vos campagnes passées ont obtenu le plus de balayages sur les écrans <b>{profile}</b>.",
+      "apply": "Appliquer le filtre"
+    },
+    "media": {
+      "badType": "Utilisez une image JPG, PNG, GIF ou WEBP, ou une vidéo MP4, WEBM ou MOV.",
+      "tooLargeVideo": "Fichier trop volumineux : {max} Mo au maximum pour une vidéo.",
+      "tooLargeImage": "Fichier trop volumineux : {max} Mo au maximum pour une image.",
+      "label": "Création publicitaire",
+      "hint": "Téléversez votre propre publicité conçue, en image ou en vidéo; le format horizontal 16:9 donne les meilleurs résultats.",
+      "videoUploaded": "Vidéo téléversée ✓",
+      "imageUploaded": "Image téléversée ✓",
+      "upload": "+ Téléverser une image ou une vidéo"
+    },
+    "picker": {
+      "unfavorite": "Retirer des favoris",
+      "favorite": "Ajouter aux favoris",
+      "previewOn": "Voir votre publicité sur cet écran",
+      "previewNeedsCreative": "Téléversez votre création pour voir l'aperçu",
+      "imprPerMonth": "~{k} k impr./mois",
+      "noData": "Pas encore de données"
+    },
+    "audiences": {
+      "saved": "« {name} » enregistré comme auditoire réutilisable.",
+      "saveFailed": "Impossible d'enregistrer l'auditoire.",
+      "removeFailed": "Impossible de retirer « {name} ».",
+      "title": "Auditoires enregistrés",
+      "deleteLabel": "Supprimer {name}",
+      "saveCurrent": "Enregistrer le ciblage actuel comme auditoire",
+      "placeholder": "ex. : centres commerciaux du centre-ville"
+    },
+    "location": {
+      "placeholder": "Recherchez un pays, une province ou un État, ou une ville…",
+      "loading": "Chargement des emplacements…",
+      "noMatches": "Aucun écran dans ce secteur pour l'instant",
+      "country": "Pays",
+      "city": "Ville"
+    },
+    "targeting": {
+      "addingGroup": "Ajout d'un nouveau groupe de ciblage à <b>{name}</b>",
+      "campaignName": "Nom de la campagne",
+      "campaignNamePlaceholder": "ex. : Promo d'été 2026",
+      "heading": "Où voulez-vous annoncer?",
+      "sub": "Choisissez un secteur et, si vous le souhaitez, le type d'écrans recherché : nous trouverons les écrans correspondants.",
+      "noInventory": "Aucun écran n'est encore actif sur le réseau. Revenez bientôt.",
+      "fromPrevious": "↩ Partir d'une campagne précédente →",
+      "areaType": "Type de secteur",
+      "areaLocation": "Emplacement",
+      "areaRadius": "Rayon",
+      "where": "Où",
+      "noScreensYet": "Aucun écran pour l'instant",
+      "city": "Ville",
+      "radiusPlaceholder": "Recherchez une ville au centre du rayon…",
+      "radiusLabel": "Rayon : {km} km — déplacez l'épingle pour cibler un quartier précis de {city}",
+      "km": "{n} km",
+      "screenType": "Type d'écran",
+      "environment": "Environnement",
+      "venueCategory": "Catégorie de lieu",
+      "anyVenue": "Tous les types de lieux",
+      "holdout": "<b>Faire un test avec groupe témoin</b> — nous retiendrons au hasard environ 20 % des écrans comme groupe témoin pour vérifier que la diffusion correspond à l'auditoire mesuré, sans frais supplémentaires (les écrans témoins ne sont pas facturés)."
+    },
+    "creativeStep": {
+      "refine": "Affiner les écrans",
+      "screens": "Écrans",
+      "selectedSummary": "{selected} sur {total} sélectionnés · ~{k} k impressions/mois",
+      "selectAll": "Tout sélectionner",
+      "deselectAll": "Tout désélectionner",
+      "tabAll": "Tous les résultats ({count})",
+      "tabFavorites": "Favoris ({count})",
+      "tabRecent": "Récents ({count})",
+      "emptyFavorites": "Aucun favori pour l'instant. Ajoutez une étoile à un écran ci-dessous pour l'enregistrer ici.",
+      "emptyRecent": "Aucun écran de campagnes passées pour l'instant.",
+      "presetUnavailable": "Cet écran n'est plus disponible. Communiquez avec le soutien AdGrid pour obtenir de l'aide.",
+      "noMatch": "Aucun écran ne correspond à vos filtres. Élargissez votre secteur ou retirez des filtres.",
+      "creative": "Création",
+      "creatives": "Créations",
+      "unassigned": "{count} écran(s) sur {total} ne sont encore associés à aucune création; ils afficheront la première création ci-dessus par défaut.",
+      "screenWord": {
+        "one": "écran",
+        "other": "écrans"
+      },
+      "addCreative": "+ Ajouter une autre création"
+    },
+    "creative": {
+      "defaultLabel": "Création {n}",
+      "sampleFailed": "Impossible d'échantillonner cette image. Utilisez plutôt le sélecteur de couleur.",
+      "lowContrast": "Contraste faible : ce code QR risque de mal se balayer ({ratio}:1, visez {min}:1 ou plus).",
+      "labelPlaceholder": "Nom de la création",
+      "needsUpload": "Téléversez votre création publicitaire pour continuer : chaque campagne a besoin de sa propre image ou vidéo.",
+      "destination": "Adresse de destination (facultatif)",
+      "destinationPlaceholder": "https://exemple.com",
+      "badUrl": "Entrez une adresse Web complète, comme https://exemple.com : c'est là que votre code QR mène les gens.",
+      "urlHint": "Ajoutez-en une pour afficher un code QR sur la publicité. Laissez vide pour diffuser sans code QR.",
+      "category": "Catégorie",
+      "accent": "Couleur d'accent",
+      "qrColours": "Couleurs du code QR",
+      "dots": "Points",
+      "background": "Fond",
+      "pickHint": "Cliquez n'importe où sur l'aperçu de votre création pour échantillonner cette couleur.",
+      "corner": {
+        "top_left": "En haut à gauche",
+        "top_right": "En haut à droite",
+        "bottom_left": "En bas à gauche",
+        "bottom_right": "En bas à droite"
+      },
+      "dragHint": "Faites glisser le code QR pour le déplacer, ou sa poignée d'angle pour le redimensionner.",
+      "showOn": "Afficher sur ({assigned} écran(s) sur {total})",
+      "split": "Répartir par type d'écran →",
+      "share": "Part des diffusions sur les écrans partagés (%)",
+      "shareHint": "Ne compte que là où cette création partage un écran avec une autre. C'est vous qui fixez la répartition; elle ne change jamais d'elle-même."
+    },
+    "budget": {
+      "area": "Secteur",
+      "radiusArea": "Rayon de {km} km",
+      "screens": "Écrans",
+      "screensSummary": "{count} sélectionnés · ~{k} k impr./mois",
+      "creatives": "Créations",
+      "budget": "Budget",
+      "budgetSummary": "{amount} ({mode})",
+      "modeDaily": "quotidien",
+      "modeTotal": "total",
+      "dates": "Dates",
+      "dateRange": "{start} → {end} ({days} jours)",
+      "time": "Heures",
+      "days": "Jours",
+      "duration": "Durée de la publicité",
+      "durationValue": "{s} s par diffusion",
+      "slotShare": "Part de créneau",
+      "slotValue": "{pct} % du temps d'antenne",
+      "frequency": "Fréquence",
+      "frequencyValue": "Au plus {n} diffusions par écran par heure",
+      "noCap": "Aucun plafond",
+      "launch": "Lancement",
+      "heading": "Budget et calendrier",
+      "budgetType": "Type de budget",
+      "totalBudget": "Budget total",
+      "dailyLimit": "Plafond quotidien",
+      "dailyLimitLabel": "Plafond quotidien ({currency})",
+      "totalBudgetLabel": "Budget total ({currency})",
+      "placeholder200": "ex. : 200",
+      "placeholder100": "ex. : 100",
+      "suggested": "Suggéré pour {screens} écrans sur {days} jours : {min} à {max}",
+      "appliesTo": "Le budget s'applique à",
+      "wholeCampaign": "Toute la campagne",
+      "perCreative": "Réparti par création",
+      "perCreativeHint": "Le budget ci-dessus reste votre plafond de dépenses global : les montants par création indiquent comment ce total est réparti, ils ne s'y ajoutent pas.",
+      "creativeBudget": "Budget de {label} ({currency})",
+      "tooLow": "Le budget pourrait être trop bas pour diffuser régulièrement sur tous les écrans sélectionnés. Envisagez d'augmenter votre budget ou de réduire le nombre d'écrans.",
+      "overCap": "{count} des {total} écrans sélectionnés limitent la durée des publicités à moins de {s} s; votre publicité y jouera moins longtemps : {names}{more}.",
+      "startDate": "Date de début",
+      "endDate": "Date de fin",
+      "daysOfWeek": "Jours de la semaine",
+      "playTimes": "Heures de diffusion",
+      "sameTime": "Mêmes heures tous les jours",
+      "differentTimes": "Heures différentes selon le jour",
+      "from": "De",
+      "until": "À",
+      "playDuration": "Durée de diffusion (secondes)",
+      "playDurationHint": "Durée de votre publicité à chaque affichage",
+      "slotShareLabel": "Part de créneau (% du temps d'antenne de l'écran)",
+      "slotShareHint": "La part de votre publicité dans la rotation de chaque écran",
+      "frequencyCap": "Plafond de fréquence (facultatif)",
+      "frequencyHint": "Nombre maximal de diffusions de votre publicité sur un même écran par heure. Laissez vide pour aucun plafond.",
+      "categoryBlocked": {
+        "one": "{count} écran de votre secteur n'accepte pas les publicités de la catégorie {category} et a été exclu : {names}{more}.",
+        "other": "{count} écrans de votre secteur n'acceptent pas les publicités de la catégorie {category} et ont été exclus : {names}{more}."
+      },
+      "launchMode": "Mode de lancement",
+      "partialTitle": "Diffuser au fil des approbations",
+      "partialDesc": "Votre campagne commence sur chaque écran dès que son propriétaire l'approuve.",
+      "allTitle": "Attendre tous les écrans",
+      "allDesc": "La campagne reste en attente jusqu'à ce que tous les propriétaires des écrans ciblés l'aient approuvée.",
+      "review": "Récapitulatif",
+      "billTo": "Facturer à",
+      "clientAccount": "Compte du client",
+      "clientDesc": "Utilise le mode de paiement du client",
+      "agencyAccount": "Compte de l'agence",
+      "agencyDesc": "Utilise votre mode de paiement",
+      "createHouseAd": "Créer la publicité maison",
+      "submit": "Soumettre la campagne →",
+      "frequencyError": "Le plafond de fréquence doit être un nombre entier de 1 à {max}, ou rester vide pour aucun plafond."
+    },
+    "wizard": {
+      "payTitle": "Payer votre campagne",
+      "payBody": "Porter {amount} à la carte enregistrée à votre dossier. Les écrans ne diffuseront rien tant que le paiement n'aura pas été prélevé.",
+      "authRequired": "Authentification de la carte requise",
+      "authBody": "Votre carte exige une vérification supplémentaire. Mettez à jour votre mode de paiement et réessayez.",
+      "goToBilling": "Aller à la facturation →",
+      "charging": "Paiement en cours…",
+      "payNow": "Payer maintenant — {amount}",
+      "payLater": "Payer plus tard",
+      "reach": "~{screens} · ~{k} k impressions/mois estimées",
+      "reachScreens": {
+        "one": "{count} écran",
+        "other": "{count} écrans"
+      },
+      "needCenter": "Entrez un point central pour voir les écrans correspondants",
+      "noMatch": "Aucun écran ne correspond. Élargissez votre secteur ou retirez des filtres.",
+      "budgetZero": "Entrez un budget supérieur à 0 avant de soumettre.",
+      "budgetMax": "Le budget ne peut pas dépasser {max}.",
+      "categoryBlocked": {
+        "one": "{names} n'accepte pas les publicités de la catégorie {category}. Choisissez une autre catégorie ou un autre écran.",
+        "other": "{names} n'acceptent pas les publicités de la catégorie {category}. Choisissez une autre catégorie ou d'autres écrans."
+      },
+      "houseAdFailed": "Impossible de créer la publicité maison",
+      "submitFailed": "Impossible de soumettre la campagne",
+      "chargeFailed": "Le paiement a échoué",
+      "title": "Nouvelle campagne",
+      "backLabel": "Aperçu",
+      "noBilling": "Ajoutez un mode de paiement avant de soumettre : votre campagne ne sera pas diffusée sans lui.",
+      "setUpBilling": "Configurer la facturation →",
+      "continuingDraft": "Brouillon en cours : <b>{name}</b>",
+      "startFresh": "Recommencer",
+      "dupTitle": "Partir d'une campagne précédente",
+      "dupEmpty": "Aucune campagne précédente trouvée.",
+      "back": "← Retour",
+      "next": "Suivant →"
+    }
+  },
+  "market": {
+    "bookingStatus": {
+      "confirmed": "Confirmée",
+      "active": "Active",
+      "completed": "Terminée",
+      "cancelled": "Annulée"
+    },
+    "title": "Place de marché",
+    "subtitle": "Emplacements exclusifs réservés directement, hors des enchères ouvertes",
+    "tabBrowse": "Parcourir",
+    "tabBookings": "Mes réservations",
+    "listingsError": "Impossible de charger les offres. Vérifiez votre connexion et réessayez.",
+    "noListings": "Aucune offre exclusive n'est disponible pour le moment.",
+    "bundle": "Forfait",
+    "bookingsError": "Impossible de charger vos réservations. Vérifiez votre connexion et réessayez.",
+    "noBookings": "Vous n'avez encore réservé aucun emplacement exclusif.",
+    "screenUnavailable": "Écran non disponible",
+    "totalSuffix": "{amount} au total",
+    "detail": {
+      "confirmed": "Réservation confirmée",
+      "failed": "La réservation a échoué",
+      "backToMarketplace": "← Retour à la place de marché",
+      "loadError": "Impossible de charger cette offre. Vérifiez votre connexion et réessayez.",
+      "bundlePlacement": "Emplacement en forfait",
+      "exclusivePlacement": "Emplacement exclusif",
+      "titlePrice": "{kind} — {price}",
+      "loadingScreens": "Chargement des écrans…",
+      "screensIncluded": {
+        "one": "{count} écran inclus : {names}",
+        "other": "{count} écrans inclus : {names}"
+      },
+      "primaryOnly": "Les données analytiques ci-dessus concernent l'écran principal de ce forfait.",
+      "total": "Total de {amount}, sans frais ajoutés",
+      "autoRenew": "Renouveler automatiquement cette réservation à son expiration",
+      "book": "Réserver cet emplacement",
+      "chargeNote": "Le total ci-dessus sera porté à votre mode de paiement enregistré.",
+      "questions": "Des questions avant de réserver?"
+    }
+  },
+  "verify": {
+    "badType": "Utilisez un fichier JPG, PNG ou PDF.",
+    "tooLarge": "Fichier trop volumineux : {max} Mo au maximum.",
+    "required": "Le nom de l'entreprise et le domaine de l'entreprise sont obligatoires.",
+    "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+    "network": "Erreur réseau. Veuillez réessayer.",
+    "failed": "L'envoi a échoué.",
+    "verified": "Vérifié!",
+    "submitted": "Envoyé pour examen.",
+    "back": "← Retour",
+    "title": "Vérification de l'entreprise",
+    "verifiedBadge": "Annonceur vérifié",
+    "verifiedBody": "Les exploitants voient un badge de vérification sur vos campagnes et peuvent approuver automatiquement vos publicités.",
+    "reviewBadge": "En cours d'examen",
+    "reviewBody": "Nous examinons votre demande. Vous serez avisé dès qu'une décision sera prise.",
+    "rejectedBadge": "Refusée",
+    "resubmit": "Vous pouvez soumettre une nouvelle demande ci-dessous.",
+    "companyName": "Nom de l'entreprise",
+    "domain": "Domaine de l'entreprise",
+    "domainPlaceholder": "acme.com",
+    "domainHint": "Le domaine correspond à votre courriel professionnel? Vous êtes vérifié immédiatement. Les adresses courriel gratuites (Gmail, Outlook, etc.) font l'objet d'un examen manuel.",
+    "businessNumber": "Numéro d'entreprise",
+    "doc": "Permis ou document d'immatriculation de l'entreprise",
+    "docOptional": "(facultatif, si le domaine ne correspond pas)",
+    "submit": "Soumettre pour vérification"
+  },
+  "scans": {
+    "col": {
+      "timestamp": "Horodatage",
+      "campaign": "Campagne",
+      "screen": "Écran",
+      "device": "Appareil",
+      "country": "Pays",
+      "email": "Courriel",
+      "consent": "Consentement",
+      "filteredBot": "Exclu (robot)",
+      "filteredDuplicate": "Exclu (doublon)",
+      "utmSource": "Source UTM",
+      "date": "Date",
+      "variant": "Variante",
+      "plays": "Diffusions",
+      "scans": "Balayages",
+      "scanRate": "Taux de balayage",
+      "costPerScan": "Coût par balayage"
+    },
+    "loading": "Chargement des balayages…",
+    "loadError": "Impossible de charger les balayages. Vérifiez votre connexion et réessayez.",
+    "title": "Balayages et données",
+    "subtitle": "Événements de balayage QR, consentements et exportation pour le reciblage",
+    "kpiTotal": "Total des balayages",
+    "kpiMonth": "Ce mois-ci",
+    "kpiScreens": "Écrans distincts",
+    "kpiTop": "Meilleure campagne",
+    "chartTitle": "Balayages — 30 derniers jours",
+    "allCampaigns": "Toutes les campagnes",
+    "to": "au",
+    "exportCsv": "Exporter en CSV",
+    "variantPerformance": "Performance des variantes",
+    "scanLog": "Journal des balayages ({count})",
+    "empty": "Aucun balayage pour l'instant. Les codes QR affichés sur les écrans seront consignés ici une fois balayés.",
+    "emailCaptures": "Courriels recueillis ({count})",
+    "yes": "Oui",
+    "no": "Non"
+  },
+  "billing": {
+    "reason": {
+      "screen_offline": "L'écran était hors ligne",
+      "underdelivered": "Diffusion insuffisante de l'écran"
+    },
+    "invoiceStatus": {
+      "paid": "payée",
+      "open": "ouverte",
+      "failed": "échouée",
+      "void": "annulée",
+      "draft": "brouillon",
+      "uncollectible": "irrécouvrable"
+    },
+    "namesError": "Impossible de charger le nom des campagnes de certains crédits de diffusion.",
+    "campaignFallback": "Campagne",
+    "screenFallback": "Écran",
+    "loadFailed": "Impossible de charger les données de facturation.",
+    "setupFailed": "Impossible de lancer la configuration",
+    "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+    "pmUpdateFailed": "Impossible de mettre à jour le mode de paiement.",
+    "nowDefault": "{card} est maintenant votre mode de paiement par défaut.",
+    "removeTitle": "Retirer le mode de paiement?",
+    "removeMessage": "Retirer {card} de votre compte?",
+    "removeDefaultWarning": " C'est votre mode par défaut actuel : les prochains paiements exigeront un autre mode enregistré.",
+    "removed": "{card} retirée.",
+    "added": "Mode de paiement ajouté.",
+    "loading": "Chargement de la facturation…",
+    "retry": "Réessayer",
+    "title": "Facturation",
+    "subtitle": "Modes de paiement, factures et crédits de diffusion",
+    "accountCredit": "Crédit au compte",
+    "creditHint": "Appliqué automatiquement à votre prochain paiement. Provient des manques de diffusion crédités ci-dessous.",
+    "cardExpired": "<b>Votre carte par défaut est expirée</b> ({card}, expirée depuis {exp}).",
+    "cardExpiring": {
+      "one": "<b>Votre carte par défaut expire bientôt</b> : {card} expire en {exp}, dans {count} jour.",
+      "other": "<b>Votre carte par défaut expire bientôt</b> : {card} expire en {exp}, dans {count} jours."
+    },
+    "updateBelow": " Mettez-la à jour ci-dessous pour qu'une campagne en cours ne s'interrompe pas si le prochain paiement échoue.",
+    "paymentMethods": "Modes de paiement",
+    "noMethods": "Aucun mode de paiement enregistré.",
+    "expires": "Expire en {exp}",
+    "default": "Par défaut",
+    "setDefault": "Définir par défaut",
+    "addMethodPortal": "+ Ajouter un mode de paiement →",
+    "addMethod": "+ Ajouter un mode de paiement",
+    "invoiceHistory": "Historique des factures",
+    "noInvoices": "Aucune facture pour l'instant.",
+    "col": {
+      "date": "Date",
+      "description": "Description",
+      "amount": "Montant",
+      "status": "Statut",
+      "pdf": "PDF",
+      "day": "Jour",
+      "campaign": "Campagne",
+      "screen": "Écran",
+      "reason": "Motif",
+      "credited": "Crédité"
+    },
+    "download": "Télécharger",
+    "creditsError": "Impossible de charger vos crédits de diffusion. Actualisez la page; si le problème persiste, communiquez avec le soutien.",
+    "deliveryCredits": "Crédits de diffusion"
+  },
+  "notif": {
+    "campaign_approved": {
+      "label": "Campagne approuvée",
+      "desc": "Quand votre campagne est approuvée par l'exploitant"
+    },
+    "campaign_live": {
+      "label": "Campagne en ondes",
+      "desc": "Quand votre campagne commence à être diffusée sur un écran"
+    },
+    "campaign_paused": {
+      "label": "Campagne en pause",
+      "desc": "Quand votre campagne est mise en pause faute de budget"
+    },
+    "low_budget": {
+      "label": "Alerte de budget bas",
+      "desc": "Quand il reste moins de 20 % de la durée d'une campagne"
+    },
+    "campaign_ended": {
+      "label": "Campagne terminée",
+      "desc": "Quand une campagne termine sa période prévue"
+    },
+    "scan_milestone": {
+      "label": "Jalons de balayage",
+      "desc": "Quand une campagne atteint 100, 500, 1 000 ou 5 000 balayages QR"
+    },
+    "weekly_report": {
+      "label": "Rapport de performance hebdomadaire",
+      "desc": "Résumé des balayages, des dépenses et des campagnes actives chaque lundi"
+    },
+    "payment_failed": {
+      "label": "Paiement échoué",
+      "desc": "Quand un paiement de votre compte échoue"
+    },
+    "team_member_joined": {
+      "label": "Nouveau membre de l'équipe",
+      "desc": "Quand quelqu'un accepte votre invitation à l'équipe"
+    },
+    "account_suspended": {
+      "label": "Compte suspendu",
+      "desc": "Si votre compte est suspendu"
+    },
+    "advertiser_verification_approved": {
+      "label": "Vérification de l'entreprise approuvée",
+      "desc": "Quand la vérification de votre entreprise est approuvée"
+    },
+    "advertiser_verification_rejected": {
+      "label": "Vérification de l'entreprise refusée",
+      "desc": "Quand la vérification de votre entreprise exige des modifications"
+    },
+    "marketplace_thread_message": {
+      "label": "Messages de la place de marché",
+      "desc": "Quand vous recevez un nouveau message dans le fil d'une offre"
+    },
+    "screen_offline_during_flight": {
+      "label": "Écran hors ligne pendant une campagne",
+      "desc": "Quand un écran réservé pour votre campagne en cours se déconnecte"
+    }
+  },
+  "settings": {
+    "saveChanges": "Enregistrer les modifications",
+    "errorSaving": "Erreur lors de l'enregistrement.",
+    "saved": "Enregistré.",
+    "fullName": "Nom complet",
+    "email": "Courriel",
+    "changeEmailHint": "Modifiez votre courriel dans l'onglet Sécurité.",
+    "companyName": "Nom de l'entreprise",
+    "companyPlaceholder": "Acme inc.",
+    "companyWebsite": "Site Web de l'entreprise",
+    "websitePlaceholder": "https://acme.com",
+    "timezone": "Fuseau horaire",
+    "language": "Langue",
+    "languageHint": "Enregistrée dans ce navigateur. Les courriels et les notifications sont encore envoyés en anglais pour l'instant.",
+    "currency": "Devise de facturation",
+    "cad": "CAD — dollar canadien",
+    "usd": "USD — dollar américain",
+    "currencyHint": "S'applique aux nouvelles campagnes seulement. Les réservations existantes ne sont pas touchées.",
+    "primaryColour": "Couleur principale",
+    "secondaryColour": "Couleur secondaire",
+    "font": "Police",
+    "fontSans": "Sans empattement",
+    "fontSerif": "Avec empattement",
+    "fontMono": "Chasse fixe",
+    "brandHint": "Sert de couleurs de départ aux nouveaux brouillons de campagne. Ne modifie pas les campagnes déjà créées.",
+    "emailSent": "Courriel de confirmation envoyé. Consultez votre boîte de réception.",
+    "pwMismatch": "Les mots de passe ne correspondent pas.",
+    "pwTooShort": "Le mot de passe doit contenir au moins 8 caractères.",
+    "changeEmail": "Modifier le courriel",
+    "newEmail": "Nouveau courriel",
+    "newEmailPlaceholder": "nouveau@courriel.com",
+    "updateEmail": "Mettre à jour le courriel",
+    "changePassword": "Modifier le mot de passe",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "updatePassword": "Mettre à jour le mot de passe",
+    "inApp": "Dans l'appli",
+    "emailChannel": "Courriel",
+    "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+    "inviteError": "Erreur lors de l'envoi de l'invitation.",
+    "inviteSent": "Invitation envoyée à {email}",
+    "removeError": "Erreur lors du retrait du membre.",
+    "loadingTeam": "Chargement de l'équipe…",
+    "teamError": "Impossible de charger votre équipe. Vérifiez votre connexion et réessayez.",
+    "teamMembers": "Membres de l'équipe",
+    "inviteTeammate": "Inviter un coéquipier",
+    "invitePlaceholder": "collegue@entreprise.com",
+    "sendInvite": "Envoyer l'invitation",
+    "title": "Paramètres",
+    "subtitle": "Gérez votre compte d'annonceur",
+    "tabs": {
+      "profile": "Profil",
+      "branding": "Image de marque",
+      "security": "Sécurité",
+      "notifications": "Notifications",
+      "team": "Équipe",
+      "access": "Accès"
+    }
+  },
+  "dash": {
+    "basisNone": "aucune diffusion pour l'instant",
+    "basisMeasured": "mesurées par caméra",
+    "basisMixed": "en partie mesurées, en partie modélisées",
+    "welcome": "Bon retour",
+    "welcomeName": "Bon retour, {name}",
+    "subtitle": "La performance de vos campagnes en un coup d'œil",
+    "newCampaign": "+ Nouvelle campagne",
+    "unpaid": {
+      "one": "<b>{count} campagne attend un paiement.</b> <muted>Les écrans ne la diffuseront pas tant que le paiement n'aura pas été prélevé.</muted>",
+      "other": "<b>{count} campagnes attendent un paiement.</b> <muted>Les écrans ne les diffuseront pas tant que le paiement n'aura pas été prélevé.</muted>"
+    },
+    "payNow": "Payer maintenant",
+    "review": "Examiner",
+    "gettingStarted": "Lancez votre première campagne",
+    "steps": {
+      "campaign": {
+        "title": "Créez votre première campagne",
+        "body": "Choisissez des écrans, téléversez votre publicité et fixez un budget. Aucune dépense minimale."
+      },
+      "card": {
+        "title": "Ajoutez un mode de paiement",
+        "body": "Nécessaire pour qu'une campagne soit diffusée. Modifiez-le ou retirez-le en tout temps dans Facturation."
+      },
+      "verify": {
+        "title": "Faites vérifier votre entreprise (facultatif)",
+        "body": "Les annonceurs vérifiés obtiennent un badge et peuvent être approuvés automatiquement par les exploitants : leurs campagnes démarrent plus vite."
+      }
+    },
+    "kpiSpent": "Dépensé à ce jour",
+    "spentSub": "{pct} d'un budget de {budget}",
+    "kpiPlays": "Diffusions",
+    "playsSub": "preuve de diffusion vérifiée",
+    "kpiImpressions": "Impressions",
+    "thousands": "{n} k",
+    "vsPrior": "par rapport aux 30 jours précédents",
+    "kpiScans": "Balayages QR",
+    "filteredSub": "{count} exclus (robots ou doublons)",
+    "leadsSub": "pistes recueillies",
+    "cpm": "CPM",
+    "cpmSub": "coût par 1 000 impressions",
+    "costPerScan": "Coût par balayage",
+    "costPerScanSub": "dépenses ÷ balayages facturables",
+    "conversions": "Conversions",
+    "reportedValue": "{amount} de valeur déclarée",
+    "reportedSoFar": "déclarées jusqu'ici",
+    "viaScan": "Par balayage QR",
+    "viaScanSub": "balayage puis conversion",
+    "viaPromo": "Par code promo",
+    "viaPromoSub": "ont vu la publicité sans la balayer",
+    "impressionsChart": "Impressions — 30 derniers jours",
+    "scansChart": "Balayages facturables — 30 derniers jours",
+    "reach": "Portée estimée",
+    "reachMissing": "coordonnées manquantes pour certains écrans",
+    "reachSub": "personnes uniques, chevauchements déduits",
+    "frequency": "Fréquence moyenne",
+    "frequencyValue": "{n}×",
+    "frequencySub": "nombre de fois où chaque personne l'a vue",
+    "budgetPacing": "Rythme du budget",
+    "campaignsError": "Impossible de charger vos campagnes. Vérifiez votre connexion et réessayez.",
+    "yourCampaigns": "Vos campagnes",
+    "viewAll": "Tout voir →",
+    "reportProblem": "Signaler un problème",
+    "budget": "Budget",
+    "impressions": "Impressions",
+    "scans": "Balayages",
+    "spend": "Dépenses",
+    "impressionsLower": "impressions",
+    "scansLower": "balayages",
+    "hideBreakdown": "Masquer le détail par écran ▴",
+    "compareScreens": "Comparer les écrans ▾",
+    "breakdown": "{impr} impr. · {scans} balayages",
+    "noCampaigns": "Aucune campagne pour l'instant",
+    "noCampaignsBody": "Lancez votre première campagne sur le réseau ADGRID en moins de 10 minutes.",
+    "createFirst": "Créer votre première campagne →",
+    "flagOffline": {
+      "one": "Écran hors ligne {count} jour pendant la campagne",
+      "other": "Écran hors ligne {count} jours pendant la campagne"
+    },
+    "flagUnder": "Diffusion à {pct} % des diffusions prévues"
+  },
+  "integ": {
+    "platformDesc": {
+      "meta": "Envoyez les événements de balayage comme conversions ViewContent à votre pixel Meta grâce à l'API Conversions côté serveur.",
+      "google": "Importez les conversions de balayage dans Google Ads pour l'attribution et la mesure du ROAS.",
+      "shopify": "Transmettez les événements de balayage à votre boutique Shopify par webhook pour suivre le parcours client."
+    },
+    "fields": {
+      "pixel_id": "ID du pixel",
+      "access_token": "Jeton d'accès d'utilisateur système",
+      "conversion_id": "ID de conversion",
+      "conversion_label": "Libellé de conversion",
+      "customer_id": "ID client",
+      "developer_token": "Jeton de développeur",
+      "refresh_token": "Jeton d'actualisation OAuth",
+      "webhook_url": "URL du webhook",
+      "secret": "Secret du webhook (facultatif)"
+    },
+    "connected": "Connecté",
+    "notConnected": "Non connecté",
+    "sent": "Envoyé",
+    "failed": "Échec",
+    "connectTitle": "Connecter {name}",
+    "testOk": "Événement de test envoyé.",
+    "testFail": "Le test a échoué. Vérifiez vos identifiants.",
+    "saveConnect": "Enregistrer et connecter",
+    "test": "Tester",
+    "viewDocs": "Documentation de {name} →",
+    "eventsFired": {
+      "one": "<b>{count}</b> événement envoyé",
+      "other": "<b>{count}</b> événements envoyés"
+    },
+    "edit": "Modifier",
+    "connect": "Connecter",
+    "disconnect": "Déconnecter",
+    "postbackKey": "Clé de postback",
+    "postbackBody": "Déclarez vos conversions depuis votre propre serveur (p. ex. un gestionnaire de webhook de commandes) au moyen d'un <code>POST</code> signé vers {url}. Plus fiable qu'un pixel côté client : résiste aux bloqueurs de publicité et ne dépend pas du navigateur de l'acheteur.",
+    "copyNow": "Copiez-la maintenant : elle ne sera plus affichée. Envoyez-la sous la forme <code>Authorization: Bearer <clé></code>.",
+    "copy": "Copier",
+    "copied": "✓ Copié",
+    "generating": "Génération…",
+    "regenerate": "Régénérer la clé",
+    "generate": "Générer une clé",
+    "pixelTitle": "Pixel de conversion",
+    "pixelBody": "Placez ceci sur votre page de confirmation de commande ou de remerciement. Remplacez {cid} par la valeur que votre site a captée lors du clic sur le lien AdGrid (paramètre d'URL ou témoin), ou utilisez plutôt <code>promo_code=</code> pour une personne qui n'a jamais balayé le code.",
+    "whereTitle": "Où dois-je placer ceci?",
+    "whereBody": "Le même pixel et la même clé de postback que ci-dessus : voici simplement les étapes exactes selon la plateforme de votre site. Les noms de menus sont ceux de l'interface anglaise de chaque plateforme.",
+    "guides": {
+      "shopify": {
+        "steps": [
+          "Dans l'administration Shopify, allez à Settings → Checkout.",
+          "Faites défiler jusqu'à Order status page → Additional scripts.",
+          "Collez l'extrait du pixel ci-dessous, puis enregistrez."
+        ],
+        "note": "Additional Scripts est en voie d'être retiré pour les boutiques Shopify Plus au profit de l'API Web Pixels / Customer Events. Si votre boutique a déjà migré, utilisez plutôt la clé de postback ci-dessus depuis votre gestionnaire de webhook de commandes; elle ne dépend aucunement de cette page."
+      },
+      "woocommerce": {
+        "steps": [
+          "Installez une extension légère d'extraits de code (p. ex. « Code Snippets ») pour éviter de modifier directement le fichier functions.php de votre thème.",
+          "Ajoutez un nouvel extrait PHP lié au crochet woocommerce_thankyou, exécuté uniquement sur la page de commande reçue.",
+          "Affichez la balise img du pixel ci-dessous en y insérant le total de la commande tiré de $order->get_total()."
+        ],
+        "note": "Si vous êtes à l'aise avec les webhooks, privilégiez la clé de postback : le webhook Order created intégré à WooCommerce peut faire un POST directement vers l'URL de postback côté serveur, ce qui résiste aux bloqueurs de publicité et ne touche pas du tout à votre thème."
+      },
+      "bigcommerce": {
+        "steps": [
+          "Dans l'administration BigCommerce, allez à Storefront → Script Manager.",
+          "Créez un nouveau script : emplacement Footer, page Order confirmation seulement.",
+          "Collez l'extrait du pixel ci-dessous, puis enregistrez."
+        ],
+        "note": ""
+      },
+      "squarespace": {
+        "steps": [
+          "Allez à Settings → Advanced → Code Injection.",
+          "Collez l'extrait du pixel ci-dessous dans le champ Order Confirmation Page."
+        ],
+        "note": "L'injection de code sur la page de confirmation de commande exige un forfait Squarespace Commerce (Advanced). Avec un forfait inférieur, utilisez plutôt les codes promo ci-dessous : imprimez un code sur la création et déclarez-le au moyen de la clé de postback depuis l'outil où vous suivez déjà vos commandes."
+      },
+      "wordpress": {
+        "steps": [
+          "Installez une extension d'en-tête et de pied de page (p. ex. « WPCode » ou « Insert Headers and Footers »).",
+          "Ajoutez l'extrait du pixel ci-dessous, limité à votre page de remerciement ou de confirmation seulement (pas à tout le site)."
+        ],
+        "note": "Pour un site d'inscription ou de génération de pistes sans total de commande, retirez complètement ?value= : la conversion compte quand même, simplement sans montant déclaré."
+      },
+      "ga4": {
+        "steps": [
+          "Rien à installer : chaque balayage QR AdGrid arrive déjà sur votre site avec utm_source=adgrid&utm_medium=ooh&utm_campaign=<id de campagne> (la redirection de balayage les ajoute automatiquement).",
+          "Dans GA4 : Reports → Acquisition → Traffic acquisition, puis filtrez Session source / medium sur adgrid / ooh."
+        ],
+        "note": "Ceci montre le trafic généré par les balayages, pas les conversions. Combinez-le au pixel ou au postback ci-dessus (sur l'une des plateformes à gauche) pour voir quelle part de ce trafic a réellement converti."
+      }
+    },
+    "promoTitle": "Codes promo et URL personnalisées",
+    "promoBody": "Pour les personnes qui voient la publicité sans la balayer : imprimez un code ou un lien court sur la création et déclarez la conversion avec <code>promo_code</code> au lieu de <code>adgrid_cid</code>.",
+    "campaign": "Campagne",
+    "select": "Choisir…",
+    "promoCode": "Code promo",
+    "vanityPath": "Chemin personnalisé (facultatif)",
+    "vanityPlaceholder": "ex. : solde-ete",
+    "adding": "Ajout…",
+    "add": "+ Ajouter",
+    "noPromo": "Aucun code promo pour l'instant.",
+    "apiTitle": "Clés d'API",
+    "apiBody": "Gérez vos campagnes par programmation à {url}. Une clé peut lister, créer, modifier (avant paiement), soumettre pour paiement et annuler vos propres campagnes, et en consulter la diffusion.",
+    "keyName": "Nom de la clé",
+    "keyNamePlaceholder": "ex. : outil d'achat média",
+    "generateKey": "+ Générer une clé",
+    "noKeys": "Aucune clé d'API pour l'instant.",
+    "revoked": "(révoquée)",
+    "created": "Créée le {date}",
+    "lastUsed": " · dernière utilisation le {date}",
+    "revoke": "Révoquer",
+    "loading": "Chargement des intégrations…",
+    "title": "Intégrations",
+    "subtitle": "Connectez vos plateformes publicitaires pour recevoir les événements de balayage comme conversions côté serveur",
+    "tabPlatforms": "Plateformes",
+    "tabEvents": "Journal des événements",
+    "tabConversions": "Suivi des conversions",
+    "tabApi": "Clés d'API",
+    "noEvents": "Aucun événement pour l'instant. Connectez une plateforme et déclenchez un balayage pour voir les événements ici.",
+    "col": {
+      "platform": "Plateforme",
+      "event": "Événement",
+      "scanId": "ID de balayage",
+      "status": "Statut",
+      "time": "Heure"
+    }
+  }
+}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { usePageMeta } from '../../lib/usePageMeta.js';
 import { Breadcrumbs } from '../../components/shared/Breadcrumbs.jsx';
+import { useT } from '../../i18n/useT.js';
 
 const page = {
   minHeight: '100vh',
@@ -41,28 +42,14 @@ const btnSecondary = { ...btn, background: 'transparent', border: '1px solid rgb
 
 // What someone can usefully do while waiting, per side of the marketplace.
 // Only lists things that exist today -- no referral credit is promised.
+// Step text lives in src/locales under legal.thankYou.<role>.steps.
 const NEXT_STEPS = {
-  operator: {
-    intro: "We'll be in touch as we onboard screens in your city. Here's how to get a head start.",
-    steps: [
-      ['Pick your screen', 'Any landscape screen with an internet connection works: a commercial display, a spare TV or existing signage.'],
-      ['Count your foot traffic', "A rough daily visitor count per screen is the one number you'll need at setup. It sets what advertisers see."],
-      ['Estimate your earnings', <>Try the <Link to="/#earnings" style={{ color: '#B79CFF' }}>earnings calculator</Link> with your numbers.</>],
-    ],
-    shareText: 'Know a venue with a screen? AdGrid pays operators 70% of what advertisers spend.',
-  },
-  advertiser: {
-    intro: "We'll be in touch as screens go live in your city. Here's how to be ready to book on day one.",
-    steps: [
-      ['Get your artwork ready', 'A landscape 1920 × 1080 image or short video. Each screen lists its exact specs when you book.'],
-      ['Leave room for a QR code', 'Each campaign gets a trackable QR code so you can see scans by screen and by hour.'],
-      ['Think local', 'Pick the neighbourhoods and venue types your customers actually visit: gyms, cafés, salons.'],
-    ],
-    shareText: 'Know a venue owner with a screen? They can earn from it on AdGrid.',
-  },
+  operator: ['screen', 'traffic', 'earnings'],
+  advertiser: ['artwork', 'qr', 'local'],
 };
 
 function ShareButton({ text }) {
+  const { t } = useT();
   const [copied, setCopied] = useState(false);
   const url = `${window.location.origin}/`;
 
@@ -80,41 +67,43 @@ function ShareButton({ text }) {
 
   return (
     <button type="button" style={btnSecondary} onClick={share}>
-      {copied ? 'Link copied' : 'Share AdGrid'}
+      {copied ? t('legal.thankYou.copied') : t('legal.thankYou.share')}
     </button>
   );
 }
 
 export function ThankYou() {
+  const { t, tx } = useT();
   usePageMeta({
-    title: 'Thank You | AdGrid',
-    description: "You're on the AdGrid waitlist. We'll be in touch as we onboard operators and advertisers in your city.",
+    title: t('legal.thankYou.metaTitle'),
+    description: t('legal.thankYou.metaDescription'),
   });
   const [params] = useSearchParams();
   const role = params.get('role') === 'advertiser' ? 'advertiser' : 'operator';
-  const { intro, steps, shareText } = NEXT_STEPS[role];
+  const ns = `legal.thankYou.${role}`;
+  const calcLink = chunk => <Link to="/#earnings" style={{ color: '#B79CFF' }}>{chunk}</Link>;
 
   return (
     <div id="main-content" style={page}>
       <div style={inner}>
-        <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Thank you' }]} />
-        <h1 style={h1}>You're on the list.</h1>
-        <p style={p}>{intro}</p>
-        <p style={promise}>We'll respond within 2 business days.</p>
+        <Breadcrumbs items={[{ label: t('legal.home'), to: '/' }, { label: t('legal.thankYou.breadcrumb') }]} />
+        <h1 style={h1}>{t('legal.thankYou.heading')}</h1>
+        <p style={p}>{t(`${ns}.intro`)}</p>
+        <p style={promise}>{t('legal.thankYou.promise')}</p>
 
-        <h2 style={h2}>While you wait</h2>
+        <h2 style={h2}>{t('legal.thankYou.whileYouWait')}</h2>
         <ol style={list}>
-          {steps.map(([title, body]) => (
-            <li key={title} style={item}>
-              <span style={itemTitle}>{title}</span>
-              {body}
+          {NEXT_STEPS[role].map(step => (
+            <li key={step} style={item}>
+              <span style={itemTitle}>{t(`${ns}.steps.${step}.title`)}</span>
+              {tx(`${ns}.steps.${step}.body`, { calc: calcLink })}
             </li>
           ))}
         </ol>
 
         <div style={actions}>
-          <ShareButton text={shareText} />
-          <Link to="/" style={btn}>Back to home</Link>
+          <ShareButton text={t(`${ns}.shareText`)} />
+          <Link to="/" style={btn}>{t('legal.thankYou.backHome')}</Link>
         </div>
       </div>
     </div>
