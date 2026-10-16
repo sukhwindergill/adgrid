@@ -1186,14 +1186,9 @@
       "frequencyError": "Frequency cap must be a whole number from 1 to {max}, or blank for no cap."
     },
     "wizard": {
-      "payTitle": "Pay for your campaign",
-      "payBody": "Charge {amount} to your card on file. Screens won't go live until payment is captured.",
-      "authRequired": "Card authentication required",
-      "authBody": "Your card requires additional verification. Update your payment method and try again.",
+      "payTitle": "Submitted for review",
+      "payBody": "Operators review every ad before it plays. Your card is charged {amount} once the first screen approves, and we'll email you either way.",
       "goToBilling": "Go to Billing →",
-      "charging": "Charging…",
-      "payNow": "Pay now — {amount}",
-      "payLater": "Pay later",
       "reach": "~{screens} · ~{k}K impressions/mo estimated",
       "reachScreens": {
         "one": "{count} screen",
@@ -1219,7 +1214,10 @@
       "dupTitle": "Start from a previous campaign",
       "dupEmpty": "No previous campaigns found.",
       "back": "← Back",
-      "next": "Next →"
+      "next": "Next →",
+      "noCardTitle": "Add a payment method",
+      "noCardBody": "Approval can't go through without a card on file. Add one now so your campaign starts on time.",
+      "done": "Done"
     }
   },
   "market": {
@@ -1514,8 +1512,8 @@
     "subtitle": "Your campaign performance at a glance",
     "newCampaign": "+ New Campaign",
     "unpaid": {
-      "one": "<b>{count} campaign waiting on payment.</b> <muted>Screens won't play it until payment is captured.</muted>",
-      "other": "<b>{count} campaigns waiting on payment.</b> <muted>Screens won't play them until payment is captured.</muted>"
+      "one": "<b>Payment needed for {count} approved campaign.</b> <muted>It won't play until the charge goes through.</muted>",
+      "other": "<b>Payment needed for {count} approved campaigns.</b> <muted>They won't play until the charge goes through.</muted>"
     },
     "payNow": "Pay now",
     "review": "Review",

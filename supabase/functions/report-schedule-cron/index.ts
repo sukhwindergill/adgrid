@@ -23,6 +23,10 @@ const APP_URL = (Deno.env.get("PUBLIC_APP_URL") ?? "").replace(/\/+$/, "");
 
 const BATCH = 50;               // schedules per invocation
 const MAX_CAMPAIGNS = 50;       // per "all campaigns" email
+// Sign-up is open and recipients are free-typed, so cap what one account can
+// make AdGrid send: only an owner's oldest MAX_SCHEDULES_PER_OWNER schedules
+// are ever sent.
+const MAX_SCHEDULES_PER_OWNER = 10;
 const SHARE_LINK_DAYS = 90;     // matches ShareReportModal
 const SHARE_LINK_MIN_LEFT_DAYS = 14; // reuse an existing link only if it outlives the email a while
 const DAY_MS = 86_400_000;
@@ -173,6 +177,10 @@ async function sendOne(s: Schedule): Promise<void> {
     await supabase.from("report_schedules").delete().eq("id", s.id);
     return;
   }
+  // An "all campaigns" schedule with nothing to show sends nothing this
+  // period (it may have campaigns next time), rather than mailing an empty
+  // AdGrid-branded email to whoever was typed in.
+  if (campaigns.length === 0) return;
 
   const ids = campaigns.map((c) => c.id);
   const { data: daily } = ids.length
@@ -196,20 +204,25 @@ async function sendOne(s: Schedule): Promise<void> {
   const heading = s.scope === "campaign"
     ? `${s.frequency === "weekly" ? "Weekly" : "Monthly"} report: ${campaigns[0].name}`
     : `${s.frequency === "weekly" ? "Weekly" : "Monthly"} report: all campaigns`;
+  // Fixed subject: campaign names are advertiser-typed, and a subject line
+  // from AdGrid's domain is exactly where phishing text would land.
+  const subject = `Your ${s.frequency === "weekly" ? "weekly" : "monthly"} AdGrid campaign report`;
 
   const csv = buildReportCsv(perCampaign);
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: FROM_EMAIL,
-      to: s.recipients,
-      subject: heading,
-      html: emailHtml({ heading, periodLabel, totals, campaigns: perCampaign }),
-      attachments: [{ filename: `adgrid-report-${period.start}.csv`, content: toBase64Utf8(csv) }],
-    }),
-  });
-  if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+  const html = emailHtml({ heading, periodLabel, totals, campaigns: perCampaign });
+  const attachments = [{ filename: `adgrid-report-${period.start}.csv`, content: toBase64Utf8(csv) }];
+  // One email per recipient: a shared To: line would show an agency's
+  // clients each other's addresses.
+  const failures: string[] = [];
+  for (const to of s.recipients) {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: FROM_EMAIL, to, subject, html, attachments }),
+    });
+    if (!res.ok) failures.push(`${to}: Resend ${res.status} ${await res.text()}`);
+  }
+  if (failures.length) throw new Error(failures.join("; "));
 }
 
 Deno.serve(async (req: Request) => {
@@ -249,6 +262,20 @@ Deno.serve(async (req: Request) => {
       .eq("next_run_at", s.next_run_at)
       .select("id");
     if (!claimed || claimed.length === 0) { skipped++; continue; }
+
+    const { data: oldest } = await supabase
+      .from("report_schedules")
+      .select("id")
+      .eq("owner_id", s.owner_id)
+      .order("created_at", { ascending: true })
+      .limit(MAX_SCHEDULES_PER_OWNER);
+    if (!(oldest ?? []).some((r: { id: string }) => r.id === s.id)) {
+      skipped++;
+      await supabase.from("report_schedules")
+        .update({ last_error: `Not sent: accounts can have at most ${MAX_SCHEDULES_PER_OWNER} scheduled reports.` })
+        .eq("id", s.id);
+      continue;
+    }
 
     try {
       await sendOne(s);

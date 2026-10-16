@@ -1186,14 +1186,9 @@
       "frequencyError": "Le plafond de fréquence doit être un nombre entier de 1 à {max}, ou rester vide pour aucun plafond."
     },
     "wizard": {
-      "payTitle": "Payer votre campagne",
-      "payBody": "Porter {amount} à la carte enregistrée à votre dossier. Les écrans ne diffuseront rien tant que le paiement n'aura pas été prélevé.",
-      "authRequired": "Authentification de la carte requise",
-      "authBody": "Votre carte exige une vérification supplémentaire. Mettez à jour votre mode de paiement et réessayez.",
+      "payTitle": "Soumise pour approbation",
+      "payBody": "Les exploitants approuvent chaque publicité avant sa diffusion. Votre carte sera débitée de {amount} dès l'approbation du premier écran, et nous vous écrirons dans les deux cas.",
       "goToBilling": "Aller à la facturation →",
-      "charging": "Paiement en cours…",
-      "payNow": "Payer maintenant — {amount}",
-      "payLater": "Payer plus tard",
       "reach": "~{screens} · ~{k} k impressions/mois estimées",
       "reachScreens": {
         "one": "{count} écran",
@@ -1219,7 +1214,10 @@
       "dupTitle": "Partir d'une campagne précédente",
       "dupEmpty": "Aucune campagne précédente trouvée.",
       "back": "← Retour",
-      "next": "Suivant →"
+      "next": "Suivant →",
+      "noCardTitle": "Ajoutez un mode de paiement",
+      "noCardBody": "L'approbation ne peut pas aboutir sans carte au dossier. Ajoutez-en une maintenant pour que votre campagne démarre à temps.",
+      "done": "Terminé"
     }
   },
   "market": {
@@ -1514,8 +1512,8 @@
     "subtitle": "La performance de vos campagnes en un coup d'œil",
     "newCampaign": "+ Nouvelle campagne",
     "unpaid": {
-      "one": "<b>{count} campagne attend un paiement.</b> <muted>Les écrans ne la diffuseront pas tant que le paiement n'aura pas été prélevé.</muted>",
-      "other": "<b>{count} campagnes attendent un paiement.</b> <muted>Les écrans ne les diffuseront pas tant que le paiement n'aura pas été prélevé.</muted>"
+      "one": "<b>Paiement requis pour {count} campagne approuvée.</b> <muted>Elle ne sera pas diffusée tant que le paiement n'aura pas abouti.</muted>",
+      "other": "<b>Paiement requis pour {count} campagnes approuvées.</b> <muted>Elles ne seront pas diffusées tant que le paiement n'aura pas abouti.</muted>"
     },
     "payNow": "Payer maintenant",
     "review": "Examiner",

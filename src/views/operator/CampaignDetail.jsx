@@ -63,6 +63,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
     const json = await res.json().catch(() => ({}));
     setPaying(false);
     if (!res.ok) {
+      if (json.awaiting_approval) { toast.error(json.error); return; }
       toast.error(json.requires_action
         ? 'Your card needs extra verification. Update it under Billing, then try again.'
         : (json.error ?? 'Payment failed.'));
@@ -194,8 +195,8 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
       {isAdvertiserView && isAwaitingPayment(c) && (
         <div role="status" style={{ background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', fontFamily: F.sans }}>
           <div style={{ flex: 1, minWidth: 200, fontSize: T.md, color: C.text }}>
-            <strong>Waiting on payment.</strong>{' '}
-            <span style={{ color: C.textSub }}>Screens won't play this campaign until payment is captured.</span>
+            <strong>{c.payment_status === 'failed' ? "Payment didn't go through." : 'Payment needed.'}</strong>{' '}
+            <span style={{ color: C.textSub }}>This campaign is approved but won't play until the charge goes through. Check your card under Billing, then retry.</span>
           </div>
           <Btn size="sm" onClick={payNow} disabled={paying}>{paying ? 'Charging…' : 'Pay now'}</Btn>
         </div>
