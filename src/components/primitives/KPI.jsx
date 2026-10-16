@@ -1,4 +1,4 @@
-import { C, F, T } from '../../design/tokens.js';
+import { C, F, T, readable } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { Card } from './Card.jsx';
 
@@ -16,7 +16,7 @@ export const KPI = ({ label, value, sub, color = C.text, trend = null, trendLabe
         }}>{icon}</span>
       )}
     </div>
-    <div style={{ fontSize: T.xxl, fontWeight: 700, color, lineHeight: 1, marginBottom: 4, fontFamily: F.mono }}>{value}</div>
+    <div style={{ fontSize: T.xxl, fontWeight: 700, color: readable(color), lineHeight: 1, marginBottom: 4, fontFamily: F.mono }}>{value}</div>
     {sub && <div style={TX.helperMuted}>{sub}</div>}
     {Number.isFinite(trend) && (
       <div style={{ fontSize: T.sm, marginTop: 6, color: trend >= 0 ? C.greenText : C.redText, fontFamily: F.sans, fontWeight: 500 }}>

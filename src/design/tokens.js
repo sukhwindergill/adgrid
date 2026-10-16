@@ -58,6 +58,14 @@ export const C = {
   overlay: 'rgba(0,0,0,0.4)',
 };
 
+// Text-safe version of a status fill colour: readable(C.green) -> C.greenText.
+// Other colours pass through. Use where a component takes a status colour
+// prop and renders it as text.
+const READABLE = {
+  [C.green]: C.greenText, [C.amber]: C.amberText, [C.red]: C.redText, [C.blue]: C.blueText,
+};
+export const readable = color => READABLE[color] ?? color;
+
 // Third-party brand colours (logos, "Connect with X" buttons). Not for UI chrome.
 export const BRAND = {
   stripe: '#635bff', stripeHover: '#5147e6',

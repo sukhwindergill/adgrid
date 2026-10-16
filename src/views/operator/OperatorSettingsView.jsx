@@ -670,10 +670,10 @@ function PayoutsTab({ profile }) {
 
 const VERIFICATION_META = {
   unverified:      { label: 'Not verified',      color: C.textMuted, dot: C.border },
-  pending_stripe:  { label: 'Verification in progress', color: C.amber, dot: C.amber },
-  pending_manual:  { label: 'Under manual review',      color: C.amber, dot: C.amber },
-  verified:        { label: 'Verified',          color: C.green, dot: C.green },
-  rejected:        { label: 'Verification rejected',    color: C.red,  dot: C.red },
+  pending_stripe:  { label: 'Verification in progress', color: C.amberText, dot: C.amber },
+  pending_manual:  { label: 'Under manual review',      color: C.amberText, dot: C.amber },
+  verified:        { label: 'Verified',          color: C.greenText, dot: C.green },
+  rejected:        { label: 'Verification rejected',    color: C.redText,  dot: C.red },
 };
 
 function VerificationTab({ profile }) {

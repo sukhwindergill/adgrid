@@ -5,7 +5,7 @@
 // queries); the "Pacing behind schedule" automation rule an advertiser can
 // opt into (see AutomationRulesView) uses the same math (src/lib/pacing.js)
 // but only notifies on request -- this shows it by default.
-import { C, F, T } from '../../design/tokens.js';
+import { C, F, T, readable } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { Card } from '../primitives/Card.jsx';
 import { ProgressBar } from '../primitives/ProgressBar.jsx';
@@ -36,7 +36,7 @@ export function PacingCard({ startDate, endDate, spent, budget, currency }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <div style={TX.title}>Pacing</div>
         <div style={{
-          fontSize: T.xs, fontWeight: 600, color: copy.color, fontFamily: F.sans,
+          fontSize: T.xs, fontWeight: 600, color: readable(copy.color), fontFamily: F.sans,
           padding: '3px 10px', borderRadius: 999, background: `${copy.color}1a`, border: `1px solid ${copy.color}55`,
         }}>{copy.label}</div>
       </div>

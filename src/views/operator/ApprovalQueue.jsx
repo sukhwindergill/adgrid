@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
-import { C, F, T } from '../../design/tokens.js';
+import { C, F, T, readable } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
@@ -392,7 +392,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <div style={{ flex: 1, minWidth: 120 }}>
                         <div style={{ fontSize: T.sm, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{screen?.name || row.screen_id}</div>
-                        {health && <span style={{ fontSize: T.xs, color: health.color, fontFamily: F.sans, display: 'inline-flex', alignItems: 'center', gap: 3 }}><IconWarning size={10} /> {health.label}</span>}
+                        {health && <span style={{ fontSize: T.xs, color: readable(health.color), fontFamily: F.sans, display: 'inline-flex', alignItems: 'center', gap: 3 }}><IconWarning size={10} /> {health.label}</span>}
                         {blockedScreenIds.has(row.screen_id) && (
                           <div style={{ fontSize: T.xs, color: C.redText, fontFamily: F.sans, display: 'flex', alignItems: 'center', gap: 3 }}>
                             <IconWarning size={10} /> You block {campaign.category} ads on this screen — it won't play here even if approved
