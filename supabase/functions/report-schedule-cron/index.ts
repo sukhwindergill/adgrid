@@ -5,7 +5,7 @@ import {
   buildReportCsv, nextRunAt, reportPeriod, rowsInPeriod, summarizeDelivery, toBase64Utf8,
 } from "../_shared/reportSchedule.ts";
 
-// Sends due report_schedules rows (see 20261016120000_report_schedules.sql).
+// Sends due report_schedules rows (see 20261016120300_report_schedules.sql).
 // Invoked hourly by pg_cron with x-cron-secret. Each email carries a KPI
 // summary for the period, a share-report link per campaign, and a CSV of
 // daily delivery. Mail goes out through Resend with the same key and sender
