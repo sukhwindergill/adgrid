@@ -113,7 +113,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
     let cancelled = false;
     supabase.from('bookings').select('id, advertiser_name, status, payment_status, budget, currency')
       .eq('advertiser_id', advertiserId)
-      .eq('payment_status', 'unpaid')
+      .in('payment_status', ['unpaid', 'failed'])
       .then(({ data }) => { if (!cancelled) setUnpaid(awaitingPayment(data || [])); });
     return () => { cancelled = true; };
   }, [advertiserId]);

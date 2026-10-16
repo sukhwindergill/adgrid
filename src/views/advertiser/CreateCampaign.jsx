@@ -76,41 +76,37 @@ function hasDraftContent(form) {
   );
 }
 
-function StepPay({ campaign, onPay, onSkip, paying, err, requiresAction, onGoToBilling }) {
+// Final step after submit. Nothing is charged here: per the Terms, payment
+// is only captured once an operator approves (charge-campaign enforces it),
+// so this step confirms what happens next and makes sure a card is on file.
+function StepSubmitted({ campaign, hasCard, onDone, onGoToBilling }) {
   const { t, formatMoney } = useT();
   const amount = formatMoney(campaign.budget, campaign.currency);
   return (
     <div style={{ maxWidth: 580, margin: '0 auto' }}>
       <Card style={{ padding: 32 }}>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>{t('create.wizard.payTitle')}</h2>
-        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>
+        <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>
           {t('create.wizard.payBody', { amount })}
         </p>
-
-        {requiresAction ? (
+        {!hasCard && (
           <div style={{
             padding: '14px 16px', borderRadius: 10, marginBottom: 16,
             background: C.amberSoft, border: `1px solid ${C.amberBorder}`,
           }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: C.amber, fontFamily: F.sans, marginBottom: 4 }}>
-              {t('create.wizard.authRequired')}
+            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>
+              {t('create.wizard.noCardTitle')}
             </div>
             <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>
-              {t('create.wizard.authBody')}
+              {t('create.wizard.noCardBody')}
             </div>
             <Btn onClick={onGoToBilling} style={{ fontSize: 13, padding: '8px 16px' }}>
               {t('create.wizard.goToBilling')}
             </Btn>
           </div>
-        ) : (
-          err && <ErrorBanner message={err} onDismiss={() => {}} />
         )}
-
-        <Btn onClick={onPay} disabled={paying || requiresAction} style={{ width: '100%', fontSize: 15, padding: '14px 24px', marginBottom: 10 }}>
-          {paying ? t('create.wizard.charging') : t('create.wizard.payNow', { amount })}
-        </Btn>
-        <Btn variant="secondary" onClick={onSkip} disabled={paying} style={{ width: '100%' }}>
-          {t('create.wizard.payLater')}
+        <Btn onClick={onDone} variant={hasCard ? 'primary' : 'secondary'} style={{ width: '100%' }}>
+          {t('create.wizard.done')}
         </Btn>
       </Card>
     </div>
@@ -131,9 +127,6 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
   const [submitErr, setSubmitErr] = useState(null);
   const [showDupModal, setShowDupModal] = useState(false);
   const [created, setCreated] = useState(null);
-  const [paying, setPaying] = useState(false);
-  const [payErr, setPayErr] = useState(null);
-  const [requiresAction, setRequiresAction] = useState(false);
 
   const [form, setForm] = useState(() => blankForm(presetScreenIds));
 
@@ -694,33 +687,6 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
     }
   };
 
-  const handlePay = async () => {
-    if (!created) return;
-    setPaying(true);
-    setPayErr(null);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/charge-campaign`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ campaign_id: created.id }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        if (body.requires_action) setRequiresAction(true);
-        throw new Error(body.error || t('create.wizard.chargeFailed'));
-      }
-      setPaying(false);
-      onSave({ ...created, status: 'scheduled' });
-    } catch (e) {
-      setPayErr(e.message || t('create.wizard.chargeFailed'));
-      setPaying(false);
-    }
-  };
-
   const skipPay = () => {
     if (!created) return;
     onSave(created);
@@ -792,7 +758,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
       {step === 0 && <StepTargeting form={form} setForm={setForm} reachSummary={reachSummary} matchedScreenCount={matchedScreens.length} allScreens={dbScreens} screensLoading={screensLoading} onPrevCampaigns={campaigns.length > 0 ? () => setShowDupModal(true) : null} existingCampaign={existingCampaign} pastCampaignIds={campaigns.map(c => c.id)} />}
       {step === 1 && <StepCreative form={form} setForm={setForm} matchedScreens={matchedScreens} presetScreenUnavailable={presetScreenUnavailable} houseAdMode={houseAdMode} />}
       {step === 2 && <StepBudgetReview form={form} setForm={setForm} matchedScreens={selectedScreens} profile={profile} onSubmit={handleSubmit} submitting={submitting} err={submitErr} canChooseBilling={canChooseBilling} billedTo={billedTo} setBilledTo={setBilledTo} houseAdMode={houseAdMode} categoryBlockedScreens={categoryBlockedScreens} campaignCategory={campaignCategory} />}
-      {step === 3 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} requiresAction={requiresAction} onGoToBilling={() => navigate('/app/adv-billing')} />}
+      {step === 3 && created && <StepSubmitted campaign={created} hasCard={!noBilling} onDone={skipPay} onGoToBilling={() => navigate('/app/adv-billing')} />}
 
       {step < 3 && (
         <div style={{ maxWidth: 620, margin: '20px auto 0', display: 'flex', gap: 10 }}>
