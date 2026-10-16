@@ -136,4 +136,60 @@ describe('AuthContext', () => {
     expect(mockSupabase.auth.updateUser).toHaveBeenCalledWith({ password: 'newpass123' });
     expect(result.current.passwordRecovery).toBe(false);
   });
+
+  describe('activeMode', () => {
+    function signedInWithProfile(profile) {
+      mockSupabase.auth.getSession.mockResolvedValueOnce({
+        data: { session: { user: { id: 'u-1' } } },
+        error: null,
+      });
+      const update = { eq: jest.fn().mockResolvedValue({ error: null }) };
+      const query = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({ data: profile, error: null }),
+        update: jest.fn(() => update),
+      };
+      mockSupabase.from.mockReturnValue(query);
+      return { query, update };
+    }
+
+    it('reads active_mode from the profile, like web', async () => {
+      signedInWithProfile({ id: 'u-1', active_mode: 'advertiser' });
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(result.current.activeMode).toBe('advertiser');
+    });
+
+    it('falls back to operator when the profile has no active_mode', async () => {
+      signedInWithProfile({ id: 'u-1', active_mode: null });
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(result.current.activeMode).toBe('operator');
+    });
+
+    it('setActiveMode switches immediately and persists to profiles.active_mode', async () => {
+      const { query, update } = signedInWithProfile({ id: 'u-1', active_mode: 'operator' });
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      await waitFor(() => expect(result.current.user).not.toBeNull());
+
+      await act(async () => { await result.current.setActiveMode('advertiser'); });
+
+      expect(result.current.activeMode).toBe('advertiser');
+      expect(query.update).toHaveBeenCalledWith({ active_mode: 'advertiser' });
+      expect(update.eq).toHaveBeenCalledWith('id', 'u-1');
+    });
+
+    it('setActiveMode ignores unknown modes', async () => {
+      const { query } = signedInWithProfile({ id: 'u-1', active_mode: 'operator' });
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      await act(async () => { await result.current.setActiveMode('admin'); });
+
+      expect(result.current.activeMode).toBe('operator');
+      expect(query.update).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -2,20 +2,34 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../../context/AuthContext';
+import * as Linking from 'expo-linking';
 import { usePushNotifications } from '../../../hooks/usePushNotifications';
+import { ModeSwitch } from '../../../components/ui/ModeSwitch';
+import { CREATE_CAMPAIGN_URL } from '../../../lib/webApp';
 import { C, F } from '../../../lib/tokens';
 
-const MENU_ITEMS = [
+const OPERATOR_MENU = [
   { icon: '📊', label: 'Analytics', route: '/(tabs)/more/analytics' },
   { icon: '🏢', label: 'Advertisers', route: '/(tabs)/more/advertisers' },
   { icon: '💳', label: 'Billing', route: '/(tabs)/more/billing' },
   { icon: '⚙️', label: 'Settings', route: '/(tabs)/more/settings' },
 ];
 
+const ADVERTISER_MENU = [
+  { icon: '➕', label: 'Create campaign on web', url: CREATE_CAMPAIGN_URL },
+  { icon: '⚙️', label: 'Settings', route: '/(tabs)/more/settings' },
+];
+
 export default function MoreScreen() {
   const router = useRouter();
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, activeMode, setActiveMode } = useAuth();
   const { deregister } = usePushNotifications(profile?.id);
+  const menuItems = activeMode === 'advertiser' ? ADVERTISER_MENU : OPERATOR_MENU;
+
+  async function switchMode(mode) {
+    await setActiveMode(mode);
+    router.replace(mode === 'advertiser' ? '/(tabs)/campaigns' : '/(tabs)');
+  }
 
   async function handleSignOut() {
     Alert.alert('Sign out', 'Are you sure?', [
@@ -44,14 +58,16 @@ export default function MoreScreen() {
             </View>
           </View>
         )}
+        {activeMode && <ModeSwitch value={activeMode} onChange={switchMode} />}
         <View style={styles.menu}>
-          {MENU_ITEMS.map((item, idx) => (
-            <TouchableOpacity key={item.route} onPress={() => router.push(item.route)}
-              accessibilityRole="button" accessibilityLabel={item.label}
-              style={[styles.menuItem, idx < MENU_ITEMS.length - 1 && { borderBottomWidth: 1, borderBottomColor: C.border }]}>
+          {menuItems.map((item, idx) => (
+            <TouchableOpacity key={item.label}
+              onPress={() => (item.url ? Linking.openURL(item.url) : router.push(item.route))}
+              accessibilityRole={item.url ? 'link' : 'button'} accessibilityLabel={item.label}
+              style={[styles.menuItem, idx < menuItems.length - 1 && { borderBottomWidth: 1, borderBottomColor: C.border }]}>
               <Text style={styles.menuIcon}>{item.icon}</Text>
               <Text style={[styles.menuLabel, { fontFamily: F.sansMed }]}>{item.label}</Text>
-              <Text style={styles.menuChevron}>›</Text>
+              <Text style={styles.menuChevron}>{item.url ? '↗' : '›'}</Text>
             </TouchableOpacity>
           ))}
         </View>

@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, StyleSheet, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useDashboard } from '../../hooks/useDashboard';
 import { useScreens } from '../../hooks/useScreens';
@@ -16,10 +16,16 @@ import { formatCurrency } from '@adgrid/core';
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { profile } = useAuth();
-  const { totalScreens, liveScreens, pendingApprovals, revenueThisMonth, loading } = useDashboard(profile?.id, profile?.owner_revenue_share);
-  const { screens, loading: screensLoading, refetch } = useScreens(profile?.id);
+  const { profile, activeMode } = useAuth();
+  const isAdvertiser = activeMode === 'advertiser';
+  const operatorId = isAdvertiser ? null : profile?.id;
+  const { totalScreens, liveScreens, pendingApprovals, revenueThisMonth, loading } = useDashboard(operatorId, profile?.owner_revenue_share);
+  const { screens, loading: screensLoading, refetch } = useScreens(operatorId);
   const firstName = profile?.name?.split(' ')[0] || 'Operator';
+
+  // AuthGate always lands on /(tabs) (this route); advertiser mode has no
+  // Home tab, so send it straight to Campaigns.
+  if (isAdvertiser) return <Redirect href="/(tabs)/campaigns" />;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>

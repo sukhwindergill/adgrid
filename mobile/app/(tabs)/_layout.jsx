@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useScreens } from '../../hooks/useScreens';
 import { useApprovals } from '../../hooks/useApprovals';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
+import { routeForNotification } from '../../lib/notificationRoute';
 
 function TabIcon({ icon, focused, badgeCount }) {
   return (
@@ -21,11 +22,25 @@ function TabIcon({ icon, focused, badgeCount }) {
 
 export default function TabsLayout() {
   const router = useRouter();
-  const { profile } = useAuth();
-  const { screens } = useScreens(profile?.id);
+  const { profile, activeMode, setActiveMode } = useAuth();
+  const isAdvertiser = activeMode === 'advertiser';
+  // Operator data is only needed for the operator tab bar's badge -- skip
+  // the queries (and the approvals realtime channel) in advertiser mode.
+  const operatorId = isAdvertiser ? null : profile?.id;
+  const { screens } = useScreens(operatorId);
   const screenIds = screens.map(s => s.id);
-  const { pendingCount } = useApprovals(profile?.id, screenIds);
-  usePushNotifications(profile?.id, () => router.push('/(tabs)/approvals'));
+  const { pendingCount } = useApprovals(operatorId, screenIds);
+  // Push tokens are keyed by profile id, so one registration covers both
+  // modes; the tap handler picks the destination (and mode) per payload.
+  usePushNotifications(profile?.id, response => {
+    const { mode, path } = routeForNotification(response);
+    if (mode !== activeMode) setActiveMode(mode);
+    router.push(path);
+  });
+  // href: null hides a route from the tab bar without unmounting the
+  // navigator, so each mode shows only its own tabs.
+  const operatorOnly = isAdvertiser ? { href: null } : {};
+  const advertiserOnly = isAdvertiser ? {} : { href: null };
 
   return (
     <Tabs
@@ -40,6 +55,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
+          ...operatorOnly,
           title: 'Home',
           tabBarIcon: ({ focused }) => <TabIcon icon="🏠" focused={focused} />,
         }}
@@ -47,6 +63,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="screens"
         options={{
+          ...operatorOnly,
           title: 'Screens',
           tabBarIcon: ({ focused }) => <TabIcon icon="📺" focused={focused} />,
         }}
@@ -54,6 +71,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="approvals"
         options={{
+          ...operatorOnly,
           title: 'Approvals',
           tabBarIcon: ({ focused }) => <TabIcon icon="✅" focused={focused} badgeCount={pendingCount} />,
         }}
@@ -61,8 +79,17 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="revenue"
         options={{
+          ...operatorOnly,
           title: 'Revenue',
           tabBarIcon: ({ focused }) => <TabIcon icon="💰" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="campaigns"
+        options={{
+          ...advertiserOnly,
+          title: 'Campaigns',
+          tabBarIcon: ({ focused }) => <TabIcon icon="📣" focused={focused} />,
         }}
       />
       <Tabs.Screen
