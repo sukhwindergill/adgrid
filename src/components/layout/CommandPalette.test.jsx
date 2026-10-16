@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 
-vi.mock('../../lib/supabase.js', () => ({ supabase: { from: vi.fn() } }));
+vi.mock('../../lib/supabase.js', () => ({ supabase: { from: vi.fn(), rpc: vi.fn() } }));
 import { CommandPalette } from './CommandPalette.jsx';
 
 describe('CommandPalette', () => {
@@ -9,7 +9,7 @@ describe('CommandPalette', () => {
     const onNavigate = vi.fn();
     const onClose = vi.fn();
     render(<CommandPalette onClose={onClose} onNavigate={onNavigate} activeMode="operator"
-      screens={[{ id: 's1', name: 'Kits Gym Lobby', city: 'Vancouver' }]} operatorCampaignIds={new Set()} />);
+      screens={[{ id: 's1', name: 'Kits Gym Lobby', city: 'Vancouver' }]} />);
     const input = screen.getByRole('combobox', { name: 'Search' });
 
     fireEvent.change(input, { target: { value: 'kits' } });

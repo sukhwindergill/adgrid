@@ -276,7 +276,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
         <span style={{ fontSize: 11, background: C.amber, color: '#fff', padding: '2px 8px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>PENDING</span>
         <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>{campaign.category}</span>
         {blockedScreenIds.size > 0 && (
-          <span style={{ fontSize: 10, background: C.redSoft, color: C.red, border: `1px solid ${C.redBorder}`, padding: '2px 8px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+          <span style={{ fontSize: 11, background: C.redSoft, color: C.red, border: `1px solid ${C.redBorder}`, padding: '2px 8px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
             <IconWarning size={10} /> BLOCKED CATEGORY
           </span>
         )}

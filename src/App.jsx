@@ -15,7 +15,8 @@ import { AppShell } from './components/layout/AppShell.jsx';
 import { Sidebar } from './components/layout/Sidebar.jsx';
 import { CommandPalette } from './components/layout/CommandPalette.jsx';
 import { ErrorBoundary } from './components/primitives/ErrorBoundary.jsx';
-import { RequireAuth, peekReturnTo } from './components/auth/RequireAuth.jsx';
+import { RequireAuth } from './components/auth/RequireAuth.jsx';
+import { peekReturnTo } from './lib/returnTo.js';
 
 import { RequirePlatformOwner } from './components/auth/RequirePlatformOwner.jsx';
 import { SkipLink } from './components/chrome/SkipLink.jsx';
@@ -668,7 +669,6 @@ function AppInner() {
         activeMode={isAdv ? 'advertiser' : 'operator'}
         screens={visibleMyScreens}
         advertiserId={currentAdvertiserId}
-        operatorCampaignIds={operatorCampaignIds}
         onNavigate={navTo}
       />}
       {loadError && (

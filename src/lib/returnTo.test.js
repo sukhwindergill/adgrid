@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { peekReturnTo, RETURN_TO_KEY } from './RequireAuth.jsx';
+import { peekReturnTo, RETURN_TO_KEY } from './returnTo.js';
 
 describe('peekReturnTo', () => {
   beforeEach(() => sessionStorage.clear());

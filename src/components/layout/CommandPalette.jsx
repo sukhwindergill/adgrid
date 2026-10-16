@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { C, F } from '../../design/tokens.js';
-import { supabase } from '../../lib/supabase.js';
+import { scopedBookings, applyBookingSearch } from '../../lib/bookingsQuery.js';
 import { navItems } from './navConfig.js';
 import { rankMatches } from '../../lib/commandSearch.js';
 
 // Cmd/Ctrl+K jump-to: pages, screens and campaigns from one box. Pages and
 // screens are matched locally; campaigns are looked up on the server
-// (scoped to the advertiser, or to the operator's own campaign ids) so it
+// (scoped to the advertiser, or to bookings on the operator's screens) so it
 // works however many there are. Mounted only while open, so each opening
 // starts from fresh state.
-export function CommandPalette({ onClose, activeMode, screens = [], advertiserId, operatorCampaignIds, onNavigate }) {
+export function CommandPalette({ onClose, activeMode, screens = [], advertiserId, onNavigate }) {
   const [query, setQuery] = useState('');
   // Tagged with the query they answer, so stale rows never show for a
   // different (or too-short) query.
@@ -23,25 +23,23 @@ export function CommandPalette({ onClose, activeMode, screens = [], advertiserId
     return () => cancelAnimationFrame(id);
   }, []);
 
-  // Debounced server lookup for campaigns.
+  // Debounced server lookup for campaigns, scoped on the server to this
+  // side of the account (see scopedBookings).
+  const screenIdsKey = screens.map(sc => sc.id).join(',');
   useEffect(() => {
     const q = query.trim();
-    const ids = operatorCampaignIds ? [...operatorCampaignIds] : [];
-    if (q.length < 2 || (!isAdv && ids.length === 0)) return;
+    if (q.length < 2 || (!isAdv && !screenIdsKey)) return;
     let cancelled = false;
     const t = setTimeout(async () => {
-      const safe = q.replace(/[%,()]/g, ' ');
-      let req = supabase.from('bookings')
-        .select('id, advertiser_name, campaign_name, status')
-        .or(`advertiser_name.ilike.%${safe}%,campaign_name.ilike.%${safe}%`)
+      const scope = isAdv ? { advertiserId } : { operatorScreenIds: screenIdsKey.split(',') };
+      const req = applyBookingSearch(scopedBookings(scope, { columns: 'id, advertiser_name, campaign_name, status' }), q)
         .order('created_at', { ascending: false })
         .limit(6);
-      req = isAdv ? req.eq('advertiser_id', advertiserId) : req.in('id', ids.slice(0, 500));
       const { data } = await req;
       if (!cancelled) setCampaigns({ q, rows: data || [] });
     }, 200);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [query, isAdv, advertiserId, operatorCampaignIds]);
+  }, [query, isAdv, advertiserId, screenIdsKey]);
 
   const results = useMemo(() => {
     const pages = rankMatches(query, navItems(activeMode), i => i.label)
