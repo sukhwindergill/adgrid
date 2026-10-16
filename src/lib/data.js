@@ -19,6 +19,6 @@ export const INIT_CAMPAIGNS = [
   { id:"BK-010", advertiser:"Shopify",        category:"Technology",       screenId:"SCR-009", screen:"Queen West — Ossington",      city:"Toronto",    budget:960,  spent:0,    impressions:0,     scans:0,   status:"paused",    start:"2026-04-01", end:"2026-04-30", days:["Mon","Tue","Wed","Thu","Fri"],       timeStart:"08:00", timeEnd:"18:00", slots:8,  duration:15, headline:"Build Your Business.",     color:"#96bf48",   destination:"https://shopify.com" },
 ];
 
-export const CATEGORIES = ["Food & Beverage","Fashion & Retail","Finance & Banking","Health & Fitness","Entertainment","Technology","Travel & Tourism","Automotive","Real Estate"];
+export const CATEGORIES = ["Food & Beverage","Fashion & Retail","Finance & Banking","Health & Fitness","Entertainment","Technology","Travel & Tourism","Automotive","Real Estate","Alcohol","Cannabis","Gambling"];
 export const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 export const HOURS = Array.from({length:24},(_,i)=>`${String(i).padStart(2,"0")}:00`);

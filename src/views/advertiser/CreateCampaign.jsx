@@ -17,6 +17,7 @@ import { sanitizeText } from '../../lib/sanitizeText.js';
 import { makeBlankCreative, reconcileAssignments } from '../../lib/creativeAssignment.js';
 import { mostRecentDraft, getDraft, saveDraft, deleteDraft } from '../../lib/campaignDrafts.js';
 import { track } from '../../lib/analytics.js';
+import { partitionScreensByCategory, parseFrequencyCap } from '../../lib/adGuardrails.js';
 import { Stepper } from './createCampaign/Stepper.jsx';
 import { StepTargeting } from './createCampaign/StepTargeting.jsx';
 import { StepCreative } from './createCampaign/StepCreative.jsx';
@@ -56,6 +57,7 @@ function blankForm(presetScreenIds) {
     slots: 10,
     start_when: 'partial',
     holdout_enabled: false,
+    frequency_cap: '', // max plays per screen per hour; blank = no cap
   };
 }
 
@@ -180,7 +182,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
   }, [form, step, isFreshDraftFlow, user]);
 
   // Screen matching
-  const matchedScreens = (() => {
+  const areaMatchedScreens = (() => {
     // A screen-invite signup is already scoped to one specific screen --
     // area/venue filters (city, radius, category) don't apply and would
     // incorrectly narrow or widen the set away from the one screen this
@@ -221,6 +223,15 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
     if (form.venue_filter) screens = screens.filter(s => s.venue_category === form.venue_filter);
     return screens;
   })();
+
+  // Operator category exclusions (G23): screens whose owner blocks this
+  // campaign's category (screens.content_categories_blocked) are never
+  // targetable. The category comes from the primary creative -- that's the
+  // one copied onto bookings.category at submit. display-feed enforces the
+  // same rule server-side.
+  const campaignCategory = form.creatives[0]?.category || null;
+  const { allowed: matchedScreens, blocked: categoryBlockedScreens } =
+    partitionScreensByCategory(areaMatchedScreens, campaignCategory);
 
   // Auto-select all matched screens when the matched set changes. Also
   // reconciles each creative's assigned_screen_ids against the new selection
@@ -281,7 +292,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
   // still holds the preset id in this case, so callers must check this flag
   // explicitly rather than relying on selected_screen_ids.length to detect
   // "no usable screen".
-  const presetScreenUnavailable = !!(presetScreenIds && presetScreenIds.length > 0 && matchedScreens.length === 0);
+  const presetScreenUnavailable = !!(presetScreenIds && presetScreenIds.length > 0 && areaMatchedScreens.length === 0);
 
   const reachSummary = matchedScreens.length > 0
     ? `~${matchedScreens.length} screen${matchedScreens.length !== 1 ? 's' : ''} · ~${(totalImpressions / 1000).toFixed(0)}K impressions/mo estimated`
@@ -325,6 +336,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
       slots: c.slots || 10,
 
       start_when: c.start_when || 'partial',
+      frequency_cap: c.frequency_cap_per_hour != null ? String(c.frequency_cap_per_hour) : '',
     }));
     setShowDupModal(false);
   };
@@ -353,6 +365,19 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
         setSubmitErr('Budget cannot exceed $1,000,000.');
         return;
       }
+    }
+    const frequencyCap = parseFrequencyCap(form.frequency_cap);
+    if (!houseAdMode && frequencyCap.error) {
+      setSubmitErr(frequencyCap.error);
+      return;
+    }
+    // The area-matching path already drops category-blocked screens, but a
+    // screen-invite preset bypasses matching -- catch it here rather than
+    // submit a campaign the screen will never play.
+    const blockedSelected = categoryBlockedScreens.filter(s => form.selected_screen_ids.includes(s.id));
+    if (blockedSelected.length > 0) {
+      setSubmitErr(`${blockedSelected.map(s => s.name).join(', ')} ${blockedSelected.length === 1 ? "doesn't" : "don't"} accept ${campaignCategory} ads. Choose a different category or screen.`);
+      return;
     }
     setSubmitting(true);
     setSubmitErr(null);
@@ -467,6 +492,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
         dayparting:            form.dayparting,
         duration:              parseInt(form.duration, 10) || 15,
         slots:                 parseInt(form.slots, 10) || 10,
+        frequency_cap_per_hour: frequencyCap.value,
         billed_to_profile_id:  canChooseBilling && billedTo === 'agency' ? user.id : null,
         status:                'pending_review',
         payment_status:        'unpaid',
@@ -647,6 +673,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
         dayparting: form.dayparting,
         duration: parseInt(form.duration, 10) || 15,
         slots: parseInt(form.slots, 10) || 10,
+        frequency_cap_per_hour: frequencyCap.value,
         spent: 0, impressions: 0, scans: 0,
         status: 'pending_review',
       });
@@ -755,7 +782,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
 
       {step === 0 && <StepTargeting form={form} setForm={setForm} reachSummary={reachSummary} matchedScreenCount={matchedScreens.length} allScreens={dbScreens} screensLoading={screensLoading} onPrevCampaigns={campaigns.length > 0 ? () => setShowDupModal(true) : null} existingCampaign={existingCampaign} pastCampaignIds={campaigns.map(c => c.id)} />}
       {step === 1 && <StepCreative form={form} setForm={setForm} matchedScreens={matchedScreens} presetScreenUnavailable={presetScreenUnavailable} houseAdMode={houseAdMode} />}
-      {step === 2 && <StepBudgetReview form={form} setForm={setForm} matchedScreens={selectedScreens} profile={profile} onSubmit={handleSubmit} submitting={submitting} err={submitErr} canChooseBilling={canChooseBilling} billedTo={billedTo} setBilledTo={setBilledTo} houseAdMode={houseAdMode} />}
+      {step === 2 && <StepBudgetReview form={form} setForm={setForm} matchedScreens={selectedScreens} profile={profile} onSubmit={handleSubmit} submitting={submitting} err={submitErr} canChooseBilling={canChooseBilling} billedTo={billedTo} setBilledTo={setBilledTo} houseAdMode={houseAdMode} categoryBlockedScreens={categoryBlockedScreens} campaignCategory={campaignCategory} />}
       {step === 3 && created && <StepPay campaign={created} onPay={handlePay} onSkip={skipPay} paying={paying} err={payErr} requiresAction={requiresAction} onGoToBilling={() => navigate('/app/adv-billing')} />}
 
       {step < 3 && (
