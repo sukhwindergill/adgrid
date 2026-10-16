@@ -12,9 +12,9 @@ import { useT } from "../../i18n/useT.js";
 import { T, C, F } from '../../design/tokens.js';
 
 const STATUS_COLORS = {
-  paid: { bg: C.greenSoft, color: C.green },
-  open: { bg: C.amberSoft, color: C.amber },
-  failed: { bg: C.redSoft, color: C.red },
+  paid: { bg: C.greenSoft, color: C.greenText },
+  open: { bg: C.amberSoft, color: C.amberText },
+  failed: { bg: C.redSoft, color: C.redText },
   void: { bg: C.surfaceAlt, color: C.textMuted },
 };
 

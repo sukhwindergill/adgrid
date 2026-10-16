@@ -10,7 +10,7 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 
 const ROLE_COLORS = {
   admin:   { bg: C.purpleSoft, color: C.purple },
-  manager: { bg: C.blueSoft,   color: C.blue },
+  manager: { bg: C.blueSoft,   color: C.blueText },
   viewer:  { bg: C.surfaceAlt, color: C.textMuted },
 }
 

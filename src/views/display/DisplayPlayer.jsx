@@ -40,7 +40,7 @@ function CreativeSlide({ campaign, screenId }) {
   return (
     <div style={{
       position: 'absolute', inset: 0,
-      background: `linear-gradient(160deg, #050a10 0%, #0d1520 60%, ${bg}22 100%)`,
+      background: `linear-gradient(160deg, ${C.screen} 0%, ${C.screenMid} 60%, ${bg}22 100%)`,
       display: 'flex', flexDirection: 'column',
       alignItems: 'flex-start', justifyContent: 'flex-end',
       padding: 'clamp(32px, 5vw, 80px)',

@@ -11,7 +11,7 @@ function RoleBadge({ role }) {
   const { t } = useT()
   const colors = {
     admin:   { bg: C.purpleSoft, color: C.purple },
-    manager: { bg: C.blueSoft,   color: C.blue },
+    manager: { bg: C.blueSoft,   color: C.blueText },
     viewer:  { bg: C.surfaceAlt, color: C.textMuted },
   }
   const s = colors[role] ?? colors.viewer

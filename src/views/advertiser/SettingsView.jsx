@@ -127,8 +127,8 @@ export function ProfileTab({ profile, onSaved }) {
 function BrandKitTab({ profile, onSaved }) {
   const { refreshProfile } = useAuth();
   const { t } = useT();
-  const [brandColor1, setBrandColor1] = useState(profile?.brand_color_1 ?? "#7c3aed");
-  const [brandColor2, setBrandColor2] = useState(profile?.brand_color_2 ?? "#0d1520");
+  const [brandColor1, setBrandColor1] = useState(profile?.brand_color_1 ?? C.purple);
+  const [brandColor2, setBrandColor2] = useState(profile?.brand_color_2 ?? C.screenMid);
   const [brandFont, setBrandFont] = useState(profile?.brand_font ?? "sans");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
