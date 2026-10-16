@@ -13,6 +13,7 @@ import { generateApiKey, hashApiKey, apiKeyPrefix } from "../../lib/apiKey.js";
 import { useT } from "../../i18n/useT.js";
 import { T, C, F, SH } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
+import { Card } from '../../components/primitives/Card.jsx';
 
 // ─── Platform definitions ───────────────────────────────────────────────────
 
@@ -204,10 +205,7 @@ function PlatformCard({ platform, integration, eventCount, onConnect, onDisconne
   const connected = !!integration;
 
   return (
-    <div style={{
-      background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-      padding: 24, display: "flex", flexDirection: "column", gap: 16,
-    }}>
+    <Card style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <BrandIcon id={platform.id} size={18} />
@@ -244,7 +242,7 @@ function PlatformCard({ platform, integration, eventCount, onConnect, onDisconne
           <Btn variant="danger" onClick={onDisconnect}>{t('integ.disconnect')}</Btn>
         )}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -284,7 +282,7 @@ function PostbackKeyCard({ hasKey, onGenerated }) {
   }
 
   return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+    <Card style={{ padding: 20, marginBottom: 20 }}>
       <div style={{ ...TX.title, marginBottom: 4 }}>{t('integ.postbackKey')}</div>
       <div style={{ ...TX.helper, marginBottom: 12, lineHeight: 1.5 }}>
         {tx('integ.postbackBody', { code: chunk => <code>{chunk}</code>, url: <code>{POSTBACK_URL}</code> })}
@@ -308,7 +306,7 @@ function PostbackKeyCard({ hasKey, onGenerated }) {
       <Btn variant="secondary" size="sm" onClick={generate} disabled={saving} style={{ marginTop: 12 }}>
         {saving ? t('integ.generating') : hasKey ? t('integ.regenerate') : t('integ.generate')}
       </Btn>
-    </div>
+    </Card>
   );
 }
 
@@ -316,7 +314,7 @@ function PixelSnippetCard() {
   const { t, tx } = useT();
   const snippet = `<img src="${PIXEL_URL}?adgrid_cid={{adgrid_cid}}&value=49.99" width="1" height="1" style="display:none" />`;
   return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+    <Card style={{ padding: 20, marginBottom: 20 }}>
       <div style={{ ...TX.title, marginBottom: 4 }}>{t('integ.pixelTitle')}</div>
       <div style={{ ...TX.helper, marginBottom: 12, lineHeight: 1.5 }}>
         {tx('integ.pixelBody', { code: chunk => <code>{chunk}</code>, cid: <code>{"{{adgrid_cid}}"}</code> })}
@@ -325,7 +323,7 @@ function PixelSnippetCard() {
         <code style={{ fontSize: T.xs, fontFamily: F.mono, color: C.text, wordBreak: "break-all", flex: 1 }}>{snippet}</code>
         <CopyButton value={snippet} label={t('integ.copy')} copiedLabel={t('integ.copied')} variant="ghost" size="sm" />
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -375,7 +373,7 @@ function PlatformSetupGuide() {
   const note = t(`integ.guides.${platform.id}.note`);
 
   return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+    <Card style={{ padding: 20, marginBottom: 20 }}>
       <div style={{ ...TX.title, marginBottom: 4 }}>{t('integ.whereTitle')}</div>
       <div style={{ ...TX.helper, marginBottom: 14, lineHeight: 1.5 }}>
         {t('integ.whereBody')}
@@ -400,7 +398,7 @@ function PlatformSetupGuide() {
       {note && (
         <div style={{ ...TX.caption, lineHeight: 1.6 }}>{note}</div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -430,7 +428,7 @@ function PromoCodesCard({ campaigns, promoCodes, onCreated }) {
   }
 
   return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20 }}>
+    <Card style={{ padding: 20 }}>
       <div style={{ ...TX.title, marginBottom: 4 }}>{t('integ.promoTitle')}</div>
       <div style={{ ...TX.helper, marginBottom: 12, lineHeight: 1.5 }}>
         {tx('integ.promoBody', { code: chunk => <code>{chunk}</code> })}
@@ -464,7 +462,7 @@ function PromoCodesCard({ campaigns, promoCodes, onCreated }) {
           ))}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -559,7 +557,7 @@ function ApiKeysTab() {
 
   return (
     <div>
-      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+      <Card style={{ padding: 20, marginBottom: 20 }}>
         <div style={{ ...TX.title, marginBottom: 4 }}>{t('integ.apiTitle')}</div>
         <div style={{ ...TX.helper, marginBottom: 12, lineHeight: 1.5 }}>
           {tx('integ.apiBody', { url: <code>{API_BASE_URL}</code> })}
@@ -580,7 +578,7 @@ function ApiKeysTab() {
           <Inp label={t('integ.keyName')} placeholder={t('integ.keyNamePlaceholder')} value={name} onChange={e => setName(e.target.value)} />
           <Btn variant="secondary" size="sm" onClick={generate} disabled={saving || !name.trim()}>{saving ? t('integ.generating') : t('integ.generateKey')}</Btn>
         </div>
-      </div>
+      </Card>
 
       {keys.length === 0 ? (
         <div style={TX.helperMuted}>{t('integ.noKeys')}</div>
@@ -735,7 +733,7 @@ export default function AdvIntegrationsView() {
 
       {/* Event Log tab */}
       {tab === "events" && (
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
+        <Card style={{ padding: 0, overflow: "hidden" }}>
           {events.length === 0 ? (
             <div style={{ padding: 48, textAlign: "center", color: C.textSub, fontSize: T.md }}>
               {t('integ.noEvents')}
@@ -779,7 +777,7 @@ export default function AdvIntegrationsView() {
               </tbody>
             </table>
           )}
-        </div>
+        </Card>
       )}
 
       {/* Conversion Tracking tab */}

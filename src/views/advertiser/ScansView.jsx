@@ -204,10 +204,7 @@ export default function ScansView({ impersonatingId }) {
       </div>
 
       {filterCampaign !== "all" && variantPerf && variantPerf.length > 0 && (
-        <div style={{
-          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-          overflow: "hidden", marginBottom: 24,
-        }}>
+        <Card style={{ padding: 0, overflow: "hidden", marginBottom: 24 }}>
           <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.border}`, fontSize: T.md, fontWeight: 600, color: C.text }}>
             {t('scans.variantPerformance')}
           </div>
@@ -233,13 +230,10 @@ export default function ScansView({ impersonatingId }) {
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       )}
 
-      <div style={{
-        background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-        overflow: "hidden", marginBottom: 24,
-      }}>
+      <Card style={{ padding: 0, overflow: "hidden", marginBottom: 24 }}>
         <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.border}`, fontSize: T.md, fontWeight: 600, color: C.text }}>
           {t('scans.scanLog', { count: filtered.length })}
         </div>
@@ -275,13 +269,10 @@ export default function ScansView({ impersonatingId }) {
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
       {emailCaptures.length > 0 && (
-        <div style={{
-          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-          overflow: "hidden",
-        }}>
+        <Card style={{ padding: 0, overflow: "hidden" }}>
           <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.border}`, fontSize: T.md, fontWeight: 600, color: C.text }}>
             {t('scans.emailCaptures', { count: emailCaptures.length })}
           </div>
@@ -314,7 +305,7 @@ export default function ScansView({ impersonatingId }) {
             </tbody>
           </table>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

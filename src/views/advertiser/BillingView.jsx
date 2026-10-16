@@ -10,6 +10,7 @@ import { PageHeader } from "../../components/primitives/PageHeader.jsx";
 import { Btn } from "../../components/primitives/Btn.jsx";
 import { useT } from "../../i18n/useT.js";
 import { T, C, F } from '../../design/tokens.js';
+import { Card } from '../../components/primitives/Card.jsx';
 
 const STATUS_COLORS = {
   paid: { bg: C.greenSoft, color: C.greenText },
@@ -266,10 +267,7 @@ export default function BillingView() {
         );
       })()}
 
-      <div style={{
-        background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-        padding: "20px 24px", marginBottom: 24,
-      }}>
+      <Card style={{ padding: "20px 24px", marginBottom: 24 }}>
         <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, marginBottom: 16 }}>
           {t('billing.paymentMethods')}
         </div>
@@ -319,12 +317,9 @@ export default function BillingView() {
             <Btn onClick={startSetup} loading={setupLoading}>{t('billing.addMethod')}</Btn>
           )}
         </div>
-      </div>
+      </Card>
 
-      <div style={{
-        background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-        overflow: "hidden",
-      }}>
+      <Card style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ padding: "14px 24px", borderBottom: `1px solid ${C.border}`, fontSize: T.lg, fontWeight: 600, color: C.text }}>
           {t('billing.invoiceHistory')}
         </div>
@@ -366,7 +361,7 @@ export default function BillingView() {
           </table>
           </div>
         )}
-      </div>
+      </Card>
 
       {!creditsLoading && creditsError && (
         <div style={{
@@ -378,10 +373,7 @@ export default function BillingView() {
       )}
 
       {!creditsLoading && !creditsError && creditRows.length > 0 && (
-        <div style={{
-          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-          overflow: "hidden", marginTop: 24,
-        }}>
+        <Card style={{ padding: 0, overflow: "hidden", marginTop: 24 }}>
           <div style={{ padding: "14px 24px", borderBottom: `1px solid ${C.border}`, fontSize: T.lg, fontWeight: 600, color: C.text }}>
             {t('billing.deliveryCredits')}
           </div>
@@ -409,7 +401,7 @@ export default function BillingView() {
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

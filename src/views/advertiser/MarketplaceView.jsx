@@ -14,10 +14,10 @@ const BOOKING_STATUSES = ['confirmed', 'active', 'completed', 'cancelled'];
 
 function EmptyState({ text }) {
   return (
-    <div style={{ textAlign: 'center', padding: '48px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
+    <Card style={{ textAlign: 'center', padding: '48px 24px' }}>
       <div style={{ color: C.textMuted, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconTagPrice size={32} /></div>
       <div style={TX.bodySub}>{text}</div>
-    </div>
+    </Card>
   );
 }
 
