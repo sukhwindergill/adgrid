@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { C, T } from '../../design/tokens.js';
+import { C, T, SH } from '../../design/tokens.js';
+import { Btn } from '../primitives/Btn.jsx';
 
 const THRESHOLD = 400;
 
@@ -16,7 +17,8 @@ export function ScrollToTopButton() {
   if (!visible) return null;
 
   return (
-    <button
+    <Btn
+      variant="unstyled"
       type="button"
       className="scroll-top-btn"
       aria-label="Scroll to top"
@@ -29,16 +31,14 @@ export function ScrollToTopButton() {
         width: 44,
         height: 44,
         borderRadius: '50%',
-        border: 'none',
-        background: C.grad,
+        background: C.gradAction,
         color: C.white,
         fontSize: T.lg,
-        cursor: 'pointer',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+        boxShadow: SH.pop,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
       }}
-    >↑</button>
+    >↑</Btn>
   );
 }

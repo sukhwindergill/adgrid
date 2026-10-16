@@ -1,22 +1,22 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { C, F, T, SH } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { Btn } from '../primitives/Btn.jsx';
+import { Pill } from '../primitives/Pill.jsx';
+import { MenuPanel, MenuItem, MenuBackdrop } from '../primitives/Menu.jsx';
+
+const ROLE_TONE = { admin: 'purple', manager: 'blue', viewer: 'neutral' }
 
 function RoleBadge({ role }) {
-  const colors = {
-    admin:   { bg: 'rgba(124,58,237,0.12)', color: C.purple },
-    manager: { bg: 'rgba(37,99,235,0.12)',  color: '#2563eb' },
-    viewer:  { bg: 'rgba(107,114,128,0.12)', color: '#6b7280' },
-  }
-  const s = colors[role] ?? colors.viewer
   return (
-    <span style={{
-      padding: '2px 7px', borderRadius: 8, fontSize: T.xs, fontWeight: 600,
-      textTransform: 'capitalize', background: s.bg, color: s.color,
-    }}>{role}</span>
+    <Pill tone={ROLE_TONE[role] ?? 'neutral'} style={{ padding: '2px 7px', borderRadius: 8, textTransform: 'capitalize' }}>
+      {role}
+    </Pill>
   )
 }
+
+const ActiveDot = () => <span style={{ fontSize: T.xs, color: C.blueText }}>●</span>
 
 export function AccountSwitcher() {
   const { profile, grants, activeAccount, setActiveAccount, setActiveMode } = useAuth()
@@ -43,14 +43,17 @@ export function AccountSwitcher() {
 
   return (
     <div style={{ position: 'relative' }}>
-      <button
+      <Btn
+        variant="unstyled"
+        aria-haspopup="menu"
+        aria-expanded={open}
         onClick={() => setOpen(o => !o)}
         style={{
           display: 'flex', alignItems: 'center', gap: 6,
           padding: '5px 12px', borderRadius: 8,
-          background: activeAccount ? 'rgba(37,99,235,0.1)' : C.bg,
+          background: activeAccount ? C.blueSoft : C.bg,
           border: `1px solid ${activeAccount ? C.blue : C.border}`,
-          cursor: 'pointer', fontFamily: F.sans, fontSize: T.base, color: C.text,
+          fontFamily: F.sans, fontSize: T.base, color: C.text,
         }}
       >
         <span style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -58,33 +61,21 @@ export function AccountSwitcher() {
         </span>
         {activeAccount && <RoleBadge role={activeAccount.role} />}
         <span style={{ color: C.textMuted, fontSize: T.xs }}>▾</span>
-      </button>
+      </Btn>
 
       {open && (
         <>
-          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 190 }} />
-          <div style={{
-            position: 'absolute', top: 38, left: 0, minWidth: 220,
-            background: C.surface, border: `1px solid ${C.border}`,
-            borderRadius: 12, boxShadow: SH.pop,
-            padding: '6px 0', zIndex: 200,
-          }}>
-            <button
-              onClick={() => switchTo(null)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                width: '100%', padding: '8px 14px', background: 'none', border: 'none',
-                cursor: 'pointer', textAlign: 'left', fontFamily: F.sans,
-              }}
-            >
+          <MenuBackdrop onClose={() => setOpen(false)} />
+          <MenuPanel role="menu" style={{ top: 38, left: 0, minWidth: 220, padding: '6px 0' }}>
+            <MenuItem role="menuitem" onClick={() => switchTo(null)} style={{ padding: '8px 14px' }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: T.base, fontWeight: !activeAccount ? 600 : 400, color: C.text }}>
                   {profile?.company_name || profile?.name || 'My Account'}
                 </div>
                 <div style={{ fontSize: T.xs, color: C.textMuted }}>Your account</div>
               </div>
-              {!activeAccount && <span style={{ fontSize: T.xs, color: C.blueText }}>●</span>}
-            </button>
+              {!activeAccount && <ActiveDot />}
+            </MenuItem>
 
             {grants.length > 0 && (
               <div style={{ height: 1, background: C.border, margin: '4px 0' }} />
@@ -101,26 +92,18 @@ export function AccountSwitcher() {
               }
               const isActive = activeAccount?.id === g.account_id
               return (
-                <button
-                  key={g.id}
-                  onClick={() => switchTo(acct)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    width: '100%', padding: '8px 14px', background: 'none', border: 'none',
-                    cursor: 'pointer', textAlign: 'left', fontFamily: F.sans,
-                  }}
-                >
+                <MenuItem role="menuitem" key={g.id} onClick={() => switchTo(acct)} style={{ padding: '8px 14px' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: T.base, fontWeight: isActive ? 600 : 400, color: C.text }}>
                       {g.account?.company_name || g.account?.name || 'Client Account'}
                     </div>
                     <div style={{ marginTop: 2 }}><RoleBadge role={g.role} /></div>
                   </div>
-                  {isActive && <span style={{ fontSize: T.xs, color: C.blueText }}>●</span>}
-                </button>
+                  {isActive && <ActiveDot />}
+                </MenuItem>
               )
             })}
-          </div>
+          </MenuPanel>
         </>
       )}
     </div>

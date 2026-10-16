@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { C, F, glass, T, SH } from '../../design/tokens.js';
+import { C, F, glass, T, alpha } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import NotificationBell from '../NotificationBell.jsx';
 import { AccountSwitcher } from './AccountSwitcher.jsx';
+import { Btn } from '../primitives/Btn.jsx';
+import { MenuPanel, MenuItem, MenuBackdrop } from '../primitives/Menu.jsx';
+import { SwitchTrack } from '../primitives/Switch.jsx';
 
 export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMode, onOpenSearch }) {
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
@@ -20,17 +23,18 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
       justifyContent: 'flex-end',
       padding: '0 20px',
       ...glass,
-      borderBottom: '1px solid rgba(0,0,0,0.07)',
+      borderBottom: `1px solid ${alpha(C.black, 0.07)}`,
       gap: 12,
     }}>
       {onOpenSearch && (
-        <button
+        <Btn
+          variant="unstyled"
           onClick={onOpenSearch}
           aria-label="Search"
           aria-keyshortcuts={isMac ? 'Meta+K' : 'Control+K'}
           style={{
             marginRight: 'auto', display: 'flex', alignItems: 'center', gap: 8,
-            padding: '7px 12px', minWidth: 0, borderRadius: 8, cursor: 'pointer',
+            padding: '7px 12px', minWidth: 0, borderRadius: 8,
             border: `1px solid ${C.border}`, background: C.surfaceAlt, color: C.textMuted,
             fontFamily: F.sans, fontSize: T.base,
           }}
@@ -38,14 +42,18 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
           <span>Search</span>
           <kbd style={{ fontFamily: F.sans, fontSize: T.xs, padding: '1px 5px', borderRadius: 4, border: `1px solid ${C.border}`, background: C.surface }}>{isMac ? '⌘K' : 'Ctrl K'}</kbd>
-        </button>
+        </Btn>
       )}
       <AccountSwitcher />
       <NotificationBell />
 
       {/* Avatar + dropdown */}
       <div style={{ position: 'relative' }}>
-        <div
+        <Btn
+          variant="unstyled"
+          aria-label="Account menu"
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
           onClick={() => setMenuOpen(o => !o)}
           style={{
             width: 34,
@@ -59,30 +67,15 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
             fontSize: T.sm,
             fontWeight: 600,
             fontFamily: F.sans,
-            cursor: 'pointer',
             userSelect: 'none',
           }}
-        >{initials}</div>
+        >{initials}</Btn>
 
         {menuOpen && (
           <>
             {/* Backdrop */}
-            <div
-              onClick={() => setMenuOpen(false)}
-              style={{ position: 'fixed', inset: 0, zIndex: 190 }}
-            />
-            <div style={{
-              position: 'absolute',
-              right: 0,
-              top: 42,
-              width: 220,
-              background: C.surface,
-              border: `1px solid ${C.border}`,
-              borderRadius: 12,
-              boxShadow: SH.pop,
-              padding: '8px 0',
-              zIndex: 200,
-            }}>
+            <MenuBackdrop onClose={() => setMenuOpen(false)} />
+            <MenuPanel role="menu" style={{ right: 0, top: 42, width: 220, padding: '8px 0' }}>
               {/* User info */}
               <div style={{ padding: '10px 16px', borderBottom: `1px solid ${C.border}` }}>
                 <div style={TX.strong}>
@@ -97,57 +90,22 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
                   several countries/cities) so the product can be demoed
                   before real operators have onboarded. Off by default. */}
               {onToggleDemoMode && (
-                <button
+                <MenuItem
+                  role="menuitemcheckbox"
+                  aria-checked={demoMode}
                   onClick={() => onToggleDemoMode()}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    width: '100%',
-                    textAlign: 'left',
-                    padding: '8px 16px',
-                    background: 'none',
-                    border: 'none',
-                    borderBottom: `1px solid ${C.border}`,
-                    fontFamily: F.sans,
-                    fontSize: T.base,
-                    color: C.text,
-                    cursor: 'pointer',
-                  }}
+                  style={{ justifyContent: 'space-between', borderBottom: `1px solid ${C.border}` }}
                 >
                   <span>Demo mode</span>
-                  <span style={{
-                    display: 'inline-block', width: 30, height: 17, borderRadius: 999,
-                    background: demoMode ? C.purple : C.borderDark, position: 'relative', transition: 'background 0.15s',
-                    flexShrink: 0,
-                  }}>
-                    <span style={{
-                      position: 'absolute', top: 2, left: demoMode ? 15 : 2, width: 13, height: 13,
-                      borderRadius: '50%', background: C.white, transition: 'left 0.15s',
-                    }} />
-                  </span>
-                </button>
+                  <SwitchTrack on={demoMode} size="sm" />
+                </MenuItem>
               )}
 
               {/* Sign out */}
-              <button
-                onClick={() => { onSignOut(); setMenuOpen(false); }}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '8px 16px',
-                  background: 'none',
-                  border: 'none',
-                  fontFamily: F.sans,
-                  fontSize: T.base,
-                  color: C.redText,
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.06)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'none'}
-              >Sign out</button>
-            </div>
+              <MenuItem role="menuitem" tone="danger" onClick={() => { onSignOut(); setMenuOpen(false); }}>
+                Sign out
+              </MenuItem>
+            </MenuPanel>
           </>
         )}
       </div>

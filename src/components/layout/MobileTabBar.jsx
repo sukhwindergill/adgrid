@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { C, F, T, SH } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
+import { Btn } from '../primitives/Btn.jsx';
+import { CountBadge } from '../primitives/CountBadge.jsx';
 import { ModeSwitcher } from './Sidebar.jsx';
 import { ICONS } from './navIcons.jsx';
 import { navFor, tabsFor, highlightedNavId } from './navConfig.js';
@@ -9,16 +11,7 @@ const MORE_ICON = (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
 );
 
-function Badge({ count }) {
-  if (!count) return null;
-  return (
-    <span style={{
-      position: 'absolute', top: -4, right: -8, minWidth: 16, height: 16, borderRadius: 8,
-      background: C.amber, color: C.white, fontSize: T.xs, fontWeight: 700, fontFamily: F.sans,
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px',
-    }}>{count > 99 ? '99+' : count}</span>
-  );
-}
+const Badge = ({ count }) => <CountBadge count={count} style={{ position: 'absolute', top: -4, right: -8 }} />;
 
 // Phone navigation: four primary destinations plus a More sheet holding the
 // full grouped nav, the operator/advertiser switch and sign out.
@@ -39,7 +32,7 @@ export function MobileTabBar({ active, activeMode, onModeSwitch, onNavigate, onS
 
   const tabBtn = (isActive) => ({
     flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-    padding: '8px 0 6px', background: 'none', border: 'none', cursor: 'pointer',
+    padding: '8px 0 6px',
     color: isActive ? C.purple : C.textSub, fontFamily: F.sans, fontSize: T.xs,
     fontWeight: isActive ? 600 : 500, minHeight: 52,
   });
@@ -65,24 +58,24 @@ export function MobileTabBar({ active, activeMode, onModeSwitch, onNavigate, onS
                 </div>
               )}
               {g.items.map(item => (
-                <button key={item.id} onClick={() => go(item.id)} aria-current={current === item.id ? 'page' : undefined} style={{
+                <Btn variant="unstyled" key={item.id} onClick={() => go(item.id)} aria-current={current === item.id ? 'page' : undefined} style={{
                   display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '12px 8px',
-                  background: current === item.id ? C.purpleSoft : 'none', border: 'none', borderRadius: 8,
-                  color: current === item.id ? C.purple : C.text, fontFamily: F.sans, fontSize: T.md, cursor: 'pointer', textAlign: 'left',
+                  background: current === item.id ? C.purpleSoft : 'none', borderRadius: 8,
+                  color: current === item.id ? C.purple : C.text, fontFamily: F.sans, fontSize: T.md, textAlign: 'left',
                 }}>
                   <span style={{ display: 'flex', position: 'relative' }}>
                     {ICONS[item.icon]}
                     {item.badge && <Badge count={pendingCount} />}
                   </span>
                   {item.label}
-                </button>
+                </Btn>
               ))}
             </div>
           ))}
-          <button onClick={() => { setMoreOpen(false); onSignOut(); }} style={{
-            width: '100%', padding: '12px 8px', background: 'none', border: 'none', borderTop: `1px solid ${C.border}`,
-            color: C.redText, fontFamily: F.sans, fontSize: T.md, textAlign: 'left', cursor: 'pointer', marginTop: 4,
-          }}>Sign out</button>
+          <Btn variant="unstyled" onClick={() => { setMoreOpen(false); onSignOut(); }} style={{
+            width: '100%', padding: '12px 8px', borderTop: `1px solid ${C.border}`,
+            color: C.redText, fontFamily: F.sans, fontSize: T.md, textAlign: 'left', marginTop: 4,
+          }}>Sign out</Btn>
         </div>
       )}
       <nav aria-label="Main" style={{
@@ -91,18 +84,18 @@ export function MobileTabBar({ active, activeMode, onModeSwitch, onNavigate, onS
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
         {tabs.map(t => (
-          <button key={t.id} onClick={() => go(t.id)} aria-current={current === t.id ? 'page' : undefined} style={tabBtn(current === t.id && !moreOpen)}>
+          <Btn variant="unstyled" key={t.id} onClick={() => go(t.id)} aria-current={current === t.id ? 'page' : undefined} style={tabBtn(current === t.id && !moreOpen)}>
             <span style={{ display: 'flex', position: 'relative' }}>
               {ICONS[t.icon]}
               {t.badge && <Badge count={pendingCount} />}
             </span>
             {t.id.endsWith('overview') ? 'Home' : t.id === 'approval' ? 'Approvals' : t.label}
-          </button>
+          </Btn>
         ))}
-        <button onClick={() => setMoreOpen(o => !o)} aria-expanded={moreOpen} style={tabBtn(moreOpen || !inTabs)}>
+        <Btn variant="unstyled" onClick={() => setMoreOpen(o => !o)} aria-expanded={moreOpen} style={tabBtn(moreOpen || !inTabs)}>
           <span style={{ display: 'flex' }}>{MORE_ICON}</span>
           More
-        </button>
+        </Btn>
       </nav>
     </>
   );

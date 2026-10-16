@@ -1,11 +1,20 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { C, F, T, SH } from '../../design/tokens.js';
+import { C, F, T, SH, alpha } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { navFor, highlightedNavId } from './navConfig.js';
 import { MobileTabBar } from './MobileTabBar.jsx';
 import { ICONS } from './navIcons.jsx';
+import { Btn } from '../primitives/Btn.jsx';
+import { Hover } from '../primitives/Hover.jsx';
+import { CountBadge } from '../primitives/CountBadge.jsx';
+
+const MODE_ACTIVE_BG = `linear-gradient(135deg, ${alpha(C.purple, 0.25)}, ${alpha(C.purpleVivid, 0.15)})`;
+const NAV_ACTIVE_BG = `linear-gradient(135deg, ${alpha(C.purple, 0.12)}, ${alpha(C.purpleVivid, 0.08)})`;
+const NAV_HOVER_BG = alpha(C.purple, 0.06);
+const SIGN_OUT_HOVER = { background: alpha(C.red, 0.1), color: C.redText };
+const legalLink = { color: C.textMuted, textDecoration: 'none' };
 
 // ─── ModeSwitcher ─────────────────────────────────────────────────────────────
 
@@ -19,17 +28,16 @@ export function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 8 }}>
         {modes.map(m => (
-          <button
+          <Btn
+            variant="unstyled"
             key={m.id}
             title={m.label}
             aria-label={`Switch to ${m.label} mode`}
             aria-pressed={activeMode === m.id}
             onClick={() => onSwitch(m.id)}
             style={{
-              width: '100%', padding: '6px 0', border: 'none', borderRadius: 6, cursor: 'pointer',
-              background: activeMode === m.id
-                ? 'linear-gradient(135deg, rgba(124,58,237,0.25), rgba(168,85,247,0.15))'
-                : 'transparent',
+              width: '100%', padding: '6px 0', borderRadius: 6,
+              background: activeMode === m.id ? MODE_ACTIVE_BG : 'transparent',
               color: activeMode === m.id ? C.purple : C.textMuted,
               fontSize: T.xs, fontWeight: 700, fontFamily: F.sans, letterSpacing: '0.04em',
               transition: 'all 0.15s',
@@ -38,7 +46,7 @@ export function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
             <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {m.id === 'operator' ? ICONS.operatorMode : ICONS.advertiserMode}
             </span>
-          </button>
+          </Btn>
         ))}
       </div>
     );
@@ -51,11 +59,13 @@ export function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
       border: `1px solid ${C.border}`,
     }}>
       {modes.map(m => (
-        <button
+        <Btn
+          variant="unstyled"
           key={m.id}
+          aria-pressed={activeMode === m.id}
           onClick={() => onSwitch(m.id)}
           style={{
-            flex: 1, padding: '7px 0', borderRadius: 6, border: 'none', cursor: 'pointer',
+            flex: 1, padding: '7px 0', borderRadius: 6,
             fontSize: T.sm, fontWeight: activeMode === m.id ? 600 : 500, fontFamily: F.sans,
             transition: 'all 0.15s',
             background: activeMode === m.id ? C.surface : 'transparent',
@@ -64,7 +74,7 @@ export function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
           }}
         >
           {m.label}
-        </button>
+        </Btn>
       ))}
     </div>
   );
@@ -73,18 +83,17 @@ export function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
 // ─── NavItem ─────────────────────────────────────────────────────────────────
 
 function NavItem({ item, active, collapsed, pendingCount, onClick }) {
-  const [hovered, setHovered] = useState(false);
   const isActive = highlightedNavId(active) === item.id;
   const showBadge = item.badge && pendingCount > 0;
 
   return (
-    <button
+    <Btn
+      variant="unstyled"
       title={collapsed ? item.label : undefined}
       aria-label={item.label}
       aria-current={isActive ? 'page' : undefined}
       onClick={() => onClick(item.id)}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      hoverStyle={isActive ? undefined : { background: NAV_HOVER_BG, color: C.text }}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -92,15 +101,9 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
         width: '100%',
         padding: collapsed ? '10px 0' : '9px 12px',
         justifyContent: collapsed ? 'center' : 'flex-start',
-        background: isActive
-          ? 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.08))'
-          : hovered
-          ? 'rgba(124,58,237,0.06)'
-          : 'transparent',
-        border: 'none',
+        background: isActive ? NAV_ACTIVE_BG : 'transparent',
         borderRadius: 8,
-        color: isActive ? C.purple : hovered ? C.text : C.textSub,
-        cursor: 'pointer',
+        color: isActive ? C.purple : C.textSub,
         fontFamily: F.sans,
         fontSize: T.base,
         fontWeight: isActive ? 600 : 400,
@@ -132,25 +135,7 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
         {ICONS[item.icon]}
         {/* Badge on icon when collapsed */}
         {showBadge && collapsed && (
-          <span style={{
-            position: 'absolute',
-            top: -4,
-            right: -4,
-            minWidth: 14,
-            height: 14,
-            borderRadius: 7,
-            background: C.amber,
-            color: C.white,
-            fontSize: T.xs,
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '0 3px',
-            fontFamily: F.sans,
-          }}>
-            {pendingCount > 99 ? '99+' : pendingCount}
-          </span>
+          <CountBadge count={pendingCount} size="sm" style={{ position: 'absolute', top: -4, right: -4 }} />
         )}
       </span>
 
@@ -158,28 +143,10 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
         <>
           <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
           {/* Badge on label row when expanded */}
-          {showBadge && (
-            <span style={{
-              minWidth: 18,
-              height: 18,
-              borderRadius: 9,
-              background: C.amber,
-              color: C.white,
-              fontSize: T.xs,
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '0 5px',
-              fontFamily: F.sans,
-              flexShrink: 0,
-            }}>
-              {pendingCount > 99 ? '99+' : pendingCount}
-            </span>
-          )}
+          {showBadge && <CountBadge count={pendingCount} size="lg" />}
         </>
       )}
-    </button>
+    </Btn>
   );
 }
 
@@ -201,9 +168,6 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
   // a phone viewport. The user's manual preference is preserved for when
   // they're back on a wider screen.
   const collapsed = isMobile ? true : collapsedPref;
-
-  const [signOutHovered, setSignOutHovered] = useState(false);
-  const [collapseHovered, setCollapseHovered] = useState(false);
 
   const toggle = () => {
     if (isMobile) return;
@@ -354,18 +318,15 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
                 {user?.email}
               </div>
             </div>
-            <button
+            <Btn
+              variant="unstyled"
               title="Sign out"
               onClick={onSignOut}
-              onMouseEnter={() => setSignOutHovered(true)}
-              onMouseLeave={() => setSignOutHovered(false)}
+              hoverStyle={SIGN_OUT_HOVER}
               style={{
-                background: signOutHovered ? 'rgba(239,68,68,0.1)' : 'transparent',
-                border: 'none',
                 borderRadius: 6,
                 padding: '4px 6px',
-                cursor: 'pointer',
-                color: signOutHovered ? C.redText : C.textMuted,
+                color: C.textMuted,
                 fontFamily: F.sans,
                 fontSize: T.xs,
                 fontWeight: 500,
@@ -374,30 +335,28 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
               }}
             >
               Sign out
-            </button>
+            </Btn>
           </div>
         ) : (
-          <button
+          <Btn
+            variant="unstyled"
             title="Sign out"
+            aria-label="Sign out"
             onClick={onSignOut}
-            onMouseEnter={() => setSignOutHovered(true)}
-            onMouseLeave={() => setSignOutHovered(false)}
+            hoverStyle={SIGN_OUT_HOVER}
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               width: '100%',
               padding: '10px 0',
-              background: signOutHovered ? 'rgba(239,68,68,0.1)' : 'transparent',
-              border: 'none',
               borderRadius: 8,
-              cursor: 'pointer',
-              color: signOutHovered ? C.redText : C.textMuted,
+              color: C.textMuted,
               transition: 'all 0.15s',
             }}
           >
             {ICONS.user}
-          </button>
+          </Btn>
         )}
 
         {/* Legal links */}
@@ -406,34 +365,25 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
             display: 'flex', gap: 10, padding: '2px 12px 4px',
             fontSize: T.xs, fontFamily: F.sans, color: C.textMuted,
           }}>
-            <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: C.textMuted, textDecoration: 'none' }}
-              onMouseEnter={e => e.currentTarget.style.color = C.purple}
-              onMouseLeave={e => e.currentTarget.style.color = C.textMuted}
-            >Terms</a>
-            <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: C.textMuted, textDecoration: 'none' }}
-              onMouseEnter={e => e.currentTarget.style.color = C.purple}
-              onMouseLeave={e => e.currentTarget.style.color = C.textMuted}
-            >Privacy</a>
+            <Hover as="a" href="/terms" target="_blank" rel="noopener noreferrer" style={legalLink} hoverStyle={{ color: C.purple }}>Terms</Hover>
+            <Hover as="a" href="/privacy" target="_blank" rel="noopener noreferrer" style={legalLink} hoverStyle={{ color: C.purple }}>Privacy</Hover>
           </div>
         )}
 
         {/* Collapse toggle — hidden on mobile, where the sidebar is always icon-rail */}
-        {!isMobile && <button
+        {!isMobile && <Btn
+          variant="unstyled"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           onClick={toggle}
-          onMouseEnter={() => setCollapseHovered(true)}
-          onMouseLeave={() => setCollapseHovered(false)}
+          hoverStyle={{ background: NAV_HOVER_BG }}
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: collapsed ? 'center' : 'flex-end',
             width: '100%',
             padding: collapsed ? '10px 0' : '8px 12px',
-            background: collapseHovered ? 'rgba(124,58,237,0.06)' : 'transparent',
-            border: 'none',
             borderRadius: 8,
-            cursor: 'pointer',
             color: C.textSub,
             transition: 'all 0.15s',
             gap: collapsed ? 0 : 6,
@@ -443,7 +393,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
             <span style={TX.caption}>Collapse</span>
           )}
           {collapsed ? ICONS.chevronRight : ICONS.chevronLeft}
-        </button>}
+        </Btn>}
       </div>
     </aside>
   );

@@ -87,6 +87,7 @@ export const SH = {
   modal: '0 24px 60px rgba(0,0,0,0.15)',
   drawer: '-8px 0 32px rgba(0,0,0,0.12)',
   sheet: '0 -8px 24px rgba(0,0,0,0.08)',
+  knob:  '0 1px 3px rgba(0,0,0,0.2)', // switch knobs
   focus: '0 0 0 3px rgba(123,47,255,0.35)',
   brand: '0 1px 8px rgba(123,47,255,0.25)',
   brandHover: '0 2px 16px rgba(123,47,255,0.4)',
