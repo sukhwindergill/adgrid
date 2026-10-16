@@ -7,6 +7,8 @@ import { C, F, T } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx'
 import { Btn } from '../../components/primitives/Btn.jsx'
+import { Inp } from '../../components/primitives/Inp.jsx'
+import { compactField } from '../../components/primitives/field.js'
 import { Badge } from '../../components/primitives/Badge.jsx'
 
 // Product-audit finding: Stripe Identity flags a submission as needing a
@@ -109,11 +111,12 @@ export function OperatorVerificationQueue() {
                 <Btn variant="success" size="sm" disabled={busyId === op.id} onClick={() => review(op.id, 'approved')}>
                   {busyId === op.id ? '…' : 'Approve'}
                 </Btn>
-                <input
-                  type="text" placeholder="Rejection reason (optional)"
+                <Inp
+                  type="text" placeholder="Rejection reason (optional)" aria-label="Rejection reason"
                   value={reasons[op.id] ?? ''}
                   onChange={e => setReasons(r => ({ ...r, [op.id]: e.target.value }))}
-                  style={{ flex: 1, minWidth: 160, padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.sans, fontSize: T.sm }}
+                  wrapperStyle={{ flex: 1, minWidth: 160 }}
+                  style={compactField}
                 />
                 <Btn variant="danger" size="sm" disabled={busyId === op.id} onClick={() => review(op.id, 'rejected')}>
                   {busyId === op.id ? '…' : 'Reject'}

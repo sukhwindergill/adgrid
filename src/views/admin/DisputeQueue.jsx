@@ -7,6 +7,8 @@ import { C, F, T } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx'
 import { Btn } from '../../components/primitives/Btn.jsx'
+import { Inp } from '../../components/primitives/Inp.jsx'
+import { compactField } from '../../components/primitives/field.js'
 import { Badge } from '../../components/primitives/Badge.jsx'
 import { DISPUTE_REASONS } from '../../lib/disputeReasons.js'
 
@@ -122,11 +124,12 @@ export function DisputeQueue() {
                   <Btn variant="success" size="sm" disabled={busyId === d.id} onClick={() => resolve(d, 'refund_full')}>
                     {busyId === d.id ? '…' : `Refund Full ($${booking ? Number(booking.budget).toLocaleString() : '—'})`}
                   </Btn>
-                  <input
-                    type="number" min="0.01" step="0.01" placeholder="Partial $"
+                  <Inp
+                    type="number" min="0.01" step="0.01" placeholder="Partial $" aria-label="Partial refund amount"
                     value={amounts[d.id] ?? ''}
                     onChange={e => setAmounts(s => ({ ...s, [d.id]: e.target.value }))}
-                    style={{ width: 90, padding: '6px 8px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.mono, fontSize: T.sm }}
+                    wrapperStyle={{ width: 90 }}
+                    style={{ ...compactField, padding: '6px 8px', fontFamily: F.mono }}
                   />
                   <Btn variant="secondary" size="sm" disabled={busyId === d.id} onClick={() => resolve(d, 'refund_partial')}>
                     {busyId === d.id ? '…' : 'Refund Partial'}

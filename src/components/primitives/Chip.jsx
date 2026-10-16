@@ -17,6 +17,7 @@ export function Chip({ selected, children, style, ...rest }) {
         fontSize: T.sm, fontFamily: F.sans,
         ...style,
       }}
+      hoverStyle={selected ? undefined : { background: C.surfaceAlt }}
     >
       {children}
     </Btn>

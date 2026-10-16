@@ -24,6 +24,9 @@ const VARIANTS = {
   // that keeps white text above 4.5:1.
   dangerSolid: { base: { background: C.redStrong, color: C.white, border: 'none' },
                  hover: { background: C.redText } },
+  // Purple outline (secondary call to action on tinted panels).
+  outline:     { base: { background: 'transparent', color: C.purple, border: `1px solid ${C.purple}` },
+                 hover: { background: C.purpleSoft } },
   success:     { base: { background: C.greenSoft, color: C.greenText, border: `1px solid ${C.greenBorder}` },
                  hover: { background: alpha(C.green, 0.16) } },
   stripe:      { base: { background: BRAND.stripe, color: C.white, border: 'none' },

@@ -20,3 +20,6 @@ export function useFieldFocus({ onFocus, onBlur } = {}) {
     onBlur: e => { setFocused(false); onBlur?.(e); },
   }];
 }
+
+// Smaller field for inline row actions (reason boxes next to Approve/Reject).
+export const compactField = { padding: '6px 10px', borderRadius: 6, fontSize: T.sm };

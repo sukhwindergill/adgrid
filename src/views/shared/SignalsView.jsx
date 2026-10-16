@@ -7,6 +7,7 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { Chip } from '../../components/primitives/Chip.jsx';
 import { useOperatorScreenCampaignRows } from '../../hooks/useOperatorScreenCampaignRows.js';
 
 const BOOSTS = { 'Food & Beverage': { morning: 2, cold: 1, highFoot: 2 }, 'Health & Fitness': { morning: 3, weekend: 2, sunny: 2 }, 'Fashion & Retail': { weekend: 2, highFoot: 3, sunny: 1 }, 'Finance & Banking': { morning: 3, weekday: 2 }, Entertainment: { evening: 3, weekend: 3 }, Technology: { morning: 1, weekday: 2 } };
@@ -84,16 +85,9 @@ export function SignalsView({ operatorScreenIds = [], screens = [] }) {
               <label style={{ ...TX.label, display: 'block', marginBottom: 6 }}>Day of Week</label>
               <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                 {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
-                  <button key={d} onClick={() => { setLive(false); setDay(d); }} style={{
-                    padding: '5px 9px', borderRadius: 6,
-                    border: `1px solid ${day === d ? C.purple : C.border}`,
-                    background: day === d ? C.purpleSoft : C.surface,
-                    color: day === d ? C.purple : C.textSub,
-                    fontSize: T.xs, fontWeight: 500, cursor: 'pointer', fontFamily: F.sans, transition: 'background 0.15s',
-                  }}
-                    onMouseEnter={e => { if (day !== d) e.currentTarget.style.background = C.surfaceAlt; }}
-                    onMouseLeave={e => { if (day !== d) e.currentTarget.style.background = C.surface; }}
-                  >{d}</button>
+                  <Chip key={d} selected={day === d} onClick={() => { setLive(false); setDay(d); }} style={{
+                    padding: '5px 9px', borderRadius: 6, fontSize: T.xs, fontWeight: 500, transition: 'background 0.15s',
+                  }}>{d}</Chip>
                 ))}
               </div>
             </div>

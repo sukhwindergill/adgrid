@@ -4,6 +4,7 @@ import { TX } from '../../design/text.js';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
+import { Hover } from '../../components/primitives/Hover.jsx';
 import { useOperatorScreenCampaignRows } from '../../hooks/useOperatorScreenCampaignRows.js';
 import { IconChart, IconClock, IconScreen } from '../../components/icons.jsx';
 
@@ -149,7 +150,7 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
                 c.status === 'active' && nowH >= parseHour(c.timeStart) && nowH < parseHour(c.timeEnd)
               );
               return (
-                <div
+                <Hover
                   key={s.id}
                   onClick={() => setSelectedId(s.id)}
                   style={{
@@ -158,8 +159,8 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
                     background: isSelected ? C.purpleSoft : C.surface,
                     transition: 'all 0.15s',
                   }}
-                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = C.surfaceAlt; }}
-                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = C.surface; }}
+                  hoverStyle={{ background: C.surfaceAlt }}
+                  disabled={isSelected}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
                     <div style={{ fontSize: T.base, fontWeight: 600, color: isSelected ? C.purple : C.text, fontFamily: F.sans }}>{s.name}</div>
@@ -174,7 +175,7 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
                   ) : (
                     <div style={TX.caption}>{s.campaigns.length} campaign{s.campaigns.length !== 1 ? 's' : ''}</div>
                   )}
-                </div>
+                </Hover>
               );
             })}
           </div>

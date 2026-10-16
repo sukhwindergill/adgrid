@@ -109,14 +109,9 @@ export function AutomationRulesView({ user, ownerSide = 'advertiser', setNav }) 
             These are budget, pacing, and delivery alerts. Auto-approving <strong>campaigns</strong> for
             review is a separate setting.
           </div>
-          <button onClick={() => setNav('op-settings')} style={{
-            padding: '6px 14px', borderRadius: 6, border: `1px solid ${C.purple}`,
-            background: 'transparent', color: C.purple, fontSize: T.sm, fontWeight: 600,
-            cursor: 'pointer', whiteSpace: 'nowrap', transition: 'background 0.15s',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = C.purpleSoft; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-          >Open Settings → Review →</button>
+          <Btn variant="outline" size="sm" onClick={() => setNav('op-settings')} style={{ padding: '6px 14px', borderRadius: 6, fontWeight: 600 }}>
+            Open Settings → Review →
+          </Btn>
         </div>
       )}
 
