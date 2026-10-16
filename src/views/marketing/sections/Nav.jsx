@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SiteSearch } from './SiteSearch.jsx';
 
-export function Nav({ onScrollTo, onLogin }) {
+export function Nav({ onScrollTo, onLogin, onSignup }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const go = id => { setMenuOpen(false); onScrollTo(id); };
@@ -23,7 +23,7 @@ export function Nav({ onScrollTo, onLogin }) {
         </div>
         <div className="nav-spacer" />
         <button className="nl nav-desktop-only" onClick={onLogin}>Sign in</button>
-        <button className="btn-p nav-desktop-only" onClick={() => go('waitlist-form')}>Join the waitlist</button>
+        <button className="btn-p nav-desktop-only" onClick={onSignup}>Get started</button>
         {/* Hamburger — mobile only */}
         <button
           className="nav-burger"
@@ -45,7 +45,7 @@ export function Nav({ onScrollTo, onLogin }) {
           <Link className="nl" to="/screens" style={{ textDecoration: 'none' }}>Screens</Link>
           <hr className="nav-divider" />
           <button className="nl" onClick={() => { setMenuOpen(false); onLogin(); }}>Sign in</button>
-          <button className="btn-p" style={{ margin: '8px 12px 12px' }} onClick={() => go('waitlist-form')}>Join the waitlist</button>
+          <button className="btn-p" style={{ margin: '8px 12px 12px' }} onClick={() => { setMenuOpen(false); onSignup(); }}>Get started</button>
         </div>
       )}
     </nav>

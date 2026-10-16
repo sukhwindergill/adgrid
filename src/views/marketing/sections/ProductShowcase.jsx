@@ -4,11 +4,14 @@ import { useCountUp } from './useCountUp.js';
 
 const TABS = {
   operators: {
-    kpis: [['Screens live', '3'], ['Fill rate', '80%'], ['This month', '$6,075']],
+    // Illustrative only, and kept in line with EarningsCalculator's
+    // assumptions ($5 CPM, 4 spots per visitor, 70% payout) so the two
+    // sections never tell a visitor different stories.
+    kpis: [['Screens live', '3'], ['Fill rate', '72%'], ['This month', '$545']],
     rows: [
-      ['Queen St & Spadina', 82, '$1,240'],
-      ['Union Station Concourse', 91, '$2,860'],
-      ['Yonge-Dundas Square', 67, '$1,975'],
+      ['Gym, Kitsilano', 84, '$310'],
+      ['Café, Queen West', 68, '$140'],
+      ['Clinic waiting room', 55, '$95'],
     ],
     caption: 'List inventory, set floor prices, approve every ad, and track earnings per screen.',
   },
@@ -90,6 +93,7 @@ export function ProductShowcase() {
           </div>
         </div>
         <p className="sec-sub" style={{ margin: '20px auto 0' }}>{t.caption}</p>
+        <p style={{ margin: '8px auto 0', fontSize: 12, opacity: 0.6 }}>Illustrative example, not real venues or earnings.</p>
       </div>
     </section>
   );

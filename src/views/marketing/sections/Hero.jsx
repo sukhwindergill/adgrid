@@ -33,7 +33,7 @@ export function Hero({ onOperatorSignup, onAdvertiserSignup }) {
             The self-serve marketplace where Canadian screen operators sell ad time and
             local advertisers buy it. Real-time pricing, no minimums, full control on both sides.
           </p>
-          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+          <div className="hero-ctas">
             <button className="btn-p" onClick={onOperatorSignup}>List your screens</button>
             <button className="btn-s" onClick={onAdvertiserSignup}>Book a campaign</button>
           </div>

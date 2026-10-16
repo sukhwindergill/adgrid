@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../marketing/marketing.css';
 import { supabase } from '../../lib/supabase.js';
 import { usePageMeta } from '../../lib/usePageMeta.js';
 import { fetchPublicScreens, summarizePublicScreens, PUBLIC_MAP_MIN_SCREENS } from '../../lib/publicScreens.js';
 import { VENUE_TAXONOMY } from '../../lib/venueTypes.js';
+import { Nav } from '../marketing/sections/Nav.jsx';
 
 const LAUNCH_CITIES = ['Toronto', 'Vancouver'];
 const DEFAULT_CENTER = [49.5, -101]; // fits Toronto and Vancouver
@@ -59,6 +60,7 @@ export function PublicScreens() {
     title: 'Advertise on Screens in Toronto & Vancouver | AdGrid',
     description: 'Digital screens in gyms, cafés, salons and more across Toronto and Vancouver. See where they are and what they cost, then book with no minimum spend.',
   });
+  const navigate = useNavigate();
   const [state, setState] = useState({ status: 'loading', count: 0, rows: [] });
 
   useEffect(() => {
@@ -75,13 +77,12 @@ export function PublicScreens() {
 
   return (
     <div id="main-content" className="mktg" style={{ background: 'var(--bg)', minHeight: '100vh' }}>
-      <nav className="mnav">
-        <div className="inner">
-          <Link to="/" className="logo" style={{ textDecoration: 'none' }}>AdGrid</Link>
-          <div className="nav-spacer" />
-          <Link to="/?role=advertiser#waitlist-form" className="btn-p">Get early access</Link>
-        </div>
-      </nav>
+      {/* Same nav as the home page; section links jump back to it by hash. */}
+      <Nav
+        onScrollTo={id => navigate(`/#${id}`)}
+        onLogin={() => navigate('/login')}
+        onSignup={() => navigate('/login?mode=signup&intent=advertiser')}
+      />
 
       <section className="sec dark" style={{ paddingTop: 128 }}>
         <div className="inner">
@@ -118,10 +119,10 @@ export function PublicScreens() {
 
           {(state.status === 'error' || (state.status === 'ready' && !showMap)) && (
             <div className="pscreens-soon">
-              <h2>Launching in {LAUNCH_CITIES.join(' & ')}</h2>
+              <h2>Now onboarding venues in {LAUNCH_CITIES.join(' & ')}</h2>
               <p>
-                We're onboarding venues now. Join the waitlist and we'll show you the screens
-                near your business, with prices, as soon as they're bookable.
+                The public map appears once enough screens are live. Create a free account to
+                browse what's bookable near your business today, with prices.
               </p>
               <div className="pscreens-chips" aria-label="Venue types">
                 {venueTypes.map(v => <span key={v} className="venue-chip">{v}</span>)}
@@ -130,8 +131,8 @@ export function PublicScreens() {
           )}
 
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 36 }}>
-            <Link to="/?role=advertiser#waitlist-form" className="btn-p">Get early access</Link>
-            <Link to="/?role=operator#waitlist-form" className="btn-s">List your screen</Link>
+            <Link to="/login?mode=signup&intent=advertiser" className="btn-p">Book a campaign</Link>
+            <Link to="/login?mode=signup&intent=operator" className="btn-s">List your screen</Link>
           </div>
         </div>
       </section>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { F } from '../../design/tokens.js';
+import { C, F } from '../../design/tokens.js';
 import { track } from '../../lib/analytics.js';
 import { IconEye, IconEyeOff } from '../../components/icons.jsx';
 
@@ -22,7 +22,7 @@ function DarkInp({ label, type, placeholder, value, onChange, onKeyDown, togglea
   const resolvedType = toggleable ? (visible ? 'text' : 'password') : type;
   return (
     <div>
-      <div style={{ fontSize: 12, fontWeight: 500, color: '#8A8A9A', fontFamily: F.sans, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 12, fontWeight: 500, color: C.textSub, fontFamily: F.sans, marginBottom: 6 }}>{label}</div>
       <div style={{ position: 'relative' }}>
         <input
           type={resolvedType}
@@ -32,13 +32,13 @@ function DarkInp({ label, type, placeholder, value, onChange, onKeyDown, togglea
           onKeyDown={onKeyDown}
           style={{
             width: '100%', padding: toggleable ? '10px 40px 10px 12px' : '10px 12px', borderRadius: 8,
-            border: '1px solid #1E1E2E', background: 'rgba(255,255,255,0.04)',
-            color: '#fff', fontSize: 13, fontFamily: F.sans,
+            border: `1px solid ${C.border}`, background: C.surface,
+            color: C.text, fontSize: 13, fontFamily: F.sans,
             outline: 'none', boxSizing: 'border-box',
             transition: 'border-color 0.15s',
           }}
-          onFocus={e => e.target.style.borderColor = '#7B2FFF'}
-          onBlur={e => e.target.style.borderColor = '#1E1E2E'}
+          onFocus={e => e.target.style.borderColor = C.purple}
+          onBlur={e => e.target.style.borderColor = C.border}
         />
         {toggleable && (
           <button
@@ -53,7 +53,7 @@ function DarkInp({ label, type, placeholder, value, onChange, onKeyDown, togglea
             onFocus={e => e.target.style.outline = '2px solid #7B2FFF'}
             onBlur={e => e.target.style.outline = 'none'}
           >
-            <span aria-hidden="true" style={{ display: 'flex', color: '#8A8A9A' }}>{visible ? <IconEyeOff size={15} /> : <IconEye size={15} />}</span>
+            <span aria-hidden="true" style={{ display: 'flex', color: C.textSub }}>{visible ? <IconEyeOff size={15} /> : <IconEye size={15} />}</span>
           </button>
         )}
       </div>
@@ -64,7 +64,7 @@ function DarkInp({ label, type, placeholder, value, onChange, onKeyDown, togglea
 // Text-style links that are real buttons, so they're reachable by keyboard.
 const linkBtn = color => ({
   background: 'none', border: 'none', padding: 0, color, cursor: 'pointer',
-  fontSize: 12, fontFamily: F.sans,
+  fontSize: 13, fontFamily: F.sans,
 });
 
 export function LoginPage() {
@@ -77,6 +77,8 @@ export function LoginPage() {
   const [intent, setIntent] = useState(params.get('intent') === 'operator' ? 'operator' : 'advertiser');
   const [tosChecked, setTosChecked] = useState(false);
   const [err, setErr]       = useState('');
+  // Success copy lives apart from err so it never renders in error styling.
+  const [notice, setNotice] = useState('');
   const [loading, setLoading]         = useState(false);
   const [oauthLoading, setOauthLoading] = useState('');
   const [demoLoading, setDemoLoading] = useState(false);
@@ -90,29 +92,29 @@ export function LoginPage() {
   const handle = async () => {
     if (activeMode === 'forgot') {
       if (!email.includes('@')) { setErr('Enter a valid email address.'); return; }
-      setErr(''); setLoading(true);
+      setErr(''); setNotice(''); setLoading(true);
       const { error } = await resetPasswordForEmail(email);
       setLoading(false);
       // Always show the same success-shaped copy regardless of whether the
       // account exists (Supabase's error differs for unknown emails vs rate
       // limiting) -- surfacing error.message here would let an attacker
       // enumerate registered accounts by trying emails against this form.
-      setErr('Check your inbox: if an account exists for that email, a password reset link is on its way.');
+      setNotice('Check your inbox: if an account exists for that email, a password reset link is on its way.');
       return;
     }
     if (activeMode === 'reset') {
       if (pass.length < 6) { setErr('Password must be at least 6 characters.'); return; }
-      setErr(''); setLoading(true);
+      setErr(''); setNotice(''); setLoading(true);
       const { error } = await updatePassword(pass);
       setLoading(false);
       if (error) setErr(error.message);
-      else setErr('Password updated. You can now sign in.');
+      else setNotice('Password updated. You can now sign in.');
       return;
     }
     if (!email.includes('@')) { setErr('Enter a valid email address.'); return; }
     if (pass.length < 6)      { setErr('Password must be at least 6 characters.'); return; }
     if (activeMode === 'signup' && !tosChecked) { setErr('Please accept the Terms of Service and Privacy Policy to continue.'); return; }
-    setErr(''); setLoading(true);
+    setErr(''); setNotice(''); setLoading(true);
     if (activeMode === 'signin') {
       const { error } = await signIn(email, pass);
       if (error) setErr(error.message);
@@ -120,7 +122,7 @@ export function LoginPage() {
       localStorage.setItem('adgrid_signup_intent', intent);
       const { error } = await signUp(email, pass, name, new Date().toISOString());
       if (error) { localStorage.removeItem('adgrid_signup_intent'); localStorage.removeItem('adgrid_screen_invite_token'); setErr(error.message); }
-      else { track('signup_submitted', { intent }); setErr('Check your email to confirm your account.'); }
+      else { track('signup_submitted', { intent }); setNotice('Check your email to confirm your account.'); }
     }
     setLoading(false);
   };
@@ -145,11 +147,9 @@ export function LoginPage() {
     if (error) { setErr(error.message); setOauthLoading(''); }
   };
 
-  const isSuccess = err.includes('Check');
-
   return (
     <div style={{
-      minHeight: '100vh', background: '#0A0A0F',
+      minHeight: '100vh', background: C.bg,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontFamily: F.sans, position: 'relative', overflow: 'hidden',
     }}>
@@ -158,13 +158,13 @@ export function LoginPage() {
       {/* Gradient orbs */}
       <div style={{
         position: 'absolute', width: 500, height: 500, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(123,47,255,0.14) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(123,47,255,0.08) 0%, transparent 70%)',
         top: '-10%', left: '-10%', animation: 'loginOrb1 12s ease-in-out infinite',
         pointerEvents: 'none',
       }} />
       <div style={{
         position: 'absolute', width: 600, height: 600, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(123,47,255,0.10) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(123,47,255,0.06) 0%, transparent 70%)',
         bottom: '-15%', right: '-10%', animation: 'loginOrb2 15s ease-in-out infinite',
         pointerEvents: 'none',
       }} />
@@ -178,18 +178,18 @@ export function LoginPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontWeight: 800, fontSize: 16, color: '#fff',
           }}>A</div>
-          <span style={{ fontSize: 20, fontWeight: 700, color: '#fff', fontFamily: F.display }}>AdGrid</span>
+          <span style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display }}>AdGrid</span>
         </a>
 
         {/* Card */}
         <div style={{
-          background: '#111118', border: '1px solid #1E1E2E',
-          borderRadius: 16, padding: 28,
+          background: C.surface, border: `1px solid ${C.border}`,
+          borderRadius: 16, padding: 28, boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}>
-          <h1 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4, fontFamily: F.display }}>
+          <h1 style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 4, fontFamily: F.display }}>
             {activeMode === 'forgot' ? 'Reset your password' : activeMode === 'reset' ? 'Set new password' : activeMode === 'signin' ? 'Sign in to AdGrid' : 'Create your account'}
           </h1>
-          <p style={{ fontSize: 13, color: '#8A8A9A', marginBottom: 20, fontFamily: F.sans }}>
+          <p style={{ fontSize: 13, color: C.textSub, marginBottom: 20, fontFamily: F.sans }}>
             {activeMode === 'forgot' ? "Enter your email and we'll send a reset link." : activeMode === 'reset' ? 'Choose a new password for your account.'
               : activeMode === 'signin' ? 'Welcome back. Pick up where you left off.'
               : intent === 'operator' ? 'List your screens and start earning from idle ad time.'
@@ -205,13 +205,13 @@ export function LoginPage() {
                   disabled={!!oauthLoading}
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                    padding: '10px 16px', borderRadius: 8, border: '1px solid #1E1E2E',
-                    background: 'rgba(255,255,255,0.05)', cursor: 'pointer', fontSize: 14, fontWeight: 500,
-                    color: '#fff', fontFamily: F.sans, transition: 'background 0.15s',
+                    padding: '10px 16px', borderRadius: 8, border: `1px solid ${C.border}`,
+                    background: C.surface, cursor: 'pointer', fontSize: 14, fontWeight: 500,
+                    color: C.text, fontFamily: F.sans, transition: 'background 0.15s',
                     opacity: oauthLoading === 'apple' ? 0.5 : 1,
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.10)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                  onMouseEnter={e => e.currentTarget.style.background = C.surfaceAlt}
+                  onMouseLeave={e => e.currentTarget.style.background = C.surface}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -227,7 +227,7 @@ export function LoginPage() {
                   disabled={!!oauthLoading}
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                    padding: '10px 16px', borderRadius: 8, border: '1px solid #1E1E2E',
+                    padding: '10px 16px', borderRadius: 8, border: `1px solid ${C.border}`,
                     background: '#000', cursor: 'pointer', fontSize: 14, fontWeight: 500,
                     color: '#fff', fontFamily: F.sans, transition: 'opacity 0.15s',
                     opacity: oauthLoading === 'google' ? 0.5 : 1,
@@ -242,25 +242,25 @@ export function LoginPage() {
 
               {/* Divider */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                <div style={{ flex: 1, height: 1, background: '#1E1E2E' }} />
-                <span style={{ fontSize: 12, color: '#4A4A5A', fontFamily: F.sans }}>or</span>
-                <div style={{ flex: 1, height: 1, background: '#1E1E2E' }} />
+                <div style={{ flex: 1, height: 1, background: C.border }} />
+                <span style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>or</span>
+                <div style={{ flex: 1, height: 1, background: C.border }} />
               </div>
             </>
           )}
 
-          {err && (
-            <div style={{
-              padding: '9px 12px', borderRadius: 8, fontSize: 12, marginBottom: 14,
-              background: isSuccess ? 'rgba(0,229,160,0.1)' : 'rgba(255,71,87,0.1)',
-              border: `1px solid ${isSuccess ? 'rgba(0,229,160,0.3)' : 'rgba(255,71,87,0.3)'}`,
-              color: isSuccess ? '#00E5A0' : '#FF4757',
-            }}>{err}</div>
+          {(err || notice) && (
+            <div role={err ? 'alert' : 'status'} style={{
+              padding: '9px 12px', borderRadius: 8, fontSize: 13, marginBottom: 14,
+              background: err ? C.redSoft : C.greenSoft,
+              border: `1px solid ${err ? C.redBorder : C.greenBorder}`,
+              color: err ? '#b91c1c' : '#047857',
+            }}>{err || notice}</div>
           )}
 
           {activeMode === 'signup' && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#8A8A9A', fontFamily: F.sans, marginBottom: 6 }}>
+              <div style={{ fontSize: 12, fontWeight: 500, color: C.textSub, fontFamily: F.sans, marginBottom: 6 }}>
                 I'm signing up to
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -275,9 +275,9 @@ export function LoginPage() {
                     style={{
                       flex: 1, padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
                       fontSize: 13, fontWeight: 500, fontFamily: F.sans, textAlign: 'center',
-                      border: `1px solid ${intent === o.id ? '#7B2FFF' : '#1E1E2E'}`,
-                      background: intent === o.id ? 'rgba(123,47,255,0.12)' : 'rgba(255,255,255,0.04)',
-                      color: intent === o.id ? '#7B2FFF' : '#8A8A9A',
+                      border: `1px solid ${intent === o.id ? C.purple : C.border}`,
+                      background: intent === o.id ? C.purpleSoft : C.surface,
+                      color: intent === o.id ? C.purple : C.textSub,
                       transition: 'all 0.15s',
                     }}
                   >
@@ -302,7 +302,7 @@ export function LoginPage() {
 
           {activeMode === 'signin' && (
             <div style={{ marginTop: -6, marginBottom: 16, textAlign: 'right' }}>
-              <button type="button" onClick={() => { setMode('forgot'); setErr(''); }} style={linkBtn('#8A8A9A')}>
+              <button type="button" onClick={() => { setMode('forgot'); setErr(''); setNotice(''); }} style={linkBtn(C.textSub)}>
                 Forgot password?
               </button>
             </div>
@@ -317,13 +317,13 @@ export function LoginPage() {
                 type="checkbox"
                 checked={tosChecked}
                 onChange={e => setTosChecked(e.target.checked)}
-                style={{ marginTop: 2, accentColor: '#7B2FFF', flexShrink: 0 }}
+                style={{ marginTop: 2, accentColor: C.purple, flexShrink: 0 }}
               />
-              <span style={{ fontSize: 12, color: '#8A8A9A', fontFamily: F.sans, lineHeight: 1.5 }}>
+              <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5 }}>
                 I agree to the{' '}
-                <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#7B2FFF' }}>Terms of Service</a>
+                <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: C.purple }}>Terms of Service</a>
                 {' '}and{' '}
-                <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#7B2FFF' }}>Privacy Policy</a>
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: C.purple }}>Privacy Policy</a>
               </span>
             </label>
           )}
@@ -333,7 +333,7 @@ export function LoginPage() {
             disabled={loading}
             style={{
               width: '100%', padding: '12px 20px', borderRadius: 8,
-              background: loading ? '#2a2a3a' : 'linear-gradient(135deg, #B79CFF, #7B2FFF)',
+              background: loading ? C.borderDark : 'linear-gradient(135deg, #B79CFF, #7B2FFF)',
               color: '#fff', border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
               fontSize: 14, fontWeight: 600, fontFamily: F.sans,
               transition: 'opacity 0.15s', opacity: loading ? 0.6 : 1,
@@ -350,25 +350,25 @@ export function LoginPage() {
               disabled={loading || demoLoading}
               style={{
                 width: '100%', padding: '10px 20px', borderRadius: 8, marginTop: 10,
-                background: 'transparent', border: '1px solid #1E1E2E',
-                color: '#8A8A9A', cursor: demoLoading ? 'not-allowed' : 'pointer',
+                background: 'transparent', border: `1px solid ${C.border}`,
+                color: C.textSub, cursor: demoLoading ? 'not-allowed' : 'pointer',
                 fontSize: 13, fontWeight: 500, fontFamily: F.sans,
                 transition: 'border-color 0.15s, color 0.15s',
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#7B2FFF'; e.currentTarget.style.color = '#fff'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1E1E2E'; e.currentTarget.style.color = '#8A8A9A'; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = C.purple; e.currentTarget.style.color = C.text; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textSub; }}
             >
               {demoLoading ? 'Signing in…' : '▶ Try Demo'}
             </button>
           )}
 
           {(activeMode === 'signin' || activeMode === 'signup') && (
-            <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12, color: '#8A8A9A', fontFamily: F.sans }}>
+            <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12, color: C.textSub, fontFamily: F.sans }}>
               {activeMode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
               <button
                 type="button"
-                onClick={() => { setMode(activeMode === 'signin' ? 'signup' : 'signin'); setErr(''); setTosChecked(false); }}
-                style={{ ...linkBtn('#7B2FFF'), fontWeight: 500 }}
+                onClick={() => { setMode(activeMode === 'signin' ? 'signup' : 'signin'); setErr(''); setNotice(''); setTosChecked(false); }}
+                style={{ ...linkBtn(C.purple), fontWeight: 500 }}
               >
                 {activeMode === 'signin' ? 'Sign up' : 'Sign in'}
               </button>
@@ -376,8 +376,8 @@ export function LoginPage() {
           )}
 
           {activeMode === 'forgot' && (
-            <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12, color: '#8A8A9A', fontFamily: F.sans }}>
-              <button type="button" onClick={() => { setMode('signin'); setErr(''); }} style={{ ...linkBtn('#7B2FFF'), fontWeight: 500 }}>
+            <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12, color: C.textSub, fontFamily: F.sans }}>
+              <button type="button" onClick={() => { setMode('signin'); setErr(''); setNotice(''); }} style={{ ...linkBtn(C.purple), fontWeight: 500 }}>
                 Back to sign in
               </button>
             </div>

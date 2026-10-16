@@ -11,15 +11,15 @@ export function applyUtmPrefill(prev, label) {
 
 const ROLE_COPY = {
   operator: {
-    eyebrow: 'Early operator access',
-    sub: "We're onboarding a first group of screen operators before public launch. Early operators get priority placement and hands-on onboarding support.",
+    eyebrow: 'Screens outside Toronto or Vancouver?',
+    sub: "We're live in Toronto and Vancouver and adding cities as operators join. Tell us where your screens are and we'll reach out when we launch there.",
     company: 'Company or venue name',
     companyPlaceholder: 'Name of your business or network',
     submit: 'Join the operator waitlist',
   },
   advertiser: {
-    eyebrow: 'Early advertiser access',
-    sub: "We're lining up a first group of local advertisers for launch. Early advertisers get first pick of screens in their neighbourhood and help setting up their first campaign.",
+    eyebrow: 'Advertising outside Toronto or Vancouver?',
+    sub: "We're live in Toronto and Vancouver and adding cities as screens come online. Tell us where you want to advertise and we'll reach out when screens open up there.",
     company: 'Business name',
     companyPlaceholder: 'The business you want to advertise',
     submit: 'Join the advertiser waitlist',
@@ -75,7 +75,7 @@ export function CtaBand({ role: roleProp, onRoleChange }) {
     <section className="sec dark" id="waitlist-form" ref={ref}>
       <div className={`inner rv ${on ? 'on' : ''}`} style={{ textAlign: 'center' }}>
         <div className="eyebrow">{copy.eyebrow}</div>
-        <h2 className="sec-h">Launching in Toronto and Vancouver</h2>
+        <h2 className="sec-h">Get notified when we reach your city</h2>
         <p className="sec-sub" style={{ margin: '14px auto 0' }}>{copy.sub}</p>
 
         <div className="form-card">
