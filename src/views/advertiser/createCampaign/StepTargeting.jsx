@@ -15,6 +15,7 @@ import { ScreenMap } from './ScreenMap.jsx';
 import { TopScreensInsight } from './TopScreensInsight.jsx';
 import { SavedAudiencesBar } from './SavedAudiencesBar.jsx';
 import { useT } from '../../../i18n/useT.js';
+import { Btn } from '../../../components/primitives/Btn.jsx';
 
 export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount, allScreens, screensLoading = false, onPrevCampaigns, existingCampaign = null, pastCampaignIds = [] }) {
   const { t, tx, regionName } = useT();
@@ -96,12 +97,9 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
 
         {onPrevCampaigns && (
           <div style={{ marginBottom: 20 }}>
-            <button onClick={onPrevCampaigns} style={{ background: 'none', border: 'none', fontSize: T.sm, color: C.purple, cursor: 'pointer', fontFamily: F.sans, padding: 0, transition: 'opacity 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = '0.75'; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-            >
+            <Btn variant="unstyled" onClick={onPrevCampaigns} style={{ fontSize: T.sm, color: C.purple, fontFamily: F.sans, transition: 'opacity 0.15s' }} hoverStyle={{ opacity: '0.75' }}>
               {t('create.targeting.fromPrevious')}
-            </button>
+            </Btn>
           </div>
         )}
 

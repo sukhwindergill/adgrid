@@ -13,6 +13,7 @@ import { useAuth } from '../../../context/AuthContext.jsx';
 import { useAdvertiserScreenFavorites } from '../../../hooks/useAdvertiserScreenFavorites.js';
 import { useAdvertiserRecentScreens } from '../../../hooks/useAdvertiserRecentScreens.js';
 import { useT } from '../../../i18n/useT.js';
+import { Btn } from '../../../components/primitives/Btn.jsx';
 
 const BLANK_CREATIVE = makeBlankCreative;
 
@@ -116,21 +117,9 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
   return (
     <div style={{ maxWidth: 760, margin: '0 auto' }}>
       <Card style={{ padding: 28 }}>
-        <button
-          onClick={() => setShowFilters(f => !f)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '6px 12px', borderRadius: 8, border: `1px solid ${C.border}`,
-            background: showFilters ? C.purpleSoft : C.surface,
-            color: showFilters ? C.purple : C.textSub,
-            fontSize: T.sm, fontWeight: 500, fontFamily: F.sans,
-            cursor: 'pointer', transition: 'all 0.15s', marginBottom: 12,
-          }}
-          onMouseEnter={e => { if (!showFilters) e.currentTarget.style.background = C.surfaceAlt; }}
-          onMouseLeave={e => { if (!showFilters) e.currentTarget.style.background = C.surface; }}
-        >
+        <Btn variant="unstyled" onClick={() => setShowFilters(f => !f)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: showFilters ? C.purpleSoft : C.surface, color: showFilters ? C.purple : C.textSub, fontSize: T.sm, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s', marginBottom: 12 }} hoverStyle={!showFilters ? { background: C.surfaceAlt } : undefined}>
           {t('create.creativeStep.refine')} {showFilters ? '▲' : '▼'}
-        </button>
+        </Btn>
         {showFilters && (
           <div style={{ marginBottom: 16, padding: 16, background: C.surfaceAlt, borderRadius: 10, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
@@ -158,14 +147,8 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={selectAll} style={{ background: 'none', border: 'none', fontSize: T.sm, color: C.purple, cursor: 'pointer', fontFamily: F.sans, transition: 'opacity 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = '0.75'; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-            >{t('create.creativeStep.selectAll')}</button>
-            <button onClick={deselectAll} style={{ ...TX.helperMuted, background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-              onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-            >{t('create.creativeStep.deselectAll')}</button>
+            <Btn variant="unstyled" onClick={selectAll} style={{ fontSize: T.sm, color: C.purple, fontFamily: F.sans, transition: 'opacity 0.15s' }} hoverStyle={{ opacity: '0.75' }}>{t('create.creativeStep.selectAll')}</Btn>
+            <Btn variant="unstyled" onClick={deselectAll} style={{ ...TX.helperMuted, transition: 'color 0.15s' }} hoverStyle={{ color: C.text }}>{t('create.creativeStep.deselectAll')}</Btn>
           </div>
         </div>
 
@@ -233,15 +216,10 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
         ))}
 
         {!houseAdMode && (
-          <button type="button" onClick={addCreative} style={{
-            background: 'none', border: `1px dashed ${C.border}`, borderRadius: 10, padding: '12px 16px',
-            fontSize: T.base, color: C.purple, cursor: 'pointer', fontFamily: F.sans, width: '100%', transition: 'background 0.15s, border-color 0.15s',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = C.purpleSoft; e.currentTarget.style.borderColor = C.purple; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.borderColor = C.border; }}
-          >
+          <Btn variant="unstyled" type="button" onClick={addCreative} style={{ border: `1px dashed ${C.border}`, borderRadius: 10, padding: '12px 16px', fontSize: T.base, color: C.purple, fontFamily: F.sans, width: '100%', transition: 'background 0.15s, border-color 0.15s' }}
+            hoverStyle={{ background: C.purpleSoft, border: `1px dashed ${C.purple}` }}>
             {t('create.creativeStep.addCreative')}
-          </button>
+          </Btn>
         )}
       </Card>
     </div>

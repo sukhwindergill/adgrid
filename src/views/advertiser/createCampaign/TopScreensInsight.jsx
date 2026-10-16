@@ -9,6 +9,7 @@ import { C, F, T } from '../../../design/tokens.js';
 import { VENUE_TAXONOMY } from '../../../lib/venueTypes.js';
 import { topPerformingProfile } from '../../../lib/screenRecommendation.js';
 import { useT } from '../../../i18n/useT.js';
+import { Btn } from '../../../components/primitives/Btn.jsx';
 
 export function TopScreensInsight({ pastCampaignIds, allScreens, currentVenueFilter, currentEnvFilter, onApply }) {
   const { t, tx } = useT();
@@ -46,19 +47,8 @@ export function TopScreensInsight({ pastCampaignIds, allScreens, currentVenueFil
         {tx('create.insight.body', { b: chunk => <strong>{chunk}</strong>, profile: `${venueLabel} · ${envLabel}` })}
       </span>
       <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-        <button onClick={() => onApply(profile)} style={{
-          background: C.purple, border: 'none', borderRadius: 6, padding: '5px 12px',
-          fontSize: T.sm, fontWeight: 600, color: C.white, fontFamily: F.sans, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'opacity 0.15s',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
-          onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-        >{t('create.insight.apply')}</button>
-        <button onClick={() => setDismissed(true)} aria-label={t('common.dismiss')} style={{
-          background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted, fontSize: T.md, padding: '0 4px', transition: 'color 0.15s',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-          onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-        >×</button>
+        <Btn onClick={() => onApply(profile)} style={{ borderRadius: 6, padding: '5px 12px', fontSize: T.sm, fontWeight: 600, whiteSpace: 'nowrap' }}>{t('create.insight.apply')}</Btn>
+        <Btn variant="unstyled" onClick={() => setDismissed(true)} aria-label={t('common.dismiss')} style={{ color: C.textMuted, fontSize: T.md, padding: '0 4px', transition: 'color 0.15s' }} hoverStyle={{ color: C.text }}>×</Btn>
       </div>
     </div>
   );

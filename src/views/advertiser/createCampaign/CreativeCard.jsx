@@ -16,6 +16,7 @@ import { CATEGORIES } from '../../../lib/data.js';
 import { QR_CORNER_PRESETS, clampQrCenter } from '../../../lib/creativeQrPosition.js';
 import { MediaUpload } from './MediaUpload.jsx';
 import { useT } from '../../../i18n/useT.js';
+import { Btn } from '../../../components/primitives/Btn.jsx';
 
 const FRAME_ASPECT = 16 / 9;
 
@@ -153,12 +154,9 @@ export function CreativeCard({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <Inp label="" placeholder={t('create.creative.labelPlaceholder')} value={creative.label} onChange={e => setField('label', e.target.value)} />
         {onRemove && (
-          <button type="button" onClick={onRemove} style={{ ...TX.error, background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, padding: '4px 10px', cursor: 'pointer', marginLeft: 12, flexShrink: 0, transition: 'background 0.15s' }}
-            onMouseEnter={e => { e.currentTarget.style.background = C.redSoft; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
-          >
+          <Btn variant="secondary" type="button" onClick={onRemove} style={{ ...TX.error, background: 'none', borderRadius: 6, padding: '4px 10px', marginLeft: 12, flexShrink: 0, transition: 'background 0.15s', boxShadow: 'none', fontWeight: 400 }} hoverStyle={{ background: C.redSoft }}>
             {t('common.remove')}
-          </button>
+          </Btn>
         )}
       </div>
 
@@ -236,16 +234,9 @@ export function CreativeCard({
             <>
               <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                 {Object.keys(QR_CORNER_PRESETS).map(corner => (
-                  <button key={corner} type="button" onClick={() => snapQrTo(corner)} style={{
-                    flex: 1, padding: '6px 4px', borderRadius: 6, border: `1px solid ${C.border}`,
-                    background: C.surface, color: C.textSub, fontSize: T.xs, fontFamily: F.sans, cursor: 'pointer',
-                    transition: 'background 0.15s',
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
-                  >
+                  <Btn variant="secondary" key={corner} type="button" onClick={() => snapQrTo(corner)} style={{ flex: 1, padding: '6px 4px', borderRadius: 6, color: C.textSub, fontSize: T.xs, transition: 'background 0.15s', boxShadow: 'none', fontWeight: 400, justifyContent: 'center' }}>
                     {t(`create.creative.corner.${corner}`)}
-                  </button>
+                  </Btn>
                 ))}
               </div>
               <div style={{ ...TX.caption, marginTop: 6 }}>
@@ -267,12 +258,9 @@ export function CreativeCard({
                 screens: t('create.creativeStep.screenWord', { count: poolScreens.length }),
               })}
             </div>
-            <button type="button" onClick={onSplitByType} style={{ background: 'none', border: 'none', fontSize: T.sm, color: C.purple, cursor: 'pointer', fontFamily: F.sans, padding: 0, textDecoration: 'underline', transition: 'opacity 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = '0.75'; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-            >
+            <Btn variant="unstyled" type="button" onClick={onSplitByType} style={{ fontSize: T.sm, color: C.purple, fontFamily: F.sans, textDecoration: 'underline', transition: 'opacity 0.15s' }} hoverStyle={{ opacity: '0.75' }}>
               {t('create.creative.split')}
-            </button>
+            </Btn>
           </div>
           {overlapsAnother && (
             <div style={{ marginBottom: 10 }}>

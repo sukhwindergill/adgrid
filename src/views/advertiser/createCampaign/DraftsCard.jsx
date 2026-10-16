@@ -27,24 +27,16 @@ export function DraftsCard({ drafts, onResume, onDelete }) {
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
             padding: '10px 14px', background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8,
           }}>
-            <button onClick={() => onResume(d.id)} style={{
-              background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', flex: 1, padding: 0,
-            }}>
+            <Btn variant="unstyled" onClick={() => onResume(d.id)} style={{ textAlign: 'left', flex: 1 }}>
               <div style={TX.strong}>{d.name}</div>
               <div style={{ ...TX.caption, marginTop: 2 }}>
                 {t('create.drafts.saved', { step: t(`create.steps.${STEP_KEYS[d.step] || STEP_KEYS[0]}`), ago: timeAgo(d.updated_at) })}
               </div>
-            </button>
+            </Btn>
             <Btn variant="secondary" size="sm" onClick={() => onResume(d.id)}>{t('create.drafts.resume')}</Btn>
-            <button
-              onClick={() => onDelete(d.id)}
-              aria-label={t('create.drafts.deleteLabel', { name: d.name })}
-              style={{ ...TX.helperMuted, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 4px', transition: 'color 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.color = C.red; }}
-              onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-            >
+            <Btn variant="unstyled" onClick={() => onDelete(d.id)} aria-label={t('create.drafts.deleteLabel', { name: d.name })} style={{ ...TX.helperMuted, padding: '6px 4px', transition: 'color 0.15s' }} hoverStyle={{ color: C.redText }}>
               {t('common.delete')}
-            </button>
+            </Btn>
           </div>
         ))}
       </div>

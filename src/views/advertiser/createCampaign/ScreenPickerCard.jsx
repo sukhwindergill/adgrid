@@ -1,10 +1,11 @@
 // src/views/advertiser/createCampaign/ScreenPickerCard.jsx
 import { useState } from 'react';
-import { C, F, T } from '../../../design/tokens.js';
+import { C, F, T, alpha } from '../../../design/tokens.js';
 import { TX } from '../../../design/text.js';
 import { AdRenderPreviewModal } from '../../../components/shared/AdRenderPreviewModal.jsx';
 import { IconEye } from '../../../components/icons.jsx';
 import { useT } from '../../../i18n/useT.js';
+import { Btn } from '../../../components/primitives/Btn.jsx';
 
 export function ScreenPickerCard({ screen, selected, onToggle, creative, isFavorited, onToggleFavorite }) {
   const { t, tOr, formatNumber } = useT();
@@ -30,40 +31,17 @@ export function ScreenPickerCard({ screen, selected, onToggle, creative, isFavor
       }}
     >
       {onToggleFavorite && (
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onToggleFavorite(screen.id); }}
-          title={isFavorited ? t('create.picker.unfavorite') : t('create.picker.favorite')}
-          style={{
-            position: 'absolute', top: 6, left: 6, zIndex: 1,
-            width: 24, height: 24, borderRadius: '50%', border: 'none',
-            background: 'rgba(0,0,0,0.55)', color: isFavorited ? '#fbbf24' : C.white,
-            fontSize: T.base, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >
+        <Btn variant="unstyled" type="button" onClick={(e) => { e.stopPropagation(); onToggleFavorite(screen.id); }} title={isFavorited ? t('create.picker.unfavorite') : t('create.picker.favorite')} style={{ position: 'absolute', top: 6, left: 6, zIndex: 1, width: 24, height: 24, borderRadius: '50%', background: alpha(C.black, 0.55), color: isFavorited ? C.amberStrong : C.white, fontSize: T.base, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {isFavorited ? '★' : '☆'}
-        </button>
+        </Btn>
       )}
       {firstPhoto && (
         <div style={{ position: 'relative' }}>
           <img src={firstPhoto} alt={screen.name} style={{ width: '100%', height: 72, objectFit: 'cover', display: 'block' }} />
           {canPreview && (
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); if (hasCreativeMedia) setShowPreview(true); }}
-              disabled={!hasCreativeMedia}
-              title={hasCreativeMedia ? t('create.picker.previewOn') : t('create.picker.previewNeedsCreative')}
-              style={{
-                position: 'absolute', bottom: 6, right: 6,
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                padding: '4px 9px', borderRadius: 14, border: 'none',
-                background: hasCreativeMedia ? 'rgba(0,0,0,0.7)' : C.overlay,
-                color: C.white, fontSize: T.xs, fontFamily: F.sans,
-                cursor: hasCreativeMedia ? 'pointer' : 'not-allowed',
-              }}
-            >
+            <Btn variant="unstyled" type="button" onClick={(e) => { e.stopPropagation(); if (hasCreativeMedia) setShowPreview(true); }} disabled={!hasCreativeMedia} title={hasCreativeMedia ? t('create.picker.previewOn') : t('create.picker.previewNeedsCreative')} style={{ position: 'absolute', bottom: 6, right: 6, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 9px', borderRadius: 14, background: hasCreativeMedia ? alpha(C.black, 0.7) : C.overlay, color: C.white, fontSize: T.xs, fontFamily: F.sans }}>
               <IconEye size={12} /> {t('common.preview')}
-            </button>
+            </Btn>
           )}
         </div>
       )}

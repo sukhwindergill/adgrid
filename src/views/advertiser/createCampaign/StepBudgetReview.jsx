@@ -221,15 +221,10 @@ export function StepBudgetReview({
                 { value: 'partial', title: t('create.budget.partialTitle'), desc: t('create.budget.partialDesc') },
                 { value: 'all', title: t('create.budget.allTitle'), desc: t('create.budget.allDesc') },
               ].map(opt => (
-                <button key={opt.value} type="button" onClick={() => setField('start_when', opt.value)} style={{
-                  padding: '14px 16px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
-                  border: `2px solid ${form.start_when === opt.value ? C.purple : C.border}`,
-                  background: form.start_when === opt.value ? C.purpleSoft : C.surface,
-                  transition: 'all 0.15s',
-                }}>
+                <Btn variant="unstyled" key={opt.value} type="button" onClick={() => setField('start_when', opt.value)} style={{ padding: '14px 16px', borderRadius: 10, textAlign: 'left', border: `2px solid ${form.start_when === opt.value ? C.purple : C.border}`, background: form.start_when === opt.value ? C.purpleSoft : C.surface, transition: 'all 0.15s' }}>
                   <div style={{ ...TX.strong, marginBottom: 2 }}>{opt.title}</div>
                   <div style={{ ...TX.helper, lineHeight: 1.4 }}>{opt.desc}</div>
-                </button>
+                </Btn>
               ))}
             </div>
           </div>

@@ -1,6 +1,7 @@
 // src/views/advertiser/createCampaign/LocationSearch.jsx
 import { useState, useRef, useEffect } from 'react';
 import { C, F, T, SH } from '../../../design/tokens.js';
+import { Inp } from '../../../components/primitives/Inp.jsx';
 import { TX } from '../../../design/text.js';
 import { useT } from '../../../i18n/useT.js';
 
@@ -15,11 +16,11 @@ function describe(entry, t, regionName) {
 }
 
 const BADGE_COLOR = {
-  country: { bg: C.purpleSoft ?? '#f3e8ff', fg: C.purple ?? C.purple },
-  city: { bg: C.blueSoft ?? '#e0f2fe', fg: C.blue ?? '#0284c7' },
+  country: { bg: C.purpleSoft, fg: C.purple },
+  city: { bg: C.blueSoft, fg: C.blueText },
 };
 const badgeColor = kind => BADGE_COLOR[kind] ?? BADGE_COLOR.city; // any State/Province/Region word falls back to a neutral tone below
-const BADGE_DEFAULT = { bg: C.surfaceAlt ?? '#f1f5f9', fg: C.textMid ?? '#475569' };
+const BADGE_DEFAULT = { bg: C.surfaceAlt, fg: C.textMid };
 
 // Single consolidated typeahead over country + state + city, all in one
 // dropdown, each row tagged with which level it resolves to (Country /
@@ -79,7 +80,7 @@ export function LocationSearch({ options, value, onSelect, placeholder, loading 
 
   return (
     <div ref={rootRef} style={{ position: 'relative' }}>
-      <input
+      <Inp
         type="text"
         value={query}
         disabled={loading}
@@ -88,13 +89,7 @@ export function LocationSearch({ options, value, onSelect, placeholder, loading 
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         onKeyDown={onKeyDown}
-        style={{
-          padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8,
-          fontSize: T.base, fontFamily: F.sans, color: C.text, background: C.surface,
-          outline: 'none', width: '100%', boxSizing: 'border-box', transition: 'border-color 0.15s',
-        }}
-        onFocusCapture={e => { e.currentTarget.style.borderColor = C.purple; }}
-        onBlurCapture={e => { e.currentTarget.style.borderColor = C.border; }}
+        style={{ boxSizing: 'border-box', transition: 'border-color 0.15s' }}
       />
       {open && q && (
         <div style={{
