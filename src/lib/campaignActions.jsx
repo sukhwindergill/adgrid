@@ -88,7 +88,7 @@ export function ApproveBtn({ campaign, setCampaigns, onSuccess }) {
       <Btn variant="success" size="sm" onClick={approve} disabled={loading}>
         {loading ? '…' : '✓ Approve'}
       </Btn>
-      {err && <div style={{ fontSize: 10, color: C.red, fontFamily: F.sans, marginTop: 3, maxWidth: 110 }}>{err}</div>}
+      {err && <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, marginTop: 3, maxWidth: 110 }}>{err}</div>}
     </div>
   );
 }

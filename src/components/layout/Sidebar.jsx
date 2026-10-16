@@ -1,37 +1,24 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T, SH, alpha } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { navFor, highlightedNavId } from './navConfig.js';
+import { MobileTabBar } from './MobileTabBar.jsx';
+import { ICONS } from './navIcons.jsx';
+import { Btn } from '../primitives/Btn.jsx';
+import { Hover } from '../primitives/Hover.jsx';
+import { CountBadge } from '../primitives/CountBadge.jsx';
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
-
-const ICONS = {
-  overview:     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
-  campaigns:    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6M9 16h4"/></svg>,
-  analytics:    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>,
-  screens:      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>,
-  revenue:      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.5 9a2.5 2.5 0 00-5 0c0 5 5 3 5 8a2.5 2.5 0 01-5 0M12 7v1m0 8v1"/></svg>,
-  audience:     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
-  approval:     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
-  advertisers:  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>,
-  signals:      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
-  rules:        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01"/></svg>,
-  integrations: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>,
-  display:      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M17 2l-5 5-5-5"/></svg>,
-  billing:      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>,
-  scans:        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9V5a2 2 0 012-2h4M3 15v4a2 2 0 002 2h4M15 3h4a2 2 0 012 2v4M15 21h4a2 2 0 002-2v-4M9 9h6v6H9z"/></svg>,
-  settings:     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,
-  marketplace:  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l1-5h16l1 5M3 9h18M3 9v9a1 1 0 001 1h16a1 1 0 001-1V9"/></svg>,
-  user:         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>,
-  operatorMode:   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>,
-  advertiserMode: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.22 1.18 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.56-.56a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>,
-  chevronLeft:  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>,
-  chevronRight: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>,
-};
+const MODE_ACTIVE_BG = `linear-gradient(135deg, ${alpha(C.purple, 0.25)}, ${alpha(C.purpleVivid, 0.15)})`;
+const NAV_ACTIVE_BG = `linear-gradient(135deg, ${alpha(C.purple, 0.12)}, ${alpha(C.purpleVivid, 0.08)})`;
+const NAV_HOVER_BG = alpha(C.purple, 0.06);
+const SIGN_OUT_HOVER = { background: alpha(C.red, 0.1), color: C.redText };
+const legalLink = { color: C.textMuted, textDecoration: 'none' };
 
 // ─── ModeSwitcher ─────────────────────────────────────────────────────────────
 
-function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
+export function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
   const modes = [
     { id: 'operator',   label: 'Operator' },
     { id: 'advertiser', label: 'Advertiser' },
@@ -41,26 +28,25 @@ function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 8 }}>
         {modes.map(m => (
-          <button
+          <Btn
+            variant="unstyled"
             key={m.id}
             title={m.label}
             aria-label={`Switch to ${m.label} mode`}
             aria-pressed={activeMode === m.id}
             onClick={() => onSwitch(m.id)}
             style={{
-              width: '100%', padding: '6px 0', border: 'none', borderRadius: 6, cursor: 'pointer',
-              background: activeMode === m.id
-                ? 'linear-gradient(135deg, rgba(124,58,237,0.25), rgba(168,85,247,0.15))'
-                : 'transparent',
-              color: activeMode === m.id ? '#a855f7' : '#555',
-              fontSize: 9, fontWeight: 700, fontFamily: F.sans, letterSpacing: '0.04em',
+              width: '100%', padding: '6px 0', borderRadius: 6,
+              background: activeMode === m.id ? MODE_ACTIVE_BG : 'transparent',
+              color: activeMode === m.id ? C.purple : C.textMuted,
+              fontSize: T.xs, fontWeight: 700, fontFamily: F.sans, letterSpacing: '0.04em',
               transition: 'all 0.15s',
             }}
           >
             <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {m.id === 'operator' ? ICONS.operatorMode : ICONS.advertiserMode}
             </span>
-          </button>
+          </Btn>
         ))}
       </div>
     );
@@ -68,84 +54,46 @@ function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
 
   return (
     <div style={{
-      display: 'flex', background: 'rgba(0,0,0,0.2)', borderRadius: 8,
+      display: 'flex', background: C.surfaceAlt, borderRadius: 8,
       padding: 3, gap: 2, margin: '0 0 10px 0',
-      border: '1px solid rgba(255,255,255,0.06)',
+      border: `1px solid ${C.border}`,
     }}>
       {modes.map(m => (
-        <button
+        <Btn
+          variant="unstyled"
           key={m.id}
+          aria-pressed={activeMode === m.id}
           onClick={() => onSwitch(m.id)}
           style={{
-            flex: 1, padding: '7px 0', borderRadius: 6, border: 'none', cursor: 'pointer',
-            fontSize: 11, fontWeight: activeMode === m.id ? 600 : 500, fontFamily: F.sans,
+            flex: 1, padding: '7px 0', borderRadius: 6,
+            fontSize: T.sm, fontWeight: activeMode === m.id ? 600 : 500, fontFamily: F.sans,
             transition: 'all 0.15s',
-            background: activeMode === m.id
-              ? 'linear-gradient(135deg, rgba(124,58,237,0.3), rgba(168,85,247,0.2))'
-              : 'transparent',
-            color: activeMode === m.id ? '#a855f7' : '#555',
-            boxShadow: activeMode === m.id ? '0 1px 4px rgba(124,58,237,0.2)' : 'none',
+            background: activeMode === m.id ? C.surface : 'transparent',
+            color: activeMode === m.id ? C.purple : C.textSub,
+            boxShadow: activeMode === m.id ? SH.sm : 'none',
           }}
         >
           {m.label}
-        </button>
+        </Btn>
       ))}
     </div>
   );
 }
 
-// ─── Nav definitions ──────────────────────────────────────────────────────────
-
-const OP_PRIMARY = [
-  { id: 'overview',  label: 'Dashboard',  icon: 'overview' },
-  { id: 'campaigns', label: 'Campaigns',  icon: 'campaigns' },
-  { id: 'analytics', label: 'Analytics',  icon: 'analytics' },
-  { id: 'screens',   label: 'Screens',    icon: 'screens' },
-  { id: 'marketplace-listings', label: 'Marketplace', icon: 'marketplace' },
-];
-
-const OP_SECONDARY = [
-  { id: 'revenue',      label: 'Revenue',         icon: 'revenue' },
-  { id: 'audience',     label: 'Audience & Scans', icon: 'audience' },
-  { id: 'approval',     label: 'Approval Queue',   icon: 'approval', badge: true },
-  { id: 'advertisers',  label: 'Advertisers',      icon: 'advertisers' },
-  { id: 'signals',      label: 'Live Signals',     icon: 'signals' },
-  { id: 'rules',        label: 'Alerts & Rules',   icon: 'rules' },
-  { id: 'integrations', label: 'Integrations',     icon: 'integrations' },
-  { id: 'display',      label: 'Display Manager',  icon: 'display' },
-  { id: 'op-settings',  label: 'Settings',         icon: 'settings' },
-];
-
-const ADV_PRIMARY = [
-  { id: 'adv-overview',  label: 'Dashboard',  icon: 'overview' },
-  { id: 'adv-campaigns', label: 'Campaigns',  icon: 'campaigns' },
-  { id: 'adv-analytics', label: 'Analytics',  icon: 'analytics' },
-  { id: 'adv-marketplace', label: 'Marketplace', icon: 'marketplace' },
-];
-
-const ADV_SECONDARY = [
-  { id: 'adv-audience',     label: 'Scans & Data',  icon: 'scans' },
-  { id: 'adv-rules',        label: 'Alerts & Rules', icon: 'rules' },
-  { id: 'adv-billing',      label: 'Billing',        icon: 'billing' },
-  { id: 'adv-settings',     label: 'Settings',       icon: 'settings' },
-  { id: 'adv-integrations', label: 'Integrations',   icon: 'integrations' },
-];
-
 // ─── NavItem ─────────────────────────────────────────────────────────────────
 
 function NavItem({ item, active, collapsed, pendingCount, onClick }) {
-  const [hovered, setHovered] = useState(false);
-  const isActive = active === item.id;
+  const isActive = highlightedNavId(active) === item.id;
   const showBadge = item.badge && pendingCount > 0;
 
   return (
-    <button
+    <Btn
+      variant="unstyled"
       title={collapsed ? item.label : undefined}
       aria-label={item.label}
       aria-current={isActive ? 'page' : undefined}
       onClick={() => onClick(item.id)}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      hoverStyle={isActive ? undefined : { background: NAV_HOVER_BG, color: C.text }}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -153,17 +101,11 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
         width: '100%',
         padding: collapsed ? '10px 0' : '9px 12px',
         justifyContent: collapsed ? 'center' : 'flex-start',
-        background: isActive
-          ? 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.08))'
-          : hovered
-          ? 'rgba(124,58,237,0.06)'
-          : 'transparent',
-        border: 'none',
+        background: isActive ? NAV_ACTIVE_BG : 'transparent',
         borderRadius: 8,
-        color: isActive ? C.purple : hovered ? C.text : C.textSub,
-        cursor: 'pointer',
+        color: isActive ? C.purple : C.textSub,
         fontFamily: F.sans,
-        fontSize: 13,
+        fontSize: T.base,
         fontWeight: isActive ? 600 : 400,
         transition: 'all 0.15s',
         position: 'relative',
@@ -193,25 +135,7 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
         {ICONS[item.icon]}
         {/* Badge on icon when collapsed */}
         {showBadge && collapsed && (
-          <span style={{
-            position: 'absolute',
-            top: -4,
-            right: -4,
-            minWidth: 14,
-            height: 14,
-            borderRadius: 7,
-            background: '#f59e0b',
-            color: '#fff',
-            fontSize: 9,
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '0 3px',
-            fontFamily: F.sans,
-          }}>
-            {pendingCount > 99 ? '99+' : pendingCount}
-          </span>
+          <CountBadge count={pendingCount} size="sm" style={{ position: 'absolute', top: -4, right: -4 }} />
         )}
       </span>
 
@@ -219,28 +143,10 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
         <>
           <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
           {/* Badge on label row when expanded */}
-          {showBadge && (
-            <span style={{
-              minWidth: 18,
-              height: 18,
-              borderRadius: 9,
-              background: '#f59e0b',
-              color: '#fff',
-              fontSize: 10,
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '0 5px',
-              fontFamily: F.sans,
-              flexShrink: 0,
-            }}>
-              {pendingCount > 99 ? '99+' : pendingCount}
-            </span>
-          )}
+          {showBadge && <CountBadge count={pendingCount} size="lg" />}
         </>
       )}
-    </button>
+    </Btn>
   );
 }
 
@@ -249,7 +155,8 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
 export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pendingCount = 0 }) {
   const navigate = useNavigate();
   const setActive = id => navigate('/app/' + id);
-  const { isMobile } = useBreakpoint();
+  const { isMobile, width: viewportWidth } = useBreakpoint();
+  const isPhone = viewportWidth < 768;
   const [collapsedPref, setCollapsedPref] = useState(() => {
     try {
       return localStorage.getItem('sidebar_collapsed') === 'true';
@@ -262,9 +169,6 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
   // they're back on a wider screen.
   const collapsed = isMobile ? true : collapsedPref;
 
-  const [signOutHovered, setSignOutHovered] = useState(false);
-  const [collapseHovered, setCollapseHovered] = useState(false);
-
   const toggle = () => {
     if (isMobile) return;
     const next = !collapsedPref;
@@ -276,11 +180,19 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
     }
   };
 
-  const isAdv     = activeMode === 'advertiser';
-  const primary   = isAdv ? ADV_PRIMARY   : OP_PRIMARY;
-  const secondary = isAdv ? ADV_SECONDARY : OP_SECONDARY;
-
+  const groups = navFor(activeMode);
   const width = collapsed ? 52 : 220;
+
+  // Phones get a bottom tab bar instead of a sidebar: an icon rail with a
+  // dozen look-alike icons was the only nav, and it ate a fifth of the width.
+  if (isPhone) {
+    return (
+      <MobileTabBar
+        active={active} activeMode={activeMode} onModeSwitch={onModeSwitch}
+        onNavigate={setActive} onSignOut={onSignOut} pendingCount={pendingCount}
+      />
+    );
+  }
 
   return (
     <aside style={{
@@ -312,12 +224,12 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
           width: 30,
           height: 30,
           borderRadius: 8,
-          background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+          background: C.gradStrong,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#fff',
-          fontSize: 13,
+          color: C.white,
+          fontSize: T.base,
           fontWeight: 700,
           fontFamily: F.sans,
           flexShrink: 0,
@@ -326,7 +238,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
           <span style={{
             fontFamily: F.sans,
             fontWeight: 700,
-            fontSize: 14,
+            fontSize: T.md,
             letterSpacing: '0.05em',
             color: C.text,
             whiteSpace: 'nowrap',
@@ -339,40 +251,28 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
         {/* Mode switcher */}
         <ModeSwitcher activeMode={activeMode} onSwitch={onModeSwitch} collapsed={collapsed} />
 
-        {/* Primary nav */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {primary.map(item => (
-            <NavItem
-              key={item.id}
-              item={item}
-              active={active}
-              collapsed={collapsed}
-              pendingCount={pendingCount}
-              onClick={setActive}
-            />
-          ))}
-        </div>
-
-        {/* Divider */}
-        <div style={{
-          height: 1,
-          background: C.border,
-          margin: collapsed ? '10px 4px' : '10px 4px',
-        }} />
-
-        {/* Secondary nav */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {secondary.map(item => (
-            <NavItem
-              key={item.id}
-              item={item}
-              active={active}
-              collapsed={collapsed}
-              pendingCount={pendingCount}
-              onClick={setActive}
-            />
-          ))}
-        </div>
+        {groups.map((g, gi) => (
+          <div key={g.group ?? 'top'} role="group" aria-label={g.group ?? 'Home'}>
+            {gi > 0 && (collapsed
+              ? <div style={{ height: 1, background: C.border, margin: '10px 4px' }} />
+              : <div style={{
+                  padding: '14px 12px 6px', fontSize: T.xs, fontWeight: 600, fontFamily: F.sans,
+                  color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em',
+                }}>{g.group}</div>)}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {g.items.map(item => (
+                <NavItem
+                  key={item.id}
+                  item={item}
+                  active={active}
+                  collapsed={collapsed}
+                  pendingCount={pendingCount}
+                  onClick={setActive}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Bottom section */}
@@ -398,12 +298,12 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
               width: 28,
               height: 28,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+              background: C.gradStrong,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#fff',
-              fontSize: 11,
+              color: C.white,
+              fontSize: T.xs,
               fontWeight: 600,
               fontFamily: F.sans,
               flexShrink: 0,
@@ -411,103 +311,89 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
               {(user?.name || user?.email || 'U').slice(0, 2).toUpperCase()}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: F.sans, fontSize: 12, fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontFamily: F.sans, fontSize: T.sm, fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user?.name || 'User'}
               </div>
-              <div style={{ fontFamily: F.sans, fontSize: 10, color: C.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ ...TX.caption, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user?.email}
               </div>
             </div>
-            <button
+            <Btn
+              variant="unstyled"
               title="Sign out"
               onClick={onSignOut}
-              onMouseEnter={() => setSignOutHovered(true)}
-              onMouseLeave={() => setSignOutHovered(false)}
+              hoverStyle={SIGN_OUT_HOVER}
               style={{
-                background: signOutHovered ? 'rgba(239,68,68,0.1)' : 'transparent',
-                border: 'none',
                 borderRadius: 6,
                 padding: '4px 6px',
-                cursor: 'pointer',
-                color: signOutHovered ? C.red : C.textMuted,
+                color: C.textMuted,
                 fontFamily: F.sans,
-                fontSize: 11,
+                fontSize: T.xs,
                 fontWeight: 500,
                 transition: 'all 0.15s',
                 flexShrink: 0,
               }}
             >
               Sign out
-            </button>
+            </Btn>
           </div>
         ) : (
-          <button
+          <Btn
+            variant="unstyled"
             title="Sign out"
+            aria-label="Sign out"
             onClick={onSignOut}
-            onMouseEnter={() => setSignOutHovered(true)}
-            onMouseLeave={() => setSignOutHovered(false)}
+            hoverStyle={SIGN_OUT_HOVER}
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               width: '100%',
               padding: '10px 0',
-              background: signOutHovered ? 'rgba(239,68,68,0.1)' : 'transparent',
-              border: 'none',
               borderRadius: 8,
-              cursor: 'pointer',
-              color: signOutHovered ? C.red : C.textMuted,
+              color: C.textMuted,
               transition: 'all 0.15s',
             }}
           >
             {ICONS.user}
-          </button>
+          </Btn>
         )}
 
         {/* Legal links */}
         {!collapsed && (
           <div style={{
             display: 'flex', gap: 10, padding: '2px 12px 4px',
-            fontSize: 10, fontFamily: F.sans, color: C.textMuted,
+            fontSize: T.xs, fontFamily: F.sans, color: C.textMuted,
           }}>
-            <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: C.textMuted, textDecoration: 'none' }}
-              onMouseEnter={e => e.currentTarget.style.color = C.purple}
-              onMouseLeave={e => e.currentTarget.style.color = C.textMuted}
-            >Terms</a>
-            <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: C.textMuted, textDecoration: 'none' }}
-              onMouseEnter={e => e.currentTarget.style.color = C.purple}
-              onMouseLeave={e => e.currentTarget.style.color = C.textMuted}
-            >Privacy</a>
+            <Hover as="a" href="/terms" target="_blank" rel="noopener noreferrer" style={legalLink} hoverStyle={{ color: C.purple }}>Terms</Hover>
+            <Hover as="a" href="/privacy" target="_blank" rel="noopener noreferrer" style={legalLink} hoverStyle={{ color: C.purple }}>Privacy</Hover>
           </div>
         )}
 
         {/* Collapse toggle — hidden on mobile, where the sidebar is always icon-rail */}
-        {!isMobile && <button
+        {!isMobile && <Btn
+          variant="unstyled"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           onClick={toggle}
-          onMouseEnter={() => setCollapseHovered(true)}
-          onMouseLeave={() => setCollapseHovered(false)}
+          hoverStyle={{ background: NAV_HOVER_BG }}
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: collapsed ? 'center' : 'flex-end',
             width: '100%',
             padding: collapsed ? '10px 0' : '8px 12px',
-            background: collapseHovered ? 'rgba(124,58,237,0.06)' : 'transparent',
-            border: 'none',
             borderRadius: 8,
-            cursor: 'pointer',
             color: C.textSub,
             transition: 'all 0.15s',
             gap: collapsed ? 0 : 6,
           }}
         >
           {!collapsed && (
-            <span style={{ fontFamily: F.sans, fontSize: 11, color: C.textMuted }}>Collapse</span>
+            <span style={TX.caption}>Collapse</span>
           )}
           {collapsed ? ICONS.chevronRight : ICONS.chevronLeft}
-        </button>}
+        </Btn>}
       </div>
     </aside>
   );

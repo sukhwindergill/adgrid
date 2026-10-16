@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { Inp } from '../../components/primitives/Inp.jsx';
@@ -104,37 +105,32 @@ export function AutomationRulesView({ user, ownerSide = 'advertiser', setNav }) 
           padding: '12px 16px', marginBottom: 20, background: C.surfaceAlt, border: `1px solid ${C.border}`,
           borderRadius: 8, fontFamily: F.sans,
         }}>
-          <div style={{ fontSize: 12, color: C.textSub, lineHeight: 1.5 }}>
+          <div style={{ fontSize: T.sm, color: C.textSub, lineHeight: 1.5 }}>
             These are budget, pacing, and delivery alerts. Auto-approving <strong>campaigns</strong> for
             review is a separate setting.
           </div>
-          <button onClick={() => setNav('op-settings')} style={{
-            padding: '6px 14px', borderRadius: 6, border: `1px solid ${C.purple}`,
-            background: 'transparent', color: C.purple, fontSize: 12, fontWeight: 600,
-            cursor: 'pointer', whiteSpace: 'nowrap', transition: 'background 0.15s',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = C.purpleSoft; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-          >Open Settings → Review →</button>
+          <Btn variant="outline" size="sm" onClick={() => setNav('op-settings')} style={{ padding: '6px 14px', borderRadius: 6, fontWeight: 600 }}>
+            Open Settings → Review →
+          </Btn>
         </div>
       )}
 
       {!loading && loadError && (
         <Card style={{ padding: 20, marginBottom: 20 }}>
-          <div style={{ fontSize: 13, color: C.red, fontFamily: F.sans }}>Couldn't load your rules — check your connection and try again.</div>
+          <div style={{ fontSize: T.base, color: C.redText, fontFamily: F.sans }}>Couldn't load your rules — check your connection and try again.</div>
         </Card>
       )}
 
       {!loading && !loadError && rules.length === 0 && (
         <Card style={{ padding: 20, marginBottom: 20 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Suggested rules</div>
-          <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, marginBottom: 14 }}>
+          <div style={{ ...TX.title, marginBottom: 4 }}>Suggested rules</div>
+          <div style={{ ...TX.helperMuted, marginBottom: 14 }}>
             Add any of these in one click. You can change or remove them later.
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {SUGGESTED.map(s => (
               <div key={s.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>
+                <span style={TX.bodySub}>
                   {s.name} — notify when {METRIC_LABELS[s.metric]} {COMPARATOR_LABELS[s.comparator]} {s.threshold}
                 </span>
                 <Btn size="sm" variant="secondary" onClick={() => addRule(s)}>Add</Btn>
@@ -145,7 +141,7 @@ export function AutomationRulesView({ user, ownerSide = 'advertiser', setNav }) 
       )}
 
       <Card style={{ padding: 20, marginBottom: 20 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>New rule</div>
+        <div style={{ ...TX.title, marginBottom: 14 }}>New rule</div>
         <div style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr 1fr 0.8fr 1fr auto',
@@ -171,8 +167,8 @@ export function AutomationRulesView({ user, ownerSide = 'advertiser', setNav }) 
         {rules.map(r => (
           <Card key={r.id} style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: r.enabled ? C.text : C.textMuted, fontFamily: F.sans }}>{r.name}</div>
-              <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>
+              <div style={{ fontSize: T.base, fontWeight: 600, color: r.enabled ? C.text : C.textMuted, fontFamily: F.sans }}>{r.name}</div>
+              <div style={{ ...TX.caption, marginTop: 2 }}>
                 {METRIC_LABELS[r.metric] ?? r.metric} {COMPARATOR_LABELS[r.comparator] ?? r.comparator} {r.threshold}
                 {' · '}{r.action === 'pause_campaign' ? 'pauses the campaign' : 'notifies you'}
                 {r.last_fired_at && ` · last fired ${new Date(r.last_fired_at).toLocaleString()}`}

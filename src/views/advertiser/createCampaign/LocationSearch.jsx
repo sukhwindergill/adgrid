@@ -1,24 +1,23 @@
 // src/views/advertiser/createCampaign/LocationSearch.jsx
 import { useState, useRef, useEffect } from 'react';
 import { C, F } from '../../../design/tokens.js';
-import { COUNTRIES, STATE_LABEL } from '../../../lib/venueTypes.js';
-
-const countryLabel = code => COUNTRIES.find(c => c.code === code)?.label ?? code;
-const stateWord = code => STATE_LABEL[code] ?? 'State';
+import { useT } from '../../../i18n/useT.js';
 
 // Display name + level badge for a flattened location option (see
-// buildFlatLocationOptions in src/lib/locationIndex.js).
-function describe(entry) {
-  if (entry.level === 'country') return { name: countryLabel(entry.country), badge: 'Country', sub: null };
-  if (entry.level === 'state') return { name: entry.state, badge: stateWord(entry.country), sub: countryLabel(entry.country) };
-  return { name: entry.city, badge: 'City', sub: `${entry.state ? `${entry.state}, ` : ''}${countryLabel(entry.country)}` };
+// buildFlatLocationOptions in src/lib/locationIndex.js). `kind` drives the
+// badge colour; `badge` is the translated word shown.
+function describe(entry, t, regionName) {
+  const stateWord = code => t(`venue.stateWord.${code}`).startsWith('venue.') ? t('venue.stateWord.default') : t(`venue.stateWord.${code}`);
+  if (entry.level === 'country') return { name: regionName(entry.country), kind: 'country', badge: t('create.location.country'), sub: null };
+  if (entry.level === 'state') return { name: entry.state, kind: 'state', badge: stateWord(entry.country), sub: regionName(entry.country) };
+  return { name: entry.city, kind: 'city', badge: t('create.location.city'), sub: `${entry.state ? `${entry.state}, ` : ''}${regionName(entry.country)}` };
 }
 
 const BADGE_COLOR = {
-  Country: { bg: C.purpleSoft ?? '#f3e8ff', fg: C.purple ?? '#7c3aed' },
-  City: { bg: C.blueSoft ?? '#e0f2fe', fg: C.blue ?? '#0284c7' },
+  country: { bg: C.purpleSoft ?? '#f3e8ff', fg: C.purple ?? '#7c3aed' },
+  city: { bg: C.blueSoft ?? '#e0f2fe', fg: C.blue ?? '#0284c7' },
 };
-const badgeColor = badge => BADGE_COLOR[badge] ?? BADGE_COLOR.City; // any State/Province/Region word falls back to a neutral tone below
+const badgeColor = kind => BADGE_COLOR[kind] ?? BADGE_COLOR.city; // any State/Province/Region word falls back to a neutral tone below
 const BADGE_DEFAULT = { bg: C.surfaceAlt ?? '#f1f5f9', fg: C.textMid ?? '#475569' };
 
 // Single consolidated typeahead over country + state + city, all in one
@@ -27,7 +26,8 @@ const BADGE_DEFAULT = { bg: C.surfaceAlt ?? '#f1f5f9', fg: C.textMid ?? '#475569
 // State select + City search. Every suggestion matches at least one real
 // screen (or, for country/state rows, rolls up screens under it) — no
 // network call, filtering is instant.
-export function LocationSearch({ options, value, onSelect, placeholder = 'Search a country, state/province, or city…', loading = false }) {
+export function LocationSearch({ options, value, onSelect, placeholder, loading = false }) {
+  const { t, regionName } = useT();
   const [query, setQuery] = useState(value ?? '');
   const [prevValue, setPrevValue] = useState(value ?? '');
   const [open, setOpen] = useState(false);
@@ -50,7 +50,7 @@ export function LocationSearch({ options, value, onSelect, placeholder = 'Search
   const q = query.trim().toLowerCase();
   const matches = q
     ? options
-        .map(e => ({ entry: e, d: describe(e) }))
+        .map(e => ({ entry: e, d: describe(e, t, regionName) }))
         .filter(({ d }) => d.name.toLowerCase().includes(q))
         .sort((a, b) => {
           const aStarts = a.d.name.toLowerCase().startsWith(q) ? 0 : 1;
@@ -82,7 +82,7 @@ export function LocationSearch({ options, value, onSelect, placeholder = 'Search
         type="text"
         value={query}
         disabled={loading}
-        placeholder={loading ? 'Loading locations…' : placeholder}
+        placeholder={loading ? t('create.location.loading') : (placeholder ?? t('create.location.placeholder'))}
         onChange={e => { setQuery(e.target.value); setOpen(true); setHighlight(0); }}
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
@@ -103,13 +103,13 @@ export function LocationSearch({ options, value, onSelect, placeholder = 'Search
         }}>
           {matches.length === 0 ? (
             <div style={{ padding: '10px 12px', fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>
-              No screens in that area yet
+              {t('create.location.noMatches')}
             </div>
           ) : matches.map(({ entry, d }, i) => {
-            const bc = badgeColor(d.badge) ?? BADGE_DEFAULT;
+            const bc = badgeColor(d.kind) ?? BADGE_DEFAULT;
             return (
               <div
-                key={`${d.badge}|${entry.country}|${entry.state ?? ''}|${entry.city ?? ''}`}
+                key={`${d.kind}|${entry.country}|${entry.state ?? ''}|${entry.city ?? ''}`}
                 // B20: the input's onBlur closes this list via setTimeout(150).
                 // A plain onClick fires after mousedown/blur/mouseup, so on any
                 // slow-enough click (assistive tech, touch, a laggy trackpad,
@@ -128,7 +128,7 @@ export function LocationSearch({ options, value, onSelect, placeholder = 'Search
                 }}
               >
                 <span style={{
-                  flexShrink: 0, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em',
+                  flexShrink: 0, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em',
                   padding: '2px 6px', borderRadius: 4, background: bc.bg, color: bc.fg,
                 }}>
                   {d.badge}
@@ -138,7 +138,7 @@ export function LocationSearch({ options, value, onSelect, placeholder = 'Search
                   {d.sub && <span style={{ color: C.textMuted, fontSize: 12 }}> — {d.sub}</span>}
                 </span>
                 <span style={{ marginLeft: 'auto', color: C.textMuted, fontSize: 12, flexShrink: 0 }}>
-                  {entry.count} screen{entry.count !== 1 ? 's' : ''}
+                  {t('common.screensCount', { count: entry.count ?? 0 })}
                 </span>
               </div>
             );

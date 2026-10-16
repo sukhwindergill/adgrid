@@ -38,7 +38,11 @@ describe('advertiserSteps', () => {
 
   it('routes each step somewhere real', () => {
     const navs = advertiserSteps({}).map(s => s.nav);
-    expect(navs).toEqual(['verification', 'adv-billing', 'adv-create']);
+    expect(navs).toEqual(['adv-create', 'adv-billing', 'verification']);
+  });
+
+  it('leads with building a campaign', () => {
+    expect(checklistProgress(advertiserSteps({})).next.id).toBe('campaign');
   });
 
   it('is complete with all three', () => {

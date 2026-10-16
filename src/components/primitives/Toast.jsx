@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T, SH } from '../../design/tokens.js';
+import { Btn } from './Btn.jsx';
 
 const ToastContext = createContext(null);
 
@@ -33,27 +34,24 @@ export function ToastProvider({ children }) {
             position: 'fixed', bottom: 24, right: 24, zIndex: 9998,
             display: 'flex', alignItems: 'center', gap: 14,
             padding: '12px 16px', borderRadius: 10, cursor: 'pointer',
-            fontFamily: F.sans, fontSize: 13, fontWeight: 500,
+            fontFamily: F.sans, fontSize: T.base, fontWeight: 500,
             maxWidth: 400,
             background: toast.variant === 'success' ? C.greenSoft : C.redSoft,
             border: `1px solid ${toast.variant === 'success' ? C.greenBorder : C.redBorder}`,
-            color: toast.variant === 'success' ? C.green : C.red,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+            color: toast.variant === 'success' ? C.greenText : C.redText,
+            boxShadow: SH.hover,
             animation: 'toast-in 0.2s ease',
           }}
         >
           <span>{toast.message}</span>
           {toast.action && (
-            <button
+            <Btn
+              variant="unstyled"
               onClick={e => { e.stopPropagation(); toast.action.onClick(); dismiss(); }}
-              style={{
-                flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer',
-                fontFamily: F.sans, fontSize: 13, fontWeight: 700,
-                color: 'inherit', textDecoration: 'underline', padding: 0,
-              }}
+              style={{ flexShrink: 0, fontFamily: F.sans, fontSize: T.base, fontWeight: 700, textDecoration: 'underline' }}
             >
               {toast.action.label}
-            </button>
+            </Btn>
           )}
           <style>{`@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
         </div>

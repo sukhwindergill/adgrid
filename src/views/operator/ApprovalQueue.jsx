@@ -2,9 +2,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
-import { C, F } from '../../design/tokens.js';
+import { notifyCampaignApproved, notifyCampaignRejected } from '../../lib/campaignNotifications.js';
+import { C, F, T, readable } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { EmptyState } from '../../components/primitives/EmptyState.jsx';
+import { Hover } from '../../components/primitives/Hover.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { CreativePreview } from '../../components/shared/CreativePreview.jsx';
@@ -16,6 +20,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { IconBolt, IconWarning } from '../../components/icons.jsx';
 import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
+import { isCategoryBlocked } from '../../lib/adGuardrails.js';
 
 const REJECT_REASONS = [
   'Inappropriate content',
@@ -23,21 +28,6 @@ const REJECT_REASONS = [
   'Not relevant to my venue',
   'Other',
 ];
-
-async function notifyCampaignApproved(advertiserId, campaignName, campaignId) {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return;
-  fetch(`${SUPABASE_FUNCTIONS_URL}/send-notification`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-    body: JSON.stringify({
-      userId: advertiserId,
-      type: 'campaign_approved',
-      campaignId,
-      data: { campaignName, appUrl: window.location.origin },
-    }),
-  }).catch(() => {});
-}
 
 function timeAgo(isoString) {
   if (!isoString) return '';
@@ -183,7 +173,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
       .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
     const allClear = campaign.start_when === 'partial' || !remaining || remaining.length === 0;
     if (allClear) {
-      notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser, campaign.id);
+      notifyCampaignApproved({ advertiserId: campaign.advertiser_id, campaignName: campaign.advertiser_name || campaign.advertiser, campaignId: campaign.id });
       await attemptCharge();
     }
     setActing(false);
@@ -223,7 +213,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
       .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
     const allClear = campaign.start_when === 'partial' || !remaining || remaining.length === 0;
     if (allClear) {
-      notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser, campaign.id);
+      notifyCampaignApproved({ advertiserId: campaign.advertiser_id, campaignName: campaign.advertiser_name || campaign.advertiser, campaignId: campaign.id });
       await attemptCharge();
     }
     setActing(false);
@@ -241,10 +231,26 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
       setActing(false);
       return;
     }
+    notifyCampaignRejected({
+      advertiserId: campaign.advertiser_id,
+      campaignId: campaign.id,
+      campaignName: campaign.campaign_name || campaign.advertiser_name || campaign.advertiser,
+      screenName: myScreens.find(s => s.id === rejectScreenId)?.name,
+      reason: rejectReason,
+    });
     setRejectScreenId(null);
     setActing(false);
     onRejected(campaign.id, rejectScreenId);
   };
+
+  // Operator category exclusions (G23): the wizard keeps blocked screens out
+  // of targeting, but a campaign submitted before the exclusion was added
+  // (or via the API) can still land here. display-feed won't play it on a
+  // blocking screen even if approved -- flag it so the operator rejects it
+  // instead of approving something that never airs.
+  const blockedScreenIds = new Set(myRows
+    .filter(row => isCategoryBlocked(campaign.category, allScreens.find(s => s.id === row.screen_id)?.content_categories_blocked))
+    .map(row => row.screen_id));
 
   const totalScreens = (campaign.campaign_screens || []).length;
   const earned = campaign.budget
@@ -259,18 +265,23 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
         padding: '10px 16px', borderBottom: `1px solid ${C.border}`, background: C.surfaceAlt,
       }}>
         <div style={{ width: 8, height: 8, borderRadius: '50%', background: campaign.accent_color || campaign.color || C.purple, flexShrink: 0 }} />
-        <span style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: F.sans, flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: T.md, fontWeight: 700, color: C.text, fontFamily: F.sans, flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
           {campaign.advertiser_name || campaign.advertiser}
           {isAdvertiserVerified && <Badge status="verified">Verified</Badge>}
         </span>
-        <span style={{ fontSize: 10, background: C.amber, color: '#fff', padding: '2px 8px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>PENDING</span>
-        <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>{campaign.category}</span>
-        <span style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{timeAgo(campaign.created_at)}</span>
+        <span style={{ fontSize: T.xs, background: C.amber, color: C.white, padding: '2px 8px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>PENDING</span>
+        <span style={{ fontSize: T.xs, color: C.textSub, fontFamily: F.sans }}>{campaign.category}</span>
+        {blockedScreenIds.size > 0 && (
+          <span style={{ fontSize: T.xs, background: C.redSoft, color: C.redText, border: `1px solid ${C.redBorder}`, padding: '2px 8px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+            <IconWarning size={10} /> BLOCKED CATEGORY
+          </span>
+        )}
+        <span style={TX.caption}>{timeAgo(campaign.created_at)}</span>
       </div>
 
       {showNudge && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '10px 16px', background: C.purpleSoft, borderBottom: `1px solid ${C.purpleBorder}`, fontFamily: F.sans, flexWrap: 'wrap' }}>
-          <div style={{ fontSize: 12, color: C.text }}>Auto-approve verified advertisers like this one?</div>
+          <div style={{ fontSize: T.sm, color: C.text }}>Auto-approve verified advertisers like this one?</div>
           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
             <Btn size="sm" variant="primary" onClick={async () => {
               await supabase.from('operator_approval_rules').upsert({ operator_id: user.id, auto_approve_verified_advertisers: true, updated_at: new Date().toISOString() }, { onConflict: 'operator_id' });
@@ -304,7 +315,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
           borderRight: isMobile ? 'none' : `1px solid ${C.border}`,
           borderBottom: isMobile ? `1px solid ${C.border}` : 'none',
         }}>
-          <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Creative Preview</div>
+          <div style={{ ...TX.caption, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Creative Preview</div>
           <CreativePreview campaign={campaign} />
           <ReadabilityPanel campaign={campaign} score={readability.score} issues={readability.issues} tiers={readabilityTiers} />
         </div>
@@ -318,14 +329,14 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
               ['You earn', earned || '—'],
             ].map(([l, v]) => (
               <div key={l}>
-                <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{l}</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: l === 'You earn' ? C.purple : C.text, fontFamily: F.mono, marginTop: 2 }}>{v}</div>
+                <div style={{ ...TX.caption, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{l}</div>
+                <div style={{ fontSize: T.sm, fontWeight: 600, color: l === 'You earn' ? C.purple : C.text, fontFamily: F.mono, marginTop: 2 }}>{v}</div>
               </div>
             ))}
           </div>
 
           <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div style={{ fontSize: T.xs, fontWeight: 600, color: C.textMid, fontFamily: F.sans, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Your screens
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -365,17 +376,21 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
                   : [];
 
                 return (
-                  <div key={row.screen_id} style={{
+                  <Hover key={row.screen_id} style={{
                     display: 'flex', flexDirection: 'column', gap: 6,
                     padding: 6, margin: -6, borderRadius: 8, transition: 'background-color 150ms ease',
                   }}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = C.surfaceAlt}
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                    hoverStyle={{ backgroundColor: C.surfaceAlt }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <div style={{ flex: 1, minWidth: 120 }}>
-                        <div style={{ fontSize: 12, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{screen?.name || row.screen_id}</div>
-                        {health && <span style={{ fontSize: 10, color: health.color, fontFamily: F.sans, display: 'inline-flex', alignItems: 'center', gap: 3 }}><IconWarning size={10} /> {health.label}</span>}
+                        <div style={{ fontSize: T.sm, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{screen?.name || row.screen_id}</div>
+                        {health && <span style={{ fontSize: T.xs, color: readable(health.color), fontFamily: F.sans, display: 'inline-flex', alignItems: 'center', gap: 3 }}><IconWarning size={10} /> {health.label}</span>}
+                        {blockedScreenIds.has(row.screen_id) && (
+                          <div style={{ fontSize: T.xs, color: C.redText, fontFamily: F.sans, display: 'flex', alignItems: 'center', gap: 3 }}>
+                            <IconWarning size={10} /> You block {campaign.category} ads on this screen — it won't play here even if approved
+                          </div>
+                        )}
                       </div>
                       <Btn size="sm" onClick={() => approveScreen(row.screen_id)} disabled={acting}>✓ Approve</Btn>
                       <Btn variant="danger" size="sm" onClick={() => setRejectScreenId(row.screen_id)} disabled={acting}>✗ Reject</Btn>
@@ -386,11 +401,11 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
                         {screenCreatives.map(cr => {
                           const check = fitChecks.find(f => f.creative?.id === cr.id);
                           return (
-                            <div key={cr.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: C.textSub, fontFamily: F.sans }}>
+                            <div key={cr.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: T.xs, color: C.textSub, fontFamily: F.sans }}>
                               <div style={{ width: 6, height: 6, borderRadius: '50%', background: cr.accent_color || C.purple, flexShrink: 0 }} />
                               <span>{cr.label || cr.headline || 'Untitled creative'} · {cr.weight}%</span>
                               {check?.status === 'mismatch' && (
-                                <span style={{ color: C.amber, display: 'inline-flex', alignItems: 'center', gap: 3 }}><IconWarning size={10} /> {check.reasons.map(r => REASON_LABEL[r] ?? r).join(', ')}</span>
+                                <span style={{ color: C.amberText, display: 'inline-flex', alignItems: 'center', gap: 3 }}><IconWarning size={10} /> {check.reasons.map(r => REASON_LABEL[r] ?? r).join(', ')}</span>
                               )}
                             </div>
                           );
@@ -399,11 +414,11 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
                     )}
 
                     {screenCreatives.length === 0 && fitChecks[0]?.status === 'mismatch' && (
-                      <span style={{ fontSize: 10, color: C.amber, fontFamily: F.sans, paddingLeft: 4, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                      <span style={{ fontSize: T.xs, color: C.amberText, fontFamily: F.sans, paddingLeft: 4, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                         <IconWarning size={10} /> Creative may not fit ({fitChecks[0].reasons.map(r => REASON_LABEL[r] ?? r).join(', ')})
                       </span>
                     )}
-                  </div>
+                  </Hover>
                 );
               })}
             </div>
@@ -413,7 +428,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
               </Btn>
             )}
             {actionErr && (
-              <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, marginTop: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{ fontSize: T.xs, color: C.redText, fontFamily: F.sans, marginTop: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
                 <IconWarning size={12} /> {actionErr}
               </div>
             )}
@@ -424,15 +439,15 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
       {/* Reject reason panel */}
       {rejectScreenId && (
         <div style={{ padding: '14px 16px', borderTop: `1px solid ${C.border}`, background: C.redSoft }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: C.red, fontFamily: F.sans, marginBottom: 8 }}>Select a reason for rejection:</div>
+          <div style={{ ...TX.error, fontWeight: 600, marginBottom: 8 }}>Select a reason for rejection:</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
             {REJECT_REASONS.map(r => (
-              <button key={r} type="button" onClick={() => setRejectReason(r)} style={{
-                padding: '5px 12px', borderRadius: 20, cursor: 'pointer', fontSize: 12, fontFamily: F.sans,
-                border: `1px solid ${rejectReason === r ? C.red : C.redBorder}`,
-                background: rejectReason === r ? C.red : 'transparent',
-                color: rejectReason === r ? '#fff' : C.red,
-              }}>{r}</button>
+              <Btn variant="unstyled" key={r} type="button" aria-pressed={rejectReason === r} onClick={() => setRejectReason(r)} style={{
+                padding: '5px 12px', borderRadius: 20, fontSize: T.sm, fontFamily: F.sans,
+                border: `1px solid ${rejectReason === r ? C.redStrong : C.redBorder}`,
+                background: rejectReason === r ? C.redStrong : 'transparent',
+                color: rejectReason === r ? C.white : C.redText,
+              }}>{r}</Btn>
             ))}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -696,7 +711,7 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
         .from('campaign_screens').select('status').eq('campaign_id', campaign.id).eq('status', 'pending');
       const allClear = campaign.start_when === 'partial' || !remaining || remaining.length === 0;
       if (allClear) {
-        notifyCampaignApproved(campaign.advertiser_id, campaign.advertiser_name || campaign.advertiser, campaign.id);
+        notifyCampaignApproved({ advertiserId: campaign.advertiser_id, campaignName: campaign.advertiser_name || campaign.advertiser, campaignId: campaign.id });
         if (session) {
           try {
             const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/charge-campaign`, {
@@ -784,14 +799,14 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
       />
 
       {loadError && (
-        <div style={{ display: 'flex', gap: 8, padding: '10px 14px', marginBottom: 16, background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`, borderRadius: 8, fontSize: 12, color: C.red, fontFamily: F.sans }}>
+        <div style={{ ...TX.error, display: 'flex', gap: 8, padding: '10px 14px', marginBottom: 16, background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8 }}>
           <span style={{ flexShrink: 0 }}><IconWarning size={14} /></span>
           <span>Couldn't load your approval queue — check your connection and try again.</span>
         </div>
       )}
 
       {bulkErrors.length > 0 && (
-        <div style={{ display: 'flex', gap: 8, padding: '10px 14px', marginBottom: 16, background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`, borderRadius: 8, fontSize: 12, color: C.red, fontFamily: F.sans, lineHeight: 1.6 }}>
+        <div style={{ ...TX.error, display: 'flex', gap: 8, padding: '10px 14px', marginBottom: 16, background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8, lineHeight: 1.6 }}>
           <span style={{ flexShrink: 0 }}><IconWarning size={14} /></span>
           <span>
           <strong>{bulkErrors.length} approval{bulkErrors.length !== 1 ? 's' : ''} failed</strong> — still pending, nothing was charged for these. Click "Approve all pending" again to retry.
@@ -805,31 +820,29 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
       {/* Auto-approve toggle */}
       <Card style={{ padding: '16px 20px', marginBottom: 20, display: 'flex', gap: 16, alignItems: 'flex-start' }}>
         <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}><IconBolt size={14} /> Auto-approve campaigns for my screens</div>
-          <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5 }}>
+          <div style={{ ...TX.title, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}><IconBolt size={14} /> Auto-approve campaigns for my screens</div>
+          <div style={{ ...TX.helper, lineHeight: 1.5 }}>
             Campaigns go live instantly without manual review.
             {autoApprove && (
-              <span style={{ display: 'block', marginTop: 4, color: C.amber, fontSize: 11 }}>
+              <span style={{ display: 'block', marginTop: 4, color: C.amberText, fontSize: T.xs }}>
                 By enabling auto-approve you accept responsibility for ensuring advertised content complies with local advertising regulations applicable to your location.
               </span>
             )}
           </div>
         </div>
-        <button type="button" onClick={toggleAutoApprove} disabled={togglingAuto} style={{
-          padding: '6px 16px', borderRadius: 20, cursor: 'pointer',
+        <Btn variant="unstyled" type="button" aria-pressed={autoApprove} onClick={toggleAutoApprove} disabled={togglingAuto} style={{
+          padding: '6px 16px', borderRadius: 20,
           border: `1px solid ${autoApprove ? C.green : C.border}`,
           background: autoApprove ? C.greenSoft : C.surface,
-          color: autoApprove ? C.green : C.textSub,
-          fontSize: 12, fontWeight: 600, fontFamily: F.sans, flexShrink: 0,
-        }}>{togglingAuto ? '…' : autoApprove ? 'ON' : 'OFF'}</button>
+          color: autoApprove ? C.greenText : C.textSub,
+          fontSize: T.sm, fontWeight: 600, fontFamily: F.sans, flexShrink: 0,
+        }}>{togglingAuto ? '…' : autoApprove ? 'ON' : 'OFF'}</Btn>
       </Card>
 
       {totalPending === 0 ? (
-        <div className="fade-in" style={{ textAlign: 'center', padding: '64px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 }}>
-          <div style={{ fontSize: 36, marginBottom: 12 }}>✓</div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>All clear</div>
-          <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>No campaigns are waiting for review.</div>
-        </div>
+        <EmptyState className="fade-in" size="lg" padding="64px 24px"
+          icon={<span style={{ fontSize: T.display, color: C.text }}>✓</span>}
+          title="All clear" description="No campaigns are waiting for review." />
       ) : (
         enriched.map((c, i) => (
           <MultiScreenCampaignCard

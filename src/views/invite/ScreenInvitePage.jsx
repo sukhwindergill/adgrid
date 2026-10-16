@@ -7,11 +7,14 @@ import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { IconScreen } from '../../components/icons.jsx';
+import { useT } from '../../i18n/useT.js';
+import { VENUE_TAXONOMY } from '../../lib/venueTypes.js';
 
 export function ScreenInvitePage() {
   const { token } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useT();
   const [state, setState] = useState('loading'); // loading | invalid | error | booked | valid
   const [screen, setScreen] = useState(null);
 
@@ -92,54 +95,54 @@ export function ScreenInvitePage() {
     <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <Card style={{ maxWidth: 460, padding: 36, textAlign: 'center' }}>
         {state === 'loading' && (
-          <div style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans }}>Loading…</div>
+          <div style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans }}>{t('common.loading')}</div>
         )}
         {state === 'error' && (
           <>
             <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 8 }}>
-              Something went wrong loading this invite
+              {t('invite.screen.errorTitle')}
             </div>
             <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>
-              This is likely a temporary connection issue. Try again.
+              {t('invite.screen.errorBody')}
             </div>
-            <Btn onClick={() => { setState('loading'); setRetryCount((n) => n + 1); }}>Try again</Btn>
+            <Btn onClick={() => { setState('loading'); setRetryCount((n) => n + 1); }}>{t('common.retry')}</Btn>
           </>
         )}
         {state === 'invalid' && (
           <>
             <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 8 }}>
-              This invite link isn't valid
+              {t('invite.screen.invalidTitle')}
             </div>
             <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>
-              It may have been mistyped. You can still explore AdGrid directly.
+              {t('invite.screen.invalidBody')}
             </div>
-            <Btn onClick={() => navigate('/')}>Go to AdGrid →</Btn>
+            <Btn onClick={() => navigate('/')}>{t('invite.screen.goToAdGrid')}</Btn>
           </>
         )}
         {state === 'booked' && (
           <>
             <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 8 }}>
-              This invite has already been used
+              {t('invite.screen.usedTitle')}
             </div>
             <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>
-              Someone already booked this screen through this link. You can still sign up directly.
+              {t('invite.screen.usedBody')}
             </div>
-            <Btn onClick={() => navigate('/login?mode=signup&intent=advertiser')}>Sign up →</Btn>
+            <Btn onClick={() => navigate('/login?mode=signup&intent=advertiser')}>{t('invite.screen.signUp')}</Btn>
           </>
         )}
         {state === 'valid' && screen && (
           <>
             <div style={{ color: C.purple, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconScreen size={36} /></div>
             <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>
-              You've been invited to advertise on
+              {t('invite.screen.invitedTo')}
             </div>
             <div style={{ fontSize: 20, fontWeight: 800, color: C.purple, fontFamily: F.sans, marginBottom: 4 }}>
               {screen.name}
             </div>
             <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 24 }}>
-              {screen.city}{screen.venue_category ? ` · ${screen.venue_category}` : ''}
+              {screen.city}{screen.venue_category ? ` · ${VENUE_TAXONOMY[screen.venue_category] ? t(`venue.category.${screen.venue_category}`) : screen.venue_category}` : ''}
             </div>
-            <Btn onClick={getStarted} style={{ width: '100%' }}>Get Started →</Btn>
+            <Btn onClick={getStarted} style={{ width: '100%' }}>{t('invite.screen.getStarted')}</Btn>
           </>
         )}
       </Card>

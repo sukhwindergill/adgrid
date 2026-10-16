@@ -1,12 +1,18 @@
 // src/components/shared/CreativePreview.jsx
 import { useRef } from 'react';
 import QRCode from 'react-qr-code';
-import { F } from '../../design/tokens.js';
+import { F, T, C, alpha } from '../../design/tokens.js';
 import { getCreativeRenderPlan } from '../../lib/getCreativeRenderPlan.js';
 import { clampQrCenter, clampQrSizePct } from '../../lib/creativeQrPosition.js';
 
 const FONT_STACKS = { sans: F.display, serif: 'Georgia, serif', mono: F.mono };
 const fontFor = (creativeFont) => FONT_STACKS[creativeFont] || FONT_STACKS.serif;
+
+// This is a scaled-down render of a physical screen, so its eyebrow/CTA text
+// is miniature screen typography, deliberately below the T scale's 11px UI floor.
+const MINI = { eyebrow: 7, tag: 8 };
+const eyebrowColor = alpha(C.white, 0.4);
+const headlineShadow = `0 2px 8px ${alpha(C.black, 0.5)}`;
 
 function BottomBarBody({ headline, cta, bg, category, headlineFont }) {
   return (
@@ -14,15 +20,15 @@ function BottomBarBody({ headline, cta, bg, category, headlineFont }) {
       {category && (
         <div style={{
           position: 'absolute', bottom: 44, left: 14,
-          fontSize: 7, letterSpacing: '2px', textTransform: 'uppercase',
-          color: 'rgba(255,255,255,0.4)', fontFamily: F.sans,
+          fontSize: MINI.eyebrow, letterSpacing: '2px', textTransform: 'uppercase',
+          color: eyebrowColor, fontFamily: F.sans,
         }}>{category}</div>
       )}
       <div data-headline style={{
         position: 'absolute', bottom: 22, left: 14, right: 60,
-        fontSize: 13, fontWeight: 800, color: '#fff',
+        fontSize: T.base, fontWeight: 800, color: C.white,
         lineHeight: 1.1, fontFamily: headlineFont,
-        textShadow: '0 2px 8px rgba(0,0,0,0.5)',
+        textShadow: headlineShadow,
         overflow: 'hidden', display: '-webkit-box',
         WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
       }}>{headline}</div>
@@ -30,7 +36,7 @@ function BottomBarBody({ headline, cta, bg, category, headlineFont }) {
         <div style={{
           position: 'absolute', bottom: 7, left: 14,
           padding: '2px 8px', border: `1.5px solid ${bg}`,
-          color: bg, fontSize: 7, fontWeight: 600,
+          color: bg, fontSize: MINI.eyebrow, fontWeight: 600,
           borderRadius: 3, fontFamily: F.sans, letterSpacing: '0.5px',
         }}>{cta}</div>
       )}
@@ -46,20 +52,20 @@ function FullBleedBody({ headline, cta, bg, category, headlineFont }) {
     }}>
       {category && (
         <div style={{
-          fontSize: 7, letterSpacing: '2px', textTransform: 'uppercase',
-          color: 'rgba(255,255,255,0.4)', fontFamily: F.sans,
+          fontSize: MINI.eyebrow, letterSpacing: '2px', textTransform: 'uppercase',
+          color: eyebrowColor, fontFamily: F.sans,
         }}>{category}</div>
       )}
       <div data-headline style={{
-        fontSize: 14, fontWeight: 800, color: '#fff', lineHeight: 1.15,
-        fontFamily: headlineFont, textShadow: '0 2px 8px rgba(0,0,0,0.5)',
+        fontSize: T.md, fontWeight: 800, color: C.white, lineHeight: 1.15,
+        fontFamily: headlineFont, textShadow: headlineShadow,
         overflow: 'hidden', display: '-webkit-box',
         WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
       }}>{headline}</div>
       {cta && (
         <div style={{
           padding: '4px 14px', borderRadius: 20, background: bg,
-          color: '#fff', fontSize: 8, fontWeight: 700, fontFamily: F.sans, letterSpacing: '0.5px',
+          color: C.white, fontSize: MINI.tag, fontWeight: 700, fontFamily: F.sans, letterSpacing: '0.5px',
         }}>{cta}</div>
       )}
     </div>
@@ -76,19 +82,19 @@ function SplitPanelBody({ headline, cta, bg, secondaryBg, category, headlineFont
       }}>
         {category && (
           <div style={{
-            fontSize: 7, letterSpacing: '2px', textTransform: 'uppercase',
-            color: 'rgba(255,255,255,0.4)', fontFamily: F.sans,
+            fontSize: MINI.eyebrow, letterSpacing: '2px', textTransform: 'uppercase',
+            color: eyebrowColor, fontFamily: F.sans,
           }}>{category}</div>
         )}
         <div data-headline style={{
-          fontSize: 12, fontWeight: 800, color: '#fff', lineHeight: 1.15,
+          fontSize: T.sm, fontWeight: 800, color: C.white, lineHeight: 1.15,
           fontFamily: headlineFont, overflow: 'hidden', display: '-webkit-box',
           WebkitLineClamp: 3, WebkitBoxOrient: 'vertical',
         }}>{headline}</div>
         {cta && (
           <div style={{
-            display: 'inline-block', padding: '2px 8px', border: '1.5px solid #fff',
-            color: '#fff', fontSize: 7, fontWeight: 600, borderRadius: 3,
+            display: 'inline-block', padding: '2px 8px', border: `1.5px solid ${C.white}`,
+            color: C.white, fontSize: MINI.eyebrow, fontWeight: 600, borderRadius: 3,
             fontFamily: F.sans, letterSpacing: '0.5px', alignSelf: 'flex-start',
           }}>{cta}</div>
         )}
@@ -157,7 +163,7 @@ function QrOverlay({ url, x, y, sizePct, frameAspect, editable, onChange, fgColo
           width: `max(${sizePct * 100}%, 44px)`, aspectRatio: '1', background: bgColor, borderRadius: '10%',
           padding: '8%', boxSizing: 'border-box', pointerEvents: editable ? 'auto' : 'none',
           cursor: editable ? 'grab' : 'default',
-          boxShadow: editable ? '0 0 0 2px rgba(124,58,237,0.6)' : 'none',
+          boxShadow: editable ? `0 0 0 2px ${alpha(C.purple, 0.6)}` : 'none',
           touchAction: editable ? 'none' : 'auto',
         }}
       >
@@ -168,7 +174,7 @@ function QrOverlay({ url, x, y, sizePct, frameAspect, editable, onChange, fgColo
             onPointerDown={startDrag('resize')}
             style={{
               position: 'absolute', right: -6, bottom: -6, width: 14, height: 14,
-              borderRadius: '50%', background: '#7c3aed', border: '2px solid #fff',
+              borderRadius: '50%', background: C.purple, border: `2px solid ${C.white}`,
               cursor: 'nwse-resize', touchAction: 'none',
             }}
           />
@@ -218,7 +224,7 @@ export function CreativePreview({
     <div data-template={template} style={{
       position: 'relative', width: '100%', aspectRatio,
       filter: blurPx > 0 ? `blur(${blurPx}px)` : undefined,
-      background: `linear-gradient(160deg, #050a10 0%, #0d1520 60%, ${bg}22 100%)`,
+      background: `linear-gradient(160deg, ${C.screen} 0%, ${C.screenMid} 60%, ${bg}22 100%)`,
       borderRadius: 8, overflow: 'hidden', flexShrink: 0,
     }}>
       {mediaUrl && (isVideo ? (
@@ -235,7 +241,7 @@ export function CreativePreview({
         />
       ))}
       {mediaUrl && template !== 'split_panel' && (
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 55%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(to top, ${alpha(C.black, 0.65)} 0%, transparent 55%)`, pointerEvents: 'none' }} />
       )}
       {!mediaUrl && <div style={{
         position: 'absolute', top: '-10%', right: '-5%',
@@ -246,8 +252,8 @@ export function CreativePreview({
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: bg }} />
       <div style={{
         position: 'absolute', top: 10, left: 12, zIndex: 2,
-        fontSize: 8, fontWeight: 700, letterSpacing: '2px',
-        color: 'rgba(255,255,255,0.2)', fontFamily: F.sans, textTransform: 'uppercase',
+        fontSize: MINI.tag, fontWeight: 700, letterSpacing: '2px',
+        color: alpha(C.white, 0.2), fontFamily: F.sans, textTransform: 'uppercase',
       }}>ADGRID</div>
       {showQr && (
         <QrOverlay

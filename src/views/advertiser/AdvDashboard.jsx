@@ -8,7 +8,6 @@ import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
-import { pluralize } from '../../lib/pluralize.js';
 import { periodDelta, splitByPeriod, dailySeries } from '../../lib/periodDelta.js';
 import { TrendSparkline } from '../../components/shared/TrendSparkline.jsx';
 import { DeliveryHealthCard } from '../../components/shared/DeliveryHealthCard.jsx';
@@ -23,15 +22,21 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { listDrafts, deleteDraft } from '../../lib/campaignDrafts.js';
 import { DraftsCard } from './createCampaign/DraftsCard.jsx';
 import { normalizeBooking } from '../../lib/normalizeBooking.js';
+import { BOOKING_LIST_COLUMNS } from '../../lib/bookingsQuery.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { advertiserSteps } from '../../lib/gettingStarted.js';
+import { awaitingPayment } from '../../lib/unpaidCampaigns.js';
 import { GettingStartedCard } from '../../components/shared/GettingStartedCard.jsx';
 import { IconDollar, IconEye, IconQr, IconTrendUp, IconTarget, IconScreen, IconWarning } from '../../components/icons.jsx';
+import { useT } from '../../i18n/useT.js';
 
 const RECENT_CAMPAIGNS_LIMIT = 20;
 
 export function AdvDashboard({ user, setAdvNav, advertiserId }) {
   const { isMobile } = useBreakpoint();
+  const { t, tx, tOr, formatNumber, formatCurrency, formatPercent, formatDate } = useT();
+  const money = n => formatCurrency(n, { minimumFractionDigits: 0 });
+  const thousands = n => t('dash.thousands', { n: formatNumber(n / 1000, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) });
   // Drafts are stored per real signed-in user (see campaignDrafts.js), not
   // per impersonated/delegate account -- `user` here can be a display-only
   // stand-in during impersonation, so this reads the actual auth user.
@@ -99,10 +104,23 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
   const [screenCoords, setScreenCoords] = useState({}); // screen_id -> {lat, lon}
   const [disputeCampaignId, setDisputeCampaignId] = useState(null);
   const [compareCampaignId, setCompareCampaignId] = useState(null);
+  const [unpaid, setUnpaid] = useState([]);
+
+  // Separate from myCampaigns (which is capped to the most recent few) so an
+  // older "Pay later" campaign still gets surfaced.
+  useEffect(() => {
+    if (!advertiserId) return;
+    let cancelled = false;
+    supabase.from('bookings').select('id, advertiser_name, status, payment_status, budget, currency')
+      .eq('advertiser_id', advertiserId)
+      .in('payment_status', ['unpaid', 'failed'])
+      .then(({ data }) => { if (!cancelled) setUnpaid(awaitingPayment(data || [])); });
+    return () => { cancelled = true; };
+  }, [advertiserId]);
 
   useEffect(() => {
     if (!advertiserId) return;
-    supabase.from('bookings').select('*')
+    supabase.from('bookings').select(BOOKING_LIST_COLUMNS)
       .eq('advertiser_id', advertiserId)
       .order('created_at', { ascending: false })
       .limit(RECENT_CAMPAIGNS_LIMIT)
@@ -230,8 +248,8 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
   // than presenting a model as a measurement.
   const allMeasured = delivery.length > 0 && delivery.every(r => r.basis === 'measured');
   const imprBasisLabel = delivery.length === 0
-    ? 'no delivery yet'
-    : allMeasured ? 'measured by camera' : 'part measured, part modelled';
+    ? t('dash.basisNone')
+    : allMeasured ? t('dash.basisMeasured') : t('dash.basisMixed');
 
   const imprPeriods = splitByPeriod(delivery, 'day', 'impressions', 30);
   const imprTrend   = periodDelta(imprPeriods.current, imprPeriods.prior);
@@ -274,19 +292,39 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
   return (
     <div>
       <PageHeader
-        title={`Welcome back${user?.name ? ', ' + user.name : ''}`}
-        subtitle="Your campaign performance at a glance"
-        actions={<Btn onClick={() => setAdvNav('adv-create')}>+ New Campaign</Btn>}
+        title={user?.name ? t('dash.welcomeName', { name: user.name }) : t('dash.welcome')}
+        subtitle={t('dash.subtitle')}
+        actions={<Btn onClick={() => setAdvNav('adv-create')}>{t('dash.newCampaign')}</Btn>}
       />
+
+      {unpaid.length > 0 && (
+        <div role="status" style={{
+          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+          padding: '14px 16px', borderRadius: 10, marginBottom: 20,
+          background: C.amberSoft, border: `1px solid ${C.amberBorder}`,
+        }}>
+          <IconWarning size={16} />
+          <div style={{ flex: 1, minWidth: 200, fontSize: 14, fontFamily: F.sans, color: C.text }}>
+            {tx('dash.unpaid', {
+              count: unpaid.length,
+              b: chunk => <strong>{chunk}</strong>,
+              muted: chunk => <span style={{ color: C.textSub }}>{chunk}</span>,
+            })}
+          </div>
+          <Btn size="sm" onClick={() => setAdvNav(unpaid.length === 1 ? `adv-campaigns/${unpaid[0].id}` : 'adv-campaigns')}>
+            {unpaid.length === 1 ? t('dash.payNow') : t('dash.review')}
+          </Btn>
+        </div>
+      )}
 
       {isOwnAccount && campaignsLoaded && (
         <GettingStartedCard
-          title="Get your first campaign running"
+          title={t('dash.gettingStarted')}
           steps={advertiserSteps({
             isVerified: profile?.is_verified_advertiser,
             hasCard,
             hasCampaign: myCampaigns.length > 0 || Number(lifetimeTotals.total_budget) > 0,
-          })}
+          }).map(step => ({ ...step, title: t(`dash.steps.${step.id}.title`), body: t(`dash.steps.${step.id}.body`) }))}
           storageKey={checklistKey}
           onGo={step => setAdvNav(step.nav)}
         />
@@ -295,43 +333,45 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
       <DraftsCard drafts={drafts} onResume={resumeDraft} onDelete={removeDraft} />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
-        <KPI label="Spent to Date" value={`$${totalSpent.toLocaleString()}`}         sub={`${totalSpend > 0 ? Math.round((totalSpent / totalSpend) * 100) : 0}% of $${totalSpend.toLocaleString()} budget`} color={C.blue} icon={<IconDollar size={16} />} />
-        <KPI label="Plays"         value={totalPlays.toLocaleString()}                sub="verified proof of play" icon="▶" />
-        <KPI label="Impressions"   value={`${(totalImpr / 1000).toFixed(1)}K`}        sub={imprBasisLabel} color={C.purple} trend={imprTrend} trendLabel="vs prior 30 days" icon={<IconEye size={16} />} />
-        <KPI label="QR Scans"      value={billableScans.toLocaleString()}
-             sub={filteredScans > 0 ? `${filteredScans} filtered as bot/duplicate` : 'leads captured'}
+        <KPI label={t('dash.kpiSpent')} value={money(totalSpent)}
+             sub={t('dash.spentSub', { pct: formatPercent(totalSpend > 0 ? Math.round((totalSpent / totalSpend) * 100) / 100 : 0), budget: money(totalSpend) })}
+             color={C.blue} icon={<IconDollar size={16} />} />
+        <KPI label={t('dash.kpiPlays')} value={formatNumber(totalPlays)} sub={t('dash.playsSub')} icon="▶" />
+        <KPI label={t('dash.kpiImpressions')} value={thousands(totalImpr)} sub={imprBasisLabel} color={C.purple} trend={imprTrend} trendLabel={t('dash.vsPrior')} icon={<IconEye size={16} />} />
+        <KPI label={t('dash.kpiScans')} value={formatNumber(billableScans)}
+             sub={filteredScans > 0 ? t('dash.filteredSub', { count: filteredScans }) : t('dash.leadsSub')}
              color={C.green} icon={<IconQr size={16} />} />
       </div>
 
       {(cpm !== null || costPerScan !== null) && (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
-          <KPI label="CPM" value={cpm === null ? '—' : `$${cpm.toFixed(2)}`} sub="cost per 1,000 impressions" icon={<IconTrendUp size={16} />} />
-          <KPI label="Cost per Scan" value={costPerScan === null ? '—' : `$${costPerScan.toFixed(2)}`} sub="spend ÷ billable scans" color={C.green} icon={<IconTarget size={16} />} />
+          <KPI label={t('dash.cpm')} value={cpm === null ? '—' : formatCurrency(cpm)} sub={t('dash.cpmSub')} icon={<IconTrendUp size={16} />} />
+          <KPI label={t('dash.costPerScan')} value={costPerScan === null ? '—' : formatCurrency(costPerScan)} sub={t('dash.costPerScanSub')} color={C.green} icon={<IconTarget size={16} />} />
         </div>
       )}
 
       {conversions.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
-          <KPI label="Conversions" value={conversions.length.toLocaleString()}
+          <KPI label={t('dash.conversions')} value={formatNumber(conversions.length)}
                sub={(() => {
                  const value = conversions.reduce((a, c) => a + (Number(c.order_value) || 0), 0);
-                 return value > 0 ? `$${value.toLocaleString()} reported value` : 'reported so far';
+                 return value > 0 ? t('dash.reportedValue', { amount: money(value) }) : t('dash.reportedSoFar');
                })()}
                color={C.green} icon={<IconTarget size={16} />} />
-          <KPI label="Via QR Scan" value={conversions.filter(c => c.source === 'scan').length.toLocaleString()} sub="scanned then converted" icon={<IconQr size={16} />} />
-          <KPI label="Via Promo Code" value={conversions.filter(c => c.source === 'promo_code' || c.source === 'vanity_url').length.toLocaleString()} sub="saw the ad, never scanned" icon={<IconTrendUp size={16} />} />
+          <KPI label={t('dash.viaScan')} value={formatNumber(conversions.filter(c => c.source === 'scan').length)} sub={t('dash.viaScanSub')} icon={<IconQr size={16} />} />
+          <KPI label={t('dash.viaPromo')} value={formatNumber(conversions.filter(c => c.source === 'promo_code' || c.source === 'vanity_url').length)} sub={t('dash.viaPromoSub')} icon={<IconTrendUp size={16} />} />
         </div>
       )}
 
       {delivery.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
           <Card>
-            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Impressions — last 30 days</div>
-            <TrendSparkline data={impressionSeries} color={C.purple} formatValue={v => v.toLocaleString()} />
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>{t('dash.impressionsChart')}</div>
+            <TrendSparkline data={impressionSeries} color={C.purple} formatValue={v => formatNumber(v)} />
           </Card>
           <Card>
-            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>Billable scans — last 30 days</div>
-            <TrendSparkline data={scanSeries} color={C.green} formatValue={v => v.toLocaleString()} />
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>{t('dash.scansChart')}</div>
+            <TrendSparkline data={scanSeries} color={C.green} formatValue={v => formatNumber(v)} />
           </Card>
         </div>
       )}
@@ -339,14 +379,14 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
       {reach > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
           <KPI
-            label="Estimated reach"
-            value={reach.toLocaleString()}
-            sub={hasUnknownPositions ? 'some screens missing coordinates' : 'unique people, overlap-adjusted'}
+            label={t('dash.reach')}
+            value={formatNumber(reach)}
+            sub={hasUnknownPositions ? t('dash.reachMissing') : t('dash.reachSub')}
           />
           <KPI
-            label="Avg frequency"
-            value={frequency === null ? '—' : `${frequency}×`}
-            sub="times each person saw it"
+            label={t('dash.frequency')}
+            value={frequency === null ? '—' : t('dash.frequencyValue', { n: frequency })}
+            sub={t('dash.frequencySub')}
           />
         </div>
       )}
@@ -358,7 +398,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
       {activeCampaigns.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           {activeCampaigns.length > 1 && (
-            <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.display, marginBottom: 10 }}>Budget Pacing</h2>
+            <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.display, marginBottom: 10 }}>{t('dash.budgetPacing')}</h2>
           )}
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${activeCampaigns.length}, 1fr)`, gap: 16 }}>
             {activeCampaigns.map(c => (
@@ -372,13 +412,13 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
 
       {campaignsLoaded && campaignsError ? (
         <Card style={{ textAlign: 'center', padding: 48 }}>
-          <div style={{ fontSize: 14, color: C.red, fontFamily: F.sans }}>Couldn't load your campaigns — check your connection and try again.</div>
+          <div style={{ fontSize: 14, color: C.red, fontFamily: F.sans }}>{t('dash.campaignsError')}</div>
         </Card>
       ) : myCampaigns.length > 0 ? (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.display }}>Your Campaigns</h2>
-            <Btn variant="ghost" size="sm" onClick={() => setAdvNav('adv-campaigns')}>View all →</Btn>
+            <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.display }}>{t('dash.yourCampaigns')}</h2>
+            <Btn variant="ghost" size="sm" onClick={() => setAdvNav('adv-campaigns')}>{t('dash.viewAll')}</Btn>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {myCampaigns.map(c => {
@@ -401,16 +441,16 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>
-                          {screenCount > 0 ? `${screenCount} ${pluralize(screenCount, 'screen')}` : c.screen}
+                          {screenCount > 0 ? t('common.screensCount', { count: screenCount }) : c.screen}
                         </div>
-                        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.city} · {c.category} · {c.start} → {c.end}</div>
+                        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.city} · {c.category ? tOr(`categories.${c.category}`, c.category) : c.category} · {formatDate(c.start)} → {formatDate(c.end)}</div>
                         {deliveryFlag && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, fontSize: 11, color: C.amber, fontFamily: F.sans }}>
                             <IconWarning size={11} /> {deliveryFlag.label}
                           </div>
                         )}
                         <button onClick={() => setDisputeCampaignId(c.id)} style={{ background: 'none', border: 'none', padding: 0, marginTop: 4, fontSize: 11, color: C.textMuted, fontFamily: F.sans, cursor: 'pointer', textDecoration: 'underline' }}>
-                          Report a problem
+                          {t('dash.reportProblem')}
                         </button>
                       </div>
                       <Badge status={displayStatus} />
@@ -419,16 +459,16 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                          <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>Budget</span>
+                          <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>{t('dash.budget')}</span>
                         </div>
-                        <div style={{ fontSize: 11, fontWeight: 500, color: C.text, fontFamily: F.mono }}>${c.spent.toLocaleString()} / ${c.budget.toLocaleString()}</div>
+                        <div style={{ fontSize: 11, fontWeight: 500, color: C.text, fontFamily: F.mono }}>{money(c.spent)} / {money(c.budget)}</div>
                       </div>
                       <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 10, color: C.textSub, fontFamily: F.sans, marginBottom: 4 }}>Impressions</div>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{(c.impressions / 1000).toFixed(1)}K</div>
+                        <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginBottom: 4 }}>{t('dash.impressions')}</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{thousands(c.impressions)}</div>
                       </div>
                       <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 10, color: C.textSub, fontFamily: F.sans, marginBottom: 4 }}>Scans</div>
+                        <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginBottom: 4 }}>{t('dash.scans')}</div>
                         <div style={{ fontSize: 16, fontWeight: 700, color: C.purple, fontFamily: F.mono }}>{c.scans}</div>
                       </div>
                     </div>
@@ -436,7 +476,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: C.textSub, fontFamily: F.sans }}>
-                          Spend
+                          {t('dash.spend')}
                           <PacingDot startDate={c.start} endDate={c.end} spent={c.spent} budget={c.budget} />
                         </span>
                       </div>
@@ -447,35 +487,35 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px 120px 100px 130px', gap: 16, alignItems: 'center' }}>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>
-                        {screenCount > 0 ? `${screenCount} ${pluralize(screenCount, 'screen')}` : c.screen}
+                        {screenCount > 0 ? t('common.screensCount', { count: screenCount }) : c.screen}
                       </div>
-                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.city} · {c.category} · {c.start} → {c.end}</div>
+                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.city} · {c.category ? tOr(`categories.${c.category}`, c.category) : c.category} · {formatDate(c.start)} → {formatDate(c.end)}</div>
                       {deliveryFlag && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, fontSize: 11, color: C.amber, fontFamily: F.sans }}>
                           <IconWarning size={11} /> {deliveryFlag.label}
                         </div>
                       )}
                       <button onClick={() => setDisputeCampaignId(c.id)} style={{ background: 'none', border: 'none', padding: 0, marginTop: 4, fontSize: 11, color: C.textMuted, fontFamily: F.sans, cursor: 'pointer', textDecoration: 'underline' }}>
-                        Report a problem
+                        {t('dash.reportProblem')}
                       </button>
                     </div>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: C.textSub, fontFamily: F.sans }}>
-                          Spend
+                          {t('dash.spend')}
                           <PacingDot startDate={c.start} endDate={c.end} spent={c.spent} budget={c.budget} />
                         </span>
-                        <span style={{ fontSize: 11, fontWeight: 500, color: C.text, fontFamily: F.mono }}>${c.spent.toLocaleString()} / ${c.budget.toLocaleString()}</span>
+                        <span style={{ fontSize: 11, fontWeight: 500, color: C.text, fontFamily: F.mono }}>{money(c.spent)} / {money(c.budget)}</span>
                       </div>
                       <ProgressBar value={c.spent} max={c.budget} height={4} />
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{(c.impressions / 1000).toFixed(1)}K</div>
-                      <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>impressions</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{thousands(c.impressions)}</div>
+                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{t('dash.impressionsLower')}</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: 18, fontWeight: 700, color: C.purple, fontFamily: F.mono }}>{c.scans}</div>
-                      <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>scans</div>
+                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{t('dash.scansLower')}</div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                       <Badge status={displayStatus} />
@@ -489,7 +529,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
                       onClick={() => setCompareCampaignId(id => id === c.id ? null : c.id)}
                       style={{ background: 'none', border: 'none', padding: 0, fontSize: 12, color: C.purple, fontFamily: F.sans, cursor: 'pointer', fontWeight: 500 }}
                     >
-                      {compareCampaignId === c.id ? 'Hide screen breakdown ▴' : 'Compare screens ▾'}
+                      {compareCampaignId === c.id ? t('dash.hideBreakdown') : t('dash.compareScreens')}
                     </button>
                     {compareCampaignId === c.id && (
                       <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -497,7 +537,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
                           <div key={s.screen_id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontFamily: F.sans }}>
                             <span style={{ color: C.text }}>{s.screen_name}</span>
                             <span style={{ color: C.textSub, fontFamily: F.mono }}>
-                              {s.impressions.toLocaleString()} impr · {s.scans.toLocaleString()} scans
+                              {t('dash.breakdown', { impr: formatNumber(s.impressions), scans: formatNumber(s.scans) })}
                             </span>
                           </div>
                         ))}
@@ -513,9 +553,9 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
       ) : (
         <Card style={{ textAlign: 'center', padding: 48 }}>
           <div style={{ color: C.textMuted, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconScreen size={32} /></div>
-          <div style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>No campaigns yet</div>
-          <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>Launch your first campaign on the ADGRID network in under 10 minutes.</div>
-          <Btn onClick={() => setAdvNav('adv-create')}>Create your first campaign →</Btn>
+          <div style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>{t('dash.noCampaigns')}</div>
+          <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>{t('dash.noCampaignsBody')}</div>
+          <Btn onClick={() => setAdvNav('adv-create')}>{t('dash.createFirst')}</Btn>
         </Card>
       )}
 

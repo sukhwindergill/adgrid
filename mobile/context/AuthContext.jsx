@@ -7,6 +7,17 @@ const FUNCTIONS_URL = process.env.EXPO_PUBLIC_SUPABASE_URL
 
 const AuthContext = createContext({});
 
+const MODES = new Set(['operator', 'advertiser']);
+
+// Same source of truth as web (profiles.active_mode). The one deliberate
+// difference is the fallback: web defaults a profile with no active_mode to
+// 'advertiser', but this app was operator-only until advertiser mode was
+// added, so an unset mode keeps existing operators landing where they always
+// have.
+export function resolveActiveMode(profile) {
+  return MODES.has(profile?.active_mode) ? profile.active_mode : 'operator';
+}
+
 // Platform-audit finding: mobile called supabase.auth.signInWithPassword and
 // supabase.auth.resetPasswordForEmail directly, with no lockout or throttle
 // at all -- not even the app-level "5 failures/15m" signal web had before
@@ -41,6 +52,7 @@ export function AuthProvider({ children }) {
   const [profileError, setProfileError] = useState(null);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [activeMode, setActiveModeState] = useState(null);
 
   async function fetchProfile(userId) {
     const { data, error } = await supabase
@@ -50,6 +62,7 @@ export function AuthProvider({ children }) {
       .single();
     setProfileError(error?.message ?? null);
     setProfile(data ?? null);
+    setActiveModeState(resolveActiveMode(data));
     return data;
   }
 
@@ -87,6 +100,19 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
+    setActiveModeState(null);
+  }
+
+  // Mirrors src/context/AuthContext.jsx's setActiveMode: flip local state
+  // immediately, then persist to profiles.active_mode so web and mobile
+  // open in the same mode for a dual-role account.
+  async function setActiveMode(mode) {
+    if (!MODES.has(mode)) return;
+    setActiveModeState(mode);
+    if (user) {
+      const { error } = await supabase.from('profiles').update({ active_mode: mode }).eq('id', user.id);
+      if (error) console.error('Failed to persist active mode:', error.message);
+    }
   }
 
   async function resetPasswordForEmail(email) {
@@ -106,8 +132,8 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{
-      user, profile, profileError, passwordRecovery, loading,
-      signIn, signOut, resetPasswordForEmail, verifyRecoveryCode, updatePassword,
+      user, profile, profileError, passwordRecovery, loading, activeMode,
+      signIn, signOut, setActiveMode, resetPasswordForEmail, verifyRecoveryCode, updatePassword,
     }}>
       {children}
     </AuthContext.Provider>

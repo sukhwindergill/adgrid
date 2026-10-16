@@ -4,10 +4,12 @@ import { supabase } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { C, F } from '../../design/tokens.js'
 import { IconWarning, IconCheckCircle, IconMail } from '../../components/icons.jsx'
+import { useT } from '../../i18n/useT.js'
 
 export function AcceptGrantView() {
   const { user, acceptGrant, signInWithOAuth } = useAuth()
   const navigate = useNavigate()
+  const { t, tx } = useT()
   const [grant, setGrant]     = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(null)
@@ -16,7 +18,7 @@ export function AcceptGrantView() {
   const grantId = new URLSearchParams(window.location.search).get('grant')
 
   useEffect(() => {
-    if (!grantId) { setError('Invalid invite link.'); setLoading(false); return }
+    if (!grantId) { setError(t('accounts.accept.invalidLink')); setLoading(false); return }
     if (!user) {
       // Can't fetch grant details without auth (RLS blocks anon access)
       // Show login prompt; grant details load after sign-in
@@ -29,12 +31,14 @@ export function AcceptGrantView() {
       .eq('id', grantId)
       .single()
       .then(({ data, error: e }) => {
-        if (e || !data) { setError('Invite not found or already used.') }
-        else if (data.status === 'active') { setError('This invite has already been accepted.') }
-        else if (data.status === 'revoked') { setError('This invite has been revoked.') }
+        if (e || !data) { setError(t('accounts.accept.notFound')) }
+        else if (data.status === 'active') { setError(t('accounts.accept.alreadyAccepted')) }
+        else if (data.status === 'revoked') { setError(t('accounts.accept.revoked')) }
         else setGrant(data)
         setLoading(false)
       })
+    // t only words the error; a language switch needn't refetch the grant.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [grantId, user])
 
   async function accept() {
@@ -53,12 +57,12 @@ export function AcceptGrantView() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.bg }}>
-      <p style={{ fontFamily: F.sans, color: C.textSub }}>Loading invite…</p>
+      <p style={{ fontFamily: F.sans, color: C.textSub }}>{t('accounts.accept.loading')}</p>
     </div>
   )
 
-  const accountName = grant?.account?.company_name || grant?.account?.name || 'an account'
-  const grantorName = grant?.grantor?.name || grant?.grantor?.email || 'Someone'
+  const accountName = grant?.account?.company_name || grant?.account?.name || t('accounts.accept.anAccount')
+  const grantorName = grant?.grantor?.name || grant?.grantor?.email || t('accounts.accept.someone')
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.bg, padding: 24 }}>
@@ -69,45 +73,49 @@ export function AcceptGrantView() {
         {error ? (
           <>
             <div style={{ color: C.red, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><IconWarning size={32} /></div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>Invite Error</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>{t('accounts.accept.errorTitle')}</h2>
             <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>{error}</p>
             <button onClick={() => navigate('/')} style={{ padding: '10px 24px', borderRadius: 10, background: C.purple, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 14, cursor: 'pointer', transition: 'opacity 0.15s' }}
               onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
               onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
             >
-              Go Home
+              {t('accounts.accept.goHome')}
             </button>
           </>
         ) : done ? (
           <>
             <div style={{ color: C.green, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><IconCheckCircle size={32} /></div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>Invite Accepted</h2>
-            <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans }}>Redirecting to your accounts…</p>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>{t('accounts.accept.acceptedTitle')}</h2>
+            <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans }}>{t('accounts.accept.redirecting')}</p>
           </>
         ) : !user ? (
           <div style={{ textAlign: 'center' }}>
             <div style={{ color: C.purple, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><IconMail size={32} /></div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>You've been invited</h2>
-            <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans, margin: '0 0 20px' }}>Sign in to see your invitation and accept it.</p>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>{t('accounts.accept.invitedTitle')}</h2>
+            <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans, margin: '0 0 20px' }}>{t('accounts.accept.signInPrompt')}</p>
             <button
               onClick={() => { sessionStorage.setItem('pending_grant', grantId); signInWithOAuth('google') }}
               style={{ width: '100%', padding: '10px', borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 14, cursor: 'pointer', color: C.text, marginBottom: 8, transition: 'background 0.15s' }}
               onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
               onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
-            >Continue with Google</button>
+            >{t('accounts.accept.google')}</button>
             <button
               onClick={() => { sessionStorage.setItem('pending_grant', grantId); navigate('/login') }}
               style={{ width: '100%', padding: '10px', borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 14, cursor: 'pointer', color: C.text, transition: 'background 0.15s' }}
               onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
               onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
-            >Sign in with email</button>
+            >{t('accounts.accept.email')}</button>
           </div>
         ) : (
           <>
             <div style={{ color: C.purple, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><IconMail size={32} /></div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>You're invited</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>{t('accounts.accept.youreInvited')}</h2>
             <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans, margin: '0 0 6px' }}>
-              <strong style={{ color: C.text }}>{grantorName}</strong> has given you <strong style={{ color: C.text }}>{grant?.role}</strong> access to
+              {tx('accounts.accept.hasGiven', {
+                b: chunk => <strong style={{ color: C.text }}>{chunk}</strong>,
+                grantor: grantorName,
+                role: grant?.role ? t(`accounts.roleLower.${grant.role}`) : '',
+              })}
             </p>
             <p style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: F.sans, margin: '0 0 28px' }}>{accountName}</p>
 
@@ -118,7 +126,7 @@ export function AcceptGrantView() {
                 onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
               >
-                Decline
+                {t('accounts.accept.decline')}
               </button>
               <button
                 onClick={accept}
@@ -126,7 +134,7 @@ export function AcceptGrantView() {
                 onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
                 onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
               >
-                Accept Invite
+                {t('accounts.accept.acceptInvite')}
               </button>
             </div>
           </>

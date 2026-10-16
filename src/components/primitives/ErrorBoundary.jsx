@@ -1,4 +1,6 @@
 import { Component } from 'react';
+import { C, F, T } from '../../design/tokens.js';
+import { Btn } from './Btn.jsx';
 
 export class ErrorBoundary extends Component {
   constructor(props) {
@@ -20,25 +22,18 @@ export class ErrorBoundary extends Component {
       return (
         <div style={{
           padding: '40px 32px', margin: 24, borderRadius: 12,
-          border: '1px solid #fca5a5', background: '#fef2f2',
-          fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+          border: `1px solid ${C.redBorder}`, background: C.redSoft,
+          fontFamily: F.sans,
         }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#dc2626', marginBottom: 8 }}>
+          <div style={{ fontSize: T.lg, fontWeight: 700, color: C.redText, marginBottom: 8 }}>
             Something went wrong
           </div>
-          <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>
+          <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 16 }}>
             {this.state.error.message}
           </div>
-          <button
-            onClick={() => this.setState({ error: null })}
-            style={{
-              padding: '7px 16px', borderRadius: 8, border: 'none',
-              background: '#dc2626', color: '#fff', fontSize: 13,
-              fontWeight: 500, cursor: 'pointer',
-            }}
-          >
+          <Btn variant="dangerSolid" onClick={() => this.setState({ error: null })}>
             Try again
-          </button>
+          </Btn>
         </div>
       );
     }

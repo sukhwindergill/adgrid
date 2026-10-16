@@ -4,7 +4,7 @@ import { C, F } from '../../../design/tokens.js';
 import { Card } from '../../../components/primitives/Card.jsx';
 import { Inp } from '../../../components/primitives/Inp.jsx';
 import { SelInput } from '../../../components/primitives/SelInput.jsx';
-import { VENUE_TAXONOMY, COUNTRIES } from '../../../lib/venueTypes.js';
+import { VENUE_TAXONOMY } from '../../../lib/venueTypes.js';
 import { buildLocationIndex, buildFlatLocationOptions } from '../../../lib/locationIndex.js';
 import { supabase } from '../../../lib/supabase.js';
 import { logDemandSignal } from '../../../lib/demandSignal.js';
@@ -13,10 +13,10 @@ import { LocationSearch } from './LocationSearch.jsx';
 import { ScreenMap } from './ScreenMap.jsx';
 import { TopScreensInsight } from './TopScreensInsight.jsx';
 import { SavedAudiencesBar } from './SavedAudiencesBar.jsx';
-
-const countryLabel = code => COUNTRIES.find(c => c.code === code)?.label ?? code;
+import { useT } from '../../../i18n/useT.js';
 
 export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount, allScreens, screensLoading = false, onPrevCampaigns, existingCampaign = null, pastCampaignIds = [] }) {
+  const { t, tx, regionName } = useT();
   const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
 
   // Log this search as a demand signal for the operator side's cold-start
@@ -71,25 +71,25 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
       <Card style={{ padding: 32 }}>
         {existingCampaign ? (
           <div style={{ marginBottom: 24, padding: '10px 14px', background: C.purpleSoft, borderRadius: 8, fontSize: 13, color: C.purple, fontFamily: F.sans }}>
-            Adding a new targeting group to <strong>{existingCampaign.name}</strong>
+            {tx('create.targeting.addingGroup', { b: chunk => <strong>{chunk}</strong>, name: existingCampaign.name })}
           </div>
         ) : (
           <div style={{ marginBottom: 24 }}>
             <Inp
-              label="Campaign name"
-              placeholder="e.g. Summer Promo 2026"
+              label={t('create.targeting.campaignName')}
+              placeholder={t('create.targeting.campaignNamePlaceholder')}
               value={form.name}
               onChange={e => setField('name', e.target.value)}
             />
           </div>
         )}
 
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>Where do you want to advertise?</h2>
-        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 20px' }}>Choose an area and, optionally, the kind of screens you're after — we'll find matching screens for you.</p>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>{t('create.targeting.heading')}</h2>
+        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 20px' }}>{t('create.targeting.sub')}</p>
 
         {noInventory && (
           <div style={{ marginBottom: 20, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder ?? '#fde68a'}`, borderRadius: 8, fontSize: 13, color: C.amber, fontFamily: F.sans }}>
-            No screens are live on the network yet — check back soon.
+            {t('create.targeting.noInventory')}
           </div>
         )}
 
@@ -99,7 +99,7 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
               onMouseEnter={e => { e.currentTarget.style.opacity = '0.75'; }}
               onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
             >
-              ↩ Start from a previous campaign →
+              {t('create.targeting.fromPrevious')}
             </button>
           </div>
         )}
@@ -107,11 +107,11 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
         <SavedAudiencesBar form={form} onApply={fields => setForm(s => ({ ...s, ...fields }))} />
 
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Area type</div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>{t('create.targeting.areaType')}</div>
           <PillGroup
             options={[
-              { value: 'location', label: 'Location' },
-              { value: 'radius',   label: 'Radius' },
+              { value: 'location', label: t('create.targeting.areaLocation') },
+              { value: 'radius',   label: t('create.targeting.areaRadius') },
             ]}
             value={form.area_type === 'radius' ? 'radius' : 'location'}
             onChange={v => setField('area_type', v === 'radius' ? 'radius' : (form.city ? 'city' : form.state ? 'state' : 'country'))}
@@ -121,12 +121,12 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {form.area_type !== 'radius' && (
             <div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 5 }}>Where</div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 5 }}>{t('create.targeting.where')}</div>
               <LocationSearch
                 options={flatLocationOptions}
-                value={form.city || form.state || (form.country ? countryLabel(form.country) : '')}
+                value={form.city || form.state || (form.country ? regionName(form.country) : '')}
                 loading={loading}
-                placeholder={loading ? 'Loading…' : noInventory ? 'No screens yet' : 'Search a country, state/province, or city…'}
+                placeholder={loading ? t('common.loading') : noInventory ? t('create.targeting.noScreensYet') : t('create.location.placeholder')}
                 onSelect={entry => setForm(s => ({
                   ...s,
                   area_type: entry.level,
@@ -142,12 +142,12 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
 
           {form.area_type === 'radius' && (
             <div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 5 }}>City</div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 5 }}>{t('create.targeting.city')}</div>
               <LocationSearch
                 options={radiusLocations.map(e => ({ level: 'city', ...e }))}
                 value={form.city}
                 loading={loading}
-                placeholder="Search a city to center the radius on…"
+                placeholder={t('create.targeting.radiusPlaceholder')}
                 onSelect={entry => setForm(s => ({
                   ...s,
                   country: entry.country,
@@ -160,10 +160,10 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
               {radiusResolved && (
                 <div style={{ marginTop: 12 }}>
                   <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>
-                    Radius: {form.radius_km} km — drag the pin to narrow to a specific part of {form.city}
+                    {t('create.targeting.radiusLabel', { km: form.radius_km, city: form.city })}
                   </div>
                   <PillGroup
-                    options={[5, 10, 25, 50, 100].map(v => ({ value: v, label: `${v}km` }))}
+                    options={[5, 10, 25, 50, 100].map(v => ({ value: v, label: t('create.targeting.km', { n: v }) }))}
                     value={form.radius_km}
                     onChange={v => setField('radius_km', v)}
                   />
@@ -191,21 +191,21 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
 
         <div style={{ marginTop: 24, paddingTop: 20, borderTop: `1px solid ${C.border}` }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: C.textMid, fontFamily: F.sans, marginBottom: 12 }}>
-            Screen type <span style={{ color: C.textMuted, fontWeight: 400 }}>(optional)</span>
+            {t('create.targeting.screenType')} <span style={{ color: C.textMuted, fontWeight: 400 }}>{t('common.optional')}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>Environment</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>{t('create.targeting.environment')}</div>
               <PillGroup
-                options={[{ value: 'any', label: 'Any' }, { value: 'indoor', label: 'Indoor' }, { value: 'outdoor', label: 'Outdoor' }]}
+                options={[{ value: 'any', label: t('common.env.any') }, { value: 'indoor', label: t('common.env.indoor') }, { value: 'outdoor', label: t('common.env.outdoor') }]}
                 value={form.env_filter}
                 onChange={v => setForm(s => ({ ...s, env_filter: v }))}
               />
             </div>
-            <SelInput label="Venue Category" value={form.venue_filter} onChange={e => setForm(s => ({ ...s, venue_filter: e.target.value }))}>
-              <option value="">Any venue type</option>
-              {Object.entries(VENUE_TAXONOMY).map(([key, { label }]) => (
-                <option key={key} value={key}>{label}</option>
+            <SelInput label={t('create.targeting.venueCategory')} value={form.venue_filter} onChange={e => setForm(s => ({ ...s, venue_filter: e.target.value }))}>
+              <option value="">{t('create.targeting.anyVenue')}</option>
+              {Object.keys(VENUE_TAXONOMY).map(key => (
+                <option key={key} value={key}>{t(`venue.category.${key}`)}</option>
               ))}
             </SelInput>
           </div>
@@ -237,9 +237,7 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
               style={{ marginTop: 2 }}
             />
             <span style={{ fontSize: 13, color: C.text, fontFamily: F.sans }}>
-              <strong>Run a holdout test</strong> — we'll randomly hold back ~20% of screens as a control
-              group to check whether delivery matched the measured audience, at no extra cost (control
-              screens aren't billed).
+              {tx('create.targeting.holdout', { b: chunk => <strong>{chunk}</strong> })}
             </span>
           </label>
         )}

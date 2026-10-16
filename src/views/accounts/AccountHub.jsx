@@ -3,8 +3,10 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import { supabase } from '../../lib/supabase.js'
 import { summarizeAccountBookings } from '../../lib/accountRollup.js'
 import { C, F } from '../../design/tokens.js'
+import { useT } from '../../i18n/useT.js'
 
 function RoleBadge({ role }) {
+  const { t } = useT()
   const colors = {
     admin:   { bg: C.purpleSoft, color: C.purple },
     manager: { bg: C.blueSoft,   color: C.blue },
@@ -14,12 +16,13 @@ function RoleBadge({ role }) {
   return (
     <span style={{
       padding: '2px 9px', borderRadius: 10, fontSize: 11, fontWeight: 600,
-      textTransform: 'capitalize', background: s.bg, color: s.color,
-    }}>{role}</span>
+      background: s.bg, color: s.color,
+    }}>{t(`accounts.roles.${role}`)}</span>
   )
 }
 
 function AccountCard({ account, isCurrent, onClick, rollup }) {
+  const { t, formatCurrency, formatNumber } = useT()
   const initials = (account.name || account.company_name || '?').slice(0, 2).toUpperCase()
   return (
     <div
@@ -52,7 +55,7 @@ function AccountCard({ account, isCurrent, onClick, rollup }) {
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans }}>
-            {account.company_name || account.name || 'Unnamed Account'}
+            {account.company_name || account.name || t('accounts.hub.unnamed')}
           </div>
           {account.role && (
             <div style={{ marginTop: 4 }}>
@@ -61,21 +64,21 @@ function AccountCard({ account, isCurrent, onClick, rollup }) {
           )}
         </div>
         {isCurrent && (
-          <span style={{ fontSize: 11, color: C.purple, fontFamily: F.sans, fontWeight: 600 }}>Active</span>
+          <span style={{ fontSize: 11, color: C.purple, fontFamily: F.sans, fontWeight: 600 }}>{t('accounts.hub.active')}</span>
         )}
       </div>
       {account.isOwn && (
-        <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>Your account</div>
+        <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>{t('accounts.hub.yours')}</div>
       )}
       {rollup && (
         <div style={{ display: 'flex', gap: 16, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{rollup.activeCampaigns}</div>
-            <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>active campaign{rollup.activeCampaigns === 1 ? '' : 's'}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{formatNumber(rollup.activeCampaigns)}</div>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{t('accounts.hub.activeCampaigns', { count: rollup.activeCampaigns })}</div>
           </div>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono }}>${rollup.spend.toLocaleString()}</div>
-            <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>spend to date</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{formatCurrency(rollup.spend, { minimumFractionDigits: 0 })}</div>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{t('accounts.hub.spend')}</div>
           </div>
         </div>
       )}
@@ -85,6 +88,7 @@ function AccountCard({ account, isCurrent, onClick, rollup }) {
 
 export function AccountHub({ onSelectAccount }) {
   const { user, profile, grants, activeAccount } = useAuth()
+  const { t } = useT()
 
   const ownAccount = {
     id: user?.id,
@@ -137,9 +141,9 @@ export function AccountHub({ onSelectAccount }) {
 
   return (
     <div style={{ padding: '48px 40px', maxWidth: 860, margin: '0 auto', fontFamily: F.sans }}>
-      <h1 style={{ fontSize: 26, fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Accounts</h1>
+      <h1 style={{ fontSize: 26, fontWeight: 700, color: C.text, margin: '0 0 8px' }}>{t('accounts.hub.title')}</h1>
       <p style={{ fontSize: 14, color: C.textSub, margin: '0 0 32px' }}>
-        Select an account to manage. You can switch at any time from the header.
+        {t('accounts.hub.sub')}
       </p>
 
       <div style={{

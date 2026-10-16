@@ -4,37 +4,23 @@ import { useReveal } from './useReveal.js';
 import { supabase } from '../../../lib/supabase.js';
 import { getUtmLabel } from '../../../lib/utm.js';
 import { track } from '../../../lib/analytics.js';
+import { useT } from '../../../i18n/useT.js';
 
 export function applyUtmPrefill(prev, label) {
   return prev.source ? prev : { ...prev, source: label };
 }
 
-const ROLE_COPY = {
-  operator: {
-    eyebrow: 'Early operator access',
-    sub: "We're onboarding a first group of screen operators before public launch. Early operators get priority placement and hands-on onboarding support.",
-    company: 'Company or venue name',
-    companyPlaceholder: 'Name of your business or network',
-    submit: 'Join the operator waitlist',
-  },
-  advertiser: {
-    eyebrow: 'Early advertiser access',
-    sub: "We're lining up a first group of local advertisers for launch. Early advertisers get first pick of screens in their neighbourhood and help setting up their first campaign.",
-    company: 'Business name',
-    companyPlaceholder: 'The business you want to advertise',
-    submit: 'Join the advertiser waitlist',
-  },
-};
 
 // `role` is controlled by the page (so hero/section CTAs can pre-select a
 // side) but falls back to local state when rendered standalone.
 export function CtaBand({ role: roleProp, onRoleChange }) {
+  const { t, tx } = useT();
   const [ref, on] = useReveal();
   const navigate = useNavigate();
   const [localRole, setLocalRole] = useState(roleProp ?? 'operator');
   const role = roleProp ?? localRole;
   const setRole = next => { setLocalRole(next); onRoleChange?.(next); };
-  const copy = ROLE_COPY[role];
+  const copyKey = key => t(`marketing.waitlist.${role}.${key}`);
   const [form, setForm] = useState({ name: '', email: '', company: '', city: '', screens: '', source: '' });
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState(null);
@@ -64,7 +50,7 @@ export function CtaBand({ role: roleProp, onRoleChange }) {
     });
     setSubmitting(false);
     if (error && !error.message?.includes('duplicate')) {
-      setSubmitErr('Something went wrong. Please try again.');
+      setSubmitErr(t('marketing.waitlist.error'));
       return;
     }
     track('waitlist_submitted', { role });
@@ -74,14 +60,14 @@ export function CtaBand({ role: roleProp, onRoleChange }) {
   return (
     <section className="sec dark" id="waitlist-form" ref={ref}>
       <div className={`inner rv ${on ? 'on' : ''}`} style={{ textAlign: 'center' }}>
-        <div className="eyebrow">{copy.eyebrow}</div>
-        <h2 className="sec-h">Launching in Toronto and Vancouver</h2>
-        <p className="sec-sub" style={{ margin: '14px auto 0' }}>{copy.sub}</p>
+        <div className="eyebrow">{copyKey('eyebrow')}</div>
+        <h2 className="sec-h">{t('marketing.waitlist.heading')}</h2>
+        <p className="sec-sub" style={{ margin: '14px auto 0' }}>{copyKey('sub')}</p>
 
         <div className="form-card">
           <form onSubmit={handleSubmit}>
-            <div className="role-toggle" role="radiogroup" aria-label="I'm joining as">
-              {[['operator', 'I have screens'], ['advertiser', 'I want to advertise']].map(([value, label]) => (
+            <div className="role-toggle" role="radiogroup" aria-label={t('marketing.waitlist.joiningAs')}>
+              {[['operator', t('marketing.waitlist.roleOperator')], ['advertiser', t('marketing.waitlist.roleAdvertiser')]].map(([value, label]) => (
                 <button key={value} type="button" role="radio" aria-checked={role === value}
                   className={`role-opt ${role === value ? 'on' : ''}`} onClick={() => setRole(value)}>
                   {label}
@@ -90,9 +76,9 @@ export function CtaBand({ role: roleProp, onRoleChange }) {
             </div>
 
             {[
-              { id: 'wl-name', label: 'Full name', field: 'name', type: 'text', placeholder: 'Jane Smith' },
-              { id: 'wl-email', label: 'Work email', field: 'email', type: 'email', placeholder: 'jane@yourcompany.com', required: true },
-              { id: 'wl-company', label: copy.company, field: 'company', type: 'text', placeholder: copy.companyPlaceholder },
+              { id: 'wl-name', label: t('marketing.waitlist.name'), field: 'name', type: 'text', placeholder: t('marketing.waitlist.namePlaceholder') },
+              { id: 'wl-email', label: t('marketing.waitlist.email'), field: 'email', type: 'email', placeholder: t('marketing.waitlist.emailPlaceholder'), required: true },
+              { id: 'wl-company', label: copyKey('company'), field: 'company', type: 'text', placeholder: copyKey('companyPlaceholder') },
             ].map(f => (
               <div className="form-field" key={f.id}>
                 <label htmlFor={f.id} className="form-label">{f.label}</label>
@@ -102,39 +88,39 @@ export function CtaBand({ role: roleProp, onRoleChange }) {
             ))}
 
             <div className="form-field">
-              <label htmlFor="wl-city" className="form-label">City</label>
+              <label htmlFor="wl-city" className="form-label">{t('marketing.waitlist.city')}</label>
               <select id="wl-city" className="fi" value={form.city} onChange={set('city')}>
-                <option value="">Select city…</option>
-                <option value="toronto">Toronto</option>
-                <option value="vancouver">Vancouver</option>
-                <option value="other-ca">Other Canadian city</option>
-                <option value="multiple">Multiple cities</option>
+                <option value="">{t('marketing.waitlist.cityPlaceholder')}</option>
+                <option value="toronto">{t('marketing.waitlist.cityToronto')}</option>
+                <option value="vancouver">{t('marketing.waitlist.cityVancouver')}</option>
+                <option value="other-ca">{t('marketing.waitlist.cityOther')}</option>
+                <option value="multiple">{t('marketing.waitlist.cityMultiple')}</option>
               </select>
             </div>
 
             {role === 'operator' && (
               <div className="form-field">
-                <label htmlFor="wl-screens" className="form-label">Number of screens</label>
+                <label htmlFor="wl-screens" className="form-label">{t('marketing.waitlist.screens')}</label>
                 <select id="wl-screens" className="fi" value={form.screens} onChange={set('screens')}>
-                  <option value="">Select range…</option>
+                  <option value="">{t('marketing.waitlist.screensPlaceholder')}</option>
                   <option value="1-5">1-5</option>
                   <option value="6-20">6-20</option>
                   <option value="21-100">21-100</option>
                   <option value="100+">100+</option>
-                  <option value="not-yet">Not yet deployed</option>
+                  <option value="not-yet">{t('marketing.waitlist.screensNotYet')}</option>
                 </select>
               </div>
             )}
 
             <div className="form-field" style={{ marginBottom: 28 }}>
               <label htmlFor="wl-source" className="form-label">
-                How did you hear about AdGrid? <span style={{ color: 'var(--sec)' }}>(optional)</span>
+                {t('marketing.waitlist.source')} <span style={{ color: 'var(--sec)' }}>{t('common.optional')}</span>
               </label>
               <input id="wl-source" className="fi" type="text" value={form.source} onChange={set('source')} />
             </div>
 
             <button type="submit" className="btn-p" style={{ width: '100%', padding: 15 }} disabled={submitting}>
-              {submitting ? 'Submitting…' : copy.submit}
+              {submitting ? t('marketing.waitlist.submitting') : copyKey('submit')}
             </button>
 
             {submitErr && (
@@ -144,8 +130,9 @@ export function CtaBand({ role: roleProp, onRoleChange }) {
             )}
 
             <p style={{ font: '400 13px/1.5 var(--inter)', color: 'var(--sec)', textAlign: 'center', marginTop: 16 }}>
-              We'll respond within 2 business days. By submitting, you agree to our{' '}
-              <Link to="/privacy" style={{ color: 'var(--sec)' }}>Privacy Policy</Link>. We'll never share your information.
+              {tx('marketing.waitlist.privacy', {
+                privacy: chunk => <Link to="/privacy" style={{ color: 'var(--sec)' }}>{chunk}</Link>,
+              })}
             </p>
           </form>
         </div>

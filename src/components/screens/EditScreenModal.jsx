@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T, SH } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Btn } from '../primitives/Btn.jsx';
+import { Chip } from '../primitives/Chip.jsx';
+import { Modal } from '../primitives/Modal.jsx';
 import { Inp } from '../primitives/Inp.jsx';
 import { SelInput } from '../primitives/SelInput.jsx';
 import { OperatingHoursFields } from './OperatingHoursFields.jsx';
@@ -15,15 +18,9 @@ function FormatChips({ value, onChange }) {
       {FORMAT_OPTIONS.map(fmt => {
         const active = value.includes(fmt);
         return (
-          <button key={fmt} type="button" onClick={() => {
+          <Chip key={fmt} selected={active} onClick={() => {
             onChange(active ? value.filter(f => f !== fmt) : [...value, fmt]);
-          }} style={{
-            padding: '6px 12px', borderRadius: 16, cursor: 'pointer',
-            border: `1px solid ${active ? C.purple : C.border}`,
-            background: active ? C.purpleSoft : C.surface,
-            color: active ? C.purple : C.textSub,
-            fontSize: 12, fontFamily: F.sans,
-          }}>{fmt}</button>
+          }}>{fmt}</Chip>
         );
       })}
     </div>
@@ -86,12 +83,7 @@ export function EditScreenModal({ screen, onClose, onSaved }) {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
-      <div style={{ background: C.surface, borderRadius: 14, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto', padding: 28, boxShadow: '0 24px 60px rgba(0,0,0,0.15)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans }}>Edit Screen</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, color: C.textMuted, cursor: 'pointer' }}>×</button>
-        </div>
+    <Modal title="Edit Screen" onClose={onClose}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
           <Inp label="Screen Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
           <Inp label="Location / Address" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} />
@@ -109,10 +101,10 @@ export function EditScreenModal({ screen, onClose, onSaved }) {
           </div>
           <OperatingHoursFields value={hours} onChange={setHours} />
           <div style={{ marginTop: 4 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 4 }}>
+            <div style={{ ...TX.label, marginBottom: 4 }}>
               Creative spec <span style={{ color: C.textMuted, fontWeight: 400 }}>(optional)</span>
             </div>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 10, lineHeight: 1.5 }}>
+            <div style={{ ...TX.caption, marginBottom: 10, lineHeight: 1.5 }}>
               Lets advertisers know before they upload whether their creative fits your screen.
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
@@ -122,19 +114,18 @@ export function EditScreenModal({ screen, onClose, onSaved }) {
                 value={form.resolution_h} onChange={e => setForm(f => ({ ...f, resolution_h: e.target.value }))} />
             </div>
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginBottom: 6 }}>Accepted file formats</div>
+              <div style={{ ...TX.helper, marginBottom: 6 }}>Accepted file formats</div>
               <FormatChips value={form.accepted_formats} onChange={v => setForm(f => ({ ...f, accepted_formats: v }))} />
             </div>
             <Inp label="Max file size (MB)" type="number" min="1" placeholder="e.g. 20"
               value={form.max_file_mb} onChange={e => setForm(f => ({ ...f, max_file_mb: e.target.value }))} />
           </div>
         </div>
-        {err && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginBottom: 12 }}>{err}</div>}
+        {err && <div style={{ ...TX.error, marginBottom: 12 }}>{err}</div>}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
           <Btn onClick={save} disabled={!form.name || saving}>{saving ? 'Saving…' : 'Save Changes'}</Btn>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

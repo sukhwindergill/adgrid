@@ -53,7 +53,11 @@
 .nl { background: none; border: none; cursor: pointer; font: 500 14px/1 var(--inter); color: var(--sec); padding: 8px 12px; border-radius: 6px; transition: color .15s; white-space: nowrap; }
 .nl:hover { color: #fff; }
 .nav-spacer { flex: 1; }
-@media (max-width: 768px) { .nav-mid { display: none; } }
+/* Section links never wrap; below 960px (where French labels stop fitting)
+   they move into the burger menu, while Sign in / Get started stay visible
+   down to the phone breakpoint. */
+.nav-mid { display: flex; flex-wrap: nowrap; }
+@media (max-width: 960px) { .nav-mid { display: none; } }
 .nav-search-wrap { flex-shrink: 0; }
 .site-search-input {
   padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
@@ -84,6 +88,7 @@
   transition: background .15s;
 }
 .nav-burger:hover { background: rgba(255,255,255,0.06); }
+@media (max-width: 960px) { .nav-burger { display: flex; } }
 .nav-burger span { display: block; width: 20px; height: 2px; background: #fff; border-radius: 2px; transition: opacity .15s; }
 .nav-mobile-menu {
   display: flex; flex-direction: column;
@@ -93,7 +98,6 @@
 .nav-mobile-menu .nl { text-align: left; padding: 12px 20px; font-size: 15px; }
 .nav-divider { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
 @media (max-width: 768px) {
-  .nav-burger { display: flex; }
   .nav-desktop-only { display: none; }
 }
 
@@ -371,7 +375,11 @@ select.fi { appearance: none; cursor: pointer; }
   outline: 2px solid #7B2FFF;
   outline-offset: 2px;
 }
+/* Hero CTAs: side by side on desktop, equal full-width stack on phones. */
+.hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; }
 @media (max-width: 768px) {
+  .hero-ctas { flex-direction: column; }
+  .hero-ctas .btn-p, .hero-ctas .btn-s { width: 100%; }
   .sticky-mobile-cta {
     display: flex; gap: 10px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
     padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
@@ -386,6 +394,12 @@ select.fi { appearance: none; cursor: pointer; }
   /* The global scroll-to-top circle sits in the same bottom-right corner as
      the sticky bar's primary button; the bar already covers navigation here. */
   body:has(.sticky-mobile-cta) .scroll-top-btn { display: none !important; }
+  /* One bottom bar at a time: the cookie notice takes the slot until it's
+     dismissed, then the sticky CTA appears. The floating contact button
+     duplicates the bar on phones, so it's hidden here. */
+  body:has(.cookie-banner) .sticky-mobile-cta { display: none; }
+  body:has(.cookie-banner) .cookie-banner { bottom: env(safe-area-inset-bottom); }
+  body:has(.sticky-mobile-cta) .floating-contact-btn { display: none !important; }
 }
 
 /* ── Earnings calculator ── */

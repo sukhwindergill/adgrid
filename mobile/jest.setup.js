@@ -5,6 +5,7 @@ jest.mock('expo-router', () => ({
   useSegments: () => [],
   useLocalSearchParams: () => ({}),
   Link: ({ children }) => children,
+  Redirect: () => null,
   Stack: { Screen: () => null },
   Tabs: { Screen: () => null },
 }));

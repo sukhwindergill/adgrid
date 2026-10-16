@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
 import { Btn } from '../primitives/Btn.jsx';
 import { fetchOrCreateThread, fetchThreadMessages, sendThreadMessage } from '../../lib/marketplace.js';
 import { useToast } from '../primitives/Toast.jsx';
@@ -38,7 +38,7 @@ export function MarketplaceThread({ listingId, operatorId }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 240, overflowY: 'auto' }}>
         {messages.map(m => (
           <div key={m.id} style={{
-            fontFamily: F.sans, fontSize: 13, color: C.textMid,
+            fontFamily: F.sans, fontSize: T.base, color: C.textMid,
             background: C.surfaceAlt, borderRadius: 8, padding: '8px 12px',
           }}>
             {m.body}
@@ -51,7 +51,7 @@ export function MarketplaceThread({ listingId, operatorId }) {
           onChange={e => setDraft(e.target.value)}
           placeholder="Ask a question about this listing"
           style={{
-            flex: 1, fontFamily: F.sans, fontSize: 13, padding: '8px 12px',
+            flex: 1, fontFamily: F.sans, fontSize: T.base, padding: '8px 12px',
             border: `1px solid ${C.border}`, borderRadius: 8,
           }}
         />

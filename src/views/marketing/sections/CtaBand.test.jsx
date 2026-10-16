@@ -80,7 +80,7 @@ describe('CtaBand', () => {
   it('follows a role pre-selected by the page', () => {
     render(<MemoryRouter><CtaBand role="advertiser" /></MemoryRouter>);
     expect(screen.getByRole('radio', { name: /i want to advertise/i })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByText('Early advertiser access')).toBeInTheDocument();
+    expect(screen.getByText('Advertising outside Toronto or Vancouver?')).toBeInTheDocument();
   });
 
   describe('UTM pre-fill', () => {

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { notifyDecision } from '../lib/campaignNotifications';
 
 const FUNCTIONS_URL = process.env.EXPO_PUBLIC_SUPABASE_URL
   ? `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1`
@@ -22,7 +23,7 @@ const SELECT = `
   id, status, screen_id, campaign_id, approved_at,
   screen:screens(id, name, operator_id),
   campaign:bookings(
-    id, name:campaign_name, advertiser_name, budget, start_when,
+    id, name:campaign_name, advertiser_id, advertiser_name, budget, start_when,
     start_date, end_date, headline, media_url, media_type
   )
 `;
@@ -164,7 +165,10 @@ export function useApprovals(operatorId, screenIds) {
     // attemptCharge sets its own error on a real charge failure -- don't
     // clear it again after the fact, or a genuine failure gets silently
     // wiped the instant this function returns.
-    if (allClear) await attemptCharge(campaignId);
+    if (allClear) {
+      notifyDecision('campaign_approved', pending.find(p => p.id === campaignScreenId));
+      await attemptCharge(campaignId);
+    }
 
     setPending(prev => prev.filter(p => p.id !== campaignScreenId));
     return { error: null };
@@ -179,6 +183,7 @@ export function useApprovals(operatorId, screenIds) {
       .update({ status: 'rejected', reject_reason: reason })
       .eq('id', campaignScreenId);
     if (err) { setError(err.message); return { error: err }; }
+    notifyDecision('campaign_rejected', pending.find(p => p.id === campaignScreenId), reason);
     setError(null);
     setPending(prev => prev.filter(p => p.id !== campaignScreenId));
     return { error: null };

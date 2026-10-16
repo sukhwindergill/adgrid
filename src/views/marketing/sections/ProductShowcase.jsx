@@ -1,48 +1,48 @@
 import { useEffect, useState } from 'react';
 import { useReveal } from './useReveal.js';
 import { useCountUp } from './useCountUp.js';
+import { useT } from '../../../i18n/useT.js';
 
 const TABS = {
   operators: {
-    kpis: [['Screens live', '3'], ['Fill rate', '80%'], ['This month', '$6,075']],
+    // Illustrative only, and kept in line with EarningsCalculator's
+    // assumptions ($5 CPM, 4 spots per visitor, 70% payout) so the two
+    // sections never tell a visitor different stories.
+    kpis: [['kpiScreens', 3, 'int'], ['kpiFill', 72, 'pct'], ['kpiMonth', 545, 'money']],
     rows: [
-      ['Queen St & Spadina', 82, '$1,240'],
-      ['Union Station Concourse', 91, '$2,860'],
-      ['Yonge-Dundas Square', 67, '$1,975'],
+      ['rowGym', 84, 310, 'money'],
+      ['rowCafe', 68, 140, 'money'],
+      ['rowClinic', 55, 95, 'money'],
     ],
-    caption: 'List inventory, set floor prices, approve every ad, and track earnings per screen.',
   },
   advertisers: {
-    kpis: [['Active campaigns', '2'], ['Plays today', '1,431'], ['QR scans', '96']],
+    kpis: [['kpiActive', 2, 'int'], ['kpiPlays', 1431, 'int'], ['kpiScans', 96, 'int']],
     rows: [
-      ['Downtown coffee launch', 74, '512 plays'],
-      ['Weekend class promo', 58, '344 plays'],
-      ['Neighbourhood open house', 41, '187 plays'],
+      ['rowCoffee', 74, 512, 'plays'],
+      ['rowClass', 58, 344, 'plays'],
+      ['rowOpenHouse', 41, 187, 'plays'],
     ],
-    caption: 'Pick venues, set a budget, upload creative, and watch plays and scans come in live.',
   },
 };
 
-function parseKpi(str) {
-  const m = str.match(/^([^\d]*)([\d,]+)(.*)$/);
-  if (!m) return { prefix: '', target: 0, suffix: str, hasComma: false };
-  const [, prefix, digits, suffix] = m;
-  return { prefix, target: parseInt(digits.replace(/,/g, ''), 10), suffix, hasComma: digits.includes(',') };
+function useKpiFormat(tab) {
+  const { t, formatCurrency, formatNumber, formatPercent } = useT();
+  return (value, kind) => {
+    const n = Math.round(value);
+    if (kind === 'money') return formatCurrency(n, { decimals: 0 });
+    if (kind === 'pct') return formatPercent(n / 100);
+    if (kind === 'plays') return t(`marketing.showcase.${tab}.plays`, { count: n });
+    return formatNumber(n);
+  };
 }
 
-function formatKpi(parsed, value) {
-  const rounded = Math.round(value);
-  const numStr = parsed.hasComma ? rounded.toLocaleString('en-US') : String(rounded);
-  return `${parsed.prefix}${numStr}${parsed.suffix}`;
-}
-
-function Kpi({ label, value, active }) {
-  const parsed = parseKpi(value);
-  const animated = useCountUp(parsed.target, active);
+function Kpi({ label, value, kind, tab, active }) {
+  const format = useKpiFormat(tab);
+  const animated = useCountUp(value, active);
   return (
     <div className="mock-kpi">
       <div className="k">{label}</div>
-      <div className="v">{formatKpi(parsed, animated)}</div>
+      <div className="v">{format(animated, kind)}</div>
     </div>
   );
 }
@@ -65,31 +65,35 @@ function MockRow({ name, pct, val, delay }) {
 
 export function ProductShowcase() {
   const [ref, on] = useReveal();
+  const { t } = useT();
+  const format = useKpiFormat('advertisers');
   const [tab, setTab] = useState('operators');
-  const t = TABS[tab];
+  const data = TABS[tab];
+  const ns = `marketing.showcase.${tab}`;
   return (
     <section className="sec light" id="product" ref={ref}>
       <div className={`inner rv ${on ? 'on' : ''}`} style={{ textAlign: 'center' }}>
-        <div className="eyebrow">The product</div>
-        <h2 className="sec-h">One dashboard for each side of the marketplace</h2>
+        <div className="eyebrow">{t('marketing.showcase.eyebrow')}</div>
+        <h2 className="sec-h">{t('marketing.showcase.heading')}</h2>
         <div className="toggle">
-          <button className={tab === 'operators' ? 'on' : ''} onClick={() => setTab('operators')}>For operators</button>
-          <button className={tab === 'advertisers' ? 'on' : ''} onClick={() => setTab('advertisers')}>For advertisers</button>
+          <button className={tab === 'operators' ? 'on' : ''} onClick={() => setTab('operators')}>{t('marketing.nav.forOperators')}</button>
+          <button className={tab === 'advertisers' ? 'on' : ''} onClick={() => setTab('advertisers')}>{t('marketing.nav.forAdvertisers')}</button>
         </div>
         <div className="shot-frame">
           <div className="shot-bar"><span /><span /><span /></div>
           <div className="shot-stage" style={{ textAlign: 'left' }}>
             <div className="mock-kpis">
-              {t.kpis.map(([k, v]) => (
-                <Kpi key={`${tab}-${k}`} label={k} value={v} active={on} />
+              {data.kpis.map(([k, v, kind]) => (
+                <Kpi key={`${tab}-${k}`} label={t(`${ns}.${k}`)} value={v} kind={kind} tab={tab} active={on} />
               ))}
             </div>
-            {t.rows.map(([name, pct, val], i) => (
-              <MockRow key={`${tab}-${name}`} name={name} pct={pct} val={val} delay={i * 80} />
+            {data.rows.map(([name, pct, val, kind], i) => (
+              <MockRow key={`${tab}-${name}`} name={t(`${ns}.${name}`)} pct={pct} val={format(val, kind)} delay={i * 80} />
             ))}
           </div>
         </div>
-        <p className="sec-sub" style={{ margin: '20px auto 0' }}>{t.caption}</p>
+        <p className="sec-sub" style={{ margin: '20px auto 0' }}>{t(`${ns}.caption`)}</p>
+        <p style={{ margin: '8px auto 0', fontSize: 12, opacity: 0.6 }}>{t('marketing.showcase.disclaimer')}</p>
       </div>
     </section>
   );

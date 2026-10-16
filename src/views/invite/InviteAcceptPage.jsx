@@ -5,10 +5,12 @@ import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js'
 import { C, F } from '../../design/tokens.js'
 import { Btn } from '../../components/primitives/Btn.jsx'
 import { Inp } from '../../components/primitives/Inp.jsx'
+import { useT } from '../../i18n/useT.js'
 
 export function InviteAcceptPage() {
   const { token } = useParams()
   const navigate = useNavigate()
+  const { t } = useT()
   const [status, setStatus] = useState('loading') // loading | valid | invalid | expired | already_accepted
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -32,7 +34,7 @@ export function InviteAcceptPage() {
   }, [token])
 
   async function submit() {
-    if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
+    if (password.length < 8) { setError(t('invite.operator.passwordTooShort')); return }
     setError('')
     setSaving(true)
 
@@ -40,7 +42,7 @@ export function InviteAcceptPage() {
     if (pwError) { setSaving(false); setError(pwError.message); return }
 
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { setSaving(false); setError('Your session expired — please click the invite link again.'); return }
+    if (!session) { setSaving(false); setError(t('invite.operator.sessionExpired')); return }
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/accept-operator-invite`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
@@ -50,10 +52,10 @@ export function InviteAcceptPage() {
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
       setError(
-        body?.error === 'expired' ? 'This invite has expired.'
-        : body?.error === 'already_accepted' ? 'This invite was already used.'
-        : body?.error === 'email_mismatch' ? 'This invite was sent to a different email address. Please sign out and use the link from your invite email.'
-        : 'Something went wrong finishing setup. Try again.'
+        body?.error === 'expired' ? t('invite.operator.expired')
+        : body?.error === 'already_accepted' ? t('invite.operator.alreadyUsed')
+        : body?.error === 'email_mismatch' ? t('invite.operator.emailMismatch')
+        : t('invite.operator.finishError')
       )
       return
     }
@@ -64,18 +66,18 @@ export function InviteAcceptPage() {
   const card = { width: '100%', maxWidth: 380, background: 'rgba(17,17,24,0.9)', border: '1px solid #1E1E2E', borderRadius: 16, padding: 28 }
 
   if (status === 'loading') {
-    return <div style={page}><div style={{ color: '#8A8A9A', fontFamily: F.sans, fontSize: 13 }}>Loading…</div></div>
+    return <div style={page}><div style={{ color: '#8A8A9A', fontFamily: F.sans, fontSize: 13 }}>{t('common.loading')}</div></div>
   }
 
   if (status === 'invalid' || status === 'expired' || status === 'already_accepted') {
-    const message = status === 'invalid' ? "This invite link isn't valid."
-      : status === 'expired' ? 'This invite has expired. Ask your platform owner to send a new one.'
-      : 'This invite was already used.'
+    const message = status === 'invalid' ? t('invite.operator.invalidLink')
+      : status === 'expired' ? t('invite.operator.expiredAsk')
+      : t('invite.operator.alreadyUsed')
     return (
       <div style={page}>
         <div style={card}>
           <p style={{ color: '#fff', fontFamily: F.sans, fontSize: 14, marginBottom: 16 }}>{message}</p>
-          <Btn onClick={() => navigate('/login')}>Back to sign in</Btn>
+          <Btn onClick={() => navigate('/login')}>{t('invite.operator.backToSignIn')}</Btn>
         </div>
       </div>
     )
@@ -85,15 +87,15 @@ export function InviteAcceptPage() {
     <div style={page}>
       <div style={card}>
         <h1 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4, fontFamily: F.display }}>
-          Set your password
+          {t('invite.operator.heading')}
         </h1>
         <p style={{ fontSize: 13, color: '#8A8A9A', marginBottom: 20, fontFamily: F.sans }}>
-          Choose a password to finish setting up your operator account.
+          {t('invite.operator.sub')}
         </p>
         {error && <div style={{ color: C.red, fontFamily: F.sans, fontSize: 12, marginBottom: 12 }}>{error}</div>}
         <div style={{ marginBottom: 16 }}>
           <Inp
-            label="Password"
+            label={t('invite.operator.password')}
             type="password"
             placeholder="••••••••"
             value={password}
@@ -101,7 +103,7 @@ export function InviteAcceptPage() {
           />
         </div>
         <Btn onClick={submit} disabled={saving} style={{ width: '100%', justifyContent: 'center' }}>
-          {saving ? 'Saving…' : 'Set password and continue'}
+          {saving ? t('common.saving') : t('invite.operator.submit')}
         </Btn>
       </div>
     </div>

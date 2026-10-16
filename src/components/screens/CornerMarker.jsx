@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T, alpha } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Btn } from '../primitives/Btn.jsx';
 import { validateQuadOrientation } from '../../lib/quadWarp.js';
 
@@ -86,7 +87,7 @@ export function CornerMarker({ photoUrl, initialCorners, onSave, onSkip }) {
         <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
           <polygon
             points={corners.map(([x, y]) => `${x * 100}%,${y * 100}%`).join(' ')}
-            fill="rgba(123,47,255,0.15)"
+            fill={alpha(C.purple, 0.15)}
             stroke={valid ? C.purple : C.red}
             strokeWidth={2}
           />
@@ -107,19 +108,19 @@ export function CornerMarker({ photoUrl, initialCorners, onSave, onSkip }) {
       </div>
 
       {!valid && (
-        <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginTop: 8 }}>
+        <div style={{ ...TX.error, marginTop: 8 }}>
           Corners cross over each other — drag them so they form a simple, non-crossing shape around the screen.
         </div>
       )}
 
-      <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginTop: 8, marginBottom: 16 }}>
+      <div style={{ ...TX.helper, marginTop: 8, marginBottom: 16 }}>
         Drag each dot onto the actual edge of the screen in the photo.
       </div>
 
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-        <button type="button" onClick={onSkip} style={{ background: 'none', border: 'none', fontSize: 12, color: C.textMuted, cursor: 'pointer', fontFamily: F.sans }}>
+        <Btn variant="unstyled" type="button" onClick={onSkip} style={TX.helperMuted}>
           Skip — no clear screen edge
-        </button>
+        </Btn>
         <div style={{ flex: 1 }} />
         <Btn onClick={() => onSave(corners)} disabled={!valid}>Save corners</Btn>
       </div>

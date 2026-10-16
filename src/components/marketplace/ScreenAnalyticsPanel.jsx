@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
+import { Card } from '../primitives/Card.jsx';
 import { supabase } from '../../lib/supabase.js';
 import { fetchScreenDemographics } from '../../lib/marketplace.js';
 
@@ -40,42 +42,39 @@ export function ScreenAnalyticsPanel({ screenId }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div
-        data-testid="traffic-section"
-        style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}
-      >
-        <div style={{ fontFamily: F.sans, fontWeight: 600, fontSize: 13, color: C.text, marginBottom: 8 }}>
+      <Card data-testid="traffic-section" style={{ padding: 16 }}>
+        <div style={{ ...TX.strong, marginBottom: 8 }}>
           Traffic — platform-verified
         </div>
         {trafficError ? (
-          <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMuted }}>Traffic data unavailable right now.</div>
+          <div style={TX.bodyMuted}>Traffic data unavailable right now.</div>
         ) : traffic ? (
-          <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMid }}>
+          <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.textMid }}>
             ~{traffic.avgDaily} scans/day average, based on {traffic.sampleDays} days of measured data
           </div>
         ) : (
-          <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMuted }}>Loading…</div>
+          <div style={TX.bodyMuted}>Loading…</div>
         )}
-      </div>
+      </Card>
 
       <div
         data-testid="demographic-section"
         style={{ background: C.surfaceAlt, border: `1px dashed ${C.borderDark}`, borderRadius: 12, padding: 16 }}
       >
-        <div style={{ fontFamily: F.sans, fontWeight: 600, fontSize: 13, color: C.textMid, marginBottom: 8 }}>
+        <div style={{ fontFamily: F.sans, fontWeight: 600, fontSize: T.base, color: C.textMid, marginBottom: 8 }}>
           Area estimate — not board-verified
         </div>
         {demo === null ? (
-          <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMuted }}>Loading…</div>
+          <div style={TX.bodyMuted}>Loading…</div>
         ) : demo.available ? (
-          <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMid }}>
+          <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.textMid }}>
             Median age ~{demo.medianAge ?? '—'}, household income {INCOME_LABELS[demo.incomeBand] ?? '—'}
-            <div style={{ fontSize: 11, color: C.textMuted, marginTop: 4 }}>
+            <div style={{ fontSize: T.xs, color: C.textMuted, marginTop: 4 }}>
               Based on public census data for this area, not measured foot traffic.
             </div>
           </div>
         ) : (
-          <div style={{ fontFamily: F.sans, fontSize: 13, color: C.textMuted }}>
+          <div style={TX.bodyMuted}>
             Demographic data not available for this location.
           </div>
         )}

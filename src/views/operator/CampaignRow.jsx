@@ -1,8 +1,10 @@
 import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T, alpha } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Badge } from '../../components/primitives/Badge.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { Hover } from '../../components/primitives/Hover.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { ApproveBtn } from '../../lib/campaignActions.jsx';
 import { pluralize } from '../../lib/pluralize.js';
@@ -20,7 +22,7 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
   const toast = useToast();
 
   return (
-    <div
+    <Hover
       onClick={e => { if (e.defaultPrevented) return; compareMode ? onToggleCompare?.(c.id) : setDetail(c); }}
       style={{
         background: isPending ? C.amberSoft : C.surface,
@@ -28,8 +30,8 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
         borderRadius: 12, padding: '16px 20px', cursor: 'pointer', transition: 'all 0.15s',
         display: 'flex', alignItems: 'flex-start', gap: 12,
       }}
-      onMouseEnter={e => { if (!compareMode) { e.currentTarget.style.borderColor = isPending ? C.amber : C.purpleBorder; e.currentTarget.style.boxShadow = '0 4px 12px rgba(124,58,237,0.08)'; } }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = compareMode && compareSelected ? C.purple : isPending ? C.amberBorder : C.border; e.currentTarget.style.boxShadow = 'none'; }}
+      hoverStyle={{ border: `1px solid ${isPending ? C.amber : C.purpleBorder}`, boxShadow: `0 4px 12px ${alpha(C.purple, 0.08)}` }}
+      disabled={compareMode}
     >
       {compareMode && (
         <input
@@ -45,27 +47,27 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
             <div style={{ fontWeight: 600, color: C.text, fontFamily: F.sans }}>{c.advertiser}</div>
-            {isPending && <span style={{ fontSize: 10, background: C.amber, color: '#fff', padding: '1px 6px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>REVIEW</span>}
+            {isPending && <span style={{ fontSize: T.xs, background: C.amber, color: C.white, padding: '1px 6px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>REVIEW</span>}
           </div>
-          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.category} · {screenCount} {pluralize(screenCount, 'screen')} · {displayCity}</div>
+          <div style={TX.caption}>{c.category} · {screenCount} {pluralize(screenCount, 'screen')} · {displayCity}</div>
         </div>
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.mono }}>${c.spent.toLocaleString()}</span>
-            <span style={{ fontSize: 12, color: C.textMuted, fontFamily: F.mono }}>${c.budget.toLocaleString()}</span>
+            <span style={{ fontSize: T.sm, fontWeight: 600, color: C.text, fontFamily: F.mono }}>${c.spent.toLocaleString()}</span>
+            <span style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.mono }}>${c.budget.toLocaleString()}</span>
           </div>
           <ProgressBar value={c.spent} max={c.budget} height={4} />
-          <div style={{ fontSize: 10, color: pct > 90 ? C.red : pct > 70 ? C.amber : C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{pct}% used</div>
+          <div style={{ fontSize: T.xs, color: pct > 90 ? C.redText : pct > 70 ? C.amberText : C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{pct}% used</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: F.mono, fontSize: 14, fontWeight: 600, color: C.text }}>{(c.impressions / 1000).toFixed(1)}K</div>
-          <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>impressions</div>
+          <div style={{ fontFamily: F.mono, fontSize: T.md, fontWeight: 600, color: C.text }}>{(c.impressions / 1000).toFixed(1)}K</div>
+          <div style={TX.caption}>impressions</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: F.mono, fontSize: 14, fontWeight: 600, color: C.purple }}>{c.scans}</div>
-          <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans }}>scans</div>
+          <div style={{ fontFamily: F.mono, fontSize: T.md, fontWeight: 600, color: C.purple }}>{c.scans}</div>
+          <div style={TX.caption}>scans</div>
         </div>
-        <div style={{ fontFamily: F.mono, fontSize: 11, color: C.textSub, whiteSpace: 'nowrap' }}>{c.start} →<br />{c.end}</div>
+        <div style={{ ...TX.mono, whiteSpace: 'nowrap' }}>{c.start} →<br />{c.end}</div>
         {isPending && canReview ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }} onClick={e => e.preventDefault()}>
             <ApproveBtn campaign={c} setCampaigns={setCampaigns} onSuccess={onApprovalChange} />
@@ -109,6 +111,6 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
           <Badge status={badgeStatus} />
         )}
       </div>
-    </div>
+    </Hover>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../primitives/Card.jsx';
 import { Btn } from '../primitives/Btn.jsx';
 import { checklistProgress } from '../../lib/gettingStarted.js';
@@ -27,12 +28,11 @@ export function GettingStartedCard({ title = 'Get started', steps, storageKey, o
     <Card style={{ marginBottom: 24, padding: 22 }}>
       <section aria-label={title}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 10 }}>
-          <h2 style={{ margin: 0, fontFamily: F.display, fontSize: 17, fontWeight: 600, color: C.text }}>{title}</h2>
-          <span style={{ fontFamily: F.sans, fontSize: 12, color: C.textMuted }}>{done} of {total} done</span>
-          <button type="button" onClick={dismiss}
-            style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontFamily: F.sans, fontSize: 12, color: C.textMuted }}>
+          <h2 style={{ margin: 0, fontFamily: F.display, fontSize: T.lg, fontWeight: 600, color: C.text }}>{title}</h2>
+          <span style={TX.helperMuted}>{done} of {total} done</span>
+          <Btn variant="unstyled" type="button" onClick={dismiss} style={{ ...TX.helperMuted, marginLeft: 'auto' }}>
             Hide
-          </button>
+          </Btn>
         </div>
 
         <div role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}
@@ -50,20 +50,20 @@ export function GettingStartedCard({ title = 'Get started', steps, storageKey, o
               }}>
                 <span aria-hidden="true" style={{
                   width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: T.sm,
                   background: step.done ? C.green : 'transparent',
                   border: step.done ? 'none' : `1.5px solid ${isNext ? C.purple : C.borderDark}`,
-                  color: '#fff',
+                  color: C.white,
                 }}>{step.done ? '✓' : ''}</span>
                 <div style={{ flex: 1, minWidth: 0, fontFamily: F.sans }}>
                   <div style={{
-                    fontSize: 13, fontWeight: 600,
+                    fontSize: T.base, fontWeight: 600,
                     color: step.done ? C.textMuted : C.text,
                     textDecoration: step.done ? 'line-through' : 'none',
                   }}>
                     {step.title}<span style={{ position: 'absolute', left: -9999 }}>{step.done ? ' (done)' : ''}</span>
                   </div>
-                  {!step.done && <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>{step.body}</div>}
+                  {!step.done && <div style={{ fontSize: T.sm, color: C.textMuted, marginTop: 2 }}>{step.body}</div>}
                 </div>
                 {isNext && <Btn size="sm" onClick={() => onGo(step)}>Start</Btn>}
               </li>

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
-import { CopyButton } from '../../components/primitives/CopyButton.jsx';
+import { Chip } from '../../components/primitives/Chip.jsx';
 import { Inp } from '../../components/primitives/Inp.jsx';
 import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { ErrorBanner } from '../../components/primitives/ErrorBanner.jsx';
@@ -18,6 +19,10 @@ import { hoursFormFromScreen, hoursUpdates, hoursError } from '../../lib/operati
 import { DemandSignal } from '../../components/shared/DemandSignal.jsx';
 import { IconBolt, IconDollar, IconScreen, IconCheckCircle, IconCard, IconWarning, IconSignal } from '../../components/icons.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { HardwareInstructions } from '../../components/screens/ScreenPairing.jsx';
+import { HARDWARE_OPTIONS } from '../../lib/screenPairing.js';
+
+const pillChip = { padding: '7px 16px', borderRadius: 20, fontWeight: 500, transition: 'all 0.15s' };
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
@@ -26,17 +31,12 @@ function WizardProgress({ step, total, onCancel }) {
   return (
     <div style={{ marginBottom: 32 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>
+        <div style={TX.helperMuted}>
           Step {step} of {total}
         </div>
-        <button
-          onClick={onCancel}
-          style={{ background: 'none', border: 'none', fontSize: 12, color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s' }}
-          onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-          onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-        >
+        <Btn variant="subtle" size="sm" onClick={onCancel}>
           Cancel
-        </button>
+        </Btn>
       </div>
       <div style={{ height: 4, background: C.border, borderRadius: 2 }}>
         <div style={{
@@ -48,7 +48,7 @@ function WizardProgress({ step, total, onCancel }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
         {['Welcome', 'Register', 'Setup', 'Profile', 'Connect', 'Payouts'].map((label, i) => (
           <div key={label} style={{
-            fontSize: 11, fontFamily: F.sans,
+            fontSize: T.xs, fontFamily: F.sans,
             color: i + 1 <= step ? C.purple : C.textMuted,
             fontWeight: i + 1 === step ? 600 : 400,
           }}>{label}</div>
@@ -66,10 +66,10 @@ function StepWelcome({ onNext }) {
     <div style={{ maxWidth: 560, margin: '0 auto' }}>
       <Card style={{ padding: isMobile ? 24 : 40, textAlign: 'center' }}>
         <div style={{ color: C.purple, marginBottom: 20, display: 'flex', justifyContent: 'center' }}><IconScreen size={48} /></div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: C.text, fontFamily: F.display, marginBottom: 12, margin: '0 0 12px' }}>
+        <h1 style={{ fontSize: T.xxl, fontWeight: 800, color: C.text, fontFamily: F.display, marginBottom: 12, margin: '0 0 12px' }}>
           Let's get your screen on the network
         </h1>
-        <p style={{ fontSize: 15, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, margin: '0 0 32px' }}>
+        <p style={{ fontSize: T.md, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, margin: '0 0 32px' }}>
           ADGRID connects your display to advertisers who pay to reach your audience. Setup takes about 5 minutes.
         </p>
 
@@ -81,9 +81,9 @@ function StepWelcome({ onNext }) {
           ].map(({ icon: Icon, text }) => (
             <div key={text} style={{
               padding: '16px 12px', background: C.surfaceAlt, borderRadius: 10,
-              fontSize: 12, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5,
+              fontSize: T.sm, color: C.textSub, fontFamily: F.sans, lineHeight: 1.5,
             }}>
-              <div style={{ fontSize: 24, marginBottom: 8, display: 'flex', justifyContent: 'center', color: C.purple }}>
+              <div style={{ fontSize: T.xxl, marginBottom: 8, display: 'flex', justifyContent: 'center', color: C.purple }}>
                 {typeof Icon === 'string' ? Icon : <Icon size={24} />}
               </div>
               {text}
@@ -91,7 +91,7 @@ function StepWelcome({ onNext }) {
           ))}
         </div>
 
-        <Btn onClick={onNext} style={{ width: '100%', fontSize: 16, padding: '14px 24px' }}>
+        <Btn onClick={onNext} style={{ width: '100%', fontSize: T.lg, padding: '14px 24px' }}>
           Get Started →
         </Btn>
       </Card>
@@ -109,21 +109,7 @@ function PillGroup({ options, value, onChange }) {
         const l = typeof opt === 'string' ? opt : opt.label;
         const active = value === v;
         return (
-          <button
-            key={v}
-            type="button"
-            onClick={() => onChange(v)}
-            style={{
-              padding: '7px 16px', borderRadius: 20, cursor: 'pointer',
-              border: `1px solid ${active ? C.purple : C.border}`,
-              background: active ? C.purpleSoft : C.surface,
-              color: active ? C.purple : C.textSub,
-              fontSize: 12, fontWeight: 500, fontFamily: F.sans,
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surfaceAlt; }}
-            onMouseLeave={e => { if (!active) e.currentTarget.style.background = C.surface; }}
-          >{l}</button>
+          <Chip key={v} selected={active} onClick={() => onChange(v)} style={pillChip}>{l}</Chip>
         );
       })}
     </div>
@@ -249,10 +235,10 @@ function StepRegister({ onBack, onScreenCreated }) {
   return (
     <div style={{ maxWidth: 600, margin: '0 auto' }}>
       <Card style={{ padding: 36 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>
+        <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>
           Tell us about your screen
         </h2>
-        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 28px' }}>
+        <p style={{ ...TX.bodySub, margin: '0 0 28px' }}>
           These details help advertisers find and book your screen.
         </p>
 
@@ -296,7 +282,7 @@ function StepRegister({ onBack, onScreenCreated }) {
           <DemandSignal city={form.city.trim()} venueCategory={form.venue_category} />
         </div>
 
-        <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, marginBottom: 20, lineHeight: 1.5 }}>
+        <div style={{ ...TX.helperMuted, marginBottom: 20, lineHeight: 1.5 }}>
           Exact address, display size, and foot traffic come next — after you've got the display
           running, so you're not guessing at specs before you've even plugged it in.
         </div>
@@ -304,7 +290,7 @@ function StepRegister({ onBack, onScreenCreated }) {
         <ErrorBanner message={err} onDismiss={() => setErr(null)} />
 
         {!valid && (
-          <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans, marginBottom: 10, textAlign: 'right' }}>
+          <div style={{ ...TX.helperMuted, marginBottom: 10, textAlign: 'right' }}>
             Still need: {missingFields.join(', ')}
           </div>
         )}
@@ -315,111 +301,6 @@ function StepRegister({ onBack, onScreenCreated }) {
           </Btn>
         </div>
       </Card>
-    </div>
-  );
-}
-
-const HARDWARE_OPTIONS = ['Browser Kiosk', 'Raspberry Pi 5', 'Mini PC', 'Android TV'];
-
-function CopyBox({ label, value }) {
-  return (
-    <div style={{ marginBottom: 16 }}>
-      {label && (
-        <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-          {label}
-        </div>
-      )}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-        <div style={{
-          flex: 1, background: C.surfaceAlt, border: `1px solid ${C.border}`,
-          borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: 12,
-          color: C.text, wordBreak: 'break-all', lineHeight: 1.5,
-        }}>
-          {value}
-        </div>
-        <CopyButton value={value} copiedLabel="✓ Copied" style={{ flexShrink: 0, minWidth: 64 }} />
-      </div>
-    </div>
-  );
-}
-
-function CodeBox({ label, value }) {
-  return (
-    <div style={{ marginBottom: 16 }}>
-      {label && (
-        <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-          {label}
-        </div>
-      )}
-      <div style={{ position: 'relative' }}>
-        <pre style={{
-          background: '#0a0a0a', borderRadius: 8, padding: '14px 16px',
-          fontFamily: F.mono, fontSize: 11, color: '#a3e635',
-          whiteSpace: 'pre', overflowX: 'auto', margin: 0,
-        }}>{value}</pre>
-        <CopyButton
-          value={value}
-          label="Copy"
-          copiedLabel="✓"
-          variant="ghost"
-          style={{
-            position: 'absolute', top: 8, right: 8,
-            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: 4, color: '#fff', fontSize: 11, padding: '3px 10px',
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function HardwareInstructions({ hardware, screen }) {
-  const playerUrl = `${window.location.origin}/display/${screen.screen_token}`;
-  const kioskCommand = `chromium-browser --no-sandbox --noerrdialogs --kiosk \\
-  --disable-infobars --disable-restore-session-state \\
-  --disable-session-crashed-bubble \\
-  "${playerUrl}"`;
-  const autostartSnippet = `# /etc/xdg/lxsession/LXDE-pi/autostart
-@xset s off
-@xset -dpms
-@xset s noblank
-@chromium-browser --no-sandbox --noerrdialogs --kiosk --disable-infobars \\
-  --disable-restore-session-state "${playerUrl}"`;
-
-  if (hardware === 'Browser Kiosk') return (
-    <div>
-      <CopyBox label="Player URL" value={playerUrl} />
-      <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.7 }}>
-        Open this URL fullscreen on your display.<br />
-        On Chrome: press <kbd style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>F11</kbd> for fullscreen.<br />
-        The screen will automatically show ads when campaigns are running.
-      </div>
-    </div>
-  );
-
-  if (hardware === 'Raspberry Pi 5' || hardware === 'Mini PC') return (
-    <div>
-      <CopyBox label="Player URL" value={playerUrl} />
-      <CodeBox label="Run once (test)" value={kioskCommand} />
-      <CodeBox label="Autostart on boot (Raspberry Pi OS)" value={autostartSnippet} />
-      <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.8 }}>
-        1. Install Chromium: <code style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>sudo apt install chromium-browser</code><br />
-        2. Test with the "Run once" command above.<br />
-        3. For autostart on boot, add the autostart snippet to your LXDE config.<br />
-        4. Disable screen blanking via <code style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>xset s off</code>.<br />
-        5. <strong>Recommended:</strong> the snippet above doesn't restart Chromium if it crashes. For unattended production screens, use the <code style={{ background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fontFamily: F.mono, fontSize: 11 }}>screen-agent/display/</code> systemd service in the AdGrid repo instead — it auto-restarts on crash and survives reboots.
-      </div>
-    </div>
-  );
-
-  // Android TV — no native app yet; use a kiosk browser app from the Play Store
-  return (
-    <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.8 }}>
-      <CopyBox label="Player URL" value={playerUrl} />
-      1. Install <strong>Fully Kiosk Browser</strong> from the Google Play Store on your Android TV.<br />
-      2. Open it, go to Settings → Web Content → Start URL, and paste the Player URL above.<br />
-      3. Enable Settings → Other → Kiosk Mode and "Start on boot" so it auto-launches.<br />
-      4. Restart the device to confirm it boots straight into the display.
     </div>
   );
 }
@@ -439,36 +320,18 @@ function StepSetup({ screen, onNext, onBack, onSkip }) {
           />
         </div>
 
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>
+        <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>
           Set up your display
         </h2>
-        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>
-          Choose your hardware and follow the instructions below.
+        <p style={{ ...TX.bodySub, margin: '0 0 24px' }}>
+          Choose your hardware, open the pairing page on the screen, and type in the code it shows.
         </p>
 
         {/* Hardware selector */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
           {HARDWARE_OPTIONS.map(hw => (
-            <button key={hw} onClick={() => setHardware(hw)} style={{
-              padding: '7px 16px', borderRadius: 20, cursor: 'pointer',
-              border: `1px solid ${hardware === hw ? C.purple : C.border}`,
-              background: hardware === hw ? C.purpleSoft : C.surface,
-              color: hardware === hw ? C.purple : C.textSub,
-              fontSize: 12, fontWeight: 500, fontFamily: F.sans,
-              transition: 'all 0.15s',
-            }}
-              onMouseEnter={e => { if (hardware !== hw) e.currentTarget.style.background = C.surfaceAlt; }}
-              onMouseLeave={e => { if (hardware !== hw) e.currentTarget.style.background = C.surface; }}
-            >{hw}</button>
+            <Chip key={hw} selected={hardware === hw} onClick={() => setHardware(hw)} style={pillChip}>{hw}</Chip>
           ))}
-        </div>
-
-        {/* Token (always visible) */}
-        <div style={{ background: C.surfaceAlt, borderRadius: 10, padding: '14px 16px', marginBottom: 24 }}>
-          <CopyBox label="Your Screen Token" value={screen.screen_token} />
-          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>
-            Keep this private — it authenticates your display.
-          </div>
         </div>
 
         {/* Hardware-specific instructions */}
@@ -481,13 +344,7 @@ function StepSetup({ screen, onNext, onBack, onSkip }) {
           <Btn onClick={onNext} style={{ flex: 1 }}>I've completed setup →</Btn>
         </div>
         <div style={{ textAlign: 'center', marginTop: 12 }}>
-          <button onClick={onSkip} style={{
-            background: 'none', border: 'none', fontSize: 12, color: C.textMuted,
-            cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-            onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-          >Do this later →</button>
+          <Btn variant="subtle" size="sm" onClick={onSkip}>Do this later →</Btn>
         </div>
       </Card>
     </div>
@@ -548,10 +405,10 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
   return (
     <div style={{ maxWidth: 600, margin: '0 auto' }}>
       <Card style={{ padding: 36 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>
+        <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>
           Finish your screen's profile
         </h2>
-        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 28px', lineHeight: 1.5 }}>
+        <p style={{ ...TX.bodySub, margin: '0 0 28px', lineHeight: 1.5 }}>
           This is what advertisers see when deciding whether to book {screen.name}. You can skip it for
           now, but the screen can't go live and start taking bookings until it's filled in.
         </p>
@@ -561,7 +418,7 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
             value={form.location} onChange={e => set('location', e.target.value)} />
 
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>
+            <div style={{ ...TX.label, marginBottom: 8 }}>
               Screen Location
             </div>
             <ScreenLocationPicker
@@ -571,7 +428,7 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
           </div>
 
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Environment</div>
+            <div style={{ ...TX.label, marginBottom: 8 }}>Environment</div>
             <PillGroup
               options={[{ value: 'indoor', label: 'Indoor' }, { value: 'outdoor', label: 'Outdoor' }]}
               value={form.environment}
@@ -580,7 +437,7 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
           </div>
 
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Screen Position</div>
+            <div style={{ ...TX.label, marginBottom: 8 }}>Screen Position</div>
             <PillGroup
               options={SCREEN_POSITION_OPTIONS}
               value={form.screen_position}
@@ -598,7 +455,7 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
             value={form.monthly_traffic_estimate}
             onChange={e => set('monthly_traffic_estimate', e.target.value)}
           />
-          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: -10 }}>
+          <div style={{ ...TX.caption, marginTop: -10 }}>
             Rough headcount past this screen per month. Drives the reach estimate advertisers see.
           </div>
 
@@ -614,13 +471,7 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
           </Btn>
         </div>
         <div style={{ textAlign: 'center', marginTop: 12 }}>
-          <button onClick={onSkip} style={{
-            background: 'none', border: 'none', fontSize: 12, color: C.textMuted,
-            cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-            onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-          >Do this later →</button>
+          <Btn variant="subtle" size="sm" onClick={onSkip}>Do this later →</Btn>
         </div>
       </Card>
     </div>
@@ -653,15 +504,15 @@ function StepConnect({ screen, onDone, onSkip, onBack }) {
     <div style={{ maxWidth: 520, margin: '0 auto' }}>
       <Card style={{ padding: 40, textAlign: 'center' }}>
         <div style={{
-          color: status === 'connected' ? C.green : blockedByOwnAction ? C.purple : status === 'none' ? C.amber : C.textMuted,
+          color: status === 'connected' ? C.greenText : blockedByOwnAction ? C.purple : status === 'none' ? C.amberText : C.textMuted,
           marginBottom: 20, display: 'flex', justifyContent: 'center',
         }}>
           {status === 'connected' ? <IconCheckCircle size={48} /> : blockedByOwnAction ? <IconCard size={48} /> : status === 'none' ? <IconWarning size={48} /> : <IconSignal size={48} />}
         </div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
+        <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
           {status === 'connected' ? 'Screen is live!' : blockedByOwnAction ? 'Heartbeat confirmed' : 'Test your connection'}
         </h2>
-        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, margin: '0 0 28px' }}>
+        <p style={{ ...TX.bodySub, lineHeight: 1.6, margin: '0 0 28px' }}>
           {status === 'connected'
             ? `${screen.name} is connected and sending heartbeats. You're all set.`
             : status === 'needs_profile'
@@ -695,24 +546,12 @@ function StepConnect({ screen, onDone, onSkip, onBack }) {
           </Btn>
         )}
 
-        <button onClick={onSkip} style={{
-          background: 'none', border: 'none', fontSize: 12,
-          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-          onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-        >
+        <Btn variant="subtle" size="sm" onClick={onSkip}>
           Skip for now →
-        </button>
+        </Btn>
       </Card>
       <div style={{ textAlign: 'center', marginTop: 12 }}>
-        <button onClick={onBack} style={{
-          background: 'none', border: 'none', fontSize: 12,
-          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-          onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-        >← Back to setup guide</button>
+        <Btn variant="subtle" size="sm" onClick={onBack}>← Back to setup guide</Btn>
       </div>
     </div>
   );
@@ -754,11 +593,11 @@ function StepPayouts({ onDone, onSkip, onBack }) {
     return (
       <div style={{ maxWidth: 520, margin: '0 auto' }}>
         <Card style={{ padding: 40, textAlign: 'center' }}>
-          <div style={{ color: C.green, marginBottom: 20, display: 'flex', justifyContent: 'center' }}><IconCheckCircle size={48} /></div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
+          <div style={{ color: C.greenText, marginBottom: 20, display: 'flex', justifyContent: 'center' }}><IconCheckCircle size={48} /></div>
+          <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
             Payouts are set up
           </h2>
-          <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, margin: '0 0 28px' }}>
+          <p style={{ ...TX.bodySub, lineHeight: 1.6, margin: '0 0 28px' }}>
             Your Stripe account is connected. You'll get paid automatically as campaigns run.
           </p>
           <Btn onClick={onDone} style={{ width: '100%' }}>Finish →</Btn>
@@ -771,10 +610,10 @@ function StepPayouts({ onDone, onSkip, onBack }) {
     <div style={{ maxWidth: 520, margin: '0 auto' }}>
       <Card style={{ padding: 40, textAlign: 'center' }}>
         <div style={{ color: C.purple, marginBottom: 20, display: 'flex', justifyContent: 'center' }}><IconCard size={48} /></div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
+        <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
           Set up payouts
         </h2>
-        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, margin: '0 0 28px' }}>
+        <p style={{ ...TX.bodySub, lineHeight: 1.6, margin: '0 0 28px' }}>
           Connect a bank account via Stripe so you actually get paid when advertisers book your screen.
           Without this, your cut of every campaign is held and never transferred.
         </p>
@@ -782,24 +621,12 @@ function StepPayouts({ onDone, onSkip, onBack }) {
         <Btn onClick={startConnect} disabled={connecting} style={{ width: '100%', marginBottom: 12 }}>
           {connecting ? 'Redirecting to Stripe…' : 'Connect with Stripe'}
         </Btn>
-        <button onClick={onSkip} style={{
-          background: 'none', border: 'none', fontSize: 12,
-          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-          onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-        >
+        <Btn variant="subtle" size="sm" onClick={onSkip}>
           Skip for now →
-        </button>
+        </Btn>
       </Card>
       <div style={{ textAlign: 'center', marginTop: 12 }}>
-        <button onClick={onBack} style={{
-          background: 'none', border: 'none', fontSize: 12,
-          color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-          onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-        >← Back</button>
+        <Btn variant="subtle" size="sm" onClick={onBack}>← Back</Btn>
       </div>
     </div>
   );

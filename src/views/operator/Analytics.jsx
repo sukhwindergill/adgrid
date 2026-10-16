@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { SkeletonRow, Skeleton } from '../../components/ui/Skeleton.jsx';
-import { C, F } from '../../design/tokens.js';
+import { SkeletonRow, Skeleton } from '../../components/primitives/Skeleton.jsx';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { IconEye, IconClock, IconDollar, IconQr, IconChart } from '../../components/icons.jsx';
@@ -13,9 +14,21 @@ import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { BenchmarkRow } from '../../components/shared/BenchmarkRow.jsx';
 import { useOperatorCampaignIds } from '../../hooks/useOperatorCampaignIds.js';
+import { Btn } from '../../components/primitives/Btn.jsx';
+import { Chip } from '../../components/primitives/Chip.jsx';
+import { Hover } from '../../components/primitives/Hover.jsx';
+import { Inp } from '../../components/primitives/Inp.jsx';
+import { SelInput } from '../../components/primitives/SelInput.jsx';
+import { Notice } from '../../components/primitives/Notice.jsx';
+
+const toolbarField = { padding: '6px 10px', borderRadius: 8, fontSize: T.sm, transition: 'border-color 0.15s' };
+const filterSelect = { ...TX.body, padding: '6px 10px', transition: 'border-color 0.15s' };
+const toolbarCard = { display: 'flex', alignItems: 'center', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 };
 import { normalizeBooking } from '../../lib/normalizeBooking.js';
 
 const RECENT_CAMPAIGNS_LIMIT = 50;
+
+const bannerNotice = { padding: '12px 16px', marginBottom: 20, fontSize: T.base };
 
 const EMPTY_HOURLY = Array(24).fill(0);
 const EMPTY_DAY    = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
@@ -26,16 +39,13 @@ function HeatmapGrid({ data }) {
   return (
     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
       {data.map((v, i) => (
-        <div key={i} title={`${String(i).padStart(2, '0')}:00 — ${v} people`} style={{
+        <Hover key={i} title={`${String(i).padStart(2, '0')}:00 — ${v} people`} hoverStyle={{ transform: 'scale(1.15)' }} style={{
           width: 36, height: 36, borderRadius: 6, background: v === 0 ? C.surfaceAlt : C.purple,
           opacity: v === 0 ? 1 : 0.20 + (v / max) * 0.80,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 9, fontFamily: F.mono, color: v / max > 0.4 ? '#fff' : C.textMuted,
+          fontSize: T.xs, fontFamily: F.mono, color: v / max > 0.4 ? C.white : C.textMuted,
           cursor: 'default', transition: 'transform 0.15s',
-        }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-        >{i}</div>
+        }}>{i}</Hover>
       ))}
     </div>
   );
@@ -47,9 +57,9 @@ function DayBars({ data }) {
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', height: 80 }}>
       {Object.entries(data).map(([day, v]) => (
         <div key={day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-          <div style={{ fontSize: 10, fontFamily: F.mono, color: C.textMuted }}>{v}</div>
+          <div style={{ fontSize: T.xs, fontFamily: F.mono, color: C.textMuted }}>{v}</div>
           <div style={{ width: '100%', height: `${(v / max) * 60}px`, background: C.purple, borderRadius: '3px 3px 0 0', opacity: 0.7, minHeight: 4 }} />
-          <div style={{ fontSize: 10, fontFamily: F.sans, color: C.textMuted }}>{day}</div>
+          <div style={TX.caption}>{day}</div>
         </div>
       ))}
     </div>
@@ -254,22 +264,17 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', gap: 4 }}>
               {[7, 30, 90].map(d => (
-                <button key={d} onClick={() => { setPeriod(d); setCustomFrom(''); setCustomTo(''); }} style={{
-                  padding: '5px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer',
-                  border: `1px solid ${period === d ? C.purple : C.border}`,
-                  background: period === d ? C.purpleSoft : C.surface,
-                  color: period === d ? C.purple : C.textSub, fontFamily: F.sans, fontWeight: 500, transition: 'background 0.15s',
-                }}
-                  onMouseEnter={e => { if (period !== d) e.currentTarget.style.background = C.surfaceAlt; }}
-                  onMouseLeave={e => { if (period !== d) e.currentTarget.style.background = C.surface; }}
-                >{d}d</button>
+                <Chip key={d} selected={period === d} onClick={() => { setPeriod(d); setCustomFrom(''); setCustomTo(''); }} style={{
+                  padding: '5px 12px', borderRadius: 8, fontWeight: 500, transition: 'background 0.15s',
+                }}>{d}d</Chip>
               ))}
             </div>
-            <select
+            <SelInput
+              aria-label="Date range"
               value={period === 'custom' ? 'custom' : period}
               onChange={e => setPeriod(e.target.value === 'custom' ? 'custom' : Number(e.target.value))}
               style={{
-                padding: '5px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer',
+                padding: '5px 12px', borderRadius: 8, fontSize: T.sm, cursor: 'pointer',
                 border: `1px solid ${period === 'custom' ? C.purple : C.border}`,
                 background: period === 'custom' ? C.purpleSoft : C.surface,
                 color: period === 'custom' ? C.purple : C.textSub, fontFamily: F.sans, fontWeight: 500,
@@ -277,97 +282,58 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
                 backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center',
                 transition: 'border-color 0.15s',
               }}
-              onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-              onBlur={e => { e.currentTarget.style.borderColor = period === 'custom' ? C.purple : C.border; }}
             >
               <option value="custom">Custom…</option>
-            </select>
+            </SelInput>
           </div>
         }
       />
 
       {period === 'custom' && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '12px 16px', background: C.surface, border: `1px solid ${C.border}`,
-          borderRadius: 12, marginBottom: 16,
-        }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: C.textSub, fontFamily: F.sans }}>Date range:</span>
-          <input
-            type="date"
-            value={customFrom}
-            onChange={e => setCustomFrom(e.target.value)}
-            style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: F.sans, background: C.surface, color: C.text, outline: 'none', transition: 'border-color 0.15s' }}
-            onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-            onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-          />
-          <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans }}>to</span>
-          <input
-            type="date"
-            value={customTo}
-            onChange={e => setCustomTo(e.target.value)}
-            style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: F.sans, background: C.surface, color: C.text, outline: 'none', transition: 'border-color 0.15s' }}
-            onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-            onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-          />
+        <div style={{ ...toolbarCard, gap: 8, padding: '12px 16px', marginBottom: 16 }}>
+          <span style={{ ...TX.helper, fontWeight: 600 }}>Date range:</span>
+          <Inp type="date" aria-label="From date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} style={{ ...toolbarField, width: 'auto' }} />
+          <span style={TX.helper}>to</span>
+          <Inp type="date" aria-label="To date" value={customTo} onChange={e => setCustomTo(e.target.value)} style={{ ...toolbarField, width: 'auto' }} />
         </div>
       )}
 
       {!hasReal && !loading && loadError && (
-        <div style={{
-          padding: '12px 16px', background: C.redSoft, border: `1px solid ${C.redBorder ?? '#fecaca'}`,
-          borderRadius: 8, marginBottom: 20, fontSize: 13, color: C.red, fontFamily: F.sans,
-        }}>
+        <Notice tone="error" style={bannerNotice}>
           Couldn't load verified impression data — check your connection and try again. Showing estimated data below in the meantime.
-        </div>
+        </Notice>
       )}
 
       {!hasReal && !loading && !loadError && (
-        <div style={{
-          padding: '12px 16px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`,
-          borderRadius: 8, marginBottom: 20, fontSize: 13, color: C.amber, fontFamily: F.sans,
-        }}>
+        <Notice tone="warning" style={bannerNotice}>
           No impression data yet — connect a Screen Agent to start tracking verified impressions. Showing estimated data below.
-        </div>
+        </Notice>
       )}
 
       {/* Filter bar */}
-      <div style={{
-        display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap',
-        padding: '14px 16px', background: C.surface, border: `1px solid ${C.border}`,
-        borderRadius: 12, marginBottom: 24,
-      }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: C.textSub, fontFamily: F.sans }}>Filter by:</span>
-        <select value={filters.gender} onChange={e => setFilters(f => ({ ...f, gender: e.target.value }))}
-          style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-        >
+      <div style={{ ...toolbarCard, gap: 12, flexWrap: 'wrap', padding: '14px 16px', marginBottom: 24 }}>
+        <span style={{ ...TX.helper, fontWeight: 600 }}>Filter by:</span>
+        <SelInput aria-label="Gender" value={filters.gender} onChange={e => setFilters(f => ({ ...f, gender: e.target.value }))} style={filterSelect}>
           <option value="">All Genders</option>
           <option value="Female">Female</option>
           <option value="Male">Male</option>
-        </select>
-        <select value={filters.age} onChange={e => setFilters(f => ({ ...f, age: e.target.value }))}
-          style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-        >
+        </SelInput>
+        <SelInput aria-label="Age" value={filters.age} onChange={e => setFilters(f => ({ ...f, age: e.target.value }))} style={filterSelect}>
           <option value="">All Ages</option>
           <option value="18-24">18–24</option>
           <option value="25-34">25–34</option>
           <option value="35-44">35–44</option>
           <option value="45-54">45–54</option>
           <option value="55+">55+</option>
-        </select>
-        <button onClick={() => setFilters({ gender: '', age: '' })}
-          style={{ padding: '6px 14px', background: 'none', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F.sans, fontSize: 13, color: C.textSub, cursor: 'pointer', transition: 'background 0.15s' }}
-          onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+        </SelInput>
+        <Btn variant="secondary" onClick={() => setFilters({ gender: '', age: '' })}
+          style={{ ...TX.bodySub, padding: '6px 14px', background: 'none', boxShadow: 'none' }}
+          hoverStyle={{ background: C.surfaceAlt }}
         >
           Reset
-        </button>
+        </Btn>
         {hasReal && (
-          <span style={{ marginLeft: 'auto', fontSize: 11, color: C.green, fontFamily: F.sans, fontWeight: 600 }}>
+          <span style={{ marginLeft: 'auto', fontSize: T.xs, color: C.greenText, fontFamily: F.sans, fontWeight: 600 }}>
             ✓ Verified impressions
           </span>
         )}
@@ -397,17 +363,17 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
       {/* Heatmap + Day bars */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <Card>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>
+          <div style={{ ...TX.title, marginBottom: 14 }}>
             {hasReal ? 'People by Hour' : 'Scans by Hour'}
-            {!hasReal && <span style={{ fontSize: 10, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>(estimated)</span>}
+            {!hasReal && <span style={{ fontSize: T.xs, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>(estimated)</span>}
           </div>
           <HeatmapGrid data={hourlyData} />
-          <div style={{ marginTop: 10, fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>Hover a block to see count · Darker = more activity</div>
+          <div style={{ ...TX.caption, marginTop: 10 }}>Hover a block to see count · Darker = more activity</div>
         </Card>
         <Card>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>
+          <div style={{ ...TX.title, marginBottom: 14 }}>
             {hasReal ? 'People by Day of Week' : 'Scans by Day of Week'}
-            {!hasReal && <span style={{ fontSize: 10, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>(estimated)</span>}
+            {!hasReal && <span style={{ fontSize: T.xs, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>(estimated)</span>}
           </div>
           <DayBars data={dailyData} />
         </Card>
@@ -416,13 +382,13 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
       {/* Demographics */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20, marginBottom: 20 }}>
         <Card>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Gender Split</div>
-          {!hasReal && <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, marginBottom: 12 }}>estimated</div>}
-          {[['Female', femalePct, '#ec4899'], ['Male', malePct, C.blue]].map(([g, pct, col]) => (
+          <div style={{ ...TX.title, marginBottom: 4 }}>Gender Split</div>
+          {!hasReal && <div style={{ ...TX.caption, marginBottom: 12 }}>estimated</div>}
+          {[['Female', femalePct, C.pink], ['Male', malePct, C.blue]].map(([g, pct, col]) => (
             <div key={g} style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 13, color: C.text, fontFamily: F.sans }}>{g}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: col, fontFamily: F.mono }}>{pct}%</span>
+                <span style={TX.body}>{g}</span>
+                <span style={{ fontSize: T.base, fontWeight: 600, color: col, fontFamily: F.mono }}>{pct}%</span>
               </div>
               <div style={{ height: 6, borderRadius: 3, background: C.surfaceAlt, overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${pct}%`, background: col, borderRadius: 3, transition: 'width 0.5s' }} />
@@ -432,16 +398,16 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
         </Card>
 
         <Card>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Age Distribution</div>
-          {!hasReal && <div style={{ fontSize: 10, color: C.textMuted, fontFamily: F.sans, marginBottom: 8 }}>estimated</div>}
+          <div style={{ ...TX.title, marginBottom: 4 }}>Age Distribution</div>
+          {!hasReal && <div style={{ ...TX.caption, marginBottom: 8 }}>estimated</div>}
           <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 80, marginBottom: 8 }}>
             {ageData.map(([label, pct]) => {
               const maxPct = Math.max(...ageData.map(d => d[1]), 1);
               return (
                 <div key={label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                  <div style={{ fontSize: 9, fontFamily: F.mono, color: C.textMuted }}>{pct}%</div>
+                  <div style={{ fontSize: T.xs, fontFamily: F.mono, color: C.textMuted }}>{pct}%</div>
                   <div style={{ width: '100%', height: `${(pct / maxPct) * 60}px`, background: C.purple, opacity: 0.7, borderRadius: '2px 2px 0 0', minHeight: 3 }} />
-                  <div style={{ fontSize: 9, fontFamily: F.sans, color: C.textMuted, whiteSpace: 'nowrap' }}>{label}</div>
+                  <div style={{ ...TX.caption, whiteSpace: 'nowrap' }}>{label}</div>
                 </div>
               );
             })}
@@ -449,12 +415,12 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
         </Card>
 
         <Card>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>Campaign Performance</div>
+          <div style={{ ...TX.title, marginBottom: 16 }}>Campaign Performance</div>
           {campaigns.slice(0, 5).map(c => (
             <div key={c.id} style={{ marginBottom: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                <span style={{ fontSize: 12, color: C.textMid, fontFamily: F.sans, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.advertiser}</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: C.purple, fontFamily: F.mono }}>{c.scans} scans</span>
+                <span style={{ fontSize: T.sm, color: C.textMid, fontFamily: F.sans, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.advertiser}</span>
+                <span style={{ fontSize: T.sm, fontWeight: 600, color: C.purple, fontFamily: F.mono }}>{c.scans} scans</span>
               </div>
               <ProgressBar value={c.scans || 0} max={Math.max(...campaigns.map(x => x.scans || 0), 1)} height={4} />
             </div>
@@ -465,22 +431,22 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
       {/* Impressions by city + 24h pattern */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <Card>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>Impressions by City</div>
+          <div style={{ ...TX.title, marginBottom: 14 }}>Impressions by City</div>
           {byCity.length > 0 ? byCity.map(({ city, impr, scans }) => (
             <div key={city} style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                <span style={{ fontSize: 13, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{city}</span>
-                <span style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans }}>{(impr / 1000).toFixed(0)}K impr · {scans} scans</span>
+                <span style={{ ...TX.body, fontWeight: 500 }}>{city}</span>
+                <span style={TX.helper}>{(impr / 1000).toFixed(0)}K impr · {scans} scans</span>
               </div>
               <ProgressBar value={impr} max={maxImpr} height={5} />
             </div>
-          )) : <div style={{ fontSize: 13, color: C.textMuted, fontFamily: F.sans }}>No campaign data</div>}
+          )) : <div style={TX.bodyMuted}>No campaign data</div>}
         </Card>
 
         <Card>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 14 }}>
+          <div style={{ ...TX.title, marginBottom: 14 }}>
             24h Activity Pattern
-            {!hasReal && <span style={{ fontSize: 10, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>(estimated)</span>}
+            {!hasReal && <span style={{ fontSize: T.xs, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>(estimated)</span>}
           </div>
           <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end', height: 80, marginBottom: 8 }}>
             {hourlyData.map((v, h) => {
@@ -496,7 +462,7 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
               );
             })}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.textMuted, fontFamily: F.mono }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: T.xs, color: C.textMuted, fontFamily: F.mono }}>
             {['00:00', '06:00', '12:00', '18:00', '23:00'].map(t => <span key={t}>{t}</span>)}
           </div>
         </Card>
@@ -505,7 +471,7 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
       {/* Campaign table */}
       <Table
         columns={[
-          { key: 'advertiser', label: 'Campaign', render: (v, r) => <div><div style={{ fontWeight: 500, color: C.text, fontFamily: F.sans }}>{v}</div><div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{r.category} · {r.city}</div></div> },
+          { key: 'advertiser', label: 'Campaign', render: (v, r) => <div><div style={{ fontWeight: 500, color: C.text, fontFamily: F.sans }}>{v}</div><div style={TX.caption}>{r.category} · {r.city}</div></div> },
           { key: 'screen',     label: 'Screen' },
           { key: 'impressions',label: 'Impressions', render: v => <span style={{ fontWeight: 600, fontFamily: F.mono }}>{(v / 1000).toFixed(1)}K</span> },
           { key: 'scans',      label: 'Scans', render: v => <span style={{ color: C.purple, fontWeight: 600, fontFamily: F.mono }}>{v}</span> },

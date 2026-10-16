@@ -1,0 +1,1716 @@
+{
+  "common": {
+    "language": {
+      "other": "Français",
+      "switchTo": "Afficher le site en français",
+      "label": "Language",
+      "en": "English",
+      "fr-CA": "Français"
+    },
+    "brand": "AdGrid",
+    "optional": "(optional)",
+    "loading": "Loading…",
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "saving": "Saving…",
+    "back": "Back",
+    "next": "Next",
+    "continue": "Continue",
+    "retry": "Try again",
+    "genericError": "Something went wrong. Please try again.",
+    "timeAgo": {
+      "justNow": "just now",
+      "minutes": "{count}m ago",
+      "hours": "{count}h ago",
+      "days": "{count}d ago"
+    },
+    "days": {
+      "short": {
+        "Mon": "Mon",
+        "Tue": "Tue",
+        "Wed": "Wed",
+        "Thu": "Thu",
+        "Fri": "Fri",
+        "Sat": "Sat",
+        "Sun": "Sun"
+      }
+    },
+    "env": {
+      "any": "Any",
+      "indoor": "Indoor",
+      "outdoor": "Outdoor"
+    },
+    "screensCount": {
+      "one": "{count} screen",
+      "other": "{count} screens"
+    },
+    "remove": "Remove",
+    "delete": "Delete",
+    "dismiss": "Dismiss",
+    "preview": "Preview",
+    "submitting": "Submitting…",
+    "uploading": "Uploading…",
+    "required": "(required)",
+    "andMore": " and {count} more"
+  },
+  "marketing": {
+    "meta": {
+      "title": "AdGrid | Canada's OOH Marketplace",
+      "description": "AdGrid is the self-serve marketplace connecting Canadian digital screen operators with local advertisers. Real-time pricing, full control on both sides."
+    },
+    "nav": {
+      "forOperators": "For operators",
+      "forAdvertisers": "For advertisers",
+      "howItWorks": "How it works",
+      "faq": "FAQ",
+      "screens": "Screens",
+      "signIn": "Sign in",
+      "getStarted": "Get started",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu"
+    },
+    "cta": {
+      "listScreens": "List your screens",
+      "bookCampaign": "Book a campaign"
+    },
+    "notFound": {
+      "metaTitle": "Page Not Found | AdGrid",
+      "metaDescription": "The page you're looking for doesn't exist or has moved.",
+      "heading": "Page not found",
+      "body": "The page you're looking for doesn't exist or has moved. Let's get you back on track.",
+      "home": "Back to home",
+      "faq": "Read the FAQ"
+    },
+    "marketBand": "<strong>Out-of-home advertising in Canada is a billion-dollar market,</strong> and most of it is still bought over email, phone calls, and PDFs. AdGrid brings it online.",
+    "proof": {
+      "heading": "Screens where people actually spend time",
+      "venues": {
+        "gyms": "Gyms",
+        "cafes": "Cafés",
+        "salons": "Salons & barbershops",
+        "clinics": "Clinics",
+        "transit": "Transit",
+        "retail": "Retail",
+        "hotels": "Hotels",
+        "campuses": "Campuses"
+      },
+      "slides": {
+        "retail": {
+          "alt": "Digital ad screen in a retail store",
+          "caption": "Retail: in-store display"
+        },
+        "transit": {
+          "alt": "Digital ad screen at a transit shelter",
+          "caption": "Transit: shelter display"
+        },
+        "clinic": {
+          "alt": "Digital ad screen in a clinic waiting room",
+          "caption": "Clinics: waiting room display"
+        },
+        "hotel": {
+          "alt": "Digital ad screen in a hotel lobby",
+          "caption": "Hotels: lobby display"
+        },
+        "campus": {
+          "alt": "Digital ad screen in a university campus hallway",
+          "caption": "Campuses: common area display"
+        }
+      }
+    },
+    "carousel": {
+      "prev": "Previous slide",
+      "next": "Next slide",
+      "goTo": "Go to slide {n}"
+    },
+    "advertisers": {
+      "eyebrow": "For advertisers",
+      "heading": "Local reach you can actually measure",
+      "sub": "Put your brand on real screens in the neighbourhoods your customers live in, and see exactly what it did.",
+      "imgAlt": "Café window screen showing an ad with a QR code",
+      "cards": {
+        "local": {
+          "h": "Hyper-local targeting",
+          "p": "Pick the exact venues your customers already visit, down to the block."
+        },
+        "pricing": {
+          "h": "Transparent pricing",
+          "p": "See the price per slot before you book. Pay only for played time."
+        },
+        "scans": {
+          "h": "Scan-level measurement",
+          "p": "Every campaign gets a unique QR code. Track scans by screen and by hour."
+        },
+        "fast": {
+          "h": "Live in days",
+          "p": "Upload creative, get approved, go live. No agencies, no RFPs."
+        }
+      }
+    },
+    "operators": {
+      "eyebrow": "For operators",
+      "heading": "Your screens. Your rules. New revenue.",
+      "sub": "Turn idle screen time into income without giving up control of what plays in your venue.",
+      "imgAlt": "Digital ad screen on a barbershop counter",
+      "cards": {
+        "pricing": {
+          "h": "Dynamic pricing",
+          "p": "Set a floor price and let demand move it up. Event nights and rush hours price themselves."
+        },
+        "control": {
+          "h": "Full approval control",
+          "p": "Approve or reject every ad. Set operating hours. Optionally auto-approve verified advertisers."
+        },
+        "analytics": {
+          "h": "Real-time analytics",
+          "p": "Fill rate, revenue trends, and playback proof, per screen, per day."
+        },
+        "lockin": {
+          "h": "No lock-in",
+          "p": "Connect in minutes. No long-term contracts, no upfront costs."
+        }
+      }
+    },
+    "hero": {
+      "eyebrow": "Canada's OOH marketplace",
+      "heading": "Canada's screens. Canada's brands. <accent>One marketplace.</accent>",
+      "sub": "The self-serve marketplace where Canadian screen operators sell ad time and local advertisers buy it. Real-time pricing, no minimums, full control on both sides.",
+      "liveNow": "Screens live now",
+      "cities": "Toronto & Vancouver",
+      "launchCities": "Launch cities",
+      "venueCategories": "Venue categories",
+      "imgAlt": "Digital ad screen mounted in a gym"
+    },
+    "how": {
+      "eyebrow": "How it works",
+      "heading": "Two sides, one marketplace",
+      "operatorsLabel": "For screen operators",
+      "advertisersLabel": "For advertisers",
+      "operatorSteps": {
+        "connect": {
+          "h": "Connect your screen",
+          "p": "Pair any display in minutes. No proprietary hardware to buy."
+        },
+        "rules": {
+          "h": "Set your rules",
+          "p": "Floor price and operating hours. You approve every ad before it plays, or auto-approve advertisers you trust."
+        },
+        "paid": {
+          "h": "Get paid",
+          "p": "Automatic payouts for every second of ad time sold. Track earnings per screen."
+        }
+      },
+      "advertiserSteps": {
+        "venues": {
+          "h": "Choose your venues",
+          "p": "Filter by neighbourhood, venue type, and daily foot traffic."
+        },
+        "budget": {
+          "h": "Set budget and schedule",
+          "p": "Transparent per-slot pricing. No minimums, no long-term contracts."
+        },
+        "measure": {
+          "h": "Measure what happens",
+          "p": "Live playback logs and QR scan tracking for every campaign."
+        }
+      }
+    },
+    "calc": {
+      "eyebrow": "Earnings calculator",
+      "heading": "What could your screen earn?",
+      "sub": "Move the sliders to match your venue. You keep {share} of what advertisers pay.",
+      "screens": "Screens",
+      "visitors": "Visitors per day, per screen",
+      "fillLegend": "How much ad time gets booked",
+      "fill": {
+        "quiet": {
+          "label": "Quiet",
+          "title": "25% of ad spots booked"
+        },
+        "typical": {
+          "label": "Typical",
+          "title": "50% of ad spots booked"
+        },
+        "busy": {
+          "label": "Busy",
+          "title": "75% of ad spots booked"
+        }
+      },
+      "resultLabel": "Estimated monthly payout",
+      "perYear": "{amount} a year",
+      "note": "Estimate only, not a guarantee. Assumes each visitor sees {spots} ad spots at a {cpm} CPM. Real earnings depend on your floor price, hours and demand in your area."
+    },
+    "showcase": {
+      "eyebrow": "The product",
+      "heading": "One dashboard for each side of the marketplace",
+      "disclaimer": "Illustrative example, not real venues or earnings.",
+      "operators": {
+        "kpiScreens": "Screens live",
+        "kpiFill": "Fill rate",
+        "kpiMonth": "This month",
+        "rowGym": "Gym, Kitsilano",
+        "rowCafe": "Café, Queen West",
+        "rowClinic": "Clinic waiting room",
+        "caption": "List inventory, set floor prices, approve every ad, and track earnings per screen."
+      },
+      "advertisers": {
+        "kpiActive": "Active campaigns",
+        "kpiPlays": "Plays today",
+        "kpiScans": "QR scans",
+        "rowCoffee": "Downtown coffee launch",
+        "rowClass": "Weekend class promo",
+        "rowOpenHouse": "Neighbourhood open house",
+        "plays": {
+          "one": "{count} play",
+          "other": "{count} plays"
+        },
+        "caption": "Pick venues, set a budget, upload creative, and watch plays and scans come in live."
+      }
+    },
+    "search": {
+      "placeholder": "Search…",
+      "noResults": "No results",
+      "sections": {
+        "how": {
+          "title": "How it works",
+          "text": "List your screens or book a campaign, real-time pricing, self-serve, no long-term contracts."
+        },
+        "operators": {
+          "title": "For operators",
+          "text": "List your digital screens, set your own prices, approve every ad before it airs."
+        },
+        "advertisers": {
+          "title": "For advertisers",
+          "text": "Book real out-of-home ad campaigns on local screens in minutes, no minimums."
+        }
+      }
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "heading": "Questions, answered",
+      "items": {
+        "cities": {
+          "q": "Which cities is AdGrid available in?",
+          "a": "We're launching in Toronto and Vancouver, with more Canadian cities planned as we onboard operators. Join the waitlist below if you're elsewhere, we'll reach out as we expand."
+        },
+        "screens": {
+          "q": "What screens qualify as an AdGrid display?",
+          "a": "Any landscape digital screen with an internet connection: a commercial display, a spare TV, or existing digital signage. Connect it in minutes with our lightweight display player; no proprietary hardware to buy."
+        },
+        "payouts": {
+          "q": "How much does AdGrid take, and how do payouts work?",
+          "a": "You keep 70% of what advertisers pay for every screen you list; AdGrid keeps 30%. Payouts are automatic via Stripe Connect on a schedule shown in your dashboard, no invoicing, no chasing payment."
+        },
+        "contract": {
+          "q": "Do I have to sign a contract or pay anything upfront?",
+          "a": "No. Listing your screens is free with no long-term contract, pause or remove your inventory anytime."
+        },
+        "control": {
+          "q": "What control do I have over what plays on my screen?",
+          "a": "Full control. Approve or reject every ad before it airs, and set operating hours so ads only run while your venue is open. If you choose, ads from verified advertisers can be approved automatically."
+        },
+        "minimum": {
+          "q": "Is there a minimum ad spend for advertisers?",
+          "a": "No minimums and no long-term contracts. You see the exact price per slot before you book, and you pay only for time that actually plays."
+        },
+        "proof": {
+          "q": "How do I know my campaign actually ran?",
+          "a": "Every campaign includes playback logs proving when and where your ad ran, plus a unique QR code so you can track scans by screen and by hour."
+        },
+        "cancel": {
+          "q": "What happens if I cancel a campaign?",
+          "a": "Cancel before any impressions are served and you get a full refund within 5-10 business days. Once impressions start, charges are final."
+        }
+      }
+    },
+    "waitlist": {
+      "heading": "Get notified when we reach your city",
+      "joiningAs": "I'm joining as",
+      "roleOperator": "I have screens",
+      "roleAdvertiser": "I want to advertise",
+      "operator": {
+        "eyebrow": "Screens outside Toronto or Vancouver?",
+        "sub": "We're live in Toronto and Vancouver and adding cities as operators join. Tell us where your screens are and we'll reach out when we launch there.",
+        "company": "Company or venue name",
+        "companyPlaceholder": "Name of your business or network",
+        "submit": "Join the operator waitlist"
+      },
+      "advertiser": {
+        "eyebrow": "Advertising outside Toronto or Vancouver?",
+        "sub": "We're live in Toronto and Vancouver and adding cities as screens come online. Tell us where you want to advertise and we'll reach out when screens open up there.",
+        "company": "Business name",
+        "companyPlaceholder": "The business you want to advertise",
+        "submit": "Join the advertiser waitlist"
+      },
+      "name": "Full name",
+      "namePlaceholder": "Jane Smith",
+      "email": "Work email",
+      "emailPlaceholder": "jane@yourcompany.com",
+      "city": "City",
+      "cityPlaceholder": "Select city…",
+      "cityToronto": "Toronto",
+      "cityVancouver": "Vancouver",
+      "cityOther": "Other Canadian city",
+      "cityMultiple": "Multiple cities",
+      "screens": "Number of screens",
+      "screensPlaceholder": "Select range…",
+      "screensNotYet": "Not yet deployed",
+      "source": "How did you hear about AdGrid?",
+      "submitting": "Submitting…",
+      "error": "Something went wrong. Please try again.",
+      "privacy": "We'll respond within 2 business days. By submitting, you agree to our <privacy>Privacy Policy</privacy>. We'll never share your information."
+    },
+    "footer": {
+      "tagline": "The self-serve marketplace for digital out-of-home advertising in Canada.",
+      "platform": "Platform",
+      "account": "Account",
+      "legal": "Legal",
+      "joinWaitlist": "Join the waitlist",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service",
+      "cookies": "Cookie Policy",
+      "refunds": "Refund Policy",
+      "madeIn": "Made in Canada"
+    }
+  },
+  "legal": {
+    "home": "Home",
+    "lastUpdated": "Last updated: {date}",
+    "privacy": {
+      "metaTitle": "Privacy Policy | AdGrid",
+      "metaDescription": "How AdGrid collects, uses, and protects the data of advertisers, screen operators, and website visitors.",
+      "title": "Privacy Policy",
+      "sections": [
+        {
+          "h": "Who we are",
+          "p": [
+            "AdGrid Inc. (\"AdGrid\", \"we\", \"us\") operates a digital out-of-home advertising platform that connects advertisers with screen owners, currently serving Toronto and Vancouver. Our registered address is available at legal@adgrid.io. AdGrid is based in Canada, and we handle personal information under the federal <em>Personal Information Protection and Electronic Documents Act</em> (PIPEDA).",
+            "<strong>Privacy Officer:</strong> AdGrid's designated Privacy Officer is accountable for our compliance with PIPEDA and is the first point of contact for any question, concern, or complaint about how we handle your personal information: {privacyEmail}."
+          ]
+        },
+        {
+          "h": "Data we collect, and why",
+          "p": [
+            "Under PIPEDA we only collect personal information for identified purposes, with your knowledge and consent (implied by creating an account, or express where we say so below). Each category below names why we collect it — we do not use it for any other purpose without asking first.",
+            "<strong>Account holders (advertisers and screen operators):</strong> name, email address, business name, and billing information, collected when you create an account, to identify you, operate your account, and process payment. Payment details are processed and stored by Stripe. AdGrid never stores raw card numbers.",
+            "<strong>Screen telemetry:</strong> whether a screen is online or offline, which campaign was playing at a given time, and periodic heartbeat timestamps.",
+            "<strong>Optional audience-measurement camera:</strong> some Operators enable an add-on camera at their venue to estimate anonymous aggregate audience size and composition. All face detection and age/gender estimation runs on-device at the screen; raw camera frames are never stored or transmitted anywhere. Only aggregate, anonymized statistics for each ~30-second window (approximate person count, dwell time, attention score, and age/gender bracket counts) are sent to AdGrid. We never receive images, video, biometric templates, or any data that identifies an individual, and screens do not track the same person across visits. Operators who enable this feature are contractually required to post a visible notice at the venue disclosing that anonymous audience analytics are in use.",
+            "<strong>QR-code scans:</strong> when a viewer scans an ad's QR code we record a scan event containing the timestamp, the campaign ID, and the screen ID, then redirect the viewer to the advertiser's destination URL. We do not set tracking cookies on the destination site and do not receive any data about what the viewer does after the redirect.",
+            "<strong>Usage data:</strong> standard server logs (IP address, browser type, pages visited) retained for up to 90 days for security and debugging purposes.",
+            "<strong>Product analytics (only if you opt in):</strong> if you choose \"Accept\" in our cookie banner, we record how the site and app are used so we can see where people get stuck and improve them. This covers pages viewed, the browser and device type, approximate location derived from your IP address, and a small set of product events: joining the waitlist, submitting the sign-up form, using the earnings calculator, and moving through or submitting the campaign builder. Once you are signed in, these events are linked to your AdGrid account ID, never your name or email. We do not record your screen, keystrokes, or what you type into forms. If you choose \"Essential only\", or never answer, none of this is collected. You can change your choice at any time on our <cookies>Cookie Policy</cookies> page.",
+            "<strong>Marketplace messages:</strong> when an advertiser and a screen operator message each other about an exclusive placement listing through AdGrid's marketplace, we store the message content, sender, and timestamp so both parties can see the conversation. We do not read or use this content for any purpose other than delivering it and, where relevant, resolving a support request.",
+            "<strong>Waitlist and contact forms:</strong> if you join our waitlist (as a screen operator or an advertiser) or contact us, we collect the name, email, company, city, and other details you submit, so we can respond to your inquiry and follow up about onboarding. We do not share this information with third parties and use it only for that purpose."
+          ]
+        },
+        {
+          "h": "How we use your data",
+          "p": [
+            "We use account data to provide the AdGrid service, process payments, send transactional emails (campaign approvals, payment receipts, payout notifications), and respond to support requests. If you opt in to product analytics, we use that data only to understand and improve AdGrid's own website and app. We do not sell personal data to third parties or use it for behavioural advertising."
+          ]
+        },
+        {
+          "h": "Data retention",
+          "p": [
+            "Account data (including marketplace messages) is retained for the life of your account and for 90 days following account deletion, after which it is permanently deleted. Screen telemetry, heartbeat records, and aggregate audience-measurement statistics are retained for 12 months, then automatically deleted. QR scan events and conversion records (from our conversion pixel or server postback) are retained for 24 months to support campaign analytics, then automatically deleted. Product analytics data (if you opted in) is retained for 12 months, then deleted. Stripe retains payment records independently per their own privacy policy."
+          ]
+        },
+        {
+          "h": "Your rights",
+          "p": [
+            "If you are located in Canada, the EU, or the UK you have the right to access, correct, or delete your personal data, and to withdraw consent where processing is consent-based. To exercise any of these rights, email our Privacy Officer at {privacyEmail}. We will respond within 30 days, as required by PIPEDA.",
+            "If you're not satisfied with how we've handled your request or your personal information, you can file a complaint with the <opc>Office of the Privacy Commissioner of Canada</opc>, the federal regulator responsible for enforcing PIPEDA."
+          ]
+        },
+        {
+          "h": "Cookies and similar technologies",
+          "p": [
+            "AdGrid does not set any cookies. Your signed-in session is kept in your browser's local storage, used only to keep you logged in, and is never shared with third parties. If you opt in to product analytics, our analytics provider also keeps a random identifier in your browser's local storage so it can tell visits apart. We do not use advertising cookies or cross-site trackers. Details are in our <cookies>Cookie Policy</cookies>."
+          ]
+        },
+        {
+          "h": "Third-party services",
+          "p": [
+            "We use Stripe for payment processing, Supabase for database and authentication, and Resend for transactional email. If you opt in to product analytics, that data is processed by PostHog, Inc. Each service operates under its own privacy policy and data processing agreement.",
+            "<strong>Storage outside Canada:</strong> some of these providers, including PostHog, store data on servers in the United States. Information stored there is subject to the laws of that country and may be accessible to its authorities. We require each provider to protect your information to a standard comparable to PIPEDA."
+          ]
+        },
+        {
+          "h": "Changes to this policy",
+          "p": [
+            "We may update this policy from time to time. Material changes will be notified by email to account holders at least 14 days before taking effect."
+          ]
+        },
+        {
+          "h": "Contact",
+          "p": [
+            "For privacy questions or data requests: {privacyEmail}"
+          ]
+        }
+      ],
+      "seeAlso": "Also see our <terms>Terms of Service</terms> and <cookies>Cookie Policy</cookies>."
+    },
+    "terms": {
+      "metaTitle": "Terms of Service | AdGrid",
+      "metaDescription": "The terms governing use of AdGrid's digital out-of-home advertising marketplace.",
+      "title": "Terms of Service",
+      "sections": [
+        {
+          "h": "1. Acceptance",
+          "p": [
+            "By creating an account or using AdGrid you agree to these Terms of Service (\"Terms\"). If you are using AdGrid on behalf of a business, you represent that you have authority to bind that business to these Terms."
+          ]
+        },
+        {
+          "h": "2. The service",
+          "p": [
+            "AdGrid provides a marketplace platform connecting advertisers (\"Advertisers\") who wish to display digital advertising with screen owners and operators (\"Operators\") who make display screens available on the network. AdGrid is not a party to individual advertising agreements between Advertisers and Operators beyond facilitating the booking and payment flow. AdGrid also offers a marketplace where Operators may list specific screens for exclusive placement over a chosen date range, and Advertisers and Operators may message each other about a listing before booking. Marketplace booking is not currently accepting payment; where a listing is marked as available for booking, the same content, payment, and approval terms in these sections apply."
+          ]
+        },
+        {
+          "h": "3. Acceptable use",
+          "p": [
+            "You must not use AdGrid to: violate any applicable law or regulation; infringe any third-party intellectual property, privacy, or other rights; transmit malware or harmful code; attempt to gain unauthorised access to any part of the platform; scrape or systematically extract data; or circumvent any rate limit, access control, or security measure. Marketplace messages must not be used to harass, solicit business outside the platform in violation of these Terms, or share content that would violate section 4 if submitted as ad creative."
+          ]
+        },
+        {
+          "h": "4. Advertiser content rules",
+          "p": [
+            "Advertisers are solely responsible for all creative content they submit. Content must not be unlawful, deceptive, defamatory, obscene, or discriminatory. Regulated categories (alcohol, gambling, cannabis, financial products, health claims) require pre-approval and must comply with all applicable advertising standards. AdGrid reserves the right to reject or remove any content at its discretion without refund if the content violates these rules or applicable law.",
+            "Each Operator may set their own content restrictions for their screens. A campaign approved by AdGrid may still be declined by an individual Operator; payment is only captured after Operator approval (or auto-approval where configured)."
+          ]
+        },
+        {
+          "h": "5. Payments and refunds",
+          "p": [
+            "You authorise AdGrid to charge your selected payment method the full campaign budget when you submit the campaign for payment. A campaign only goes live on a given screen once both (a) payment has been captured and (b) the Operator (or the screen's auto-approval setting) has approved your content; until both occur, no impressions are served. All charges are processed by Stripe and are non-refundable except where a campaign is cancelled before any impressions are served, in which case a full refund will be issued within 5–10 business days. AdGrid deducts a platform fee from Operator payouts as described in the Operator terms."
+          ]
+        },
+        {
+          "h": "6. Operator responsibilities",
+          "p": [
+            "Operators are responsible for keeping their screens online, displaying approved campaigns accurately, and maintaining any hardware required to run the AdGrid display player. Operators receive payouts via Stripe Connect on a schedule displayed in their dashboard, less AdGrid's platform fee."
+          ]
+        },
+        {
+          "h": "7. Limitation of liability",
+          "p": [
+            "To the maximum extent permitted by applicable law, AdGrid's total liability for any claim arising out of or relating to these Terms or the service is limited to the greater of (a) the amounts you paid AdGrid in the 3 months preceding the claim or (b) CAD $100. AdGrid is not liable for indirect, incidental, special, consequential, or punitive damages, including lost profits, even if advised of the possibility."
+          ]
+        },
+        {
+          "h": "8. Disclaimer of warranties",
+          "p": [
+            "The AdGrid platform is provided \"as is\" without warranty of any kind. We do not warrant that the service will be uninterrupted, error-free, or that any particular campaign will achieve any specific reach, impression count, or business result."
+          ]
+        },
+        {
+          "h": "9. Governing law",
+          "p": [
+            "These Terms are governed by the laws of the Province of Ontario and the federal laws of Canada applicable therein, without regard to conflict of law principles. Disputes will be resolved in the courts of Ontario, Canada."
+          ]
+        },
+        {
+          "h": "10. Changes",
+          "p": [
+            "We may update these Terms from time to time. We will notify account holders by email at least 14 days before material changes take effect. Continued use of the service after the effective date constitutes acceptance."
+          ]
+        },
+        {
+          "h": "11. Contact",
+          "p": [
+            "Questions about these Terms: {legalEmail}"
+          ]
+        }
+      ],
+      "seeAlso": "Also see our <privacy>Privacy Policy</privacy> and <refunds>Refund Policy</refunds>."
+    },
+    "cookies": {
+      "metaTitle": "Cookie Policy | AdGrid",
+      "metaDescription": "How AdGrid uses cookies and similar storage technologies.",
+      "title": "Cookie Policy",
+      "sections": [
+        {
+          "h": "Short version",
+          "p": [
+            "AdGrid does not set cookies. We use browser storage to keep you signed in, and, only if you say yes, product analytics to see how people use the site. We do not use advertising cookies, tracking pixels, or cross-site trackers."
+          ]
+        },
+        {
+          "h": "What we use instead of cookies",
+          "p": [
+            "<strong>Local storage (strictly necessary):</strong> when you sign in, your session token is kept in your browser's local storage so you stay logged in between visits. This value is never transmitted to any third party and is cleared when you sign out or clear your browser data.",
+            "<strong>Product analytics (optional, off unless you accept):</strong> if you choose \"Accept\" in our cookie banner, PostHog, our analytics provider, stores a random identifier in your browser's local storage and records pages viewed and a few product events, as described in our <privacy>Privacy Policy</privacy>. If you choose \"Essential only\", or never answer, the analytics script is not loaded at all.",
+            "We do not use tracking pixels, advertising cookies, session-replay scripts, or any cross-site tracking technology. If a screen operator's venue uses the optional anonymous audience-measurement camera described in our <privacy>Privacy Policy</privacy>, it runs entirely on-device at the screen and involves no cookies or browser storage at all."
+          ]
+        },
+        {
+          "h": "Third-party services",
+          "p": [
+            "Payments (Stripe), our database and authentication (Supabase), and transactional email (Resend) may set their own strictly necessary cookies or storage when you interact directly with their hosted checkout or login flows. These are governed by each provider's own cookie and privacy policy, not by AdGrid."
+          ]
+        },
+        {
+          "h": "Your choice",
+          "slot": "analyticsChoice"
+        },
+        {
+          "h": "If this changes",
+          "p": [
+            "If we add any other non-essential storage, such as advertising, we will update this page and ask for your consent before using it."
+          ]
+        },
+        {
+          "h": "Contact",
+          "p": [
+            "Questions about this policy: {privacyEmail}"
+          ]
+        }
+      ],
+      "seeAlso": "Also see our <privacy>Privacy Policy</privacy> and <terms>Terms of Service</terms>.",
+      "choice": {
+        "unavailable": "Product analytics is currently turned off for everyone, so there is nothing to choose.",
+        "status": "Product analytics is <strong>{state}</strong> for this browser.",
+        "on": "on",
+        "off": "off",
+        "turnOn": "Turn on",
+        "turnOff": "Turn off"
+      }
+    },
+    "refunds": {
+      "metaTitle": "Refund Policy | AdGrid",
+      "metaDescription": "When AdGrid issues refunds for advertising campaigns booked through the platform.",
+      "title": "Refund Policy",
+      "sections": [
+        {
+          "h": "When a campaign is refundable",
+          "p": [
+            "Your card is charged the full campaign budget when you submit a campaign for payment. A campaign only goes live once (a) payment has been captured and (b) the screen Operator has approved your creative, or the screen is set to auto-approval. If a campaign is cancelled — by you or because an Operator declines your content — before any impressions have been served on that screen, you receive a full refund of the amount charged for that screen."
+          ]
+        },
+        {
+          "h": "When a campaign is not refundable",
+          "p": [
+            "Once a campaign has begun serving impressions on a screen, the portion of the budget already spent on that screen is non-refundable. Content removed by AdGrid for violating the Acceptable Use or Advertiser Content Rules in our <terms>Terms of Service</terms> is not refunded."
+          ]
+        },
+        {
+          "h": "How refunds are issued",
+          "p": [
+            "Eligible refunds are returned to your original payment method via Stripe within 5–10 business days of approval. We do not issue refunds as account credit unless you request that instead."
+          ]
+        },
+        {
+          "h": "Operator payouts",
+          "p": [
+            "Where a refund is issued for a campaign that had not yet served impressions, no Operator payout is generated for that amount. Refunds do not claw back a payout already paid to an Operator for impressions actually served."
+          ]
+        },
+        {
+          "h": "Requesting a refund",
+          "p": [
+            "Email {billingEmail} with your campaign ID. We respond within 2 business days."
+          ]
+        }
+      ],
+      "seeAlso": "This policy is part of, and should be read together with, our <terms>Terms of Service</terms>."
+    },
+    "thankYou": {
+      "metaTitle": "Thank You | AdGrid",
+      "metaDescription": "You're on the AdGrid waitlist. We'll be in touch as we onboard operators and advertisers in your city.",
+      "breadcrumb": "Thank you",
+      "heading": "You're on the list.",
+      "promise": "We'll respond within 2 business days.",
+      "whileYouWait": "While you wait",
+      "backHome": "Back to home",
+      "share": "Share AdGrid",
+      "copied": "Link copied",
+      "operator": {
+        "intro": "We'll be in touch as we onboard screens in your city. Here's how to get a head start.",
+        "steps": {
+          "screen": {
+            "title": "Pick your screen",
+            "body": "Any landscape screen with an internet connection works: a commercial display, a spare TV or existing signage."
+          },
+          "traffic": {
+            "title": "Count your foot traffic",
+            "body": "A rough daily visitor count per screen is the one number you'll need at setup. It sets what advertisers see."
+          },
+          "earnings": {
+            "title": "Estimate your earnings",
+            "body": "Try the <calc>earnings calculator</calc> with your numbers."
+          }
+        },
+        "shareText": "Know a venue with a screen? AdGrid pays operators 70% of what advertisers spend."
+      },
+      "advertiser": {
+        "intro": "We'll be in touch as screens go live in your city. Here's how to be ready to book on day one.",
+        "steps": {
+          "artwork": {
+            "title": "Get your artwork ready",
+            "body": "A landscape 1920 × 1080 image or short video. Each screen lists its exact specs when you book."
+          },
+          "qr": {
+            "title": "Leave room for a QR code",
+            "body": "Each campaign gets a trackable QR code so you can see scans by screen and by hour."
+          },
+          "local": {
+            "title": "Think local",
+            "body": "Pick the neighbourhoods and venue types your customers actually visit: gyms, cafés, salons."
+          }
+        },
+        "shareText": "Know a venue owner with a screen? They can earn from it on AdGrid."
+      }
+    }
+  },
+  "venue": {
+    "category": {
+      "food_drink": "Food & Drink",
+      "fitness": "Fitness & Wellness",
+      "retail": "Retail",
+      "transport": "Transport",
+      "healthcare": "Healthcare",
+      "hospitality": "Hospitality",
+      "education": "Education",
+      "entertainment": "Entertainment",
+      "other": "Other"
+    },
+    "fallback": "Venue",
+    "subtype": {
+      "Café": "Café",
+      "Restaurant": "Restaurant",
+      "Bar": "Bar",
+      "Fast Food": "Fast Food",
+      "Bakery": "Bakery",
+      "Gym": "Gym",
+      "Yoga Studio": "Yoga Studio",
+      "Spa": "Spa",
+      "Barber / Salon": "Barber / Salon",
+      "Clothing": "Clothing",
+      "Electronics": "Electronics",
+      "Supermarket": "Supermarket",
+      "Pharmacy": "Pharmacy",
+      "Convenience": "Convenience",
+      "Bus Stop": "Bus Stop",
+      "Train Station": "Train Station",
+      "Airport": "Airport",
+      "Metro / Tube": "Metro / Tube",
+      "GP / Clinic": "GP / Clinic",
+      "Hospital": "Hospital",
+      "Dentist": "Dentist",
+      "Hotel": "Hotel",
+      "Co-working Space": "Co-working Space",
+      "University": "University",
+      "School": "School",
+      "Library": "Library",
+      "Cinema": "Cinema",
+      "Events Venue": "Events Venue",
+      "Sports Venue": "Sports Venue"
+    },
+    "stateWord": {
+      "CA": "Province",
+      "GB": "Region",
+      "US": "State",
+      "AU": "State",
+      "default": "State"
+    }
+  },
+  "public": {
+    "screens": {
+      "metaTitle": "Advertise on Screens in Toronto & Vancouver | AdGrid",
+      "metaDescription": "Digital screens in gyms, cafés, salons and more across Toronto and Vancouver. See where they are and what they cost, then book with no minimum spend.",
+      "eyebrow": "The AdGrid network",
+      "heading": "Screens where your customers already are",
+      "sub": "Digital screens in gyms, cafés, salons and other local venues. Venue owners approve every ad, and every campaign gets a QR code so you can see what it brought in.",
+      "loading": "Loading screens…",
+      "screensLive": {
+        "one": "screen live",
+        "other": "screens live"
+      },
+      "cities": {
+        "one": "city",
+        "other": "cities"
+      },
+      "perThousand": "per 1,000 views",
+      "fromPerThousand": "From {price} per 1,000 views",
+      "mapLabel": "Map of approximate screen locations",
+      "approxNote": "Circles show approximate areas. Exact venues are shown after you sign up.",
+      "venueTypes": "Venue types",
+      "onboarding": "Now onboarding venues in Toronto & Vancouver",
+      "soonBody": "The public map appears once enough screens are live. Create a free account to browse what's bookable near your business today, with prices.",
+      "book": "Book a campaign",
+      "list": "List your screen"
+    },
+    "report": {
+      "unavailable": "This report link is no longer available",
+      "loadError": "Could not load this report",
+      "loading": "Loading report…",
+      "print": "Print / Save PDF",
+      "exportCsv": "Export CSV",
+      "eyebrow": "AdGrid campaign report",
+      "day": "Day",
+      "plays": "Plays",
+      "impressions": "Impressions",
+      "scans": "Scans",
+      "qrScans": "QR Scans",
+      "basis": "Basis",
+      "playsSub": "verified proof of play",
+      "scansSub": "bot and duplicate filtered",
+      "basisLabel": {
+        "measured": "measured by camera",
+        "mixed": "part measured, part modelled",
+        "modelled": "modelled",
+        "none": "no delivery yet"
+      },
+      "basisShort": {
+        "measured": "measured",
+        "mixed": "mixed",
+        "modelled": "modelled",
+        "none": "none"
+      },
+      "health": "Delivery health: <strong>{pct}</strong> of scheduled plays confirmed",
+      "offline": {
+        "one": " · {count} day a screen was offline",
+        "other": " · {count} days a screen was offline"
+      },
+      "noDelivery": "No delivery recorded for this campaign yet."
+    }
+  },
+  "invite": {
+    "operator": {
+      "passwordTooShort": "Password must be at least 8 characters.",
+      "sessionExpired": "Your session expired — please click the invite link again.",
+      "expired": "This invite has expired.",
+      "alreadyUsed": "This invite was already used.",
+      "emailMismatch": "This invite was sent to a different email address. Please sign out and use the link from your invite email.",
+      "finishError": "Something went wrong finishing setup. Try again.",
+      "invalidLink": "This invite link isn't valid.",
+      "expiredAsk": "This invite has expired. Ask your platform owner to send a new one.",
+      "backToSignIn": "Back to sign in",
+      "heading": "Set your password",
+      "sub": "Choose a password to finish setting up your operator account.",
+      "password": "Password",
+      "submit": "Set password and continue"
+    },
+    "screen": {
+      "errorTitle": "Something went wrong loading this invite",
+      "errorBody": "This is likely a temporary connection issue. Try again.",
+      "invalidTitle": "This invite link isn't valid",
+      "invalidBody": "It may have been mistyped. You can still explore AdGrid directly.",
+      "goToAdGrid": "Go to AdGrid →",
+      "usedTitle": "This invite has already been used",
+      "usedBody": "Someone already booked this screen through this link. You can still sign up directly.",
+      "signUp": "Sign up →",
+      "invitedTo": "You've been invited to advertise on",
+      "getStarted": "Get Started →"
+    }
+  },
+  "accounts": {
+    "roles": {
+      "admin": "Admin",
+      "manager": "Manager",
+      "viewer": "Viewer"
+    },
+    "roleLower": {
+      "admin": "admin",
+      "manager": "manager",
+      "viewer": "viewer"
+    },
+    "grantStatus": {
+      "pending": "pending",
+      "active": "active",
+      "revoked": "revoked"
+    },
+    "activity": {
+      "someone": "Someone",
+      "grant_created": "{who} was invited as {role}",
+      "access_accepted": "{who} accepted access as {role}",
+      "access_revoked": "{who}'s access was revoked (was {role})",
+      "role_changed": "{who}'s role was changed to {role}",
+      "other": "{who} — {action}"
+    },
+    "accept": {
+      "invalidLink": "Invalid invite link.",
+      "notFound": "Invite not found or already used.",
+      "alreadyAccepted": "This invite has already been accepted.",
+      "revoked": "This invite has been revoked.",
+      "loading": "Loading invite…",
+      "anAccount": "an account",
+      "someone": "Someone",
+      "errorTitle": "Invite Error",
+      "goHome": "Go Home",
+      "acceptedTitle": "Invite Accepted",
+      "redirecting": "Redirecting to your accounts…",
+      "invitedTitle": "You've been invited",
+      "signInPrompt": "Sign in to see your invitation and accept it.",
+      "google": "Continue with Google",
+      "email": "Sign in with email",
+      "youreInvited": "You're invited",
+      "hasGiven": "<b>{grantor}</b> has given you <b>{role}</b> access to",
+      "decline": "Decline",
+      "acceptInvite": "Accept Invite"
+    },
+    "access": {
+      "heading": "Who has access to your account",
+      "grant": "Grant Access",
+      "loadError": "Couldn't load access grants — check your connection and try again.",
+      "empty": "No one has access to your account yet.",
+      "unknown": "Unknown",
+      "revoke": "Revoke",
+      "activity": "Activity",
+      "activityError": "Couldn't load activity — check your connection and try again.",
+      "activityEmpty": "No access changes on your account yet."
+    },
+    "team": {
+      "loadError": "Couldn't load your team and client accounts — check your connection and try again.",
+      "noClients": "No client accounts yet. Ask a client to grant you access first.",
+      "team": "Team",
+      "noMembers": "No team members yet.",
+      "selectMember": "Select a team member to manage their client access.",
+      "clientAccessFor": "Client Access for {name}",
+      "clientAccount": "Client Account",
+      "orgGrant": "Org grant: {role}",
+      "noAccess": "No access"
+    },
+    "grantModal": {
+      "enterEmail": "Enter an email address.",
+      "noAccount": "No AdGrid account found with that email.",
+      "self": "You can't grant access to yourself.",
+      "duplicate": "This account already has a grant for that user.",
+      "title": "Grant Account Access",
+      "sent": "✓ Invite sent to {email}",
+      "done": "Done",
+      "email": "Email address",
+      "emailPlaceholder": "agency@example.com",
+      "role": "Role",
+      "roleViewer": "Viewer — read only",
+      "roleManager": "Manager — create & edit campaigns",
+      "roleAdmin": "Admin — full access",
+      "sending": "Sending…",
+      "send": "Send Invite"
+    },
+    "hub": {
+      "unnamed": "Unnamed Account",
+      "active": "Active",
+      "yours": "Your account",
+      "activeCampaigns": {
+        "one": "active campaign",
+        "other": "active campaigns"
+      },
+      "spend": "spend to date",
+      "title": "Accounts",
+      "sub": "Select an account to manage. You can switch at any time from the header."
+    }
+  },
+  "login": {
+    "hidePassword": "Hide password",
+    "showPassword": "Show password",
+    "invalidEmail": "Enter a valid email address.",
+    "resetSent": "Check your inbox: if an account exists for that email, a password reset link is on its way.",
+    "passwordTooShort": "Password must be at least 6 characters.",
+    "passwordUpdated": "Password updated. You can now sign in.",
+    "acceptTerms": "Please accept the Terms of Service and Privacy Policy to continue.",
+    "confirmEmail": "Check your email to confirm your account.",
+    "homeLabel": "AdGrid home",
+    "title": {
+      "forgot": "Reset your password",
+      "reset": "Set new password",
+      "signin": "Sign in to AdGrid",
+      "signup": "Create your account"
+    },
+    "sub": {
+      "forgot": "Enter your email and we'll send a reset link.",
+      "reset": "Choose a new password for your account.",
+      "signin": "Welcome back. Pick up where you left off.",
+      "operator": "List your screens and start earning from idle ad time.",
+      "advertiser": "Put your business on screens in the neighbourhoods you serve."
+    },
+    "redirecting": "Redirecting…",
+    "google": "Continue with Google",
+    "apple": "Continue with Apple",
+    "or": "or",
+    "signingUpTo": "I'm signing up to",
+    "intentAdvertiser": "Run ad campaigns",
+    "intentOperator": "List my screens",
+    "fullName": "Full Name",
+    "namePlaceholder": "Your name",
+    "email": "Email",
+    "emailPlaceholder": "you@company.com",
+    "password": "Password",
+    "newPassword": "New Password",
+    "forgotPassword": "Forgot password?",
+    "agree": "I agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
+    "pleaseWait": "Please wait…",
+    "submit": {
+      "forgot": "Send reset link →",
+      "reset": "Update password →",
+      "signin": "Sign in →",
+      "signup": "Create account →"
+    },
+    "signingIn": "Signing in…",
+    "tryDemo": "▶ Try Demo",
+    "noAccount": "Don't have an account? ",
+    "haveAccount": "Already have an account? ",
+    "signUp": "Sign up",
+    "signIn": "Sign in",
+    "backToSignIn": "Back to sign in"
+  },
+  "display": {
+    "scanToLearn": "Scan to learn more",
+    "noCampaigns": "No active campaigns scheduled",
+    "tokenNotRecognised": "Screen token not recognised",
+    "disconnected": "This screen was disconnected. Showing a new pairing code…",
+    "checkUrl": "Check the URL and reconnect from your AdGrid dashboard.",
+    "connecting": "Connecting…",
+    "privacyNotice": "AdGrid advertising display. QR code scans are recorded anonymously.",
+    "privacyLink": "Privacy Policy ↗",
+    "pair": {
+      "instruction": "Enter this code in your AdGrid dashboard to connect this screen",
+      "codeLabel": "Pairing code {code}",
+      "howTo": "On your phone or computer, sign in at <b>{host}</b>, open your screen's <b>Setup Guide</b> and choose <b>Enter pairing code</b>.",
+      "newCodeIn": "New code in {time} · this page updates by itself",
+      "gettingCode": "Getting a pairing code…",
+      "offline": "Can't reach AdGrid right now.",
+      "offlineHint": "Check this screen's internet connection — it will keep retrying.",
+      "paired": "Paired — starting your screen…"
+    }
+  },
+  "categories": {
+    "Food & Beverage": "Food & Beverage",
+    "Fashion & Retail": "Fashion & Retail",
+    "Finance & Banking": "Finance & Banking",
+    "Health & Fitness": "Health & Fitness",
+    "Entertainment": "Entertainment",
+    "Technology": "Technology",
+    "Travel & Tourism": "Travel & Tourism",
+    "Automotive": "Automotive",
+    "Real Estate": "Real Estate",
+    "Alcohol": "Alcohol",
+    "Cannabis": "Cannabis",
+    "Gambling": "Gambling"
+  },
+  "create": {
+    "steps": {
+      "targeting": "Targeting",
+      "creative": "Creative",
+      "budget": "Budget & Schedule"
+    },
+    "stepper": {
+      "stepOf": "Step {step} of {total}"
+    },
+    "drafts": {
+      "title": "Continue a draft",
+      "saved": "{step} · saved {ago}",
+      "resume": "Resume",
+      "deleteLabel": "Delete draft {name}"
+    },
+    "insight": {
+      "body": "Your past campaigns scanned best on <b>{profile}</b> screens.",
+      "apply": "Apply filter"
+    },
+    "media": {
+      "badType": "Use JPG, PNG, GIF, WEBP, or MP4/WEBM/MOV video.",
+      "tooLargeVideo": "File too large — max {max} MB for video.",
+      "tooLargeImage": "File too large — max {max} MB for images.",
+      "label": "Ad creative",
+      "hint": "Upload your own designed ad — image or video, landscape 16:9 works best.",
+      "videoUploaded": "Video uploaded ✓",
+      "imageUploaded": "Image uploaded ✓",
+      "upload": "+ Upload image or video"
+    },
+    "picker": {
+      "unfavorite": "Remove from favorites",
+      "favorite": "Save as favorite",
+      "previewOn": "Preview your ad on this screen",
+      "previewNeedsCreative": "Upload your creative to preview",
+      "imprPerMonth": "~{k}K impr/mo",
+      "noData": "~No data yet"
+    },
+    "audiences": {
+      "saved": "Saved \"{name}\" as a reusable audience.",
+      "saveFailed": "Failed to save audience.",
+      "removeFailed": "Failed to remove \"{name}\".",
+      "title": "Saved Audiences",
+      "deleteLabel": "Delete {name}",
+      "saveCurrent": "Save current targeting as an audience",
+      "placeholder": "e.g. Downtown malls"
+    },
+    "location": {
+      "placeholder": "Search a country, state/province, or city…",
+      "loading": "Loading locations…",
+      "noMatches": "No screens in that area yet",
+      "country": "Country",
+      "city": "City"
+    },
+    "targeting": {
+      "addingGroup": "Adding a new targeting group to <b>{name}</b>",
+      "campaignName": "Campaign name",
+      "campaignNamePlaceholder": "e.g. Summer Promo 2026",
+      "heading": "Where do you want to advertise?",
+      "sub": "Choose an area and, optionally, the kind of screens you're after — we'll find matching screens for you.",
+      "noInventory": "No screens are live on the network yet — check back soon.",
+      "fromPrevious": "↩ Start from a previous campaign →",
+      "areaType": "Area type",
+      "areaLocation": "Location",
+      "areaRadius": "Radius",
+      "where": "Where",
+      "noScreensYet": "No screens yet",
+      "city": "City",
+      "radiusPlaceholder": "Search a city to center the radius on…",
+      "radiusLabel": "Radius: {km} km — drag the pin to narrow to a specific part of {city}",
+      "km": "{n}km",
+      "screenType": "Screen type",
+      "environment": "Environment",
+      "venueCategory": "Venue Category",
+      "anyVenue": "Any venue type",
+      "holdout": "<b>Run a holdout test</b> — we'll randomly hold back ~20% of screens as a control group to check whether delivery matched the measured audience, at no extra cost (control screens aren't billed)."
+    },
+    "creativeStep": {
+      "refine": "Refine screens",
+      "screens": "Screens",
+      "selectedSummary": "{selected} of {total} selected · ~{k}K impressions/mo",
+      "selectAll": "Select all",
+      "deselectAll": "Deselect all",
+      "tabAll": "All matching ({count})",
+      "tabFavorites": "Favorites ({count})",
+      "tabRecent": "Recent ({count})",
+      "emptyFavorites": "No favorites yet — star a board below to save it here.",
+      "emptyRecent": "No boards from past campaigns yet.",
+      "presetUnavailable": "This screen is no longer available. Contact AdGrid support for help.",
+      "noMatch": "No screens match your filters. Try widening your area or removing filters.",
+      "creative": "Creative",
+      "creatives": "Creatives",
+      "unassigned": "{count} of {total} {screens} aren't assigned to a creative yet — they'll show the first creative above by default.",
+      "screenWord": {
+        "one": "screen",
+        "other": "screens"
+      },
+      "addCreative": "+ Add another creative"
+    },
+    "creative": {
+      "defaultLabel": "Creative {n}",
+      "sampleFailed": "Couldn't sample this image — use the color picker instead.",
+      "lowContrast": "Low contrast — this QR may not scan reliably ({ratio}:1, aim for {min}:1+).",
+      "labelPlaceholder": "Creative label",
+      "needsUpload": "Upload your ad creative to continue — every campaign needs its own designed image or video.",
+      "destination": "Destination URL (optional)",
+      "destinationPlaceholder": "https://example.com",
+      "badUrl": "Enter a full web address, like https://example.com — this is where your QR code sends people.",
+      "urlHint": "Add one to show a scannable QR code on the ad. Leave blank to run without one.",
+      "category": "Category",
+      "accent": "Accent Colour",
+      "qrColours": "QR Code Colours",
+      "dots": "Dots",
+      "background": "Background",
+      "pickHint": "Click anywhere on your creative preview to sample that color.",
+      "corner": {
+        "top_left": "Top left",
+        "top_right": "Top right",
+        "bottom_left": "Bottom left",
+        "bottom_right": "Bottom right"
+      },
+      "dragHint": "Drag the QR code to reposition it, or drag its corner handle to resize.",
+      "showOn": "Show on ({assigned} of {total} {screens})",
+      "split": "Split by screen type →",
+      "share": "Share of plays on shared screens (%)",
+      "shareHint": "Only matters where this creative shares a screen with another — you set the split, it never changes on its own."
+    },
+    "budget": {
+      "area": "Area",
+      "radiusArea": "{km}km radius",
+      "screens": "Screens",
+      "screensSummary": "{count} selected · ~{k}K impr/mo",
+      "creatives": "Creatives",
+      "budget": "Budget",
+      "budgetSummary": "{amount} ({mode})",
+      "modeDaily": "daily",
+      "modeTotal": "total",
+      "dates": "Dates",
+      "dateRange": "{start} → {end} ({days} days)",
+      "time": "Time",
+      "days": "Days",
+      "duration": "Ad Duration",
+      "durationValue": "{s}s per play",
+      "slotShare": "Slot Share",
+      "slotValue": "{pct}% of airtime",
+      "frequency": "Frequency",
+      "frequencyValue": "Max {n} plays per screen per hour",
+      "noCap": "No cap",
+      "launch": "Launch",
+      "heading": "Budget & Schedule",
+      "budgetType": "Budget type",
+      "totalBudget": "Total budget",
+      "dailyLimit": "Daily limit",
+      "dailyLimitLabel": "Daily limit ({currency})",
+      "totalBudgetLabel": "Total budget ({currency})",
+      "placeholder200": "e.g. 200",
+      "placeholder100": "e.g. 100",
+      "suggested": "Suggested for {screens} screens over {days} days: {min}–{max}",
+      "appliesTo": "Budget applies to",
+      "wholeCampaign": "Whole campaign",
+      "perCreative": "Split per creative",
+      "perCreativeHint": "The budget above is still your overall spend cap — per-creative amounts track how that total is split, they don't add to it.",
+      "creativeBudget": "{label} budget ({currency})",
+      "tooLow": "Budget may be too low to run consistently across all selected screens. Consider increasing your budget or reducing screen count.",
+      "overCap": "{count} of {total} selected screens cap ad duration below {s}s — your ad will play shorter there: {names}{more}.",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "daysOfWeek": "Days of week",
+      "playTimes": "Play times",
+      "sameTime": "Same time every day",
+      "differentTimes": "Different times per day",
+      "from": "From",
+      "until": "Until",
+      "playDuration": "Ad play duration (seconds)",
+      "playDurationHint": "How long your ad plays each time it's shown",
+      "slotShareLabel": "Slot share (% of screen airtime)",
+      "slotShareHint": "Your ad's share of each screen's rotation",
+      "frequencyCap": "Frequency cap (optional)",
+      "frequencyHint": "Max times your ad plays on any one screen per hour. Leave blank for no cap.",
+      "categoryBlocked": {
+        "one": "{count} screen in your area doesn't accept {category} ads and was left out: {names}{more}.",
+        "other": "{count} screens in your area don't accept {category} ads and were left out: {names}{more}."
+      },
+      "launchMode": "Launch mode",
+      "partialTitle": "Go live as screens approve",
+      "partialDesc": "Your campaign starts running on each screen as soon as that screen's owner approves.",
+      "allTitle": "Wait for all screens",
+      "allDesc": "Campaign stays pending until every targeted screen owner has approved.",
+      "review": "Review",
+      "billTo": "Bill to",
+      "clientAccount": "Client account",
+      "clientDesc": "Uses client's payment method",
+      "agencyAccount": "Agency account",
+      "agencyDesc": "Uses your payment method",
+      "createHouseAd": "Create House Ad",
+      "submit": "Submit Campaign →",
+      "frequencyError": "Frequency cap must be a whole number from 1 to {max}, or blank for no cap."
+    },
+    "wizard": {
+      "payTitle": "Submitted for review",
+      "payBody": "Operators review every ad before it plays. Your card is charged {amount} once the first screen approves, and we'll email you either way.",
+      "goToBilling": "Go to Billing →",
+      "reach": "~{screens} · ~{k}K impressions/mo estimated",
+      "reachScreens": {
+        "one": "{count} screen",
+        "other": "{count} screens"
+      },
+      "needCenter": "Enter a center location to see matching screens",
+      "noMatch": "No screens match — try widening your area or removing filters",
+      "budgetZero": "Enter a budget greater than 0 before submitting.",
+      "budgetMax": "Budget cannot exceed {max}.",
+      "categoryBlocked": {
+        "one": "{names} doesn't accept {category} ads. Choose a different category or screen.",
+        "other": "{names} don't accept {category} ads. Choose a different category or screen."
+      },
+      "houseAdFailed": "Failed to create house ad",
+      "submitFailed": "Failed to submit campaign",
+      "chargeFailed": "Charge failed",
+      "title": "New Campaign",
+      "backLabel": "Overview",
+      "noBilling": "Add a payment method before submitting — your campaign won't go live without one.",
+      "setUpBilling": "Set up billing →",
+      "continuingDraft": "Continuing draft: <b>{name}</b>",
+      "startFresh": "Start fresh",
+      "dupTitle": "Start from a previous campaign",
+      "dupEmpty": "No previous campaigns found.",
+      "back": "← Back",
+      "next": "Next →",
+      "noCardTitle": "Add a payment method",
+      "noCardBody": "Approval can't go through without a card on file. Add one now so your campaign starts on time.",
+      "done": "Done"
+    }
+  },
+  "market": {
+    "bookingStatus": {
+      "confirmed": "Confirmed",
+      "active": "Active",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "title": "Marketplace",
+    "subtitle": "Exclusive placements booked outright, outside the open auction",
+    "tabBrowse": "Browse",
+    "tabBookings": "My Bookings",
+    "listingsError": "Couldn't load listings — check your connection and try again.",
+    "noListings": "No exclusive listings available right now.",
+    "bundle": "Bundle",
+    "bookingsError": "Couldn't load your bookings — check your connection and try again.",
+    "noBookings": "You haven't booked any exclusive placements yet.",
+    "screenUnavailable": "Screen unavailable",
+    "totalSuffix": "{amount} total",
+    "detail": {
+      "confirmed": "Booking confirmed",
+      "failed": "Booking failed",
+      "backToMarketplace": "← Back to Marketplace",
+      "loadError": "Couldn't load this listing — check your connection and try again.",
+      "bundlePlacement": "Bundle placement",
+      "exclusivePlacement": "Exclusive placement",
+      "titlePrice": "{kind} — {price}",
+      "loadingScreens": "Loading screens…",
+      "screensIncluded": {
+        "one": "{count} screen included: {names}",
+        "other": "{count} screens included: {names}"
+      },
+      "primaryOnly": "Analytics shown above are for the primary screen in this bundle.",
+      "total": "Total {amount} — no added fees",
+      "autoRenew": "Auto-renew this booking when it expires",
+      "book": "Book this placement",
+      "chargeNote": "You'll be charged the total above using your saved payment method.",
+      "questions": "Questions before you book?"
+    }
+  },
+  "verify": {
+    "badType": "Use JPG, PNG, or PDF.",
+    "tooLarge": "File too large — max {max} MB.",
+    "required": "Company name and business domain are required.",
+    "sessionExpired": "Session expired. Please log in again.",
+    "network": "Network error — please try again.",
+    "failed": "Submission failed.",
+    "verified": "Verified!",
+    "submitted": "Submitted for review.",
+    "back": "← Back",
+    "title": "Business Verification",
+    "verifiedBadge": "Verified advertiser",
+    "verifiedBody": "Operators see a verified badge on your campaigns and may auto-approve your work.",
+    "reviewBadge": "Under review",
+    "reviewBody": "We're reviewing your submission. You'll be notified once it's decided.",
+    "rejectedBadge": "Rejected",
+    "resubmit": "You can resubmit below.",
+    "companyName": "Company name",
+    "domain": "Business domain",
+    "domainPlaceholder": "acme.com",
+    "domainHint": "Matches your company email domain? You're verified instantly. Free email addresses (Gmail, Outlook, etc.) go to manual review.",
+    "businessNumber": "Business number",
+    "doc": "Business license/registration doc",
+    "docOptional": "(optional — if domain doesn't match)",
+    "submit": "Submit for verification"
+  },
+  "scans": {
+    "col": {
+      "timestamp": "Timestamp",
+      "campaign": "Campaign",
+      "screen": "Screen",
+      "device": "Device",
+      "country": "Country",
+      "email": "Email",
+      "consent": "Consent",
+      "filteredBot": "Filtered as bot",
+      "filteredDuplicate": "Filtered as duplicate",
+      "utmSource": "UTM Source",
+      "date": "Date",
+      "variant": "Variant",
+      "plays": "Plays",
+      "scans": "Scans",
+      "scanRate": "Scan Rate",
+      "costPerScan": "Cost / Scan"
+    },
+    "loading": "Loading scans…",
+    "loadError": "Couldn't load scans — check your connection and try again.",
+    "title": "Scans & Data",
+    "subtitle": "QR scan events, consent, and remarketing export",
+    "kpiTotal": "Total Scans",
+    "kpiMonth": "This Month",
+    "kpiScreens": "Unique Screens",
+    "kpiTop": "Top Campaign",
+    "chartTitle": "Scans — last 30 days",
+    "allCampaigns": "All campaigns",
+    "to": "to",
+    "exportCsv": "Export CSV",
+    "variantPerformance": "Variant Performance",
+    "scanLog": "Scan Log ({count})",
+    "empty": "No scans yet. QR codes on screens will log here once scanned.",
+    "emailCaptures": "Email Captures ({count})",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "billing": {
+    "reason": {
+      "screen_offline": "Screen was offline",
+      "underdelivered": "Screen under-delivered"
+    },
+    "invoiceStatus": {
+      "paid": "paid",
+      "open": "open",
+      "failed": "failed",
+      "void": "void",
+      "draft": "draft",
+      "uncollectible": "uncollectible"
+    },
+    "namesError": "Couldn't load campaign names for some delivery credits.",
+    "campaignFallback": "Campaign",
+    "screenFallback": "Screen",
+    "loadFailed": "Failed to load billing data.",
+    "setupFailed": "Failed to start setup",
+    "sessionExpired": "Session expired. Please log in again.",
+    "pmUpdateFailed": "Failed to update payment method.",
+    "nowDefault": "{card} is now your default payment method.",
+    "removeTitle": "Remove payment method?",
+    "removeMessage": "Remove {card} from your account?",
+    "removeDefaultWarning": " This is your current default — future charges will need a different method on file.",
+    "removed": "{card} removed.",
+    "added": "Payment method added successfully.",
+    "loading": "Loading billing…",
+    "retry": "Retry",
+    "title": "Billing",
+    "subtitle": "Payment methods, invoices, and delivery credits",
+    "accountCredit": "Account Credit",
+    "creditHint": "Applied automatically to your next charge. Comes from delivery shortfalls credited below.",
+    "cardExpired": "<b>Your default card has expired</b> ({card}, expired {exp}).",
+    "cardExpiring": {
+      "one": "<b>Your default card expires soon</b> — {card} expires {exp}, in {count} day.",
+      "other": "<b>Your default card expires soon</b> — {card} expires {exp}, in {count} days."
+    },
+    "updateBelow": " Update it below so a running campaign doesn't pause mid-flight when the next charge fails.",
+    "paymentMethods": "Payment Methods",
+    "noMethods": "No payment methods on file.",
+    "expires": "Expires {exp}",
+    "default": "Default",
+    "setDefault": "Set as default",
+    "addMethodPortal": "+ Add Payment Method →",
+    "addMethod": "+ Add Payment Method",
+    "invoiceHistory": "Invoice History",
+    "noInvoices": "No invoices yet.",
+    "col": {
+      "date": "Date",
+      "description": "Description",
+      "amount": "Amount",
+      "status": "Status",
+      "pdf": "PDF",
+      "day": "Day",
+      "campaign": "Campaign",
+      "screen": "Screen",
+      "reason": "Reason",
+      "credited": "Credited"
+    },
+    "download": "Download",
+    "creditsError": "Couldn't load your delivery credits — try refreshing. If this keeps happening, contact support.",
+    "deliveryCredits": "Delivery Credits"
+  },
+  "notif": {
+    "campaign_approved": {
+      "label": "Campaign approved",
+      "desc": "When your campaign is approved by the operator"
+    },
+    "campaign_live": {
+      "label": "Campaign live",
+      "desc": "When your campaign goes live on a screen"
+    },
+    "campaign_paused": {
+      "label": "Campaign paused",
+      "desc": "When your campaign is paused due to low budget"
+    },
+    "low_budget": {
+      "label": "Low budget alert",
+      "desc": "When a campaign has less than 20% of its run remaining"
+    },
+    "campaign_ended": {
+      "label": "Campaign ended",
+      "desc": "When a campaign completes its scheduled run"
+    },
+    "scan_milestone": {
+      "label": "Scan milestones",
+      "desc": "When a campaign hits 100, 500, 1k, or 5k QR scans"
+    },
+    "weekly_report": {
+      "label": "Weekly performance report",
+      "desc": "Summary of scans, spend, and active campaigns every Monday"
+    },
+    "payment_failed": {
+      "label": "Payment failed",
+      "desc": "When a payment for your account fails"
+    },
+    "team_member_joined": {
+      "label": "Team member joined",
+      "desc": "When someone accepts your team invite"
+    },
+    "account_suspended": {
+      "label": "Account suspended",
+      "desc": "If your account is suspended"
+    },
+    "advertiser_verification_approved": {
+      "label": "Business verification approved",
+      "desc": "When your business verification is approved"
+    },
+    "advertiser_verification_rejected": {
+      "label": "Business verification rejected",
+      "desc": "When your business verification needs changes"
+    },
+    "marketplace_thread_message": {
+      "label": "Marketplace messages",
+      "desc": "When you get a new message in a marketplace listing thread"
+    },
+    "screen_offline_during_flight": {
+      "label": "Screen down mid-campaign",
+      "desc": "When a screen your live campaign is booked on goes offline"
+    }
+  },
+  "settings": {
+    "saveChanges": "Save Changes",
+    "errorSaving": "Error saving.",
+    "saved": "Saved.",
+    "fullName": "Full Name",
+    "email": "Email",
+    "changeEmailHint": "Change email in the Security tab.",
+    "companyName": "Company Name",
+    "companyPlaceholder": "Acme Inc.",
+    "companyWebsite": "Company Website",
+    "websitePlaceholder": "https://acme.com",
+    "timezone": "Timezone",
+    "language": "Language",
+    "languageHint": "Saved in this browser. Emails and notifications are still sent in English for now.",
+    "currency": "Billing Currency",
+    "cad": "CAD — Canadian Dollar",
+    "usd": "USD — US Dollar",
+    "currencyHint": "Applies to new campaigns only. Existing bookings are not affected.",
+    "primaryColour": "Primary Colour",
+    "secondaryColour": "Secondary Colour",
+    "font": "Font",
+    "fontSans": "Sans",
+    "fontSerif": "Serif",
+    "fontMono": "Mono",
+    "brandHint": "Seeds the colors on new campaign drafts in the wizard. Doesn't change campaigns you've already created.",
+    "emailSent": "Confirmation email sent. Check your inbox.",
+    "pwMismatch": "Passwords do not match.",
+    "pwTooShort": "Password must be at least 8 characters.",
+    "changeEmail": "Change Email",
+    "newEmail": "New Email",
+    "newEmailPlaceholder": "new@email.com",
+    "updateEmail": "Update Email",
+    "changePassword": "Change Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
+    "updatePassword": "Update Password",
+    "inApp": "In-app",
+    "emailChannel": "Email",
+    "sessionExpired": "Session expired. Please log in again.",
+    "inviteError": "Error sending invite.",
+    "inviteSent": "Invite sent to {email}",
+    "removeError": "Error removing member.",
+    "loadingTeam": "Loading team…",
+    "teamError": "Couldn't load your team — check your connection and try again.",
+    "teamMembers": "Team Members",
+    "inviteTeammate": "Invite Teammate",
+    "invitePlaceholder": "colleague@company.com",
+    "sendInvite": "Send Invite",
+    "title": "Settings",
+    "subtitle": "Manage your advertiser account",
+    "tabs": {
+      "profile": "Profile",
+      "branding": "Brand Kit",
+      "security": "Security",
+      "notifications": "Notifications",
+      "team": "Team",
+      "access": "Access"
+    }
+  },
+  "dash": {
+    "basisNone": "no delivery yet",
+    "basisMeasured": "measured by camera",
+    "basisMixed": "part measured, part modelled",
+    "welcome": "Welcome back",
+    "welcomeName": "Welcome back, {name}",
+    "subtitle": "Your campaign performance at a glance",
+    "newCampaign": "+ New Campaign",
+    "unpaid": {
+      "one": "<b>Payment needed for {count} approved campaign.</b> <muted>It won't play until the charge goes through.</muted>",
+      "other": "<b>Payment needed for {count} approved campaigns.</b> <muted>They won't play until the charge goes through.</muted>"
+    },
+    "payNow": "Pay now",
+    "review": "Review",
+    "gettingStarted": "Get your first campaign running",
+    "steps": {
+      "campaign": {
+        "title": "Build your first campaign",
+        "body": "Pick screens, upload your ad and set a budget. No minimum spend."
+      },
+      "card": {
+        "title": "Add a payment method",
+        "body": "Needed before a campaign can run. Change or remove it any time under Billing."
+      },
+      "verify": {
+        "title": "Verify your business (optional)",
+        "body": "Verified advertisers get a badge and can be auto-approved by operators, so campaigns go live faster."
+      }
+    },
+    "kpiSpent": "Spent to Date",
+    "spentSub": "{pct} of {budget} budget",
+    "kpiPlays": "Plays",
+    "playsSub": "verified proof of play",
+    "kpiImpressions": "Impressions",
+    "thousands": "{n}K",
+    "vsPrior": "vs prior 30 days",
+    "kpiScans": "QR Scans",
+    "filteredSub": "{count} filtered as bot/duplicate",
+    "leadsSub": "leads captured",
+    "cpm": "CPM",
+    "cpmSub": "cost per 1,000 impressions",
+    "costPerScan": "Cost per Scan",
+    "costPerScanSub": "spend ÷ billable scans",
+    "conversions": "Conversions",
+    "reportedValue": "{amount} reported value",
+    "reportedSoFar": "reported so far",
+    "viaScan": "Via QR Scan",
+    "viaScanSub": "scanned then converted",
+    "viaPromo": "Via Promo Code",
+    "viaPromoSub": "saw the ad, never scanned",
+    "impressionsChart": "Impressions — last 30 days",
+    "scansChart": "Billable scans — last 30 days",
+    "reach": "Estimated reach",
+    "reachMissing": "some screens missing coordinates",
+    "reachSub": "unique people, overlap-adjusted",
+    "frequency": "Avg frequency",
+    "frequencyValue": "{n}×",
+    "frequencySub": "times each person saw it",
+    "budgetPacing": "Budget Pacing",
+    "campaignsError": "Couldn't load your campaigns — check your connection and try again.",
+    "yourCampaigns": "Your Campaigns",
+    "viewAll": "View all →",
+    "reportProblem": "Report a problem",
+    "budget": "Budget",
+    "impressions": "Impressions",
+    "scans": "Scans",
+    "spend": "Spend",
+    "impressionsLower": "impressions",
+    "scansLower": "scans",
+    "hideBreakdown": "Hide screen breakdown ▴",
+    "compareScreens": "Compare screens ▾",
+    "breakdown": "{impr} impr · {scans} scans",
+    "noCampaigns": "No campaigns yet",
+    "noCampaignsBody": "Launch your first campaign on the ADGRID network in under 10 minutes.",
+    "createFirst": "Create your first campaign →",
+    "flagOffline": {
+      "one": "Screen offline {count} day during flight",
+      "other": "Screen offline {count} days during flight"
+    },
+    "flagUnder": "Delivery at {pct}% of scheduled plays"
+  },
+  "integ": {
+    "platformDesc": {
+      "meta": "Send scan events as ViewContent conversions to your Meta Pixel via server-side CAPI.",
+      "google": "Import scan conversions into Google Ads for attribution and ROAS measurement.",
+      "shopify": "POST scan events to your Shopify store via webhook for customer journey tracking."
+    },
+    "fields": {
+      "pixel_id": "Pixel ID",
+      "access_token": "System User Access Token",
+      "conversion_id": "Conversion ID",
+      "conversion_label": "Conversion Label",
+      "customer_id": "Customer ID",
+      "developer_token": "Developer Token",
+      "refresh_token": "OAuth Refresh Token",
+      "webhook_url": "Webhook URL",
+      "secret": "Webhook Secret (optional)"
+    },
+    "connected": "Connected",
+    "notConnected": "Not connected",
+    "sent": "Sent",
+    "failed": "Failed",
+    "connectTitle": "Connect {name}",
+    "testOk": "Test event sent successfully.",
+    "testFail": "Test failed — check your credentials.",
+    "saveConnect": "Save & Connect",
+    "test": "Test",
+    "viewDocs": "View {name} docs →",
+    "eventsFired": {
+      "one": "<b>{count}</b> event fired",
+      "other": "<b>{count}</b> events fired"
+    },
+    "edit": "Edit",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "postbackKey": "Postback key",
+    "postbackBody": "Report conversions from your own backend (e.g. an order-webhook handler) with a signed <code>POST</code> to {url}. More reliable than a client-side pixel -- survives ad blockers and doesn't depend on the buyer's browser.",
+    "copyNow": "Copy this now -- it won't be shown again. Send it as <code>Authorization: Bearer <key></code>.",
+    "copy": "Copy",
+    "copied": "✓ Copied",
+    "generating": "Generating…",
+    "regenerate": "Regenerate key",
+    "generate": "Generate key",
+    "pixelTitle": "Conversion pixel",
+    "pixelBody": "Drop this on your order-confirmation / thank-you page. Replace {cid} with the value your site captured from the AdGrid link click (URL param or cookie), or use <code>promo_code=</code> instead for someone who never scanned.",
+    "whereTitle": "Where do I put this?",
+    "whereBody": "Same pixel, same postback key above -- just the exact steps for where your site actually puts it.",
+    "guides": {
+      "shopify": {
+        "steps": [
+          "Go to Settings → Checkout in your Shopify admin.",
+          "Scroll to Order status page → Additional scripts.",
+          "Paste the pixel snippet below and Save."
+        ],
+        "note": "Additional Scripts is being retired for Shopify Plus stores in favor of the Web Pixels API/Customer Events -- if yours is already migrated, use the Postback key above from your order-webhook handler instead; it doesn't depend on this page at all."
+      },
+      "woocommerce": {
+        "steps": [
+          "Install a lightweight snippet plugin (e.g. \"Code Snippets\") -- avoids editing your theme's functions.php directly.",
+          "Add a new PHP snippet hooked to woocommerce_thankyou, running on the order-received page only.",
+          "Echo the pixel img tag below, filling in the order total from $order->get_total()."
+        ],
+        "note": "Prefer the Postback key instead if you're comfortable with a webhook -- WooCommerce's built-in Order created webhook can POST straight to the postback URL server-side, which survives ad blockers and doesn't touch your theme at all."
+      },
+      "bigcommerce": {
+        "steps": [
+          "Go to Storefront → Script Manager in your BigCommerce admin.",
+          "Create a new script: Location footer, Page Order confirmation only.",
+          "Paste the pixel snippet below and Save."
+        ],
+        "note": ""
+      },
+      "squarespace": {
+        "steps": [
+          "Go to Settings → Advanced → Code Injection.",
+          "Paste the pixel snippet below into the Order Confirmation Page field."
+        ],
+        "note": "Code Injection on the order confirmation page requires a Squarespace Commerce (Advanced) plan -- on a lower plan, use the Promo codes path below instead: print a code on the creative and report it via the Postback key from wherever you already track orders."
+      },
+      "wordpress": {
+        "steps": [
+          "Install a header/footer plugin (e.g. \"WPCode\" or \"Insert Headers and Footers\").",
+          "Add the pixel snippet below, scoped to your thank-you / confirmation page only (not sitewide)."
+        ],
+        "note": "For a signup or lead-gen site without an order total, drop ?value= entirely -- the conversion still counts, just without a reported dollar amount."
+      },
+      "ga4": {
+        "steps": [
+          "Nothing to install -- every AdGrid QR scan already lands on your site with utm_source=adgrid&utm_medium=ooh&utm_campaign=<campaign id> (scan-redirect appends these automatically).",
+          "In GA4: Reports → Acquisition → Traffic acquisition, then filter Session source / medium to adgrid / ooh."
+        ],
+        "note": "This shows scan-driven traffic, not conversions -- pair it with the pixel/postback above (on one of the platforms to the left) to see which of that traffic actually converted."
+      }
+    },
+    "promoTitle": "Promo codes & vanity URLs",
+    "promoBody": "For people who see the ad but never scan -- print a code or short link on the creative and report it as a conversion by <code>promo_code</code> instead of <code>adgrid_cid</code>.",
+    "campaign": "Campaign",
+    "select": "Select…",
+    "promoCode": "Promo code",
+    "vanityPath": "Vanity path (optional)",
+    "vanityPlaceholder": "e.g. summer-sale",
+    "adding": "Adding…",
+    "add": "+ Add",
+    "noPromo": "No promo codes yet.",
+    "apiTitle": "API Keys",
+    "apiBody": "Manage campaigns programmatically at {url}. A key can list, create, edit (before payment), submit for payment, cancel, and read delivery for your own campaigns only.",
+    "keyName": "Key name",
+    "keyNamePlaceholder": "e.g. Media buying tool",
+    "generateKey": "+ Generate key",
+    "noKeys": "No API keys yet.",
+    "revoked": "(revoked)",
+    "created": "Created {date}",
+    "lastUsed": " · last used {date}",
+    "revoke": "Revoke",
+    "loading": "Loading integrations…",
+    "title": "Integrations",
+    "subtitle": "Connect ad platforms to receive scan events as server-side conversions",
+    "tabPlatforms": "Platforms",
+    "tabEvents": "Event Log",
+    "tabConversions": "Conversion Tracking",
+    "tabApi": "API Keys",
+    "noEvents": "No events yet. Connect a platform and trigger a scan to see events here.",
+    "col": {
+      "platform": "Platform",
+      "event": "Event",
+      "scanId": "Scan ID",
+      "status": "Status",
+      "time": "Time"
+    }
+  }
+}

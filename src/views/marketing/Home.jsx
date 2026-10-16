@@ -17,17 +17,19 @@ import { Footer } from './sections/Footer.jsx';
 import { StickyMobileCta } from './sections/StickyMobileCta.jsx';
 import { FloatingContactButton } from '../../components/chrome/FloatingContactButton.jsx';
 import { CookieBanner } from '../../components/chrome/CookieBanner.jsx';
+import { useT } from '../../i18n/useT.js';
 
 export function MarketingHome({ onLogin: onLoginProp }) {
+  const { t } = useT();
   usePageMeta({
-    title: "AdGrid | Canada's OOH Marketplace",
-    description: "AdGrid is the self-serve marketplace connecting Canadian digital screen operators with local advertisers. Real-time pricing, full control on both sides.",
+    title: t('marketing.meta.title'),
+    description: t('marketing.meta.description'),
   });
   const navigate = useNavigate();
   const onLogin = onLoginProp ?? (() => navigate('/login'));
-  // Pre-launch: every CTA lands on the waitlist form with the visitor's side
-  // of the marketplace pre-selected, instead of the open sign-up page.
-  // ?role=advertiser (e.g. from /screens) pre-selects the advertiser side.
+  // Sign-up is open: the primary CTAs go straight to account creation with
+  // the visitor's side pre-selected. The waitlist form stays for cities we
+  // don't serve yet; ?role=advertiser (e.g. from /screens) pre-selects it.
   const [searchParams] = useSearchParams();
   const [waitlistRole, setWaitlistRole] = useState(() => (searchParams.get('role') === 'advertiser' ? 'advertiser' : 'operator'));
 
@@ -37,11 +39,8 @@ export function MarketingHome({ onLogin: onLoginProp }) {
     window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 72, behavior: 'smooth' });
   };
 
-  const joinWaitlist = role => {
-    setWaitlistRole(role);
-    scrollTo('waitlist-form');
-  };
-  const onOperatorSignup = () => joinWaitlist('operator');
+  const signUp = intent => navigate(`/login?mode=signup&intent=${intent}`);
+  const onOperatorSignup = () => signUp('operator');
 
   // Deep links like /#earnings (from the thank-you page): the SPA router
   // doesn't scroll to hashes on its own. Sections render synchronously, so
@@ -52,11 +51,11 @@ export function MarketingHome({ onLogin: onLoginProp }) {
     const id = requestAnimationFrame(() => scrollTo(hash.slice(1)));
     return () => cancelAnimationFrame(id);
   }, [hash]);
-  const onAdvertiserSignup = () => joinWaitlist('advertiser');
+  const onAdvertiserSignup = () => signUp('advertiser');
 
   return (
     <div id="main-content" className="mktg" style={{ background: '#0A0A0F', minHeight: '100vh' }}>
-      <Nav onScrollTo={scrollTo} onLogin={onLogin} />
+      <Nav onScrollTo={scrollTo} onLogin={onLogin} onSignup={() => navigate('/login?mode=signup')} />
       <Hero onOperatorSignup={onOperatorSignup} onAdvertiserSignup={onAdvertiserSignup} />
       <ProofStrip />
       <ProductShowcase />

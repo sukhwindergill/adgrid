@@ -13,8 +13,8 @@ import { QR_CONTRAST_MIN_RATIO } from '../../../lib/qrColor.js';
 import { mapCoverClickToNatural, rgbToHex } from '../../../lib/sampleMediaColor.js';
 import { CATEGORIES } from '../../../lib/data.js';
 import { QR_CORNER_PRESETS, clampQrCenter } from '../../../lib/creativeQrPosition.js';
-import { pluralize } from '../../../lib/pluralize.js';
 import { MediaUpload } from './MediaUpload.jsx';
+import { useT } from '../../../i18n/useT.js';
 
 const FRAME_ASPECT = 16 / 9;
 
@@ -48,6 +48,7 @@ function sampleColorAtClick(mediaEl, clickX, clickY) {
 export function CreativeCard({
   creative, onChange, onRemove, poolScreens, allCreatives, showAssignment, onSplitByType,
 }) {
+  const { t, tOr, formatNumber } = useT();
   const setField = (k, v) => onChange({ ...creative, [k]: v });
   // MediaUpload calls setForm(s => ({ ...s, media_url, media_type, media_width, media_height })) --
   // it needs the *whole* creative as "previous state" so destination_url/accent_color/etc
@@ -113,7 +114,7 @@ export function CreativeCard({
       setField(armedPickField, hex);
       setPickError('');
     } catch {
-      setPickError("Couldn't sample this image — use the color picker instead.");
+      setPickError(t('create.creative.sampleFailed'));
     }
     setPickField(null);
   };
@@ -122,7 +123,10 @@ export function CreativeCard({
   const qrBgColor = creative.qr_bg_color || '#ffffff';
   const qrContrastRatioValue = contrastRatio(qrFgColor, qrBgColor);
   const qrContrastWarning = qrContrastRatioValue < QR_CONTRAST_MIN_RATIO
-    ? `Low contrast — this QR may not scan reliably (${qrContrastRatioValue.toFixed(1)}:1, aim for ${QR_CONTRAST_MIN_RATIO}:1+).`
+    ? t('create.creative.lowContrast', {
+      ratio: formatNumber(qrContrastRatioValue, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+      min: formatNumber(QR_CONTRAST_MIN_RATIO),
+    })
     : null;
 
   const assignedScreens = poolScreens.filter(s => creative.assigned_screen_ids.includes(s.id));
@@ -146,13 +150,13 @@ export function CreativeCard({
   return (
     <div style={{ padding: 24, background: C.surfaceAlt, borderRadius: 12, border: `1px solid ${C.border}`, marginBottom: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <Inp label="" placeholder="Creative label" value={creative.label} onChange={e => setField('label', e.target.value)} />
+        <Inp label="" placeholder={t('create.creative.labelPlaceholder')} value={creative.label} onChange={e => setField('label', e.target.value)} />
         {onRemove && (
           <button type="button" onClick={onRemove} style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, padding: '4px 10px', fontSize: 12, color: C.red, cursor: 'pointer', fontFamily: F.sans, marginLeft: 12, flexShrink: 0, transition: 'background 0.15s' }}
             onMouseEnter={e => { e.currentTarget.style.background = C.redSoft; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
           >
-            Remove
+            {t('common.remove')}
           </button>
         )}
       </div>
@@ -160,43 +164,43 @@ export function CreativeCard({
       <MediaUpload form={creative} setForm={setMediaForm} />
       {!creative.media_url && (
         <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginTop: -14, marginBottom: 14 }}>
-          Upload your ad creative to continue — every campaign needs its own designed image or video.
+          {t('create.creative.needsUpload')}
         </div>
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 28 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Inp label="Destination URL (optional)" placeholder="https://example.com" type="url" value={creative.destination_url} onChange={e => setField('destination_url', e.target.value)} />
+          <Inp label={t('create.creative.destination')} placeholder={t('create.creative.destinationPlaceholder')} type="url" value={creative.destination_url} onChange={e => setField('destination_url', e.target.value)} />
           {creative.destination_url.trim() !== '' && !isValidDestinationUrl(creative.destination_url) ? (
             <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, marginTop: -8 }}>
-              Enter a full web address, like https://example.com — this is where your QR code sends people.
+              {t('create.creative.badUrl')}
             </div>
           ) : (
             <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: -8 }}>
-              Add one to show a scannable QR code on the ad. Leave blank to run without one.
+              {t('create.creative.urlHint')}
             </div>
           )}
-          <SelInput label="Category" value={creative.category} onChange={e => setField('category', e.target.value)}>
-            {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+          <SelInput label={t('create.creative.category')} value={creative.category} onChange={e => setField('category', e.target.value)}>
+            {CATEGORIES.map(c => <option key={c} value={c}>{tOr(`categories.${c}`, c)}</option>)}
           </SelInput>
           <ColorField
-            label="Accent Colour"
+            label={t('create.creative.accent')}
             value={creative.accent_color}
             onChange={hex => setField('accent_color', hex)}
             onPickFromCreative={creative.media_url ? () => startPick('accent_color') : null}
           />
           {hasDestination && (
             <div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>QR Code Colours</div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>{t('create.creative.qrColours')}</div>
               <div style={{ display: 'flex', gap: 16 }}>
                 <ColorField
-                  label="Dots"
+                  label={t('create.creative.dots')}
                   value={qrFgColor}
                   onChange={hex => setField('qr_fg_color', hex)}
                   onPickFromCreative={creative.media_url ? () => startPick('qr_fg_color') : null}
                 />
                 <ColorField
-                  label="Background"
+                  label={t('create.creative.background')}
                   value={qrBgColor}
                   onChange={hex => setField('qr_bg_color', hex)}
                   onPickFromCreative={creative.media_url ? () => startPick('qr_bg_color') : null}
@@ -204,7 +208,7 @@ export function CreativeCard({
               </div>
               {armedPickField && (
                 <div style={{ fontSize: 11, color: C.purple, fontFamily: F.sans, marginTop: 6 }}>
-                  Click anywhere on your creative preview to sample that color.
+                  {t('create.creative.pickHint')}
                 </div>
               )}
               {pickError && creative.media_url && (
@@ -218,7 +222,7 @@ export function CreativeCard({
         </div>
 
         <div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Preview</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>{t('common.preview')}</div>
           <CreativePreview
             campaign={creative}
             editableQr={hasDestination}
@@ -233,18 +237,18 @@ export function CreativeCard({
                 {Object.keys(QR_CORNER_PRESETS).map(corner => (
                   <button key={corner} type="button" onClick={() => snapQrTo(corner)} style={{
                     flex: 1, padding: '6px 4px', borderRadius: 6, border: `1px solid ${C.border}`,
-                    background: C.surface, color: C.textSub, fontSize: 10, fontFamily: F.sans, cursor: 'pointer', textTransform: 'capitalize',
+                    background: C.surface, color: C.textSub, fontSize: 11, fontFamily: F.sans, cursor: 'pointer',
                     transition: 'background 0.15s',
                   }}
                     onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
                     onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
                   >
-                    {corner.replace('_', ' ')}
+                    {t(`create.creative.corner.${corner}`)}
                   </button>
                 ))}
               </div>
               <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 6 }}>
-                Drag the QR code to reposition it, or drag its corner handle to resize.
+                {t('create.creative.dragHint')}
               </div>
             </>
           )}
@@ -256,23 +260,27 @@ export function CreativeCard({
         <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: C.textMid, fontFamily: F.sans }}>
-              Show on ({creative.assigned_screen_ids.length} of {poolScreens.length} {pluralize(poolScreens.length, 'screen')})
+              {t('create.creative.showOn', {
+                assigned: creative.assigned_screen_ids.length,
+                total: poolScreens.length,
+                screens: t('create.creativeStep.screenWord', { count: poolScreens.length }),
+              })}
             </div>
             <button type="button" onClick={onSplitByType} style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans, padding: 0, textDecoration: 'underline', transition: 'opacity 0.15s' }}
               onMouseEnter={e => { e.currentTarget.style.opacity = '0.75'; }}
               onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
             >
-              Split by screen type →
+              {t('create.creative.split')}
             </button>
           </div>
           {overlapsAnother && (
             <div style={{ marginBottom: 10 }}>
               <Inp
-                label="Share of plays on shared screens (%)"
+                label={t('create.creative.share')}
                 type="number" min="1" max="100" step="1"
                 value={String(creative.weight)}
                 onChange={e => setField('weight', Math.max(1, parseInt(e.target.value, 10) || 1))}
-                hint="Only matters where this creative shares a screen with another — you set the split, it never changes on its own."
+                hint={t('create.creative.shareHint')}
               />
             </div>
           )}

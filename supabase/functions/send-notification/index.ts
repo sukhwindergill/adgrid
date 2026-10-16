@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { fireOperatorWebhook } from "../_shared/operatorWebhook.ts";
 import { resolveChannelPrefs } from "../_shared/notificationPrefs.ts";
+import { PUSH_EVENT_TYPES, sendExpoPush } from "../_shared/expoPush.ts";
 
 // Events that also fire an operator's configured webhook (in addition to,
 // never instead of, the in-app notification and email below) -- see
@@ -72,6 +73,20 @@ const TEMPLATES: Record<string, (data: Record<string, string>) => { title: strin
     body: `"${d.campaignName}" has been approved and is now scheduled to go live.`,
     html: emailHtml("Your campaign is approved", `Your campaign <strong>${d.campaignName}</strong> has been approved and is scheduled to go live.`, "View Campaign", d.appUrl ?? ""),
   }),
+  campaign_rejected: (d) => {
+    const where = d.screenName ? ` on ${d.screenName}` : "";
+    const why = d.reason ? ` Reason: ${d.reason}` : "";
+    return {
+      title: "Your campaign was not approved",
+      body: `"${d.campaignName}" was rejected${where}.${why}`,
+      html: emailHtml(
+        "Your campaign was not approved",
+        `Your campaign <strong>${d.campaignName}</strong> was rejected${where}.${d.reason ? `<br><br>Reason: <strong>${d.reason}</strong>` : ""}<br><br>You can update the creative and resubmit, or pick other screens.`,
+        "Review Campaign",
+        d.appUrl ?? "",
+      ),
+    };
+  },
   advertiser_verification_approved: (d) => ({
     title: "Business verification approved",
     body: "Your business is now verified — you'll show as a verified advertiser to operators.",
@@ -455,7 +470,7 @@ Deno.serve(async (req: Request) => {
   // and unrelated to any real relationship with the target user.
   if (!isInternal && callerUserId !== userId) {
     let allowed = false;
-    if (type === "campaign_approved" && callerRole === "operator" && typeof campaignId === "string" && campaignId) {
+    if ((type === "campaign_approved" || type === "campaign_rejected") && callerRole === "operator" && typeof campaignId === "string" && campaignId) {
       const { data: opScreens } = await supabase.from("screens").select("id").eq("operator_id", callerUserId);
       const opScreenIds = (opScreens ?? []).map((s: { id: string }) => s.id);
       if (opScreenIds.length > 0) {
@@ -517,6 +532,18 @@ Deno.serve(async (req: Request) => {
   // NotificationPrefsView.jsx saved a value but never suppressed anything.
   if (channelPrefs.inApp) {
     await supabase.from("notifications").insert({ user_id: userId, type, title, body });
+  }
+
+  // Phone push for the events the mobile app routes to a campaign. Follows
+  // the in-app preference (push is the app's in-app channel). campaignId may
+  // arrive top-level (client callers) or in data (internal callers).
+  const pushCampaignId = typeof campaignId === "string" && campaignId
+    ? campaignId
+    : String((notifData as Record<string, unknown>).campaignId ?? "");
+  if (PUSH_EVENT_TYPES.has(type) && channelPrefs.inApp && pushCampaignId) {
+    // Push text isn't HTML: send the template's plain body, unescaped.
+    const plain = body.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+    await sendExpoPush(supabase, userId, title, plain, { type, campaignId: pushCampaignId });
   }
 
   // Fire the operator's configured webhook, if any -- additive, never

@@ -162,7 +162,7 @@ async function distributeOperatorCuts(
       await notifyAdvertiser(profile.id, "payout_transfer_failed", {
         amount: (amountCents / 100).toFixed(2),
         currency,
-        appUrl: Deno.env.get("PUBLIC_APP_URL") ?? "",
+        appUrl: `${Deno.env.get("PUBLIC_APP_URL") ?? ""}/app/op-settings`,
       });
     }
   }
@@ -282,7 +282,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: screenLinks } = await supabase
     .from("campaign_screens")
-    .select("status, screens(is_demo)")
+    .select("status, is_control, screens(is_demo)")
     .eq("campaign_id", campaign_id);
 
   // Demo inventory (screens.is_demo) is seeded fake screens used to make the
@@ -305,6 +305,23 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ error: "Every screen targeted by this campaign has rejected it — there's nothing to charge for." }),
       { status: 400, headers: CORS },
+    );
+  }
+
+  // Terms of Service: "payment is only captured after Operator approval".
+  // Until at least one (non-holdout) screen has approved, there is nothing
+  // the advertiser is buying yet -- and charging up front left them paying
+  // for campaigns operators then rejected, with no refund path (stripe-refund
+  // is retired; only SLA expiry credits). It also skipped operator payouts:
+  // distributeOperatorCuts only pays screens approved at charge time, and
+  // the later approval's charge attempt then 409s as "already paid".
+  const hasApprovedScreen = (screenLinks ?? []).some(
+    (r) => !r.is_control && (r.status === "approved" || r.status === "auto_approved"),
+  );
+  if (!hasApprovedScreen) {
+    return new Response(
+      JSON.stringify({ error: "Your card is charged once an operator approves the campaign.", awaiting_approval: true }),
+      { status: 409, headers: CORS },
     );
   }
 
@@ -401,7 +418,7 @@ Deno.serve(async (req: Request) => {
     await notifyAdvertiser(booking.advertiser_id, "payment_failed", {
       amount: booking.budget.toFixed(2),
       currency,
-      appUrl: Deno.env.get("PUBLIC_APP_URL") ?? "",
+      appUrl: `${Deno.env.get("PUBLIC_APP_URL") ?? ""}/app/adv-billing`,
     });
     return new Response(JSON.stringify({ error: msg }), {
       status: 400,
@@ -418,7 +435,7 @@ Deno.serve(async (req: Request) => {
     await notifyAdvertiser(booking.advertiser_id, "payment_authentication_required", {
       amount: booking.budget.toFixed(2),
       currency,
-      appUrl: Deno.env.get("PUBLIC_APP_URL") ?? "",
+      appUrl: `${Deno.env.get("PUBLIC_APP_URL") ?? ""}/app/adv-billing`,
     });
     return new Response(
       JSON.stringify({

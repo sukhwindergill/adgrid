@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { C, F } from '../../design/tokens.js';
+import { C } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { AdRenderPreview } from './AdRenderPreview.jsx';
+import { Btn } from '../primitives/Btn.jsx';
+import { Modal } from '../primitives/Modal.jsx';
 
 // Modal shell around AdRenderPreview -- lets the advertiser switch between
 // a screen's marked photos (if it has more than one) while previewing.
@@ -10,42 +13,32 @@ export function AdRenderPreviewModal({ screenName, markedPhotos, mediaUrl, media
   const active = markedPhotos[activeIndex];
 
   return (
-    <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}
-      onClick={onClose}
-    >
-      <div
-        style={{ background: C.surface, borderRadius: 14, width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', padding: 24, boxShadow: '0 24px 60px rgba(0,0,0,0.15)' }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans }}>{screenName}</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, color: C.textMuted, cursor: 'pointer' }}>×</button>
-        </div>
+    <Modal title={screenName} onClose={onClose} onBackdropClick={onClose} maxWidth={560} padding={24} headerStyle={{ marginBottom: 16 }}>
 
         <AdRenderPreview photoUrl={active.url} corners={active.corners} mediaUrl={mediaUrl} mediaType={mediaType} />
 
         {markedPhotos.length > 1 && (
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             {markedPhotos.map((p, i) => (
-              <button
+              <Btn
+                variant="unstyled"
                 key={p.url}
+                aria-pressed={i === activeIndex}
                 onClick={() => setActiveIndex(i)}
                 style={{
-                  width: 56, height: 40, borderRadius: 6, overflow: 'hidden', padding: 0, cursor: 'pointer',
-                  border: `2px solid ${i === activeIndex ? C.purple : C.border}`, background: 'none',
+                  width: 56, height: 40, borderRadius: 6, overflow: 'hidden',
+                  border: `2px solid ${i === activeIndex ? C.purple : C.border}`,
                 }}
               >
                 <img src={p.url} alt={`Photo ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-              </button>
+              </Btn>
             ))}
           </div>
         )}
 
-        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 12, lineHeight: 1.5 }}>
+        <div style={{ ...TX.caption, marginTop: 12, lineHeight: 1.5 }}>
           Approximate preview — actual on-screen appearance depends on your display's brightness, viewing angle, and ambient light.
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

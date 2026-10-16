@@ -5,15 +5,18 @@ import { supabase } from './lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from './lib/constants.js';
 import { useToast } from './components/primitives/Toast.jsx';
 import { usePendingApprovalCount } from './hooks/usePendingApprovalCount.js';
-import { useOperatorCampaignIds } from './hooks/useOperatorCampaignIds.js';
 import { normalizeBooking } from './lib/normalizeBooking.js';
+import { parseAppPath } from './lib/appPath.js';
+import { BOOKING_LIST_COLUMNS } from './lib/bookingsQuery.js';
 
 import { LoginPage } from './components/login/LoginPage.jsx';
 import { GlobalHeader } from './components/layout/GlobalHeader.jsx';
 import { AppShell } from './components/layout/AppShell.jsx';
 import { Sidebar } from './components/layout/Sidebar.jsx';
+import { CommandPalette } from './components/layout/CommandPalette.jsx';
 import { ErrorBoundary } from './components/primitives/ErrorBoundary.jsx';
 import { RequireAuth } from './components/auth/RequireAuth.jsx';
+import { peekReturnTo } from './lib/returnTo.js';
 
 import { RequirePlatformOwner } from './components/auth/RequirePlatformOwner.jsx';
 import { SkipLink } from './components/chrome/SkipLink.jsx';
@@ -71,6 +74,7 @@ const AdvertiserVerificationView = lazy(() => import('./views/advertiser/Adverti
 const InviteAcceptPage = lazy(() => import('./views/invite/InviteAcceptPage.jsx').then(m => ({ default: m.InviteAcceptPage })));
 const ScreenInvitePage = lazy(() => import('./views/invite/ScreenInvitePage.jsx').then(m => ({ default: m.ScreenInvitePage })));
 const DisplayPlayer  = lazy(() => import('./views/display/DisplayPlayer.jsx').then(m => ({ default: m.DisplayPlayer })));
+const PairScreen     = lazy(() => import('./views/display/PairScreen.jsx').then(m => ({ default: m.PairScreen })));
 const MarketingHome  = lazy(() => import('./views/marketing/Home.jsx').then(m => ({ default: m.MarketingHome })));
 const NotFound       = lazy(() => import('./views/marketing/NotFound.jsx').then(m => ({ default: m.NotFound })));
 const PrivacyPolicy  = lazy(() => import('./views/legal/PrivacyPolicy.jsx').then(m => ({ default: m.PrivacyPolicy })));
@@ -81,7 +85,7 @@ const ThankYou       = lazy(() => import('./views/legal/ThankYou.jsx').then(m =>
 const PublicScreens  = lazy(() => import('./views/public/PublicScreens.jsx').then(m => ({ default: m.PublicScreens })));
 
 import { C, F } from './design/tokens.js';
-import { Skeleton } from './components/ui/Skeleton.jsx';
+import { Skeleton } from './components/primitives/Skeleton.jsx';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -97,6 +101,10 @@ async function callNotification(userId, type, data = {}) {
     body: JSON.stringify({ userId, type, data }),
   }).catch(e => console.error('Notification error:', e));
 }
+
+// How many of the advertiser's most recent bookings the shell keeps (for
+// CreateCampaign's "previous campaigns" picker). Lists page server-side.
+const RECENT_ADVERTISER_BOOKINGS = 50;
 
 // ─── AppInner (auth-gated shell) ─────────────────────────────────────────────
 
@@ -147,44 +155,49 @@ function AppInner() {
   const [duplicatingCampaign, setDuplicatingCampaign] = useState(null); // campaign object | null
   const [dataLoading,      setDataLoading]   = useState(false);
   const [loadError,        setLoadError]     = useState(null);
-  const [selectedScreenId, setSelectedScreenId] = useState(null);
-  const [selectedListingId, setSelectedListingId] = useState(null);
   const [presetScreenIds, setPresetScreenIds] = useState(() => {
     const id = sessionStorage.getItem('adgrid_preset_screen_id')
     return id ? [id] : null
   })
+  const [searchOpen, setSearchOpen] = useState(false);
+  useEffect(() => {
+    const onKey = e => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen(o => !o);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   const [approvalRefreshKey, setApprovalRefreshKey] = useState(0);
   const bumpApprovalRefresh = useCallback(() => setApprovalRefreshKey(k => k + 1), []);
   const pendingCount = usePendingApprovalCount(myScreens.map(s => s.id), approvalRefreshKey);
 
-  // B27: `campaigns` is the whole RLS-visible set of bookings -- for a
-  // dual-role account that's the union of "I'm the advertiser" and "I'm
-  // the operator of a targeted screen" (two separate, both-legitimate RLS
-  // policies). Every mode-specific view needs its own scoped slice of
-  // that, not the raw union, or a dual-role account's own advertiser
-  // spend shows up as operator revenue (and vice versa -- someone else's
-  // booking on a screen this account operates showing up in "My
-  // Campaigns"). advertiserCampaigns mirrors AdvDashboard's existing
-  // internal filter; operatorCampaigns is the operator-side equivalent,
-  // resolved against campaign_screens rather than trusted from the
-  // booking row itself.
+  // `campaigns` is a small, server-scoped slice: the current advertiser's
+  // most recent bookings (RECENT_ADVERTISER_BOOKINGS), used by
+  // CreateCampaign's "previous campaigns" picker and as local state for
+  // in-place updates. Every list/dashboard view owns its own scoped,
+  // paginated query (Campaigns, Dashboard, AdvDashboard, ApprovalQueue,
+  // ...) -- nothing here holds the account's full booking history any more.
+  // B27: scoping on advertiser_id server-side also keeps a dual-role
+  // account's operator-side bookings (someone else's booking on a screen
+  // this account operates) out of the advertiser slice.
   const currentAdvertiserId = impersonating?.id ?? user?.id;
+  // Delegates acting for another account see that account's bookings.
+  const bookingsAdvertiserId = activeAccount && !activeAccount.isOwn ? activeAccount.id : currentAdvertiserId;
   // Same is_demo gate as visibleDbScreens/visibleMyScreens above -- fake
-  // bookings only show once demo mode is switched on, from either side.
-  const visibleCampaigns = useMemo(() => demoMode ? campaigns : campaigns.filter(c => !c.is_demo), [campaigns, demoMode]);
-  const advertiserCampaigns = useMemo(
-    () => visibleCampaigns.filter(c => c.advertiser_id === currentAdvertiserId),
-    [visibleCampaigns, currentAdvertiserId]
-  );
-  const myScreenIds = useMemo(() => myScreens.map(s => s.id), [myScreens]);
-  const operatorCampaignIds = useOperatorCampaignIds(myScreenIds);
-  const operatorCampaigns = useMemo(
-    () => visibleCampaigns.filter(c => operatorCampaignIds.has(c.id)),
-    [visibleCampaigns, operatorCampaignIds]
-  );
+  // bookings only show once demo mode is switched on.
+  const advertiserCampaigns = useMemo(() => demoMode ? campaigns : campaigns.filter(c => !c.is_demo), [campaigns, demoMode]);
 
-  // Derive active from current URL path
-  const active = location.pathname.replace(/^\/app\/?/, '') || 'overview';
+  // Derive the view from the URL: /app/<view>[/<id>]. The optional id makes
+  // detail views (a campaign, a screen, a marketplace listing) real
+  // addresses -- they survive refresh, work with Back, and can be linked
+  // from emails and notifications.
+  const {
+    active, hasView,
+    screenId: selectedScreenId, listingId: selectedListingId, campaignId: detailId,
+  } = parseAppPath(location.pathname);
 
   // Badge fallback: also refetch on navigation into the approval route, in
   // case a screen was approved/rejected in another tab or session --
@@ -195,20 +208,25 @@ function AppInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
-  // 'adv-marketplace' covers both the browse list and the listing detail
-  // (toggled by local selectedListingId state, no separate route). Sidebar
-  // nav clicks go through react-router's navigate() directly (not navTo),
-  // which changes location.pathname; the internal onSelectListing/onBack
-  // callbacks only flip selectedListingId and never touch the path. So a
-  // pathname-keyed effect fires exactly on real nav-ins (including
-  // clicking "Marketplace" again after leaving) and not on the internal
-  // browse<->detail toggle -- same class of fix as selectedScreenId/
-  // 'screens' vs 'screen-detail' below, but here we don't have a second
-  // route id to fall back on, so we reset explicitly instead.
+  // Campaign detail follows the URL: open the booking named by the path
+  // (fetching it when we arrived by link or refresh), and drop it when the
+  // path no longer names one (Back, sidebar nav).
   useEffect(() => {
-    if (active === 'adv-marketplace') setSelectedListingId(null);
+    if (!detailId) { setDetail(null); return; }
+    if (detail?.id === detailId) return;
+    let cancelled = false;
+    supabase.from('bookings').select('*').eq('id', detailId).maybeSingle().then(({ data, error }) => {
+      if (cancelled) return;
+      if (error || !data) {
+        toast.error("That campaign couldn't be found, or you don't have access to it.");
+        navigate('/app/' + active, { replace: true });
+        return;
+      }
+      setDetail(normalizeBooking(data));
+    });
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
+  }, [detailId]);
 
   // ── Impersonation audit trail ─────────────────────────────────────────────
   useEffect(() => {
@@ -245,13 +263,10 @@ function AppInner() {
 
     const bookingsQuery = supabase
       .from('bookings')
-      .select('*')
+      .select(BOOKING_LIST_COLUMNS)
+      .eq('advertiser_id', bookingsAdvertiserId)
       .order('created_at', { ascending: false })
-
-    // When acting as delegate, scope bookings to that account's data
-    if (activeAccount && !activeAccount.isOwn) {
-      bookingsQuery.eq('advertiser_id', activeAccount.id)
-    }
+      .limit(RECENT_ADVERTISER_BOOKINGS)
 
     const [bookingsRes, screensRes, myScreensRes] = await Promise.all([
       bookingsQuery,
@@ -308,9 +323,9 @@ function AppInner() {
       setMyScreens([])
     }
     setDataLoading(false)
-  }, [activeAccount, user])
+  }, [bookingsAdvertiserId, user])
 
-  // Load data when user or activeAccount changes
+  // Load data when user, activeAccount or impersonation target changes
   useEffect(() => {
     if (user) loadData()
   }, [user, activeAccount, loadData])
@@ -322,11 +337,18 @@ function AppInner() {
   // re-run this navigate-away on every background token refresh, silently
   // kicking anyone out of a mid-flow screen (e.g. the campaign wizard) back
   // to the overview and discarding their in-progress form state.
+  //
+  // On the first run (page load or sign-in) a specific /app/... path is
+  // left alone so deep links and refreshes land where they point; only a
+  // bare /app goes to the mode's home. Later runs are real mode switches.
+  const modeInitialized = useRef(false);
   useEffect(() => {
     if (user && activeMode) {
+      const firstRun = !modeInitialized.current;
+      modeInitialized.current = true;
       if (presetScreenIds && activeMode === 'advertiser') {
         navTo('adv-create');
-      } else {
+      } else if (!firstRun || !hasView) {
         navTo(activeMode === 'advertiser' ? 'adv-overview' : 'overview');
       }
     }
@@ -423,12 +445,15 @@ function AppInner() {
     if (!keepAddingToCampaign) setAddingToCampaign(null);
     if (!keepDuplicatingCampaign) setDuplicatingCampaign(null);
     navigate('/app/' + v);
-    setDetail(null);
   };
+  const openDetail = c => { setDetail(c); navigate(`/app/${active}/${c.id}`); };
 
   // ── Mutation helpers ───────────────────────────────────────────────────────
   const updateCampaign = async updated => {
-    const prevCampaign = campaigns.find(c => c.id === updated.id);
+    // `campaigns` only holds a recent slice, so fall back to the campaign
+    // open in the detail view -- without a previous status, becomingActive
+    // below would treat an already-active campaign as newly activated.
+    const prevCampaign = campaigns.find(c => c.id === updated.id) ?? (detail?.id === updated.id ? detail : undefined);
     // manage-campaign-status already resolved and wrote the real status
     // server-side (Pause/Resume/Cancel in CampaignDetail's Danger Zone) --
     // this call is here purely to sync local state. Without this flag,
@@ -466,7 +491,7 @@ function AppInner() {
     if (becomingActive && updated.advertiser_id) {
       callNotification(updated.advertiser_id, 'campaign_approved', {
         campaignName: updated.advertiser_name ?? updated.advertiser ?? '',
-        appUrl: '',
+        appUrl: `${window.location.origin}/app/adv-campaigns/${updated.id}`,
       });
     }
   };
@@ -485,7 +510,7 @@ function AppInner() {
       return (
         <CampaignDetail
           campaign={detail}
-          onBack={() => setDetail(null)}
+          onBack={() => navigate('/app/' + active)}
           onUpdate={updateCampaign}
           canReview={canReview}
           setCampaigns={setCampaigns}
@@ -544,12 +569,12 @@ function AppInner() {
           }}
         />
       );
-      if (active === 'adv-campaigns')    return <Campaigns advertiserId={currentAdvertiserId} dbScreens={visibleDbScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} allowCancel />;
+      if (active === 'adv-campaigns')    return <Campaigns advertiserId={currentAdvertiserId} dbScreens={visibleDbScreens} setCampaigns={setCampaigns} setDetail={openDetail} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} allowCancel />;
       if (active === 'adv-marketplace') {
         if (selectedListingId) {
-          return <MarketplaceListingDetail listingId={selectedListingId} onBack={() => setSelectedListingId(null)} />;
+          return <MarketplaceListingDetail listingId={selectedListingId} onBack={() => navTo('adv-marketplace')} />;
         }
-        return <MarketplaceView onSelectListing={id => setSelectedListingId(id)} />;
+        return <MarketplaceView onSelectListing={id => navTo(`adv-marketplace/${id}`)} />;
       }
       if (active === 'adv-analytics')    return <Analytics advertiserId={currentAdvertiserId} />;
       if (active === 'adv-audience')     return <ScansView impersonatingId={impersonating?.id ?? null} />;
@@ -574,9 +599,8 @@ function AppInner() {
             campaigns: 0,
             status: 'pending',
           }]);
-          setSelectedScreenId(newScreen.id);
           setActiveMode('operator');
-          navTo('screen-detail');
+          navTo(`screen-detail/${newScreen.id}`);
         }}
         onCancel={() => navTo('screens')}
       />
@@ -586,17 +610,17 @@ function AppInner() {
         dbScreens={myScreens}
         setDbScreens={setMyScreens}
         loading={dataLoading}
-        onSelectScreen={id => { setSelectedScreenId(id); navTo('screen-detail'); }}
+        onSelectScreen={id => navTo(`screen-detail/${id}`)}
         onStartOnboard={() => navTo('screen-onboard')}
       />
     );
-    if (active === 'approval')      return <ApprovalQueue setCampaigns={setCampaigns} setDetail={c => setDetail(c)} dbScreens={visibleMyScreens} onApprovalChange={bumpApprovalRefresh} />;
+    if (active === 'approval')      return <ApprovalQueue setCampaigns={setCampaigns} setDetail={openDetail} dbScreens={visibleMyScreens} onApprovalChange={bumpApprovalRefresh} />;
     if (active === 'screen-detail') {
       if (!selectedScreenId) { navTo('screens'); return null; }
       return <ScreenDetailView screenId={selectedScreenId} onBack={() => navTo('screens')} profile={profile} onScreenUpdated={updated => setMyScreens(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s))} />;
     }
     if (active === 'notif-prefs')   return <OperatorSettingsView setNav={navTo} initialTab="notifications" />;
-    if (active === 'campaigns')    return <Campaigns operatorScreenIds={visibleMyScreens.map(s => s.id)} dbScreens={visibleMyScreens} setCampaigns={setCampaigns} setDetail={c => setDetail(c)} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} canReview={canReview} onApprovalChange={bumpApprovalRefresh} />;
+    if (active === 'campaigns')    return <Campaigns operatorScreenIds={visibleMyScreens.map(s => s.id)} dbScreens={visibleMyScreens} setCampaigns={setCampaigns} setDetail={openDetail} loadError={loadError} loading={dataLoading} onNewCampaign={() => navTo('adv-create')} canReview={canReview} onApprovalChange={bumpApprovalRefresh} />;
     if (active === 'marketplace-listings') {
       return <MarketplaceListingsView operatorId={impersonating?.id ?? user.id} myScreens={myScreens} />;
     }
@@ -636,9 +660,17 @@ function AppInner() {
           onSignOut={signOut}
           demoMode={demoMode}
           onToggleDemoMode={canUseDemoMode ? toggleDemoMode : undefined}
+          onOpenSearch={() => setSearchOpen(true)}
         />
       }
     >
+      {searchOpen && <CommandPalette
+        onClose={() => setSearchOpen(false)}
+        activeMode={isAdv ? 'advertiser' : 'operator'}
+        screens={visibleMyScreens}
+        advertiserId={currentAdvertiserId}
+        onNavigate={navTo}
+      />}
       {loadError && (
         <div style={{
           background: '#ff000022', border: '1px solid #ff4444', borderRadius: 8,
@@ -669,7 +701,8 @@ function AppInner() {
 function PublicOnlyRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
-  if (user) return <Navigate to="/app" replace />;
+  // Signed in: back to the page that sent them to sign in, if any.
+  if (user) return <Navigate to={peekReturnTo() ?? '/app'} replace />;
   return children;
 }
 
@@ -687,6 +720,7 @@ export default function App() {
         <Route path="/thank-you" element={<ThankYou />} />
         <Route path="/screens" element={<PublicScreens />} />
         <Route path="/display/:token" element={<DisplayPlayerRoute />} />
+        <Route path="/pair" element={<ErrorBoundary fallback={() => <DisplayCrashFallback />}><PairScreen /></ErrorBoundary>} />
         <Route path="/report/:token" element={<CampaignReport />} />
         <Route path="/invite/screen/:token" element={<ScreenInvitePage />} />
         <Route path="/invite/:token" element={<InviteAcceptPage />} />
@@ -724,10 +758,10 @@ export default function App() {
 }
 
 // Skip-link + scroll-to-top + scroll-progress-bar, mounted for every route
-// except the unattended kiosk display player.
+// except the unattended kiosk display player and its /pair screen.
 function SiteChrome() {
   const location = useLocation();
-  if (location.pathname.startsWith('/display/')) return null;
+  if (location.pathname.startsWith('/display/') || location.pathname === '/pair') return null;
   return (
     <>
       <SkipLink />

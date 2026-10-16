@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from './Card.jsx';
 import { Btn } from './Btn.jsx';
 
@@ -44,25 +45,20 @@ export function ConfirmProvider({ children }) {
       {children}
       {state && (
         <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+          position: 'fixed', inset: 0, background: C.overlay,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           zIndex: 9997,
         }}>
-          <Card style={{ width: '100%', maxWidth: 380, padding: 28, margin: 20 }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.display, marginBottom: 8 }}>
+          <Card role="alertdialog" aria-modal="true" aria-label={state.title} style={{ width: '100%', maxWidth: 380, padding: 28, margin: 20 }}>
+            <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.display, marginBottom: 8 }}>
               {state.title}
             </div>
-            <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 24, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+            <div style={{ ...TX.bodySub, marginBottom: 24, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
               {state.message}
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <Btn variant="ghost" onClick={() => handleResponse(false)}>Cancel</Btn>
-              <Btn
-                onClick={() => handleResponse(true)}
-                style={state.danger ? { background: C.red, color: '#fff' } : {}}
-                onMouseEnter={state.danger ? (e => { e.currentTarget.style.background = '#dc2626'; }) : undefined}
-                onMouseLeave={state.danger ? (e => { e.currentTarget.style.background = C.red; }) : undefined}
-              >
+              <Btn variant={state.danger ? 'dangerSolid' : 'primary'} onClick={() => handleResponse(true)}>
                 {state.confirmLabel}
               </Btn>
             </div>
