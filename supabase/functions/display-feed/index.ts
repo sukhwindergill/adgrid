@@ -6,6 +6,7 @@ import { rateLimited, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { capHouseAds } from "../_shared/houseAdCap.ts";
 import { capAdvertiserLoopShare } from "../_shared/advertiserLoopCap.ts";
 import { shouldServeProgrammaticFill } from "../_shared/programmaticFill.ts";
+import { isCategoryBlocked, applyFrequencyCap, separateCompetitors } from "../_shared/adGuardrails.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -37,7 +38,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: screen, error: screenError } = await supabase
     .from("screens")
-    .select("id, name, operator_id, status, operating_hours_start, operating_hours_end, timezone, max_ad_duration, house_ad_max_pct, programmatic_backfill_enabled, resolution_w, resolution_h")
+    .select("id, name, operator_id, status, operating_hours_start, operating_hours_end, timezone, max_ad_duration, house_ad_max_pct, programmatic_backfill_enabled, resolution_w, resolution_h, content_categories_blocked")
     .eq("screen_token", screenToken)
     .single();
 
@@ -152,7 +153,7 @@ Deno.serve(async (req: Request) => {
     // Step 2: fetch bookings for those campaigns filtered by date and live status
     const { data: bookings } = await supabase
       .from("bookings")
-      .select("id, advertiser_id, advertiser_name, headline, cta_text, accent_color, destination_url, category, media_url, media_type, qr_x, qr_y, qr_size_pct, qr_fg_color, qr_bg_color, slots, duration, schedule_days, time_start, time_end, dayparting, is_house_ad")
+      .select("id, advertiser_id, advertiser_name, headline, cta_text, accent_color, destination_url, category, media_url, media_type, qr_x, qr_y, qr_size_pct, qr_fg_color, qr_bg_color, slots, duration, schedule_days, time_start, time_end, dayparting, is_house_ad, frequency_cap_per_hour")
       .in("id", campaignIds)
       .in("status", ["scheduled", "active"])
       .eq("payment_status", "paid")
@@ -205,6 +206,8 @@ Deno.serve(async (req: Request) => {
 
       for (const b of bookings) {
         const cs = csMap.get(b.id);
+        // Operator category exclusion (G23) always wins -- see adGuardrails.ts.
+        if (isCategoryBlocked(b.category, screen.content_categories_blocked)) continue;
         const days: string[] = (b.schedule_days as string[]) ?? [];
         const inDay = days.length === 0 || days.includes(currentDay);
         const window = resolveDayWindow(
@@ -264,12 +267,36 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // Advertiser frequency caps (G23): count this screen's plays in the
+  // trailing hour for just the capped campaigns, then trim each to its
+  // remaining allowance. Runs before the loop-share cap so a capped
+  // campaign's freed airtime goes to everyone else.
+  const cappedIds = [...new Set(
+    activeCampaigns.filter((c) => c.frequency_cap_per_hour != null).map((c) => c.id as string),
+  )];
+  const playsLastHour = new Map<string, number>();
+  if (cappedIds.length > 0) {
+    const { data: recentPlays } = await supabase
+      .from("ad_plays")
+      .select("campaign_id")
+      .eq("screen_id", screen.id)
+      .in("campaign_id", cappedIds)
+      .gte("played_at", new Date(now.getTime() - 60 * 60 * 1000).toISOString());
+    for (const p of recentPlays ?? []) {
+      playsLastHour.set(p.campaign_id as string, (playsLastHour.get(p.campaign_id as string) ?? 0) + 1);
+    }
+  }
+  const uncappedOrUnderCap = applyFrequencyCap(
+    activeCampaigns as { id: string; frequency_cap_per_hour?: number | null }[],
+    playsLastHour,
+  ) as typeof activeCampaigns;
+
   // No single advertiser can crowd out the rest of the paid loop on one
   // screen -- max-ad-duration-enforcement already caps one spot's length,
   // this caps one advertiser's combined share of the loop. See
   // advertiserLoopCap.ts. House ads are handled separately below and are
   // never touched by this cap.
-  const rawPaidEntries = activeCampaigns.filter((c) => !c.is_house_ad);
+  const rawPaidEntries = uncappedOrUnderCap.filter((c) => !c.is_house_ad);
   const paidEntries = capAdvertiserLoopShare(
     rawPaidEntries as { duration: number; advertiser_id: string | null }[],
   ) as typeof rawPaidEntries;
@@ -277,13 +304,19 @@ Deno.serve(async (req: Request) => {
   // House ads never bump or trim a paid campaign's airtime -- they only
   // ever fill what paid campaigns aren't using, up to the operator's
   // configured house_ad_max_pct share of the loop. See houseAdCap.ts.
-  const houseEntries = activeCampaigns.filter((c) => c.is_house_ad);
+  const houseEntries = uncappedOrUnderCap.filter((c) => c.is_house_ad);
   const cappedHouseEntries = capHouseAds(
     paidEntries as { duration: number }[],
     houseEntries as { duration: number }[],
     (screen.house_ad_max_pct as number | null) ?? 20,
   );
-  let feedCampaigns = [...paidEntries, ...cappedHouseEntries];
+  // Competitive separation (G23): no two different advertisers in the same
+  // category back to back, wrap-around included. The current minute rotates
+  // which competitor sits out when a loop is too small to separate them.
+  let feedCampaigns = separateCompetitors(
+    [...paidEntries, ...cappedHouseEntries] as { category?: string | null; advertiser_id?: string | null }[],
+    Math.floor(now.getTime() / 60000),
+  ) as Record<string, unknown>[];
 
   // Programmatic backfill (G20) -- the lowest-priority tier, only ever
   // claiming loop time nothing else claimed. See programmaticFill.ts:

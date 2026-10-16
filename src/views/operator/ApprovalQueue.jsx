@@ -16,6 +16,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { IconBolt, IconWarning } from '../../components/icons.jsx';
 import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
+import { isCategoryBlocked } from '../../lib/adGuardrails.js';
 
 const REJECT_REASONS = [
   'Inappropriate content',
@@ -246,6 +247,15 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
     onRejected(campaign.id, rejectScreenId);
   };
 
+  // Operator category exclusions (G23): the wizard keeps blocked screens out
+  // of targeting, but a campaign submitted before the exclusion was added
+  // (or via the API) can still land here. display-feed won't play it on a
+  // blocking screen even if approved -- flag it so the operator rejects it
+  // instead of approving something that never airs.
+  const blockedScreenIds = new Set(myRows
+    .filter(row => isCategoryBlocked(campaign.category, allScreens.find(s => s.id === row.screen_id)?.content_categories_blocked))
+    .map(row => row.screen_id));
+
   const totalScreens = (campaign.campaign_screens || []).length;
   const earned = campaign.budget
     ? `~$${Math.round(computeRevenueSplit(campaign.budget, ownerRevenueShare).owner / Math.max(1, totalScreens)).toLocaleString()}`
@@ -265,6 +275,11 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
         </span>
         <span style={{ fontSize: 11, background: C.amber, color: '#fff', padding: '2px 8px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>PENDING</span>
         <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>{campaign.category}</span>
+        {blockedScreenIds.size > 0 && (
+          <span style={{ fontSize: 10, background: C.redSoft, color: C.red, border: `1px solid ${C.redBorder}`, padding: '2px 8px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+            <IconWarning size={10} /> BLOCKED CATEGORY
+          </span>
+        )}
         <span style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{timeAgo(campaign.created_at)}</span>
       </div>
 
@@ -376,6 +391,11 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
                       <div style={{ flex: 1, minWidth: 120 }}>
                         <div style={{ fontSize: 12, fontWeight: 500, color: C.text, fontFamily: F.sans }}>{screen?.name || row.screen_id}</div>
                         {health && <span style={{ fontSize: 11, color: health.color, fontFamily: F.sans, display: 'inline-flex', alignItems: 'center', gap: 3 }}><IconWarning size={10} /> {health.label}</span>}
+                        {blockedScreenIds.has(row.screen_id) && (
+                          <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, display: 'flex', alignItems: 'center', gap: 3 }}>
+                            <IconWarning size={10} /> You block {campaign.category} ads on this screen — it won't play here even if approved
+                          </div>
+                        )}
                       </div>
                       <Btn size="sm" onClick={() => approveScreen(row.screen_id)} disabled={acting}>✓ Approve</Btn>
                       <Btn variant="danger" size="sm" onClick={() => setRejectScreenId(row.screen_id)} disabled={acting}>✗ Reject</Btn>

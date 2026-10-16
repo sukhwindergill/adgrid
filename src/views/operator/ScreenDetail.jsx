@@ -23,6 +23,8 @@ import { ScreenLocationPicker } from '../../components/ScreenLocationPicker.jsx'
 import { IconEdit, IconCamera } from '../../components/icons.jsx';
 import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
 import { CreateCampaign } from '../advertiser/CreateCampaign.jsx';
+import { CATEGORIES } from '../../lib/data.js';
+import { SENSITIVE_CATEGORIES, isCategoryBlocked, toggleBlockedCategory } from '../../lib/adGuardrails.js';
 
 async function startStripeConnect(setConnecting) {
   setConnecting(true);
@@ -85,6 +87,7 @@ function DetailsTab({ screen, onSaved }) {
     lon:             screen.lon != null ? screen.lon : null,
     house_ad_max_pct: screen.house_ad_max_pct ?? 20,
     programmatic_backfill_enabled: screen.programmatic_backfill_enabled ?? false,
+    content_categories_blocked: screen.content_categories_blocked ?? [],
   });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -92,6 +95,13 @@ function DetailsTab({ screen, onSaved }) {
   const set = (key, val) => setFields(s => ({ ...s, [key]: val }));
   const handleCategoryChange = (val) => setFields(s => ({ ...s, venue_category: val, venue_subtype: '' }));
   const subtypes = fields.venue_category ? (VENUE_TAXONOMY[fields.venue_category]?.subtypes ?? []) : [];
+  // Sensitive categories first, then the rest of the wizard's list, then any
+  // legacy hand-typed value already on the screen so it can still be cleared.
+  const blockableCategories = [...new Set([
+    ...SENSITIVE_CATEGORIES,
+    ...CATEGORIES,
+    ...fields.content_categories_blocked.filter(b => !CATEGORIES.some(c => isCategoryBlocked(c, [b]))),
+  ])];
 
   const handleSave = async () => {
     setSaving(true);
@@ -108,6 +118,7 @@ function DetailsTab({ screen, onSaved }) {
       lon:             fields.lon,
       house_ad_max_pct: fields.house_ad_max_pct,
       programmatic_backfill_enabled: fields.programmatic_backfill_enabled,
+      content_categories_blocked: fields.content_categories_blocked,
     }).eq('id', screen.id);
     setSaving(false);
     if (error) { setMsg({ ok: false, text: error.message }); return; }
@@ -185,6 +196,29 @@ function DetailsTab({ screen, onSaved }) {
           </label>
           <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: -8 }}>
             When there's no paid campaign or house ad to play, fill with external programmatic demand instead of the idle slide. Never bumps a paid campaign or house ad.
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 4 }}>Blocked ad categories</div>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginBottom: 8 }}>
+              Advertisers in these categories can't target this screen, and it will never play their ads. Campaigns already in your approval queue are flagged.
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {blockableCategories.map(cat => {
+                const active = isCategoryBlocked(cat, fields.content_categories_blocked);
+                return (
+                  <button key={cat} type="button" aria-pressed={active}
+                    onClick={() => set('content_categories_blocked', toggleBlockedCategory(fields.content_categories_blocked, cat))}
+                    style={{
+                      padding: '7px 14px', borderRadius: 20, cursor: 'pointer',
+                      border: `1px solid ${active ? C.red : C.border}`,
+                      background: active ? C.redSoft : C.surface,
+                      color: active ? C.red : C.textSub,
+                      fontSize: 12, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s',
+                    }}
+                  >{active ? '⊘ ' : ''}{cat}</button>
+                );
+              })}
+            </div>
           </div>
         </div>
         {msg && (

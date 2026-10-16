@@ -8,11 +8,13 @@ import { PillGroup } from './PillGroup.jsx';
 import { formatCurrency } from '../../../lib/formatCurrency.js';
 import { syncDaypartingDays } from '../../../lib/dayparting.js';
 import { IconWarning } from '../../../components/icons.jsx';
+import { parseFrequencyCap } from '../../../lib/adGuardrails.js';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function StepBudgetReview({
   form, setForm, matchedScreens, profile, onSubmit, submitting, err, canChooseBilling, billedTo, setBilledTo, houseAdMode = false,
+  categoryBlockedScreens = [], campaignCategory = null,
 }) {
   const setField = (k, v) => setForm(s => ({ ...s, [k]: v }));
 
@@ -30,6 +32,8 @@ export function StepBudgetReview({
     typeof s.max_ad_duration === 'number' && Number(form.duration) > s.max_ad_duration
   );
 
+  const frequencyCap = parseFrequencyCap(form.frequency_cap);
+
   const isMulti = form.creatives.length > 1;
   const creativeLabel = (i) => form.creatives[i]?.label || `Creative ${i + 1}`;
 
@@ -45,6 +49,7 @@ export function StepBudgetReview({
     ['Days', form.schedule_days.join(', ')],
     ['Ad Duration', `${form.duration}s per play`],
     ['Slot Share', `${form.slots}% of airtime`],
+    ...(houseAdMode ? [] : [['Frequency', frequencyCap.value ? `Max ${frequencyCap.value} plays per screen per hour` : 'No cap']]),
     ['Launch', form.start_when === 'partial' ? 'Go live as screens approve' : 'Wait for all screens'],
   ];
 
@@ -174,6 +179,20 @@ export function StepBudgetReview({
               value={form.slots} onChange={e => setField('slots', e.target.value)}
               hint="Your ad's share of each screen's rotation" />
           </div>
+
+          {!houseAdMode && (
+            <Inp label="Frequency cap (optional)" type="number" min="1" step="1" placeholder="No cap"
+              value={form.frequency_cap ?? ''} onChange={e => setField('frequency_cap', e.target.value)}
+              error={frequencyCap.error || undefined}
+              hint={frequencyCap.error ? undefined : 'Max times your ad plays on any one screen per hour. Leave blank for no cap.'} />
+          )}
+
+          {categoryBlockedScreens.length > 0 && (
+            <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: 12, color: C.amber, fontFamily: F.sans }}>
+              <span style={{ flexShrink: 0 }}><IconWarning size={14} /></span>
+              <span>{categoryBlockedScreens.length} screen{categoryBlockedScreens.length !== 1 ? 's' : ''} in your area {categoryBlockedScreens.length !== 1 ? "don't" : "doesn't"} accept {campaignCategory} ads and {categoryBlockedScreens.length !== 1 ? 'were' : 'was'} left out: {categoryBlockedScreens.slice(0, 3).map(s => s.name).join(', ')}{categoryBlockedScreens.length > 3 ? ` and ${categoryBlockedScreens.length - 3} more` : ''}.</span>
+            </div>
+          )}
 
           <div>
             <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>Launch mode</div>
