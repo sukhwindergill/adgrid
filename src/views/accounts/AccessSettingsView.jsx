@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { C, F } from '../../design/tokens.js'
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { GrantAccessModal } from './GrantAccessModal.jsx'
 import { describeActivity } from '../../lib/accountActivityLog.js'
 import { useT } from '../../i18n/useT.js'
+import { Btn } from '../../components/primitives/Btn.jsx';
 
 const ROLE_COLORS = {
   admin:   { bg: C.purpleSoft, color: C.purple },
-  manager: { bg: C.blueSoft,   color: C.blue },
+  manager: { bg: C.blueSoft,   color: C.blueText },
   viewer:  { bg: C.surfaceAlt, color: C.textMuted },
 }
 
@@ -58,28 +60,23 @@ export function AccessSettingsView() {
 
   const statusColor = { pending: C.amber, active: C.green, revoked: C.red }
 
-  if (loading) return <p style={{ fontFamily: F.sans, fontSize: 13, color: C.textSub }}>{t('common.loading')}</p>
+  if (loading) return <p style={TX.bodySub}>{t('common.loading')}</p>
 
   return (
     <div style={{ maxWidth: 580 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.display, margin: 0 }}>
+        <h3 style={{ fontSize: T.lg, fontWeight: 600, color: C.text, fontFamily: F.display, margin: 0 }}>
           {t('accounts.access.heading')}
         </h3>
-        <button
-          onClick={() => setShowModal(true)}
-          style={{ padding: '8px 16px', borderRadius: 8, background: C.purple, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 13, fontWeight: 500, cursor: 'pointer', transition: 'opacity 0.15s' }}
-          onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
-          onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-        >
+        <Btn onClick={() => setShowModal(true)} style={{ padding: '8px 16px', borderRadius: 8, fontSize: T.base, fontWeight: 500 }}>
           {t('accounts.access.grant')}
-        </button>
+        </Btn>
       </div>
 
       {loadError ? (
-        <p style={{ fontSize: 13, color: C.red, fontFamily: F.sans }}>{t('accounts.access.loadError')}</p>
+        <p style={{ fontSize: T.base, color: C.redText, fontFamily: F.sans }}>{t('accounts.access.loadError')}</p>
       ) : grants.length === 0 ? (
-        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>{t('accounts.access.empty')}</p>
+        <p style={TX.bodySub}>{t('accounts.access.empty')}</p>
       ) : (
         grants.map(g => {
           const rc = ROLE_COLORS[g.role] ?? ROLE_COLORS.viewer
@@ -89,23 +86,18 @@ export function AccessSettingsView() {
               background: C.bg, borderRadius: 10, border: `1px solid ${C.border}`, marginBottom: 8,
             }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 500, color: C.text, fontFamily: F.sans }}>
+                <div style={{ ...TX.body, fontWeight: 500 }}>
                   {g.grantee?.company_name || g.grantee?.name || g.invite_email || t('accounts.access.unknown')}
                 </div>
-                <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>
+                <div style={{ ...TX.helper, marginTop: 2 }}>
                   {g.grantee?.email || g.invite_email}
                 </div>
               </div>
-              <span style={{ padding: '2px 9px', borderRadius: 10, fontSize: 11, fontWeight: 600, background: rc.bg, color: rc.color }}>{t(`accounts.roles.${g.role}`)}</span>
-              <span style={{ fontSize: 11, color: statusColor[g.status] ?? C.textMuted, fontFamily: F.sans, fontWeight: 500 }}>{t(`accounts.grantStatus.${g.status}`)}</span>
-              <button
-                onClick={() => revoke(g.id)}
-                style={{ padding: '4px 10px', borderRadius: 6, background: 'transparent', border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 12, color: C.red, cursor: 'pointer', transition: 'background 0.15s' }}
-                onMouseEnter={e => { e.currentTarget.style.background = C.redSoft; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-              >
+              <span style={{ padding: '2px 9px', borderRadius: 10, fontSize: T.xs, fontWeight: 600, background: rc.bg, color: rc.color }}>{t(`accounts.roles.${g.role}`)}</span>
+              <span style={{ fontSize: T.xs, color: statusColor[g.status] ?? C.textMuted, fontFamily: F.sans, fontWeight: 500 }}>{t(`accounts.grantStatus.${g.status}`)}</span>
+              <Btn variant="secondary" onClick={() => revoke(g.id)} style={{ ...TX.error, padding: '4px 10px', borderRadius: 6, background: 'transparent', transition: 'background 0.15s', boxShadow: 'none', fontWeight: 400 }} hoverStyle={{ background: C.redSoft }}>
                 {t('accounts.access.revoke')}
-              </button>
+              </Btn>
             </div>
           )
         })
@@ -118,21 +110,21 @@ export function AccessSettingsView() {
         />
       )}
 
-      <h3 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.display, margin: '32px 0 12px' }}>
+      <h3 style={{ fontSize: T.lg, fontWeight: 600, color: C.text, fontFamily: F.display, margin: '32px 0 12px' }}>
         {t('accounts.access.activity')}
       </h3>
       {activityError ? (
-        <p style={{ fontSize: 13, color: C.red, fontFamily: F.sans }}>{t('accounts.access.activityError')}</p>
+        <p style={{ fontSize: T.base, color: C.redText, fontFamily: F.sans }}>{t('accounts.access.activityError')}</p>
       ) : activity.length === 0 ? (
-        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>{t('accounts.access.activityEmpty')}</p>
+        <p style={TX.bodySub}>{t('accounts.access.activityEmpty')}</p>
       ) : (
         activity.map(entry => (
           <div key={entry.id} style={{
             display: 'flex', justifyContent: 'space-between', gap: 12, padding: '9px 2px',
             borderBottom: `1px solid ${C.border}`, fontFamily: F.sans,
           }}>
-            <span style={{ fontSize: 13, color: C.text }}>{describeActivity(entry)}</span>
-            <span style={{ fontSize: 12, color: C.textMuted, flexShrink: 0 }}>{formatDate(entry.created_at)}</span>
+            <span style={{ fontSize: T.base, color: C.text }}>{describeActivity(entry)}</span>
+            <span style={{ fontSize: T.sm, color: C.textMuted, flexShrink: 0 }}>{formatDate(entry.created_at)}</span>
           </div>
         ))
       )}

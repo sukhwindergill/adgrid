@@ -5,6 +5,7 @@ import { getCreativeRenderPlan } from '../../lib/getCreativeRenderPlan.js';
 import { getSlideDurationMs } from '../../lib/getSlideDuration.js';
 import { loadPairedToken, savePairedToken } from '../../lib/screenPairing.js';
 import { useT } from '../../i18n/useT.js';
+import { T, C, D, F, alpha } from '../../design/tokens.js';
 
 const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
@@ -39,7 +40,7 @@ function CreativeSlide({ campaign, screenId }) {
   return (
     <div style={{
       position: 'absolute', inset: 0,
-      background: `linear-gradient(160deg, #050a10 0%, #0d1520 60%, ${bg}22 100%)`,
+      background: `linear-gradient(160deg, ${C.screen} 0%, ${C.screenMid} 60%, ${bg}22 100%)`,
       display: 'flex', flexDirection: 'column',
       alignItems: 'flex-start', justifyContent: 'flex-end',
       padding: 'clamp(32px, 5vw, 80px)',
@@ -55,7 +56,7 @@ function CreativeSlide({ campaign, screenId }) {
       ))}
       {/* Scrim so the headline/CTA/QR stay legible over any media */}
       {mediaUrl && (
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.15) 45%, transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(to top, ${alpha(C.black, 0.7)} 0%, ${alpha(C.black, 0.15)} 45%, transparent 70%)`, pointerEvents: 'none' }} />
       )}
       {/* Background accent glow (only without media) */}
       {!mediaUrl && <div style={{
@@ -72,7 +73,7 @@ function CreativeSlide({ campaign, screenId }) {
       <div style={{
         position: 'absolute', top: 'clamp(20px, 3vw, 48px)', left: 'clamp(20px, 3vw, 48px)',
         fontSize: 'clamp(10px, 1.2vw, 16px)', fontWeight: 700, letterSpacing: '3px',
-        color: 'rgba(255,255,255,0.2)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", textTransform: 'uppercase',
+        color: alpha(C.white, 0.2), fontFamily: F.sans, textTransform: 'uppercase',
       }}>
         ADGRID
       </div>
@@ -90,12 +91,12 @@ function CreativeSlide({ campaign, screenId }) {
           left: `${plan.qrX}%`, top: `${plan.qrY}%`, transform: 'translate(-50%, -50%)',
           width: `max(${plan.qrSizePct * 100}%, 44px)`,
           background: plan.qrBgColor, borderRadius: 12, padding: 'clamp(8px, 1.2vw, 16px)',
-          boxSizing: 'border-box', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          boxSizing: 'border-box', boxShadow: `0 8px 32px ${alpha(C.black, 0.4)}`,
         }}>
           <QRCode value={qrUrl} size={256} style={{ width: '100%', height: 'auto', display: 'block' }} level="M" fgColor={plan.qrFgColor} bgColor={plan.qrBgColor} />
           <div style={{
-            fontSize: 'clamp(8px, 0.8vw, 12px)', color: '#555', textAlign: 'center',
-            marginTop: 6, fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", fontWeight: 500,
+            fontSize: 'clamp(8px, 0.8vw, 12px)', color: C.textSub, textAlign: 'center',
+            marginTop: 6, fontFamily: F.sans, fontWeight: 500,
           }}>{t('display.scanToLearn')}</div>
         </div>
       )}
@@ -104,7 +105,7 @@ function CreativeSlide({ campaign, screenId }) {
       {showTextOverlay && category && (
         <div style={{
           fontSize: 'clamp(10px, 1vw, 14px)', letterSpacing: '3px', textTransform: 'uppercase',
-          color: 'rgba(255,255,255,0.4)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", marginBottom: 'clamp(12px, 2vw, 24px)',
+          color: alpha(C.white, 0.4), fontFamily: F.sans, marginBottom: 'clamp(12px, 2vw, 24px)',
         }}>
           {category}
         </div>
@@ -113,9 +114,9 @@ function CreativeSlide({ campaign, screenId }) {
       {/* Headline */}
       {showTextOverlay && (
         <div style={{
-          fontSize: 'clamp(32px, 6vw, 96px)', fontWeight: 800, color: '#fff',
+          fontSize: 'clamp(32px, 6vw, 96px)', fontWeight: 800, color: C.white,
           lineHeight: 1.05, maxWidth: '70%', marginBottom: 'clamp(16px, 2.5vw, 40px)',
-          fontFamily: 'Georgia, serif', textShadow: '0 4px 24px rgba(0,0,0,0.5)',
+          fontFamily: F.serif, textShadow: `0 4px 24px ${alpha(C.black, 0.5)}`,
         }}>
           {headline}
         </div>
@@ -129,7 +130,7 @@ function CreativeSlide({ campaign, screenId }) {
           border: `2px solid ${bg}`,
           color: bg, fontSize: 'clamp(12px, 1.4vw, 22px)',
           fontWeight: 600, borderRadius: 4,
-          fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: '1px',
+          fontFamily: F.sans, letterSpacing: '1px',
         }}>
           {cta}
         </div>
@@ -143,24 +144,24 @@ function IdleSlide() {
   return (
     <div style={{
       position: 'absolute', inset: 0,
-      background: 'linear-gradient(160deg, #050a10 0%, #0d1a2e 100%)',
+      background: `linear-gradient(160deg, ${C.screen} 0%, ${C.screenIdle} 100%)`,
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
     }}>
       <div style={{
         fontSize: 'clamp(24px, 5vw, 64px)', fontWeight: 800, letterSpacing: '8px',
-        color: 'rgba(255,255,255,0.08)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+        color: alpha(C.white, 0.08), fontFamily: F.sans,
         textTransform: 'uppercase', marginBottom: 24,
       }}>
         ADGRID
       </div>
       <div style={{
-        fontSize: 'clamp(12px, 1.5vw, 18px)', color: 'rgba(255,255,255,0.2)',
-        fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+        fontSize: 'clamp(12px, 1.5vw, 18px)', color: D.textFaint,
+        fontFamily: F.sans,
       }}>
         {t('display.noCampaigns')}
       </div>
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: 'rgba(124,58,237,0.3)' }} />
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: alpha(C.purple, 0.3) }} />
     </div>
   );
 }
@@ -182,11 +183,11 @@ function InvalidTokenScreen({ screenToken }) {
     return () => clearTimeout(t);
   }, [fromPairing]);
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#050a10', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
-      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: 1, textTransform: 'uppercase' }}>
+    <div style={{ position: 'fixed', inset: 0, background: C.screen, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
+      <div style={{ fontSize: T.base, color: D.textFaint, fontFamily: F.sans, letterSpacing: 1, textTransform: 'uppercase' }}>
         {tr('display.tokenNotRecognised')}
       </div>
-      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif" }}>
+      <div style={{ fontSize: T.xs, color: D.textFaint, fontFamily: F.sans }}>
         {fromPairing
           ? tr('display.disconnected')
           : tr('display.checkUrl')}
@@ -392,8 +393,8 @@ export function DisplayPlayer({ screenToken }) {
 
   if (status === 'loading') {
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#050a10', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: 2, textTransform: 'uppercase' }}>
+      <div style={{ position: 'fixed', inset: 0, background: C.screen, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: T.md, color: D.textFaint, fontFamily: F.sans, letterSpacing: 2, textTransform: 'uppercase' }}>
           {t('display.connecting')}
         </div>
       </div>
@@ -414,7 +415,7 @@ export function DisplayPlayer({ screenToken }) {
   const current = campaigns[currentIdx];
 
   return (
-    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#050a10', cursor: 'none' }}>
+    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: C.screen, cursor: 'none' }}>
       <div style={{
         position: 'absolute', inset: 0,
         opacity: fadeIn ? 1 : 0,
@@ -436,7 +437,7 @@ export function DisplayPlayer({ screenToken }) {
           {campaigns.map((_, i) => (
             <div key={i} style={{
               width: i === currentIdx ? 24 : 6, height: 6, borderRadius: 3,
-              background: i === currentIdx ? '#fff' : 'rgba(255,255,255,0.25)',
+              background: i === currentIdx ? C.white : alpha(C.white, 0.25),
               transition: 'all 0.3s ease',
             }} />
           ))}
@@ -447,13 +448,13 @@ export function DisplayPlayer({ screenToken }) {
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
         padding: '6px 20px',
-        background: 'rgba(0,0,0,0.8)',
+        background: alpha(C.black, 0.8),
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
       }}>
-        <span style={{ fontSize: 'clamp(9px, 0.9vw, 12px)', color: 'rgba(255,255,255,0.35)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif" }}>
+        <span style={{ fontSize: 'clamp(9px, 0.9vw, 12px)', color: D.textFaint, fontFamily: F.sans }}>
           {t('display.privacyNotice')}
         </span>
-        <a href="/privacy" style={{ fontSize: 'clamp(9px, 0.9vw, 12px)', color: 'rgba(255,255,255,0.25)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", textDecoration: 'underline' }}>
+        <a href="/privacy" style={{ fontSize: 'clamp(9px, 0.9vw, 12px)', color: D.textFaint, fontFamily: F.sans, textDecoration: 'underline' }}>
           {t('display.privacyLink')}
         </a>
       </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T, SH } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { KPI } from '../../components/primitives/KPI.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
@@ -304,7 +305,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
           background: C.amberSoft, border: `1px solid ${C.amberBorder}`,
         }}>
           <IconWarning size={16} />
-          <div style={{ flex: 1, minWidth: 200, fontSize: 14, fontFamily: F.sans, color: C.text }}>
+          <div style={{ flex: 1, minWidth: 200, fontSize: T.md, fontFamily: F.sans, color: C.text }}>
             {tx('dash.unpaid', {
               count: unpaid.length,
               b: chunk => <strong>{chunk}</strong>,
@@ -366,11 +367,11 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
       {delivery.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
           <Card>
-            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>{t('dash.impressionsChart')}</div>
+            <div style={{ ...TX.strong, marginBottom: 12 }}>{t('dash.impressionsChart')}</div>
             <TrendSparkline data={impressionSeries} color={C.purple} formatValue={v => formatNumber(v)} />
           </Card>
           <Card>
-            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 12 }}>{t('dash.scansChart')}</div>
+            <div style={{ ...TX.strong, marginBottom: 12 }}>{t('dash.scansChart')}</div>
             <TrendSparkline data={scanSeries} color={C.green} formatValue={v => formatNumber(v)} />
           </Card>
         </div>
@@ -398,7 +399,7 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
       {activeCampaigns.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           {activeCampaigns.length > 1 && (
-            <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.display, marginBottom: 10 }}>{t('dash.budgetPacing')}</h2>
+            <h2 style={{ fontSize: T.lg, fontWeight: 600, color: C.text, fontFamily: F.display, marginBottom: 10 }}>{t('dash.budgetPacing')}</h2>
           )}
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${activeCampaigns.length}, 1fr)`, gap: 16 }}>
             {activeCampaigns.map(c => (
@@ -412,12 +413,12 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
 
       {campaignsLoaded && campaignsError ? (
         <Card style={{ textAlign: 'center', padding: 48 }}>
-          <div style={{ fontSize: 14, color: C.red, fontFamily: F.sans }}>{t('dash.campaignsError')}</div>
+          <div style={{ fontSize: T.md, color: C.redText, fontFamily: F.sans }}>{t('dash.campaignsError')}</div>
         </Card>
       ) : myCampaigns.length > 0 ? (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.display }}>{t('dash.yourCampaigns')}</h2>
+            <h2 style={{ fontSize: T.lg, fontWeight: 600, color: C.text, fontFamily: F.display }}>{t('dash.yourCampaigns')}</h2>
             <Btn variant="ghost" size="sm" onClick={() => setAdvNav('adv-campaigns')}>{t('dash.viewAll')}</Btn>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -431,27 +432,24 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
               const deliveryFlag = campaignDeliveryFlag(healthByCampaign[c.id]);
 
               return (
-              <Card key={c.id} style={{ padding: '16px 20px', transition: 'transform 0.2s, box-shadow 0.2s' }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.1)'; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-              >
+              <Card key={c.id} lift style={{ padding: '16px 20px', transition: 'transform 0.2s, box-shadow 0.2s' }}>
                 {isMobile ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {/* Row 1: Name + Status Badge */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>
+                        <div style={{ ...TX.strong, marginBottom: 2 }}>
                           {screenCount > 0 ? t('common.screensCount', { count: screenCount }) : c.screen}
                         </div>
-                        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.city} · {c.category ? tOr(`categories.${c.category}`, c.category) : c.category} · {formatDate(c.start)} → {formatDate(c.end)}</div>
+                        <div style={TX.caption}>{c.city} · {c.category ? tOr(`categories.${c.category}`, c.category) : c.category} · {formatDate(c.start)} → {formatDate(c.end)}</div>
                         {deliveryFlag && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, fontSize: 11, color: C.amber, fontFamily: F.sans }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, fontSize: T.xs, color: C.amberText, fontFamily: F.sans }}>
                             <IconWarning size={11} /> {deliveryFlag.label}
                           </div>
                         )}
-                        <button onClick={() => setDisputeCampaignId(c.id)} style={{ background: 'none', border: 'none', padding: 0, marginTop: 4, fontSize: 11, color: C.textMuted, fontFamily: F.sans, cursor: 'pointer', textDecoration: 'underline' }}>
+                        <Btn variant="unstyled" onClick={() => setDisputeCampaignId(c.id)} style={{ ...TX.caption, marginTop: 4, textDecoration: 'underline' }}>
                           {t('dash.reportProblem')}
-                        </button>
+                        </Btn>
                       </div>
                       <Badge status={displayStatus} />
                     </div>
@@ -459,23 +457,23 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                          <span style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans }}>{t('dash.budget')}</span>
+                          <span style={{ fontSize: T.xs, color: C.textSub, fontFamily: F.sans }}>{t('dash.budget')}</span>
                         </div>
-                        <div style={{ fontSize: 11, fontWeight: 500, color: C.text, fontFamily: F.mono }}>{money(c.spent)} / {money(c.budget)}</div>
+                        <div style={{ fontSize: T.xs, fontWeight: 500, color: C.text, fontFamily: F.mono }}>{money(c.spent)} / {money(c.budget)}</div>
                       </div>
                       <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginBottom: 4 }}>{t('dash.impressions')}</div>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{thousands(c.impressions)}</div>
+                        <div style={{ fontSize: T.xs, color: C.textSub, fontFamily: F.sans, marginBottom: 4 }}>{t('dash.impressions')}</div>
+                        <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{thousands(c.impressions)}</div>
                       </div>
                       <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginBottom: 4 }}>{t('dash.scans')}</div>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: C.purple, fontFamily: F.mono }}>{c.scans}</div>
+                        <div style={{ fontSize: T.xs, color: C.textSub, fontFamily: F.sans, marginBottom: 4 }}>{t('dash.scans')}</div>
+                        <div style={{ fontSize: T.lg, fontWeight: 700, color: C.purple, fontFamily: F.mono }}>{c.scans}</div>
                       </div>
                     </div>
                     {/* Row 3: Progress Bar */}
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: C.textSub, fontFamily: F.sans }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: T.xs, color: C.textSub, fontFamily: F.sans }}>
                           {t('dash.spend')}
                           <PacingDot startDate={c.start} endDate={c.end} spent={c.spent} budget={c.budget} />
                         </span>
@@ -486,36 +484,36 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px 120px 100px 130px', gap: 16, alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>
+                      <div style={{ ...TX.strong, marginBottom: 2 }}>
                         {screenCount > 0 ? t('common.screensCount', { count: screenCount }) : c.screen}
                       </div>
-                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{c.city} · {c.category ? tOr(`categories.${c.category}`, c.category) : c.category} · {formatDate(c.start)} → {formatDate(c.end)}</div>
+                      <div style={TX.caption}>{c.city} · {c.category ? tOr(`categories.${c.category}`, c.category) : c.category} · {formatDate(c.start)} → {formatDate(c.end)}</div>
                       {deliveryFlag && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, fontSize: 11, color: C.amber, fontFamily: F.sans }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, fontSize: T.xs, color: C.amberText, fontFamily: F.sans }}>
                           <IconWarning size={11} /> {deliveryFlag.label}
                         </div>
                       )}
-                      <button onClick={() => setDisputeCampaignId(c.id)} style={{ background: 'none', border: 'none', padding: 0, marginTop: 4, fontSize: 11, color: C.textMuted, fontFamily: F.sans, cursor: 'pointer', textDecoration: 'underline' }}>
+                      <Btn variant="unstyled" onClick={() => setDisputeCampaignId(c.id)} style={{ ...TX.caption, marginTop: 4, textDecoration: 'underline' }}>
                         {t('dash.reportProblem')}
-                      </button>
+                      </Btn>
                     </div>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: C.textSub, fontFamily: F.sans }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: T.xs, color: C.textSub, fontFamily: F.sans }}>
                           {t('dash.spend')}
                           <PacingDot startDate={c.start} endDate={c.end} spent={c.spent} budget={c.budget} />
                         </span>
-                        <span style={{ fontSize: 11, fontWeight: 500, color: C.text, fontFamily: F.mono }}>{money(c.spent)} / {money(c.budget)}</span>
+                        <span style={{ fontSize: T.xs, fontWeight: 500, color: C.text, fontFamily: F.mono }}>{money(c.spent)} / {money(c.budget)}</span>
                       </div>
                       <ProgressBar value={c.spent} max={c.budget} height={4} />
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{thousands(c.impressions)}</div>
-                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{t('dash.impressionsLower')}</div>
+                      <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{thousands(c.impressions)}</div>
+                      <div style={TX.caption}>{t('dash.impressionsLower')}</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: C.purple, fontFamily: F.mono }}>{c.scans}</div>
-                      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{t('dash.scansLower')}</div>
+                      <div style={{ fontSize: T.lg, fontWeight: 700, color: C.purple, fontFamily: F.mono }}>{c.scans}</div>
+                      <div style={TX.caption}>{t('dash.scansLower')}</div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                       <Badge status={displayStatus} />
@@ -525,16 +523,13 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
 
                 {screenCount >= 2 && (
                   <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
-                    <button
-                      onClick={() => setCompareCampaignId(id => id === c.id ? null : c.id)}
-                      style={{ background: 'none', border: 'none', padding: 0, fontSize: 12, color: C.purple, fontFamily: F.sans, cursor: 'pointer', fontWeight: 500 }}
-                    >
+                    <Btn variant="unstyled" onClick={() => setCompareCampaignId(id => id === c.id ? null : c.id)} style={{ fontSize: T.sm, color: C.purple, fontFamily: F.sans, fontWeight: 500 }}>
                       {compareCampaignId === c.id ? t('dash.hideBreakdown') : t('dash.compareScreens')}
-                    </button>
+                    </Btn>
                     {compareCampaignId === c.id && (
                       <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {perScreenBreakdown(delivery, c.id, screenNames).map(s => (
-                          <div key={s.screen_id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontFamily: F.sans }}>
+                          <div key={s.screen_id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: T.sm, fontFamily: F.sans }}>
                             <span style={{ color: C.text }}>{s.screen_name}</span>
                             <span style={{ color: C.textSub, fontFamily: F.mono }}>
                               {t('dash.breakdown', { impr: formatNumber(s.impressions), scans: formatNumber(s.scans) })}
@@ -553,8 +548,8 @@ export function AdvDashboard({ user, setAdvNav, advertiserId }) {
       ) : (
         <Card style={{ textAlign: 'center', padding: 48 }}>
           <div style={{ color: C.textMuted, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconScreen size={32} /></div>
-          <div style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 6 }}>{t('dash.noCampaigns')}</div>
-          <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>{t('dash.noCampaignsBody')}</div>
+          <div style={{ ...TX.titleLg, marginBottom: 6 }}>{t('dash.noCampaigns')}</div>
+          <div style={{ ...TX.bodySub, marginBottom: 20 }}>{t('dash.noCampaignsBody')}</div>
           <Btn onClick={() => setAdvNav('adv-create')}>{t('dash.createFirst')}</Btn>
         </Card>
       )}

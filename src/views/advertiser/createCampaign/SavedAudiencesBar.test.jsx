@@ -76,7 +76,7 @@ describe('SavedAudiencesBar', () => {
     await waitFor(() => screen.getByText('Save current targeting as an audience'));
     fireEvent.click(screen.getByText('Save current targeting as an audience'));
 
-    expect(screen.getByText('Save')).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
 
   it('renders nothing extra (no crash) when there are no saved audiences yet', async () => {

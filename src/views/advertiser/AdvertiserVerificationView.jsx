@@ -4,7 +4,8 @@ import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { useToast } from '../../components/primitives/Toast.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { Badge } from '../../components/primitives/Badge.jsx';
@@ -111,21 +112,21 @@ export function AdvertiserVerificationView() {
       <Btn variant="ghost" onClick={() => navigate('/app/settings')} style={{ marginBottom: 16, paddingLeft: 0 }}>
         {t('verify.back')}
       </Btn>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, fontFamily: F.display, marginBottom: 20 }}>
+      <h1 style={{ ...TX.pageTitle, marginBottom: 20 }}>
         {t('verify.title')}
       </h1>
 
       {profile?.is_verified_advertiser ? (
         <Card style={{ padding: 16, marginBottom: 20 }}>
           <Badge status="active">{t('verify.verifiedBadge')}</Badge>
-          <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginTop: 8 }}>
+          <div style={{ ...TX.helper, marginTop: 8 }}>
             {t('verify.verifiedBody')}
           </div>
         </Card>
       ) : latest?.status === 'pending_manual' ? (
         <Card style={{ padding: 16, marginBottom: 20 }}>
           <Badge status="pending">{t('verify.reviewBadge')}</Badge>
-          <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginTop: 8 }}>
+          <div style={{ ...TX.helper, marginTop: 8 }}>
             {t('verify.reviewBody')}
           </div>
         </Card>
@@ -135,42 +136,42 @@ export function AdvertiserVerificationView() {
             <Card style={{ padding: 16, marginBottom: 20, borderColor: C.redBorder }}>
               <Badge status="rejected">{t('verify.rejectedBadge')}</Badge>
               {latest.rejection_reason && (
-                <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginTop: 8 }}>{latest.rejection_reason}</div>
+                <div style={{ ...TX.helper, marginTop: 8 }}>{latest.rejection_reason}</div>
               )}
-              <div style={{ fontSize: 12, color: C.textSub, fontFamily: F.sans, marginTop: 8 }}>{t('verify.resubmit')}</div>
+              <div style={{ ...TX.helper, marginTop: 8 }}>{t('verify.resubmit')}</div>
             </Card>
           )}
 
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>{t('verify.companyName')}</div>
+            <div style={{ ...TX.label, marginBottom: 6 }}>{t('verify.companyName')}</div>
             <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)}
-              style={{ width: '100%', padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.sans, fontSize: 13 }} />
+              style={{ width: '100%', padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.sans, fontSize: T.base }} />
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>{t('verify.domain')}</div>
+            <div style={{ ...TX.label, marginBottom: 6 }}>{t('verify.domain')}</div>
             <input type="text" placeholder={t('verify.domainPlaceholder')} value={businessDomain} onChange={e => setBusinessDomain(e.target.value)}
-              style={{ width: '100%', padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.sans, fontSize: 13 }} />
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 4 }}>
+              style={{ width: '100%', padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.sans, fontSize: T.base }} />
+            <div style={{ ...TX.caption, marginTop: 4 }}>
               {t('verify.domainHint')}
             </div>
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>
+            <div style={{ ...TX.label, marginBottom: 6 }}>
               {t('verify.businessNumber')} <span style={{ color: C.textMuted, fontWeight: 400 }}>{t('common.optional')}</span>
             </div>
             <input type="text" value={businessNumber} onChange={e => setBusinessNumber(e.target.value)}
-              style={{ width: '100%', padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.sans, fontSize: 13 }} />
+              style={{ width: '100%', padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.sans, fontSize: T.base }} />
           </div>
 
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>
+            <div style={{ ...TX.label, marginBottom: 6 }}>
               {t('verify.doc')} <span style={{ color: C.textMuted, fontWeight: 400 }}>{t('verify.docOptional')}</span>
             </div>
             <input type="file" accept="image/jpeg,image/png,application/pdf" onChange={e => handleDocFile(e.target.files?.[0])} />
-            {docFile && <div style={{ fontSize: 12, color: C.text, fontFamily: F.sans, marginTop: 6 }}>{docFile.name}</div>}
-            {docErr && <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginTop: 6 }}>{docErr}</div>}
+            {docFile && <div style={{ fontSize: T.sm, color: C.text, fontFamily: F.sans, marginTop: 6 }}>{docFile.name}</div>}
+            {docErr && <div style={{ ...TX.error, marginTop: 6 }}>{docErr}</div>}
           </div>
 
           <Btn variant="primary" disabled={submitting} onClick={submit}>

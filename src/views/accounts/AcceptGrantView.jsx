@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { C, F } from '../../design/tokens.js'
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { IconWarning, IconCheckCircle, IconMail } from '../../components/icons.jsx'
 import { useT } from '../../i18n/useT.js'
+import { Btn } from '../../components/primitives/Btn.jsx';
 
 export function AcceptGrantView() {
   const { user, acceptGrant, signInWithOAuth } = useAuth()
@@ -72,70 +74,47 @@ export function AcceptGrantView() {
       }}>
         {error ? (
           <>
-            <div style={{ color: C.red, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><IconWarning size={32} /></div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>{t('accounts.accept.errorTitle')}</h2>
-            <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>{error}</p>
-            <button onClick={() => navigate('/')} style={{ padding: '10px 24px', borderRadius: 10, background: C.purple, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 14, cursor: 'pointer', transition: 'opacity 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-            >
+            <div style={{ color: C.redText, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><IconWarning size={32} /></div>
+            <h2 style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>{t('accounts.accept.errorTitle')}</h2>
+            <p style={{ fontSize: T.md, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>{error}</p>
+            <Btn onClick={() => navigate('/')} style={{ padding: '10px 24px', borderRadius: 10, fontSize: T.md }}>
               {t('accounts.accept.goHome')}
-            </button>
+            </Btn>
           </>
         ) : done ? (
           <>
-            <div style={{ color: C.green, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><IconCheckCircle size={32} /></div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>{t('accounts.accept.acceptedTitle')}</h2>
-            <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans }}>{t('accounts.accept.redirecting')}</p>
+            <div style={{ color: C.greenText, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><IconCheckCircle size={32} /></div>
+            <h2 style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>{t('accounts.accept.acceptedTitle')}</h2>
+            <p style={{ fontSize: T.md, color: C.textSub, fontFamily: F.sans }}>{t('accounts.accept.redirecting')}</p>
           </>
         ) : !user ? (
           <div style={{ textAlign: 'center' }}>
             <div style={{ color: C.purple, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><IconMail size={32} /></div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>{t('accounts.accept.invitedTitle')}</h2>
-            <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans, margin: '0 0 20px' }}>{t('accounts.accept.signInPrompt')}</p>
-            <button
-              onClick={() => { sessionStorage.setItem('pending_grant', grantId); signInWithOAuth('google') }}
-              style={{ width: '100%', padding: '10px', borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 14, cursor: 'pointer', color: C.text, marginBottom: 8, transition: 'background 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
-              onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
-            >{t('accounts.accept.google')}</button>
-            <button
-              onClick={() => { sessionStorage.setItem('pending_grant', grantId); navigate('/login') }}
-              style={{ width: '100%', padding: '10px', borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 14, cursor: 'pointer', color: C.text, transition: 'background 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
-              onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
-            >{t('accounts.accept.email')}</button>
+            <h2 style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>{t('accounts.accept.invitedTitle')}</h2>
+            <p style={{ fontSize: T.md, color: C.textSub, fontFamily: F.sans, margin: '0 0 20px' }}>{t('accounts.accept.signInPrompt')}</p>
+            <Btn variant="secondary" onClick={() => { sessionStorage.setItem('pending_grant', grantId); signInWithOAuth('google') }} style={{ width: '100%', padding: '10px', borderRadius: 10, fontSize: T.md, color: C.text, marginBottom: 8, transition: 'background 0.15s', boxShadow: 'none', fontWeight: 400, justifyContent: 'center' }}>{t('accounts.accept.google')}</Btn>
+            <Btn variant="secondary" onClick={() => { sessionStorage.setItem('pending_grant', grantId); navigate('/login') }} style={{ width: '100%', padding: '10px', borderRadius: 10, fontSize: T.md, color: C.text, transition: 'background 0.15s', boxShadow: 'none', fontWeight: 400, justifyContent: 'center' }}>{t('accounts.accept.email')}</Btn>
           </div>
         ) : (
           <>
             <div style={{ color: C.purple, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><IconMail size={32} /></div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>{t('accounts.accept.youreInvited')}</h2>
-            <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans, margin: '0 0 6px' }}>
+            <h2 style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>{t('accounts.accept.youreInvited')}</h2>
+            <p style={{ fontSize: T.md, color: C.textSub, fontFamily: F.sans, margin: '0 0 6px' }}>
               {tx('accounts.accept.hasGiven', {
                 b: chunk => <strong style={{ color: C.text }}>{chunk}</strong>,
                 grantor: grantorName,
                 role: grant?.role ? t(`accounts.roleLower.${grant.role}`) : '',
               })}
             </p>
-            <p style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: F.sans, margin: '0 0 28px' }}>{accountName}</p>
+            <p style={{ ...TX.titleLg, margin: '0 0 28px' }}>{accountName}</p>
 
             <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={decline}
-                style={{ flex: 1, padding: '10px', borderRadius: 10, background: 'transparent', border: `1px solid ${C.border}`, fontFamily: F.sans, fontSize: 14, cursor: 'pointer', color: C.textSub, transition: 'background 0.15s' }}
-                onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-              >
+              <Btn variant="secondary" onClick={decline} style={{ flex: 1, padding: '10px', borderRadius: 10, background: 'transparent', fontSize: T.md, color: C.textSub, transition: 'background 0.15s', boxShadow: 'none', fontWeight: 400, justifyContent: 'center' }}>
                 {t('accounts.accept.decline')}
-              </button>
-              <button
-                onClick={accept}
-                style={{ flex: 1, padding: '10px', borderRadius: 10, background: C.purple, color: '#fff', border: 'none', fontFamily: F.sans, fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'opacity 0.15s' }}
-                onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
-                onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-              >
+              </Btn>
+              <Btn onClick={accept} style={{ flex: 1, padding: '10px', borderRadius: 10, fontSize: T.md, fontWeight: 600, justifyContent: 'center' }}>
                 {t('accounts.accept.acceptInvite')}
-              </button>
+              </Btn>
             </div>
           </>
         )}

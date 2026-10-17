@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { usePageMeta } from '../../lib/usePageMeta.js';
 import { Breadcrumbs } from '../../components/shared/Breadcrumbs.jsx';
 import { rich, useT } from '../../i18n/useT.js';
+import { T, C, D, F } from '../../design/tokens.js';
 
 // Shared renderer for the legal pages. Each page's text lives in the locale
 // catalogs under legal.<doc>: title, metaTitle, metaDescription, an array of
@@ -14,16 +15,16 @@ import { rich, useT } from '../../i18n/useT.js';
 
 const page = {
   minHeight: '100vh',
-  background: '#0b0d12',
-  color: 'rgba(255,255,255,0.85)',
-  fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+  background: D.bg,
+  color: D.text,
+  fontFamily: F.sans,
   padding: '48px 24px',
 };
 const inner = { maxWidth: 760, margin: '0 auto' };
-const h1 = { fontSize: 32, fontWeight: 700, color: '#fff', margin: '0 0 8px' };
-const h2 = { fontSize: 20, fontWeight: 600, color: '#fff', margin: '32px 0 8px' };
-const legalP = { fontSize: 15, lineHeight: 1.7, margin: '0 0 12px' };
-const linkStyle = { color: '#a78bfa' };
+const h1 = { fontSize: T.display, fontWeight: 700, color: C.white, margin: '0 0 8px' };
+const h2 = { fontSize: T.xl, fontWeight: 600, color: C.white, margin: '32px 0 8px' };
+const legalP = { fontSize: T.lg, lineHeight: 1.7, margin: '0 0 12px' };
+const linkStyle = { color: D.link };
 
 const mail = address => <a href={`mailto:${address}`} style={linkStyle}>{address}</a>;
 
@@ -56,7 +57,7 @@ export function LegalDocument({ doc, updated, slots = {} }) {
       <div style={inner}>
         <Breadcrumbs items={[{ label: t('legal.home'), to: '/' }, { label: t(`${ns}.title`) }]} />
         <h1 style={h1}>{t(`${ns}.title`)}</h1>
-        <p style={{ ...legalP, color: 'rgba(255,255,255,0.5)' }}>
+        <p style={{ ...legalP, color: D.textFaint }}>
           {t('legal.lastUpdated', { date: formatDate(updated, { dateStyle: 'long' }) })}
         </p>
 
@@ -70,7 +71,7 @@ export function LegalDocument({ doc, updated, slots = {} }) {
           );
         })}
 
-        <p style={{ ...legalP, marginTop: 32, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 24 }}>
+        <p style={{ ...legalP, marginTop: 32, borderTop: `1px solid ${D.hairline}`, paddingTop: 24 }}>
           {tx(`${ns}.seeAlso`, vars)}
         </p>
       </div>

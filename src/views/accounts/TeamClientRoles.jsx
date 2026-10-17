@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { C, F } from '../../lib/constants.js'
+
 import { useT } from '../../i18n/useT.js'
+import { T, C, F } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
+import { Btn } from '../../components/primitives/Btn.jsx';
+import { SelInput } from '../../components/primitives/SelInput.jsx';
 
 export function TeamClientRoles() {
   const { user } = useAuth()
@@ -65,10 +69,10 @@ export function TeamClientRoles() {
     setSaving(false)
   }
 
-  if (loading) return <p style={{ fontFamily: F.sans, fontSize: 13, color: C.textSub }}>{t('common.loading')}</p>
-  if (loadError) return <p style={{ fontFamily: F.sans, fontSize: 13, color: C.red }}>{t('accounts.team.loadError')}</p>
+  if (loading) return <p style={TX.bodySub}>{t('common.loading')}</p>
+  if (loadError) return <p style={{ fontFamily: F.sans, fontSize: T.base, color: C.redText }}>{t('accounts.team.loadError')}</p>
   if (clients.length === 0) return (
-    <p style={{ fontFamily: F.sans, fontSize: 13, color: C.textSub }}>
+    <p style={TX.bodySub}>
       {t('accounts.team.noClients')}
     </p>
   )
@@ -76,33 +80,22 @@ export function TeamClientRoles() {
   return (
     <div style={{ maxWidth: 620, display: 'flex', gap: 20 }}>
       <div style={{ width: 200, flexShrink: 0 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontFamily: F.sans, marginBottom: 10 }}>{t('accounts.team.team')}</div>
-        {members.length === 0 && <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>{t('accounts.team.noMembers')}</p>}
+        <div style={{ ...TX.helperMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>{t('accounts.team.team')}</div>
+        {members.length === 0 && <p style={TX.bodySub}>{t('accounts.team.noMembers')}</p>}
         {members.map(m => (
-          <button
-            key={m.id}
-            onClick={() => selectMember(m)}
-            style={{
-              display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px',
-              borderRadius: 8, border: `1px solid ${selected?.id === m.id ? C.purple : C.border}`,
-              background: selected?.id === m.id ? C.purpleSoft : 'transparent',
-              marginBottom: 6, cursor: 'pointer', fontFamily: F.sans, transition: 'background 0.15s',
-            }}
-            onMouseEnter={e => { if (selected?.id !== m.id) e.currentTarget.style.background = C.surfaceAlt; }}
-            onMouseLeave={e => { if (selected?.id !== m.id) e.currentTarget.style.background = 'transparent'; }}
-          >
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{m.user_profile?.name || m.user_profile?.email}</div>
-            <div style={{ fontSize: 11, color: C.textMuted }}>{t(`accounts.roles.${m.role}`)}</div>
-          </button>
+          <Btn variant="unstyled" key={m.id} onClick={() => selectMember(m)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', borderRadius: 8, border: `1px solid ${selected?.id === m.id ? C.purple : C.border}`, background: selected?.id === m.id ? C.purpleSoft : 'transparent', marginBottom: 6, fontFamily: F.sans, transition: 'background 0.15s' }} hoverStyle={selected?.id !== m.id ? { background: C.surfaceAlt } : undefined}>
+            <div style={{ fontSize: T.base, fontWeight: 500, color: C.text }}>{m.user_profile?.name || m.user_profile?.email}</div>
+            <div style={{ fontSize: T.xs, color: C.textMuted }}>{t(`accounts.roles.${m.role}`)}</div>
+          </Btn>
         ))}
       </div>
 
       <div style={{ flex: 1 }}>
         {!selected ? (
-          <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, paddingTop: 8 }}>{t('accounts.team.selectMember')}</p>
+          <p style={{ ...TX.bodySub, paddingTop: 8 }}>{t('accounts.team.selectMember')}</p>
         ) : (
           <>
-            <div style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontFamily: F.sans, marginBottom: 10 }}>
+            <div style={{ ...TX.helperMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
               {t('accounts.team.clientAccessFor', { name: selected.user_profile?.name || selected.user_profile?.email })}
             </div>
             {clients.map(g => {
@@ -113,26 +106,19 @@ export function TeamClientRoles() {
                   background: C.bg, borderRadius: 8, border: `1px solid ${C.border}`, marginBottom: 8,
                 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: C.text, fontFamily: F.sans }}>
+                    <div style={{ ...TX.body, fontWeight: 500 }}>
                       {g.account?.company_name || g.account?.name || t('accounts.team.clientAccount')}
                     </div>
-                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>
+                    <div style={TX.caption}>
                       {t('accounts.team.orgGrant', { role: t(`accounts.roles.${g.role}`) })}
                     </div>
                   </div>
-                  <select
-                    value={current?.role ?? 'none'}
-                    onChange={e => setRole(g.account_id, e.target.value)}
-                    disabled={saving}
-                    style={{ padding: '5px 8px', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.sans, fontSize: 12, color: C.text, background: C.surface, outline: 'none', transition: 'border-color 0.15s' }}
-                    onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-                    onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-                  >
+                  <SelInput value={current?.role ?? 'none'} onChange={e => setRole(g.account_id, e.target.value)} disabled={saving} style={{ padding: '5px 8px', borderRadius: 6, fontFamily: F.sans, fontSize: T.sm, color: C.text, background: C.surface, transition: 'border-color 0.15s' }}>
                     <option value="none">{t('accounts.team.noAccess')}</option>
                     <option value="viewer">{t('accounts.roles.viewer')}</option>
                     <option value="manager">{t('accounts.roles.manager')}</option>
                     <option value="admin">{t('accounts.roles.admin')}</option>
-                  </select>
+                  </SelInput>
                 </div>
               )
             })}

@@ -1,6 +1,7 @@
 // src/views/advertiser/createCampaign/StepCreative.jsx
 import { useState, useMemo } from 'react';
-import { C, F } from '../../../design/tokens.js';
+import { C, F, T } from '../../../design/tokens.js';
+import { TX } from '../../../design/text.js';
 import { Card } from '../../../components/primitives/Card.jsx';
 import { SelInput } from '../../../components/primitives/SelInput.jsx';
 import { PillGroup } from './PillGroup.jsx';
@@ -12,6 +13,7 @@ import { useAuth } from '../../../context/AuthContext.jsx';
 import { useAdvertiserScreenFavorites } from '../../../hooks/useAdvertiserScreenFavorites.js';
 import { useAdvertiserRecentScreens } from '../../../hooks/useAdvertiserRecentScreens.js';
 import { useT } from '../../../i18n/useT.js';
+import { Btn } from '../../../components/primitives/Btn.jsx';
 
 const BLANK_CREATIVE = makeBlankCreative;
 
@@ -115,25 +117,13 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
   return (
     <div style={{ maxWidth: 760, margin: '0 auto' }}>
       <Card style={{ padding: 28 }}>
-        <button
-          onClick={() => setShowFilters(f => !f)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '6px 12px', borderRadius: 8, border: `1px solid ${C.border}`,
-            background: showFilters ? C.purpleSoft : C.surface,
-            color: showFilters ? C.purple : C.textSub,
-            fontSize: 12, fontWeight: 500, fontFamily: F.sans,
-            cursor: 'pointer', transition: 'all 0.15s', marginBottom: 12,
-          }}
-          onMouseEnter={e => { if (!showFilters) e.currentTarget.style.background = C.surfaceAlt; }}
-          onMouseLeave={e => { if (!showFilters) e.currentTarget.style.background = C.surface; }}
-        >
+        <Btn variant="unstyled" onClick={() => setShowFilters(f => !f)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: showFilters ? C.purpleSoft : C.surface, color: showFilters ? C.purple : C.textSub, fontSize: T.sm, fontWeight: 500, fontFamily: F.sans, transition: 'all 0.15s', marginBottom: 12 }} hoverStyle={!showFilters ? { background: C.surfaceAlt } : undefined}>
           {t('create.creativeStep.refine')} {showFilters ? '▲' : '▼'}
-        </button>
+        </Btn>
         {showFilters && (
           <div style={{ marginBottom: 16, padding: 16, background: C.surfaceAlt, borderRadius: 10, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>{t('create.targeting.environment')}</div>
+              <div style={{ ...TX.helperMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>{t('create.targeting.environment')}</div>
               <PillGroup
                 options={[{ value: 'any', label: t('common.env.any') }, { value: 'indoor', label: t('common.env.indoor') }, { value: 'outdoor', label: t('common.env.outdoor') }]}
                 value={form.env_filter}
@@ -151,20 +141,14 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: 0 }}>{t('create.creativeStep.screens')}</h2>
-            <div style={{ fontSize: 12, color: C.purple, fontFamily: F.sans, marginTop: 4 }}>
+            <h2 style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.display, margin: 0 }}>{t('create.creativeStep.screens')}</h2>
+            <div style={{ fontSize: T.sm, color: C.purple, fontFamily: F.sans, marginTop: 4 }}>
               {t('create.creativeStep.selectedSummary', { selected: form.selected_screen_ids.length, total: matchedScreens.length, k: formatNumber(Math.round(totalImpr / 1000)) })}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={selectAll} style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans, transition: 'opacity 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = '0.75'; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-            >{t('create.creativeStep.selectAll')}</button>
-            <button onClick={deselectAll} style={{ background: 'none', border: 'none', fontSize: 12, color: C.textMuted, cursor: 'pointer', fontFamily: F.sans, transition: 'color 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-              onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-            >{t('create.creativeStep.deselectAll')}</button>
+            <Btn variant="unstyled" onClick={selectAll} style={{ fontSize: T.sm, color: C.purple, fontFamily: F.sans, transition: 'opacity 0.15s' }} hoverStyle={{ opacity: '0.75' }}>{t('create.creativeStep.selectAll')}</Btn>
+            <Btn variant="unstyled" onClick={deselectAll} style={{ ...TX.helperMuted, transition: 'color 0.15s' }} hoverStyle={{ color: C.text }}>{t('create.creativeStep.deselectAll')}</Btn>
           </div>
         </div>
 
@@ -181,7 +165,7 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
         </div>
 
         {visibleScreens.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '32px 24px', color: C.textSub, fontFamily: F.sans, fontSize: 13 }}>
+          <div style={{ ...TX.bodySub, textAlign: 'center', padding: '32px 24px' }}>
             {screenTab === 'favorites'
               ? t('create.creativeStep.emptyFavorites')
               : screenTab === 'recent'
@@ -206,10 +190,10 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
           </div>
         )}
 
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 16px' }}>{isMulti ? t('create.creativeStep.creatives') : t('create.creativeStep.creative')}</h2>
+        <h2 style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 16px' }}>{isMulti ? t('create.creativeStep.creatives') : t('create.creativeStep.creative')}</h2>
 
         {unassigned.length > 0 && (
-          <div style={{ marginBottom: 16, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: 12, color: C.amber, fontFamily: F.sans }}>
+          <div style={{ marginBottom: 16, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: T.sm, color: C.amberText, fontFamily: F.sans }}>
             {t('create.creativeStep.unassigned', {
               count: unassigned.length,
               total: form.selected_screen_ids.length,
@@ -232,15 +216,10 @@ export function StepCreative({ form, setForm, matchedScreens, presetScreenUnavai
         ))}
 
         {!houseAdMode && (
-          <button type="button" onClick={addCreative} style={{
-            background: 'none', border: `1px dashed ${C.border}`, borderRadius: 10, padding: '12px 16px',
-            fontSize: 13, color: C.purple, cursor: 'pointer', fontFamily: F.sans, width: '100%', transition: 'background 0.15s, border-color 0.15s',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = C.purpleSoft; e.currentTarget.style.borderColor = C.purple; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.borderColor = C.border; }}
-          >
+          <Btn variant="unstyled" type="button" onClick={addCreative} style={{ border: `1px dashed ${C.border}`, borderRadius: 10, padding: '12px 16px', fontSize: T.base, color: C.purple, fontFamily: F.sans, width: '100%', transition: 'background 0.15s, border-color 0.15s' }}
+            hoverStyle={{ background: C.purpleSoft, border: `1px dashed ${C.purple}` }}>
             {t('create.creativeStep.addCreative')}
-          </button>
+          </Btn>
         )}
       </Card>
     </div>

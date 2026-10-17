@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase.js'
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js'
-import { C, F } from '../../design/tokens.js'
+import { C, F, T, D } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Btn } from '../../components/primitives/Btn.jsx'
 import { Inp } from '../../components/primitives/Inp.jsx'
 import { useT } from '../../i18n/useT.js'
@@ -62,11 +63,11 @@ export function InviteAcceptPage() {
     navigate('/app', { replace: true })
   }
 
-  const page = { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0A0A0F' }
-  const card = { width: '100%', maxWidth: 380, background: 'rgba(17,17,24,0.9)', border: '1px solid #1E1E2E', borderRadius: 16, padding: 28 }
+  const page = { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: D.bg }
+  const card = { width: '100%', maxWidth: 380, background: D.card, border: `1px solid ${D.border}`, borderRadius: 16, padding: 28 }
 
   if (status === 'loading') {
-    return <div style={page}><div style={{ color: '#8A8A9A', fontFamily: F.sans, fontSize: 13 }}>{t('common.loading')}</div></div>
+    return <div style={page}><div style={{ color: D.textSub, fontFamily: F.sans, fontSize: T.base }}>{t('common.loading')}</div></div>
   }
 
   if (status === 'invalid' || status === 'expired' || status === 'already_accepted') {
@@ -76,7 +77,7 @@ export function InviteAcceptPage() {
     return (
       <div style={page}>
         <div style={card}>
-          <p style={{ color: '#fff', fontFamily: F.sans, fontSize: 14, marginBottom: 16 }}>{message}</p>
+          <p style={{ color: C.white, fontFamily: F.sans, fontSize: T.md, marginBottom: 16 }}>{message}</p>
           <Btn onClick={() => navigate('/login')}>{t('invite.operator.backToSignIn')}</Btn>
         </div>
       </div>
@@ -86,16 +87,19 @@ export function InviteAcceptPage() {
   return (
     <div style={page}>
       <div style={card}>
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4, fontFamily: F.display }}>
+        <h1 style={{ fontSize: T.lg, fontWeight: 700, color: C.white, marginBottom: 4, fontFamily: F.display }}>
           {t('invite.operator.heading')}
         </h1>
-        <p style={{ fontSize: 13, color: '#8A8A9A', marginBottom: 20, fontFamily: F.sans }}>
+        <p style={{ fontSize: T.base, color: D.textSub, marginBottom: 20, fontFamily: F.sans }}>
           {t('invite.operator.sub')}
         </p>
-        {error && <div style={{ color: C.red, fontFamily: F.sans, fontSize: 12, marginBottom: 12 }}>{error}</div>}
+        {error && <div role="alert" style={{ ...TX.error, color: C.red, marginBottom: 12 }}>{error}</div>}
         <div style={{ marginBottom: 16 }}>
+          <label htmlFor="invite-password" style={{ ...TX.label, color: D.textSub, display: 'block', marginBottom: 5 }}>
+            {t('invite.operator.password')}
+          </label>
           <Inp
-            label={t('invite.operator.password')}
+            id="invite-password"
             type="password"
             placeholder="••••••••"
             value={password}
