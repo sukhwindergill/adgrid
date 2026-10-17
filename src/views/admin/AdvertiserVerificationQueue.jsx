@@ -10,6 +10,7 @@ import { Btn } from '../../components/primitives/Btn.jsx'
 import { Inp } from '../../components/primitives/Inp.jsx'
 import { compactField } from '../../components/primitives/field.js'
 import { Badge } from '../../components/primitives/Badge.jsx'
+import { useT } from '../../i18n/useT.js'
 
 function useVerificationQueue() {
   const [pending, setPending] = useState([])
@@ -46,6 +47,7 @@ function useVerificationQueue() {
 export function AdvertiserVerificationQueue() {
   const navigate = useNavigate()
   const toast = useToast()
+  const { t } = useT()
   const { pending, reviewed, loading, error, refresh } = useVerificationQueue()
   const [busyId, setBusyId] = useState(null)
   const [reasons, setReasons] = useState({})
@@ -55,7 +57,7 @@ export function AdvertiserVerificationQueue() {
 
     setBusyId(verificationId)
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { toast.error('Session expired. Please log in again.'); setBusyId(null); return }
+    if (!session) { toast.error(t('admin.sessionExpired')); setBusyId(null); return }
 
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/manual-review-advertiser`, {
       method: 'POST',
@@ -65,33 +67,33 @@ export function AdvertiserVerificationQueue() {
     const body = await res.json().catch(() => ({}))
     setBusyId(null)
 
-    if (!res.ok) { toast.error(body?.error ?? 'Failed to submit review.'); return }
-    toast.success(decision === 'approved' ? 'Advertiser verified.' : 'Submission rejected.')
+    if (!res.ok) { toast.error(body?.error ?? t('admin.reviewFailed')); return }
+    toast.success(decision === 'approved' ? t('admin.advVerify.verified') : t('admin.advVerify.rejected'))
     refresh()
   }
 
   const viewDoc = async (path) => {
     if (!path) return
     const { data, error: signErr } = await supabase.storage.from('advertiser-docs').createSignedUrl(path, 300)
-    if (signErr || !data) { toast.error('Could not load document.'); return }
+    if (signErr || !data) { toast.error(t('admin.advVerify.docFailed')); return }
     window.open(data.signedUrl, '_blank', 'noopener')
   }
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 20px' }}>
       <Btn variant="ghost" onClick={() => navigate('/app')} style={{ marginBottom: 16, paddingLeft: 0 }}>
-        ← Back
+        {t('admin.back')}
       </Btn>
       <h1 style={{ ...TX.pageTitle, marginBottom: 20 }}>
-        Advertiser Verification Queue
+        {t('admin.advVerify.title')}
       </h1>
 
       {loading ? (
-        <div style={TX.bodySub}>Loading…</div>
+        <div style={TX.bodySub}>{t('common.loading')}</div>
       ) : error ? (
-        <div style={{ color: C.redText, fontFamily: F.sans, fontSize: T.base }}>Couldn't load the queue — check your connection and try again.</div>
+        <div style={{ color: C.redText, fontFamily: F.sans, fontSize: T.base }}>{t('admin.queueError')}</div>
       ) : pending.length === 0 ? (
-        <div style={{ ...TX.bodySub, marginBottom: 32 }}>Nothing awaiting manual review.</div>
+        <div style={{ ...TX.bodySub, marginBottom: 32 }}>{t('admin.nothingPending')}</div>
       ) : (
         <div style={{ marginBottom: 32 }}>
           {pending.map(v => (
@@ -100,34 +102,34 @@ export function AdvertiserVerificationQueue() {
                 <div>
                   <div style={TX.strong}>{v.company_name}</div>
                   <div style={{ ...TX.caption, marginTop: 2 }}>
-                    {v.profiles?.name ?? 'Unnamed advertiser'} · {v.profiles?.email}
+                    {v.profiles?.name ?? t('admin.advVerify.unnamed')} · {v.profiles?.email}
                   </div>
                   <div style={{ ...TX.caption, marginTop: 2 }}>
-                    Domain: {v.business_domain}{v.business_number ? ` · Business #: ${v.business_number}` : ''}
+                    {t('admin.advVerify.domain', { domain: v.business_domain })}{v.business_number ? t('admin.advVerify.businessNumber', { number: v.business_number }) : ''}
                   </div>
                 </div>
-                <Badge status="pending">Needs review</Badge>
+                <Badge status="pending">{t('admin.needsReview')}</Badge>
               </div>
 
               {v.doc_storage_path && (
                 <Btn variant="ghost" size="sm" onClick={() => viewDoc(v.doc_storage_path)} style={{ marginBottom: 12 }}>
-                  View document
+                  {t('admin.advVerify.viewDoc')}
                 </Btn>
               )}
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
                 <Btn variant="success" size="sm" disabled={busyId === v.id} onClick={() => review(v.id, 'approved')}>
-                  {busyId === v.id ? '…' : 'Approve'}
+                  {busyId === v.id ? '…' : t('admin.approve')}
                 </Btn>
                 <Inp
-                  type="text" placeholder="Rejection reason (optional)" aria-label="Rejection reason"
+                  type="text" placeholder={t('admin.rejectReason')} aria-label={t('admin.rejectReasonLabel')}
                   value={reasons[v.id] ?? ''}
                   onChange={e => setReasons(r => ({ ...r, [v.id]: e.target.value }))}
                   wrapperStyle={{ flex: 1, minWidth: 160 }}
                   style={compactField}
                 />
                 <Btn variant="danger" size="sm" disabled={busyId === v.id} onClick={() => review(v.id, 'rejected')}>
-                  {busyId === v.id ? '…' : 'Reject'}
+                  {busyId === v.id ? '…' : t('admin.reject')}
                 </Btn>
               </div>
             </Card>
@@ -138,18 +140,18 @@ export function AdvertiserVerificationQueue() {
       {reviewed.length > 0 && (
         <>
           <h2 style={{ fontSize: T.lg, fontWeight: 600, color: C.text, fontFamily: F.display, marginBottom: 12 }}>
-            Recently reviewed
+            {t('admin.recentlyReviewed')}
           </h2>
           {reviewed.map(v => (
             <Card key={v.id} style={{ marginBottom: 8, padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
               <div>
                 <div style={TX.body}>{v.company_name}</div>
                 <div style={{ ...TX.caption, marginTop: 2 }}>
-                  {v.profiles?.name ?? 'Unnamed advertiser'} · {v.profiles?.email}
+                  {v.profiles?.name ?? t('admin.advVerify.unnamed')} · {v.profiles?.email}
                 </div>
               </div>
               <Badge status={v.status === 'rejected' ? 'rejected' : 'verified'}>
-                {v.status === 'rejected' ? 'Rejected' : 'Verified'}
+                {v.status === 'rejected' ? t('admin.rejected') : t('admin.verified')}
               </Badge>
             </Card>
           ))}

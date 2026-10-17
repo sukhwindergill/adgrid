@@ -8,6 +8,7 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { BrandIcon } from '../../components/shared/BrandIcon.jsx';
 import { IconWarning } from '../../components/icons.jsx';
+import { useT } from '../../i18n/useT.js';
 
 // Product-audit finding (not from a written spec): this page used to render
 // a full "Integrations" console -- connection status badges, a KPI row, an
@@ -39,6 +40,7 @@ const PLANNED_PLATFORMS = [
 ];
 
 function WebhookCard() {
+  const { t, tx } = useT();
   const [loading, setLoading] = useState(true);
   const [url, setUrl] = useState('');
   const [secret, setSecret] = useState('');
@@ -120,12 +122,12 @@ function WebhookCard() {
     <Card style={{ padding: 20, marginBottom: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
         <BrandIcon id="webhook" size={16} />
-        <div style={TX.title}>Custom Webhook</div>
+        <div style={TX.title}>{t('opInteg.webhook')}</div>
       </div>
       <div style={{ ...TX.helper, marginBottom: 12, lineHeight: 1.5 }}>
-        Receive a signed <code>POST</code> for events on your own screens/campaigns/payouts as they happen -- campaign submitted, screen offline or dropped SLA, delivery shortfall credited, payout failed, dispute resolved. Connect it to Zapier, Make, or your own backend.
+        {tx('opInteg.webhookBody', { code: chunk => <code>{chunk}</code> })}
       </div>
-      <label style={{ ...TX.caption, display: 'block', marginBottom: 4 }}>Webhook URL</label>
+      <label style={{ ...TX.caption, display: 'block', marginBottom: 4 }}>{t('opInteg.url')}</label>
       <input
         type="url"
         value={url}
@@ -133,28 +135,28 @@ function WebhookCard() {
         placeholder="https://example.com/adgrid-webhook"
         style={{ width: '100%', padding: '8px 10px', fontSize: T.base, fontFamily: F.sans, border: `1px solid ${C.border}`, borderRadius: 6, marginBottom: 10, boxSizing: 'border-box' }}
       />
-      <label style={{ ...TX.caption, display: 'block', marginBottom: 4 }}>Signing secret (optional)</label>
+      <label style={{ ...TX.caption, display: 'block', marginBottom: 4 }}>{t('opInteg.secret')}</label>
       <input
         type="text"
         value={secret}
         onChange={e => setSecret(e.target.value)}
-        placeholder="Used to sign each delivery as X-AdGrid-Signature"
+        placeholder={t('opInteg.secretPlaceholder')}
         style={{ width: '100%', padding: '8px 10px', fontSize: T.base, fontFamily: F.sans, border: `1px solid ${C.border}`, borderRadius: 6, marginBottom: 12, boxSizing: 'border-box' }}
       />
       {error && <div style={{ ...TX.error, marginBottom: 8 }}>{error}</div>}
-      {testResult === 'ok' && <div style={{ fontSize: T.sm, color: C.greenText, fontFamily: F.sans, marginBottom: 8 }}>Test event delivered successfully.</div>}
-      {testResult === 'fail' && <div style={{ ...TX.error, marginBottom: 8 }}>Test event delivery failed -- check the URL and that your endpoint is reachable.</div>}
+      {testResult === 'ok' && <div style={{ fontSize: T.sm, color: C.greenText, fontFamily: F.sans, marginBottom: 8 }}>{t('opInteg.testOk')}</div>}
+      {testResult === 'fail' && <div style={{ ...TX.error, marginBottom: 8 }}>{t('opInteg.testFail')}</div>}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <Btn variant="secondary" size="sm" onClick={handleSave} disabled={saving || !url}>
-          {saving ? 'Saving…' : hasSaved ? 'Save changes' : 'Save webhook'}
+          {saving ? t('common.saving') : hasSaved ? t('opInteg.saveChanges') : t('opInteg.save')}
         </Btn>
         {hasSaved && (
           <>
             <Btn variant="ghost" size="sm" onClick={handleToggle}>
-              {enabled ? 'Disable' : 'Enable'}
+              {enabled ? t('rules.disable') : t('rules.enable')}
             </Btn>
             <Btn variant="ghost" size="sm" onClick={handleTest} disabled={testing || !enabled}>
-              {testing ? 'Sending…' : 'Send test event'}
+              {testing ? t('opInteg.sending') : t('opInteg.sendTest')}
             </Btn>
           </>
         )}
@@ -164,19 +166,20 @@ function WebhookCard() {
 }
 
 export function IntegrationsView() {
+  const { t, tOr } = useT();
   return (
     <div>
-      <PageHeader title="Integrations" subtitle="Connect ADGRID scan and impression data to your existing tools" />
+      <PageHeader title={t('opInteg.title')} subtitle={t('opInteg.subtitle')} />
 
       <Card style={{ padding: 20, marginBottom: 20, borderLeft: `3px solid ${C.amber}` }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <span style={{ flexShrink: 0, marginTop: 2 }}><IconWarning size={16} /></span>
           <div>
             <div style={{ ...TX.strong, marginBottom: 4 }}>
-              Operator-side integrations aren't available yet
+              {t('opInteg.notYet')}
             </div>
             <div style={{ ...TX.bodySub, lineHeight: 1.6 }}>
-              Custom Webhook below is real and working -- everything else on this page is a preview of what's planned. Advertisers can already connect Meta, Google Ads, and Shopify from their own Integrations page.
+              {t('opInteg.notYetBody')}
             </div>
           </div>
         </div>
@@ -185,7 +188,7 @@ export function IntegrationsView() {
       <WebhookCard />
 
       <div style={{ ...TX.helper, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
-        Planned
+        {t('opInteg.planned')}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
         {PLANNED_PLATFORMS.map(p => (
@@ -194,7 +197,7 @@ export function IntegrationsView() {
               <BrandIcon id={p.id} size={16} />
               <div>
                 <div style={TX.strong}>{p.name}</div>
-                <div style={TX.caption}>{p.category}</div>
+                <div style={TX.caption}>{tOr(`opInteg.category.${p.category}`, p.category)}</div>
               </div>
             </div>
           </Card>

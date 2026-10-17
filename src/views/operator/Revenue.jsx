@@ -19,9 +19,11 @@ import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { SkeletonRow, SkeletonTable } from '../../components/primitives/Skeleton.jsx';
 import { IconDollar, IconBank, IconScreen } from '../../components/icons.jsx';
+import { useT } from '../../i18n/useT.js';
+import { tList } from '../../i18n/core.js';
 
 function revenueToCsv(rows, ownerRevenueShare) {
-  const header = ['Campaign', 'Screen', 'City', 'Gross', 'Platform', 'Owner', 'Status'];
+  const header = tList('op.revenue.csv');
   const lines = rows.map(c => {
     const split = computeRevenueSplit(c.budget, ownerRevenueShare);
     return [c.advertiser, c.screen, c.city, c.budget, split.platform, split.owner, c.status];
@@ -51,6 +53,8 @@ export function Revenue({ operatorScreenIds = [] }) {
   const [period, setPeriod] = useState(30);
   const { isMobile } = useBreakpoint();
   const { profile } = useAuth();
+  const { t, tx, formatCurrency } = useT();
+  const money = n => formatCurrency(n, { minimumFractionDigits: 0 });
   const ownerRevenueShare = profile?.owner_revenue_share ?? DEFAULT_OWNER_REVENUE_SHARE;
   const ownerPct = Math.round(ownerRevenueShare * 100);
 
@@ -187,15 +191,15 @@ export function Revenue({ operatorScreenIds = [] }) {
 
   return (
     <div>
-      <PageHeader title="Revenue" subtitle="Platform earnings and owner payouts"
+      <PageHeader title={t('op.revenue.title')} subtitle={t('op.revenue.subtitle')}
         actions={
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {[[30, '30d'], [90, '90d'], [365, '365d'], [null, 'All']].map(([d, label]) => (
+            {[[30, '30d'], [90, '90d'], [365, '365d'], [null, t('op.revenue.all')]].map(([d, label]) => (
               <Chip key={label} selected={period === d} onClick={() => setPeriod(d)} style={{
                 padding: '5px 12px', borderRadius: 8, fontWeight: 500, transition: 'background 0.15s',
               }}>{label}</Chip>
             ))}
-            <Btn variant="secondary" size="sm" onClick={() => downloadCsv(revenueToCsv(filteredCampaigns, ownerRevenueShare), 'adgrid-revenue.csv')}>↓ Export Report</Btn>
+            <Btn variant="secondary" size="sm" onClick={() => downloadCsv(revenueToCsv(filteredCampaigns, ownerRevenueShare), 'adgrid-revenue.csv')}>{t('op.revenue.exportReport')}</Btn>
           </div>
         } />
 
@@ -203,30 +207,27 @@ export function Revenue({ operatorScreenIds = [] }) {
         <div style={{ ...TX.body, display: 'flex', gap: 8, padding: '12px 16px', marginBottom: 20, background: C.amberSoft, border: `1px solid ${C.amber}44`, borderRadius: 8, lineHeight: 1.5 }}>
           <span style={{ flexShrink: 0, color: C.amberText }}><IconScreen size={16} /></span>
           <span>
-            <strong>Fill rate dropped {Math.abs(fillRateTrend.deltaPts)} points</strong> — paid ads made up{' '}
-            {Math.round(fillRateTrend.currentRate)}% of impressions in the last 30 days, down from{' '}
-            {Math.round(fillRateTrend.priorRate)}% the 30 days before. More airtime is going to house ads
-            instead of paying advertisers — consider adjusting pricing or checking your screen's listing.
+            {tx('op.revenue.fillDrop', { b: chunk => <strong>{chunk}</strong>, pts: Math.abs(fillRateTrend.deltaPts), current: Math.round(fillRateTrend.currentRate), prior: Math.round(fillRateTrend.priorRate) })}
           </span>
         </div>
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(5,1fr)', gap: 14, marginBottom: 24 }}>
-        <KPI label="Total Ad Spend"   value={`$${total.toLocaleString()}`}    sub="from advertisers" trend={spendTrend} trendLabel="vs prior 30 days" icon={<IconDollar size={16} />} />
-        <KPI label="Platform Revenue" value={`$${platform.toLocaleString()}`} sub={`${100 - ownerPct}% of spend`} color={C.blue} icon={<IconDollar size={16} />} />
-        <KPI label="Owner Payouts"    value={`$${owners.toLocaleString()}`}   sub={`${ownerPct}% of spend`} color={C.green} icon={<IconBank size={16} />} />
-        <KPI label="Given Up to House Ads" value={`$${houseAdOpportunityCost.toLocaleString()}`} sub="estimated, at CPM floor" color={C.textSub} icon={<IconScreen size={16} />} />
+        <KPI label={t('op.revenue.kpiSpend')} value={money(total)} sub={t('op.revenue.kpiSpendSub')} trend={spendTrend} trendLabel={t('dash.vsPrior')} icon={<IconDollar size={16} />} />
+        <KPI label={t('op.revenue.kpiPlatform')} value={money(platform)} sub={t('op.revenue.pctOfSpend', { pct: 100 - ownerPct })} color={C.blue} icon={<IconDollar size={16} />} />
+        <KPI label={t('op.revenue.kpiOwner')} value={money(owners)} sub={t('op.revenue.pctOfSpend', { pct: ownerPct })} color={C.green} icon={<IconBank size={16} />} />
+        <KPI label={t('op.revenue.kpiHouse')} value={money(houseAdOpportunityCost)} sub={t('op.revenue.kpiHouseSub')} color={C.textSub} icon={<IconScreen size={16} />} />
         {programmaticFills.length > 0 && (
-          <KPI label="Programmatic Revenue" value={`$${programmaticRevenue.toLocaleString()}`} sub={`${programmaticFills.length} fill${programmaticFills.length !== 1 ? 's' : ''} played`} color={C.green} icon={<IconDollar size={16} />} />
+          <KPI label={t('op.revenue.kpiProgrammatic')} value={money(programmaticRevenue)} sub={t('op.revenue.fills', { count: programmaticFills.length })} color={C.green} icon={<IconDollar size={16} />} />
         )}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <Card>
-          <div style={{ ...TX.title, marginBottom: 16 }}>Revenue Split</div>
+          <div style={{ ...TX.title, marginBottom: 16 }}>{t('op.revenue.split')}</div>
           <div style={{ height: 8, borderRadius: 4, overflow: 'hidden', display: 'flex', marginBottom: 16 }}>
             <div style={{ width: `${ownerPct}%`, background: C.green }} /><div style={{ flex: 1, background: C.blue }} />
           </div>
-          {[[`Screen Owners (${ownerPct}%)`, `$${owners.toLocaleString()}`, C.green], [`Platform (${100 - ownerPct}%)`, `$${platform.toLocaleString()}`, C.blue]].map(([l, v, c]) => (
+          {[[t('op.revenue.owners', { pct: ownerPct }), money(owners), C.green], [t('op.revenue.platform', { pct: 100 - ownerPct }), money(platform), C.blue]].map(([l, v, c]) => (
             <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '11px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
               <span style={{ fontSize: T.base, color: C.textMid }}>{l}</span>
               <span style={{ fontSize: T.md, fontWeight: 700, color: c }}>{v}</span>
@@ -234,14 +235,14 @@ export function Revenue({ operatorScreenIds = [] }) {
           ))}
         </Card>
         <Card>
-          <div style={{ ...TX.title, marginBottom: 16 }}>By City</div>
+          <div style={{ ...TX.title, marginBottom: 16 }}>{t('op.revenue.byCity')}</div>
           {cities.map(city => {
             const rev = filteredCampaigns.filter(c => c.city === city).reduce((a, c) => a + c.budget, 0);
             return (
               <div key={city} style={{ marginBottom: 14 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, fontFamily: F.sans }}>
                   <span style={{ fontSize: T.base, fontWeight: 500, color: C.text }}>{city}</span>
-                  <span style={{ fontSize: T.base, fontWeight: 600, color: C.text }}>${rev.toLocaleString()}</span>
+                  <span style={{ fontSize: T.base, fontWeight: 600, color: C.text }}>{money(rev)}</span>
                 </div>
                 <ProgressBar value={rev} max={maxRev} height={5} />
               </div>
@@ -251,16 +252,16 @@ export function Revenue({ operatorScreenIds = [] }) {
       </div>
       <Table
         columns={[
-          { key: 'advertiser', label: 'Campaign', render: (v, r) => <div><div style={{ fontWeight: 500, color: C.text, fontFamily: F.sans }}>{v}</div><div style={TX.caption}>{r.city}</div></div> },
-          { key: 'screen',   label: 'Screen' },
-          { key: 'budget',   label: 'Gross',        render: v => <span style={{ fontWeight: 600, fontFamily: F.mono }}>${v.toLocaleString()}</span> },
-          { key: 'budget',   label: `Platform (${100 - ownerPct}%)`, render: v => <span style={{ color: C.blueText, fontFamily: F.mono }}>${computeRevenueSplit(v, ownerRevenueShare).platform.toLocaleString()}</span> },
-          { key: 'budget',   label: `Owner (${ownerPct}%)`,  render: v => <span style={{ color: C.greenText, fontFamily: F.mono }}>${computeRevenueSplit(v, ownerRevenueShare).owner.toLocaleString()}</span> },
-          { key: 'status',   label: 'Status',       render: v => <Badge status={v} /> },
+          { key: 'advertiser', label: t('op.revenue.campaign'), render: (v, r) => <div><div style={{ fontWeight: 500, color: C.text, fontFamily: F.sans }}>{v}</div><div style={TX.caption}>{r.city}</div></div> },
+          { key: 'screen',   label: t('op.revenue.screen') },
+          { key: 'budget',   label: t('op.revenue.gross'), render: v => <span style={{ fontWeight: 600, fontFamily: F.mono }}>{money(v)}</span> },
+          { key: 'budget',   label: t('op.revenue.platform', { pct: 100 - ownerPct }), render: v => <span style={{ color: C.blueText, fontFamily: F.mono }}>{money(computeRevenueSplit(v, ownerRevenueShare).platform)}</span> },
+          { key: 'budget',   label: t('op.revenue.owner', { pct: ownerPct }), render: v => <span style={{ color: C.greenText, fontFamily: F.mono }}>{money(computeRevenueSplit(v, ownerRevenueShare).owner)}</span> },
+          { key: 'status',   label: t('op.revenue.status'), render: v => <Badge status={v} /> },
         ]}
         rows={filteredCampaigns}
-        emptyTitle={loadError ? "Couldn't load revenue data" : undefined}
-        emptyDescription={loadError ? 'Check your connection and try again.' : undefined} />
+        emptyTitle={loadError ? t('op.revenue.loadError') : undefined}
+        emptyDescription={loadError ? t('op.revenue.loadErrorSub') : undefined} />
     </div>
   );
 }

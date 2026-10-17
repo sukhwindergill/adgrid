@@ -16,11 +16,12 @@ import { normalizeBooking } from '../../lib/normalizeBooking.js';
 import { groupByCampaignId, rollupGroup } from '../../lib/campaignRollup.js';
 import { CampaignRow } from './CampaignRow.jsx';
 import { CampaignComparisonTable } from '../../components/shared/CampaignComparisonTable.jsx';
-import { pluralize } from '../../lib/pluralize.js';
 import { IconClipboard, IconWarning } from '../../components/icons.jsx';
+import { useT } from '../../i18n/useT.js';
+import { tList } from '../../i18n/core.js';
 
 const PAGE_SIZE = 25;
-const STATUS_TABS = [['all', 'All'], ['active', 'Active'], ['scheduled', 'Scheduled'], ['pending_review', 'Pending Review'], ['paused', 'Paused'], ['completed', 'Completed']];
+const STATUS_TABS = ['all', 'active', 'scheduled', 'pending_review', 'paused', 'completed'];
 
 // Owns its own paginated, server-scoped `bookings` fetch instead of
 // filtering the app-wide unbounded array (App.jsx's `campaigns` state --
@@ -35,6 +36,9 @@ const STATUS_TABS = [['all', 'All'], ['active', 'Active'], ['scheduled', 'Schedu
 // see Revenue.jsx for exact spend totals.
 export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScreens = [], setCampaigns, setDetail, loadError, loading = false, onNewCampaign, allowCancel = false, canReview = false, onApprovalChange }) {
   const [filter, setFilter] = useState('all');
+  const { t, tOr, formatCurrency, formatNumber } = useT();
+  const money = n => formatCurrency(n, { minimumFractionDigits: 0 });
+  const tabLabel = v => (v === 'all' ? t('op.campaigns.all') : tOr(`ui.status.${v}`, v));
   const [city, setCity]     = useState('All');
   const [campaignScreens, setCampaignScreens] = useState({});
   const [screenData, setScreenData] = useState({});
@@ -217,7 +221,7 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
   // pull, which is the same unbounded-fetch trap this whole refactor
   // exists to close.
   function exportCSV(exportRows) {
-    const headers = ['ID', 'Advertiser', 'Screen Count', 'City', 'Status', 'Budget', 'Start', 'End', 'Impressions', 'Scans'];
+    const headers = tList('op.campaigns.csv');
     const escape = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const lines = exportRows.map(c => {
       const screens = campaignScreens[c.id] || [];
@@ -279,14 +283,14 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
         </div>
       )}
 
-      <PageHeader title="Campaigns"
-        subtitle={`${totalCount} ${filter === 'all' ? 'total' : STATUS_TABS.find(([v]) => v === filter)?.[1].toLowerCase()}`}
+      <PageHeader title={t('op.campaigns.title')}
+        subtitle={filter === 'all' ? t('op.campaigns.subtitleAll', { count: totalCount }) : t('op.campaigns.subtitleStatus', { count: totalCount, status: tabLabel(filter).toLowerCase() })}
         actions={<>
           <Btn variant={compareMode ? 'primary' : 'secondary'} size="sm" onClick={() => compareMode ? exitCompare() : setCompareMode(true)}>
-            {compareMode ? '✕ Exit Compare' : '⇄ Compare'}
+            {compareMode ? t('op.campaigns.exitCompare') : t('op.campaigns.compare')}
           </Btn>
-          <Btn variant="secondary" size="sm" onClick={() => exportCSV(shown)}>↓ Export CSV</Btn>
-          <Btn onClick={onNewCampaign}>+ New Campaign</Btn>
+          <Btn variant="secondary" size="sm" onClick={() => exportCSV(shown)}>{t('op.campaigns.exportCsv')}</Btn>
+          <Btn onClick={onNewCampaign}>{t('op.campaigns.newCampaign')}</Btn>
         </>} />
 
       {compareMode && (
@@ -294,22 +298,22 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
           ? <CampaignComparisonTable campaigns={compareCampaigns} onRemove={toggleCompare} />
           : (
             <div style={{ ...TX.bodySub, padding: '14px 20px', marginBottom: 20, background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8 }}>
-              Select two or more campaigns below to compare spend, CPM, and cost per scan side by side.
+              {t('op.campaigns.compareHint')}
             </div>
           )
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(2,1fr)', gap: 12, marginBottom: 24, maxWidth: isMobile ? '100%' : 400 }}>
-        <KPI label="Total Campaigns" value={totalCount} icon={<IconClipboard size={16} />} />
-        <KPI label="Active Now"      value={activeCount} color={C.green} icon="▶" />
+        <KPI label={t('op.campaigns.kpiTotal')} value={totalCount} icon={<IconClipboard size={16} />} />
+        <KPI label={t('op.campaigns.kpiActive')} value={activeCount} color={C.green} icon="▶" />
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ display: 'flex', gap: 4 }}>
-          {STATUS_TABS.map(([v, l]) => (
+          {STATUS_TABS.map(v => (
             <Chip key={v} selected={filter === v} onClick={() => setFilter(v)} style={{
               padding: '6px 14px', borderRadius: 20, fontWeight: 500, transition: 'all 0.15s',
-            }}>{l}</Chip>
+            }}>{tabLabel(v)}</Chip>
           ))}
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -317,12 +321,12 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
             type="search"
             value={searchInput}
             onChange={e => setSearchInput(e.target.value)}
-            placeholder="Search campaigns…"
-            aria-label="Search campaigns"
+            placeholder={t('op.campaigns.searchPlaceholder')}
+            aria-label={t('op.campaigns.searchLabel')}
             style={{ padding: '6px 12px', fontSize: T.sm, minWidth: isMobile ? 0 : 200, opacity: rowsLoading ? 0.7 : 1 }}
           />
-          <SelInput aria-label="Filter by city" value={city} onChange={e => setCity(e.target.value)} style={{ padding: '6px 12px', fontSize: T.sm, color: C.textMid }}>
-            {cities.map(c => <option key={c}>{c}</option>)}
+          <SelInput aria-label={t('op.campaigns.cityFilter')} value={city} onChange={e => setCity(e.target.value)} style={{ padding: '6px 12px', fontSize: T.sm, color: C.textMid }}>
+            {cities.map(c => <option key={c} value={c}>{c === 'All' ? t('op.campaigns.all') : c}</option>)}
           </SelInput>
         </div>
       </div>
@@ -332,22 +336,22 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
           {totalCount === 0 && filter === 'all' && !search ? (
             <>
               <div style={{ ...TX.heading, marginBottom: 6 }}>
-                No campaigns yet
+                {t('op.campaigns.emptyTitle')}
               </div>
               <div style={{ ...TX.bodySub, maxWidth: 320, margin: '0 auto 20px' }}>
-                Create your first campaign to start reaching customers on your screens.
+                {t('op.campaigns.emptyBody')}
               </div>
               <Btn onClick={onNewCampaign}>
-                + Create your first campaign
+                {t('op.campaigns.createFirst')}
               </Btn>
             </>
           ) : (
             <>
               <div style={{ ...TX.titleLg, marginBottom: 6 }}>
-                No campaigns match these filters
+                {t('op.campaigns.noMatch')}
               </div>
               <div style={TX.bodySub}>
-                Try adjusting the search, status filter or city selector.
+                {t('op.campaigns.noMatchBody')}
               </div>
             </>
           )}
@@ -391,17 +395,17 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
                   <div>
                     <div style={{ fontWeight: 700, color: C.text, fontFamily: F.sans }}>{expanded ? '▾' : '▸'} {parentName}</div>
                     <div style={{ ...TX.caption, marginTop: 2 }}>
-                      {withBadge.length} {pluralize(withBadge.length, 'targeting group')} · {totalScreens} {pluralize(totalScreens, 'screen')} · ${rollup.spent.toLocaleString()} of ${rollup.budget.toLocaleString()}
+                      {t('op.campaigns.groupMeta', { groups: t('op.campaigns.groups', { count: withBadge.length }), screens: t('common.screensCount', { count: totalScreens }), spent: money(rollup.spent), budget: money(rollup.budget) })}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 20 }}>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontFamily: F.mono, fontSize: T.base, fontWeight: 600, color: C.text }}>{(rollup.impressions / 1000).toFixed(1)}K</div>
-                      <div style={TX.caption}>impressions</div>
+                      <div style={{ fontFamily: F.mono, fontSize: T.base, fontWeight: 600, color: C.text }}>{t('dash.thousands', { n: formatNumber(rollup.impressions / 1000, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) })}</div>
+                      <div style={TX.caption}>{t('op.campaigns.impressions')}</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontFamily: F.mono, fontSize: T.base, fontWeight: 600, color: C.purple }}>{rollup.scans}</div>
-                      <div style={TX.caption}>scans</div>
+                      <div style={TX.caption}>{t('op.campaigns.scans')}</div>
                     </div>
                   </div>
                 </div>
@@ -418,7 +422,7 @@ export function Campaigns({ advertiserId = null, operatorScreenIds = null, dbScr
           })}
           {hasMore && (
             <Btn variant="secondary" onClick={loadMore} disabled={loadingMore} style={{ alignSelf: 'center', marginTop: 8 }}>
-              {loadingMore ? 'Loading…' : `Load more (${totalCount - rows.length} remaining)`}
+              {loadingMore ? t('common.loading') : t('op.campaigns.loadMore', { count: totalCount - rows.length })}
             </Btn>
           )}
         </div>

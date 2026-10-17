@@ -21,6 +21,8 @@ import { IconBolt, IconDollar, IconScreen, IconCheckCircle, IconCard, IconWarnin
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { HardwareInstructions } from '../../components/screens/ScreenPairing.jsx';
 import { HARDWARE_OPTIONS } from '../../lib/screenPairing.js';
+import { useT } from '../../i18n/useT.js';
+import { tList } from '../../i18n/core.js';
 
 const pillChip = { padding: '7px 16px', borderRadius: 20, fontWeight: 500, transition: 'all 0.15s' };
 
@@ -28,14 +30,15 @@ const pillChip = { padding: '7px 16px', borderRadius: 20, fontWeight: 500, trans
 
 function WizardProgress({ step, total, onCancel }) {
   const pct = ((step - 1) / (total - 1)) * 100;
+  const { t } = useT();
   return (
     <div style={{ marginBottom: 32 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <div style={TX.helperMuted}>
-          Step {step} of {total}
+          {t('scr.onboard.stepOf', { step, total })}
         </div>
         <Btn variant="subtle" size="sm" onClick={onCancel}>
-          Cancel
+          {t('common.cancel')}
         </Btn>
       </div>
       <div style={{ height: 4, background: C.border, borderRadius: 2 }}>
@@ -46,7 +49,7 @@ function WizardProgress({ step, total, onCancel }) {
         }} />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-        {['Welcome', 'Register', 'Setup', 'Profile', 'Connect', 'Payouts'].map((label, i) => (
+        {tList('scr.onboard.steps').map((label, i) => (
           <div key={label} style={{
             fontSize: T.xs, fontFamily: F.sans,
             color: i + 1 <= step ? C.purple : C.textMuted,
@@ -62,22 +65,23 @@ function WizardProgress({ step, total, onCancel }) {
 
 function StepWelcome({ onNext }) {
   const { isMobile } = useBreakpoint();
+  const { t } = useT();
   return (
     <div style={{ maxWidth: 560, margin: '0 auto' }}>
       <Card style={{ padding: isMobile ? 24 : 40, textAlign: 'center' }}>
         <div style={{ color: C.purple, marginBottom: 20, display: 'flex', justifyContent: 'center' }}><IconScreen size={48} /></div>
         <h1 style={{ fontSize: T.xxl, fontWeight: 800, color: C.text, fontFamily: F.display, marginBottom: 12, margin: '0 0 12px' }}>
-          Let's get your screen on the network
+          {t('scr.onboard.welcomeTitle')}
         </h1>
         <p style={{ fontSize: T.md, color: C.textSub, fontFamily: F.sans, lineHeight: 1.6, margin: '0 0 32px' }}>
-          ADGRID connects your display to advertisers who pay to reach your audience. Setup takes about 5 minutes.
+          {t('scr.onboard.welcomeBody')}
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 16, marginBottom: 36 }}>
           {[
-            { icon: IconScreen, text: 'Works on any display — TV, monitor, or commercial screen' },
-            { icon: IconBolt, text: '5 minutes to set up' },
-            { icon: IconDollar, text: 'Start earning from day one' },
+            { icon: IconScreen, text: t('scr.onboard.perkDisplay') },
+            { icon: IconBolt, text: t('scr.onboard.perkFast') },
+            { icon: IconDollar, text: t('scr.onboard.perkEarn') },
           ].map(({ icon: Icon, text }) => (
             <div key={text} style={{
               padding: '16px 12px', background: C.surfaceAlt, borderRadius: 10,
@@ -92,7 +96,7 @@ function StepWelcome({ onNext }) {
         </div>
 
         <Btn onClick={onNext} style={{ width: '100%', fontSize: T.lg, padding: '14px 24px' }}>
-          Get Started →
+          {t('scr.onboard.getStarted')}
         </Btn>
       </Card>
     </div>
@@ -141,6 +145,8 @@ function PillGroup({ options, value, onChange }) {
 //     not required to get a token and start hardware setup.
 function StepRegister({ onBack, onScreenCreated }) {
   const { user } = useAuth();
+  const { t, tOr } = useT();
+  const stateLabel = code => tOr(`venue.stateWord.${code}`, STATE_LABEL[code] || t('scr.onboard.stateFallback'));
   const [form, setForm] = useState({
     name: '', owner_name: '', country: 'CA', state: '', city: '',
     venue_category: '', venue_subtype: '',
@@ -161,12 +167,12 @@ function StepRegister({ onBack, onScreenCreated }) {
   // field sees an unresponsive button and no clue why. missingFields drives
   // an inline "still need: ..." hint so the disabled state is never a dead end.
   const missingFields = [
-    !form.name.trim() && 'screen name',
-    !form.owner_name.trim() && 'business / owner name',
-    !form.state.trim() && (STATE_LABEL[form.country] || 'province / state'),
-    !form.city.trim() && 'city',
-    !form.venue_category && 'venue category',
-    subtypes.length > 0 && !form.venue_subtype && 'venue type',
+    !form.name.trim() && t('scr.onboard.missing.name'),
+    !form.owner_name.trim() && t('scr.onboard.missing.owner'),
+    !form.state.trim() && (STATE_LABEL[form.country] ? stateLabel(form.country).toLowerCase() : t('scr.onboard.missing.state')),
+    !form.city.trim() && t('scr.onboard.missing.city'),
+    !form.venue_category && t('scr.onboard.missing.category'),
+    subtypes.length > 0 && !form.venue_subtype && t('scr.onboard.missing.type'),
   ].filter(Boolean);
 
   const valid = missingFields.length === 0;
@@ -236,46 +242,46 @@ function StepRegister({ onBack, onScreenCreated }) {
     <div style={{ maxWidth: 600, margin: '0 auto' }}>
       <Card style={{ padding: 36 }}>
         <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>
-          Tell us about your screen
+          {t('scr.onboard.registerTitle')}
         </h2>
         <p style={{ ...TX.bodySub, margin: '0 0 28px' }}>
-          These details help advertisers find and book your screen.
+          {t('scr.onboard.registerSub')}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 28 }}>
-          <Inp label="Screen Name" placeholder="e.g. Corner Brew — King St"
+          <Inp label={t('scr.onboard.screenName')} placeholder={t('scr.onboard.screenNamePh')}
             value={form.name} onChange={e => set('name', e.target.value)} />
 
-          <Inp label="Business / Owner Name" placeholder="e.g. Corner Brew Coffee"
+          <Inp label={t('scr.onboard.owner')} placeholder={t('scr.onboard.ownerPh')}
             value={form.owner_name} onChange={e => set('owner_name', e.target.value)} />
 
-          <SelInput label="Country" value={form.country} onChange={e => setForm(s => ({ ...s, country: e.target.value, state: '', city: '' }))}>
-            {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+          <SelInput label={t('scr.onboard.country')} value={form.country} onChange={e => setForm(s => ({ ...s, country: e.target.value, state: '', city: '' }))}>
+            {COUNTRIES.map(c => <option key={c.code} value={c.code}>{tOr(`scr.country.${c.code}`, c.label)}</option>)}
           </SelInput>
 
           <Inp
-            label={STATE_LABEL[form.country] || 'Province / State'}
-            placeholder="e.g. Ontario"
+            label={STATE_LABEL[form.country] ? stateLabel(form.country) : t('scr.onboard.stateFallback')}
+            placeholder={t('scr.onboard.statePh')}
             value={form.state}
             onChange={e => set('state', e.target.value)}
           />
 
-          <Inp label="City" placeholder="e.g. Toronto"
+          <Inp label={t('scr.onboard.city')} placeholder={t('scr.onboard.cityPh')}
             value={form.city} onChange={e => set('city', e.target.value)} />
 
           <div>
-            <SelInput label="Venue Category" value={form.venue_category} onChange={e => handleCategoryChange(e.target.value)}>
-              <option value="">Select category…</option>
+            <SelInput label={t('scr.onboard.category')} value={form.venue_category} onChange={e => handleCategoryChange(e.target.value)}>
+              <option value="">{t('scr.onboard.selectCategory')}</option>
               {Object.entries(VENUE_TAXONOMY).map(([key, { label }]) => (
-                <option key={key} value={key}>{label}</option>
+                <option key={key} value={key}>{tOr(`venue.category.${key}`, label)}</option>
               ))}
             </SelInput>
           </div>
 
           {subtypes.length > 0 && (
-            <SelInput label="Venue Type" value={form.venue_subtype} onChange={e => set('venue_subtype', e.target.value)}>
-              <option value="">Select type…</option>
-              {subtypes.map(s => <option key={s} value={s}>{s}</option>)}
+            <SelInput label={t('scr.onboard.type')} value={form.venue_subtype} onChange={e => set('venue_subtype', e.target.value)}>
+              <option value="">{t('scr.onboard.selectType')}</option>
+              {subtypes.map(s => <option key={s} value={s}>{tOr(`venue.subtype.${s}`, s)}</option>)}
             </SelInput>
           )}
 
@@ -283,21 +289,20 @@ function StepRegister({ onBack, onScreenCreated }) {
         </div>
 
         <div style={{ ...TX.helperMuted, marginBottom: 20, lineHeight: 1.5 }}>
-          Exact address, display size, and foot traffic come next — after you've got the display
-          running, so you're not guessing at specs before you've even plugged it in.
+          {t('scr.onboard.laterHint')}
         </div>
 
         <ErrorBanner message={err} onDismiss={() => setErr(null)} />
 
         {!valid && (
           <div style={{ ...TX.helperMuted, marginBottom: 10, textAlign: 'right' }}>
-            Still need: {missingFields.join(', ')}
+            {t('scr.onboard.stillNeed', { fields: missingFields.join(', ') })}
           </div>
         )}
         <div style={{ display: 'flex', gap: 10 }}>
-          <Btn variant="secondary" onClick={onBack} style={{ flex: 1 }}>← Back</Btn>
+          <Btn variant="secondary" onClick={onBack} style={{ flex: 1 }}>{t('scr.onboard.back')}</Btn>
           <Btn onClick={handleSubmit} disabled={!valid || saving} style={{ flex: 1 }}>
-            {saving ? 'Registering…' : 'Next →'}
+            {saving ? t('scr.onboard.registering') : t('scr.onboard.next')}
           </Btn>
         </div>
       </Card>
@@ -307,6 +312,7 @@ function StepRegister({ onBack, onScreenCreated }) {
 
 function StepSetup({ screen, onNext, onBack, onSkip }) {
   const [hardware, setHardware] = useState('Browser Kiosk');
+  const { t, tOr } = useT();
 
   return (
     <div style={{ maxWidth: 620, margin: '0 auto' }}>
@@ -321,16 +327,16 @@ function StepSetup({ screen, onNext, onBack, onSkip }) {
         </div>
 
         <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>
-          Set up your display
+          {t('scr.onboard.setupTitle')}
         </h2>
         <p style={{ ...TX.bodySub, margin: '0 0 24px' }}>
-          Choose your hardware, open the pairing page on the screen, and type in the code it shows.
+          {t('scr.onboard.setupSub')}
         </p>
 
         {/* Hardware selector */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
           {HARDWARE_OPTIONS.map(hw => (
-            <Chip key={hw} selected={hardware === hw} onClick={() => setHardware(hw)} style={pillChip}>{hw}</Chip>
+            <Chip key={hw} selected={hardware === hw} onClick={() => setHardware(hw)} style={pillChip}>{tOr(`scr.hw.${hw}`, hw)}</Chip>
           ))}
         </div>
 
@@ -340,11 +346,11 @@ function StepSetup({ screen, onNext, onBack, onSkip }) {
         </div>
 
         <div style={{ display: 'flex', gap: 10 }}>
-          <Btn variant="secondary" onClick={onBack} style={{ flex: 1 }}>← Back</Btn>
-          <Btn onClick={onNext} style={{ flex: 1 }}>I've completed setup →</Btn>
+          <Btn variant="secondary" onClick={onBack} style={{ flex: 1 }}>{t('scr.onboard.back')}</Btn>
+          <Btn onClick={onNext} style={{ flex: 1 }}>{t('scr.onboard.setupDone')}</Btn>
         </div>
         <div style={{ textAlign: 'center', marginTop: 12 }}>
-          <Btn variant="subtle" size="sm" onClick={onSkip}>Do this later →</Btn>
+          <Btn variant="subtle" size="sm" onClick={onSkip}>{t('scr.onboard.later')}</Btn>
         </div>
       </Card>
     </div>
@@ -374,6 +380,7 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
     lng: screen.lon ?? '',
   });
   const [hours, setHours] = useState(() => hoursFormFromScreen(screen));
+  const { t, tOr } = useT();
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
 
@@ -406,20 +413,19 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
     <div style={{ maxWidth: 600, margin: '0 auto' }}>
       <Card style={{ padding: 36 }}>
         <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>
-          Finish your screen's profile
+          {t('scr.onboard.profileTitle')}
         </h2>
         <p style={{ ...TX.bodySub, margin: '0 0 28px', lineHeight: 1.5 }}>
-          This is what advertisers see when deciding whether to book {screen.name}. You can skip it for
-          now, but the screen can't go live and start taking bookings until it's filled in.
+          {t('scr.onboard.profileSub', { name: screen.name })}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 20 }}>
-          <Inp label="Location / Address" placeholder="e.g. King St W & Bay St"
+          <Inp label={t('scr.edit.location')} placeholder={t('scr.onboard.locationPh')}
             value={form.location} onChange={e => set('location', e.target.value)} />
 
           <div>
             <div style={{ ...TX.label, marginBottom: 8 }}>
-              Screen Location
+              {t('scr.onboard.screenLocation')}
             </div>
             <ScreenLocationPicker
               value={form.lat !== '' && form.lng !== '' ? { lat: Number(form.lat), lng: Number(form.lng) } : null}
@@ -428,35 +434,35 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
           </div>
 
           <div>
-            <div style={{ ...TX.label, marginBottom: 8 }}>Environment</div>
+            <div style={{ ...TX.label, marginBottom: 8 }}>{t('scr.onboard.environment')}</div>
             <PillGroup
-              options={[{ value: 'indoor', label: 'Indoor' }, { value: 'outdoor', label: 'Outdoor' }]}
+              options={[{ value: 'indoor', label: t('scr.onboard.indoor') }, { value: 'outdoor', label: t('scr.onboard.outdoor') }]}
               value={form.environment}
               onChange={val => set('environment', val)}
             />
           </div>
 
           <div>
-            <div style={{ ...TX.label, marginBottom: 8 }}>Screen Position</div>
+            <div style={{ ...TX.label, marginBottom: 8 }}>{t('scr.onboard.screenPosition')}</div>
             <PillGroup
-              options={SCREEN_POSITION_OPTIONS}
+              options={SCREEN_POSITION_OPTIONS.map(o => ({ ...o, label: tOr(`scr.position.${o.value}`, o.label) }))}
               value={form.screen_position}
               onChange={val => set('screen_position', val)}
             />
           </div>
 
-          <Inp label="Display Size" placeholder="e.g. 55 inch 4K, 72 inch LED"
+          <Inp label={t('scr.edit.displaySize')} placeholder={t('scr.onboard.displaySizePh')}
             value={form.display_size} onChange={e => set('display_size', e.target.value)} />
 
           <Inp
-            label="Estimated monthly foot traffic"
+            label={t('scr.onboard.traffic')}
             type="number" min="0" step="1"
-            placeholder="e.g. 8000"
+            placeholder={t('scr.onboard.trafficPh')}
             value={form.monthly_traffic_estimate}
             onChange={e => set('monthly_traffic_estimate', e.target.value)}
           />
           <div style={{ ...TX.caption, marginTop: -10 }}>
-            Rough headcount past this screen per month. Drives the reach estimate advertisers see.
+            {t('scr.onboard.trafficHint')}
           </div>
 
           <OperatingHoursFields value={hours} onChange={setHours} />
@@ -465,13 +471,13 @@ function StepProfile({ screen, onNext, onBack, onSkip }) {
         <ErrorBanner message={err} onDismiss={() => setErr(null)} />
 
         <div style={{ display: 'flex', gap: 10 }}>
-          <Btn variant="secondary" onClick={onBack} style={{ flex: 1 }}>← Back</Btn>
+          <Btn variant="secondary" onClick={onBack} style={{ flex: 1 }}>{t('scr.onboard.back')}</Btn>
           <Btn onClick={handleSave} disabled={saving} style={{ flex: 1 }}>
-            {saving ? 'Saving…' : 'Save & continue →'}
+            {saving ? t('common.saving') : t('scr.onboard.saveContinue')}
           </Btn>
         </div>
         <div style={{ textAlign: 'center', marginTop: 12 }}>
-          <Btn variant="subtle" size="sm" onClick={onSkip}>Do this later →</Btn>
+          <Btn variant="subtle" size="sm" onClick={onSkip}>{t('scr.onboard.later')}</Btn>
         </div>
       </Card>
     </div>
@@ -482,6 +488,7 @@ function StepConnect({ screen, onDone, onSkip, onBack }) {
   // 'idle' | 'checking' | 'connected' | 'none' | 'needs_payout' | 'needs_profile'
   const [status, setStatus] = useState('idle');
   const { profile } = useAuth();
+  const { t } = useT();
 
   const check = async () => {
     setStatus('checking');
@@ -510,18 +517,18 @@ function StepConnect({ screen, onDone, onSkip, onBack }) {
           {status === 'connected' ? <IconCheckCircle size={48} /> : blockedByOwnAction ? <IconCard size={48} /> : status === 'none' ? <IconWarning size={48} /> : <IconSignal size={48} />}
         </div>
         <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
-          {status === 'connected' ? 'Screen is live!' : blockedByOwnAction ? 'Heartbeat confirmed' : 'Test your connection'}
+          {status === 'connected' ? t('scr.onboard.liveTitle') : blockedByOwnAction ? t('scr.onboard.heartbeatTitle') : t('scr.onboard.testTitle')}
         </h2>
         <p style={{ ...TX.bodySub, lineHeight: 1.6, margin: '0 0 28px' }}>
           {status === 'connected'
-            ? `${screen.name} is connected and sending heartbeats. You're all set.`
+            ? t('scr.onboard.liveBody', { name: screen.name })
             : status === 'needs_profile'
-            ? `${screen.name} is online. It can't go live yet, though — its listing profile (location, environment, display size, foot traffic) is still incomplete. Go back and finish it.`
+            ? t('scr.onboard.needsProfileBody', { name: screen.name })
             : status === 'needs_payout'
-            ? `${screen.name} is online. One more step before it can go live: set up payouts so you actually get paid when it's booked.`
+            ? t('scr.onboard.needsPayoutBody', { name: screen.name })
             : status === 'none'
-            ? 'No heartbeat detected yet. Make sure your display is running and try again.'
-            : "Click the button below after your display is running. We'll check if it's sending a heartbeat to our servers."}
+            ? t('scr.onboard.noneBody')
+            : t('scr.onboard.idleBody')}
         </p>
 
         {status !== 'connected' && !blockedByOwnAction && (
@@ -530,28 +537,28 @@ function StepConnect({ screen, onDone, onSkip, onBack }) {
             disabled={status === 'checking'}
             style={{ width: '100%', marginBottom: 12 }}
           >
-            {status === 'checking' ? 'Checking…' : status === 'none' ? 'Retry' : 'Test Connection'}
+            {status === 'checking' ? t('scr.onboard.checking') : status === 'none' ? t('scr.onboard.retry') : t('scr.onboard.testConnection')}
           </Btn>
         )}
 
         {status === 'needs_profile' && (
           <Btn onClick={onBack} style={{ width: '100%', marginBottom: 12 }}>
-            Finish profile →
+            {t('scr.onboard.finishProfile')}
           </Btn>
         )}
 
         {(status === 'connected' || status === 'needs_payout') && (
           <Btn onClick={onDone} style={{ width: '100%', marginBottom: 12 }}>
-            {status === 'needs_payout' ? 'Set up payouts →' : 'Go to my screen →'}
+            {status === 'needs_payout' ? t('scr.onboard.setupPayouts') : t('scr.onboard.goToScreen')}
           </Btn>
         )}
 
         <Btn variant="subtle" size="sm" onClick={onSkip}>
-          Skip for now →
+          {t('scr.onboard.skip')}
         </Btn>
       </Card>
       <div style={{ textAlign: 'center', marginTop: 12 }}>
-        <Btn variant="subtle" size="sm" onClick={onBack}>← Back to setup guide</Btn>
+        <Btn variant="subtle" size="sm" onClick={onBack}>{t('scr.onboard.backToGuide')}</Btn>
       </div>
     </div>
   );
@@ -564,6 +571,7 @@ function StepConnect({ screen, onDone, onSkip, onBack }) {
 function StepPayouts({ onDone, onSkip, onBack }) {
   const { profile } = useAuth();
   const [connecting, setConnecting] = useState(false);
+  const { t } = useT();
   const [error, setError] = useState(null);
   const connectStatus = profile?.connect_status;
 
@@ -573,7 +581,7 @@ function StepPayouts({ onDone, onSkip, onBack }) {
     const state = crypto.randomUUID();
     sessionStorage.setItem('stripe_connect_state', state);
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setError('Session expired. Please log in again.'); setConnecting(false); return; }
+    if (!session) { setError(t('settings.sessionExpired')); setConnecting(false); return; }
     try {
       const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-connect-account`, {
         method: 'POST',
@@ -581,7 +589,7 @@ function StepPayouts({ onDone, onSkip, onBack }) {
         body: JSON.stringify({ returnUrl: window.location.origin + '/app/screens', state }),
       });
       const json = await res.json();
-      if (!res.ok || !json.url) throw new Error(json.error ?? 'Failed to start Stripe Connect');
+      if (!res.ok || !json.url) throw new Error(json.error ?? t('op.settings.stripeStartFailed'));
       window.location.href = json.url;
     } catch (e) {
       setError(e.message);
@@ -595,12 +603,12 @@ function StepPayouts({ onDone, onSkip, onBack }) {
         <Card style={{ padding: 40, textAlign: 'center' }}>
           <div style={{ color: C.greenText, marginBottom: 20, display: 'flex', justifyContent: 'center' }}><IconCheckCircle size={48} /></div>
           <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
-            Payouts are set up
+            {t('scr.onboard.payoutsDoneTitle')}
           </h2>
           <p style={{ ...TX.bodySub, lineHeight: 1.6, margin: '0 0 28px' }}>
-            Your Stripe account is connected. You'll get paid automatically as campaigns run.
+            {t('scr.onboard.payoutsDoneBody')}
           </p>
-          <Btn onClick={onDone} style={{ width: '100%' }}>Finish →</Btn>
+          <Btn onClick={onDone} style={{ width: '100%' }}>{t('scr.onboard.finish')}</Btn>
         </Card>
       </div>
     );
@@ -611,22 +619,21 @@ function StepPayouts({ onDone, onSkip, onBack }) {
       <Card style={{ padding: 40, textAlign: 'center' }}>
         <div style={{ color: C.purple, marginBottom: 20, display: 'flex', justifyContent: 'center' }}><IconCard size={48} /></div>
         <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 12px' }}>
-          Set up payouts
+          {t('scr.onboard.payoutsTitle')}
         </h2>
         <p style={{ ...TX.bodySub, lineHeight: 1.6, margin: '0 0 28px' }}>
-          Connect a bank account via Stripe so you actually get paid when advertisers book your screen.
-          Without this, your cut of every campaign is held and never transferred.
+          {t('scr.onboard.payoutsBody')}
         </p>
         {error && <ErrorBanner message={error} />}
         <Btn onClick={startConnect} disabled={connecting} style={{ width: '100%', marginBottom: 12 }}>
-          {connecting ? 'Redirecting to Stripe…' : 'Connect with Stripe'}
+          {connecting ? t('op.settings.redirectingStripe') : t('op.settings.connectStripe')}
         </Btn>
         <Btn variant="subtle" size="sm" onClick={onSkip}>
-          Skip for now →
+          {t('scr.onboard.skip')}
         </Btn>
       </Card>
       <div style={{ textAlign: 'center', marginTop: 12 }}>
-        <Btn variant="subtle" size="sm" onClick={onBack}>← Back</Btn>
+        <Btn variant="subtle" size="sm" onClick={onBack}>{t('scr.onboard.back')}</Btn>
       </div>
     </div>
   );

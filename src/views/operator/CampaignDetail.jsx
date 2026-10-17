@@ -22,9 +22,13 @@ import { IconEdit, IconClock } from '../../components/icons.jsx';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
 import { isAwaitingPayment } from '../../lib/unpaidCampaigns.js';
 import { notifyCampaignRejected } from '../../lib/campaignNotifications.js';
+import { useT } from '../../i18n/useT.js';
 
 export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onDuplicate, canReview = false, setCampaigns, onApprovalChange, isAdvertiserView = false }) {
   const toast = useToast();
+  const { t, tOr, formatCurrency, formatNumber, formatPercent, formatDate } = useT();
+  const money = n => formatCurrency(n, { minimumFractionDigits: 0 });
+  const dayLabel = d => tOr(`common.days.short.${d}`, d);
   const [tab, setTab] = useState('overview');
   const [rejecting, setRejecting] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
@@ -65,12 +69,12 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
     if (!res.ok) {
       if (json.awaiting_approval) { toast.error(json.error); return; }
       toast.error(json.requires_action
-        ? 'Your card needs extra verification. Update it under Billing, then try again.'
-        : (json.error ?? 'Payment failed.'));
+        ? t('op.detail.cardVerify')
+        : (json.error ?? t('op.detail.paymentFailed')));
       return;
     }
     onUpdate({ ...c, status: 'scheduled', payment_status: 'paid', __skipServerWrite: true });
-    toast.success('Payment captured. Your campaign is scheduled.');
+    toast.success(t('op.detail.paymentCaptured'));
   }
 
   async function runStatusAction(action) {
@@ -83,9 +87,9 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
     });
     const json = await res.json().catch(() => ({}));
     setStatusActionLoading(false);
-    if (!res.ok) { toast.error(json.error ?? `Failed to ${action} campaign.`); return; }
+    if (!res.ok) { toast.error(json.error ?? t(`op.detail.actionFailed.${action}`)); return; }
     onUpdate({ ...c, status: json.status, __skipServerWrite: true });
-    toast.success(`Campaign ${action === 'pause' ? 'paused' : action === 'resume' ? 'resumed' : 'cancelled'}.`);
+    toast.success(t(`op.detail.actionDone.${action}`));
   }
 
   useEffect(() => {
@@ -96,7 +100,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
       .eq('campaign_id', c.id)
       .maybeSingle()
       .then(({ data, error }) => {
-        if (error) { toast.error('Failed to load delivery check results.'); return; }
+        if (error) { toast.error(t('op.detail.checkFailed')); return; }
         setDeliveryCheckRow(data ?? null);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -109,7 +113,7 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
   // shown otherwise -- see src/lib/dayparting.js and display-feed's
   // resolveDayWindow for how this is actually enforced on-screen.
   const scheduleLabel = c.dayparting
-    ? (c.days || []).map(d => `${d} ${c.dayparting[d]?.time_start}–${c.dayparting[d]?.time_end}`).join(', ')
+    ? (c.days || []).map(d => `${dayLabel(d)} ${c.dayparting[d]?.time_start}–${c.dayparting[d]?.time_end}`).join(', ')
     : `${c.timeStart}–${c.timeEnd}`;
 
   const hourly = Array.from({ length: 24 }, (_, h) => {
@@ -137,14 +141,14 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
       campaignName: c.campaign_name || c.advertiser,
       reason,
     });
-    toast.success('Campaign rejected.');
+    toast.success(t('op.detail.rejected'));
     onBack();
     onApprovalChange?.();
   };
 
   const statusAction = (s) => {
-    if (s === 'active') return <Btn variant="danger" size="sm" loading={statusActionLoading} onClick={() => runStatusAction('pause')}>⏸ Pause</Btn>;
-    if (s === 'paused') return <Btn variant="success" size="sm" loading={statusActionLoading} onClick={() => runStatusAction('resume')}>▶ Resume</Btn>;
+    if (s === 'active') return <Btn variant="danger" size="sm" loading={statusActionLoading} onClick={() => runStatusAction('pause')}>{t('op.detail.pause')}</Btn>;
+    if (s === 'paused') return <Btn variant="success" size="sm" loading={statusActionLoading} onClick={() => runStatusAction('resume')}>{t('op.detail.resume')}</Btn>;
     if (s === 'pending_review' && canReview) return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {rejecting ? (
@@ -153,8 +157,8 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
               autoFocus
               value={rejectReason}
               onChange={e => setRejectReason(e.target.value)}
-              placeholder="Reason for rejection…"
-              aria-label="Reason for rejection"
+              placeholder={t('op.detail.rejectPlaceholder')}
+              aria-label={t('op.detail.rejectLabel')}
               wrapperStyle={{ width: 220 }}
               style={{ padding: '5px 10px', borderRadius: 6, fontSize: T.sm, transition: 'border-color 0.15s' }}
               onKeyDown={e => {
@@ -162,14 +166,14 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
                 if (e.key === 'Escape') { setRejecting(false); setRejectReason(''); setRejectErr(null); }
               }}
             />
-            <Btn variant="danger" size="sm" disabled={rejectLoading} onClick={confirmReject}>{rejectLoading ? '…' : 'Confirm Reject'}</Btn>
-            <Btn variant="secondary" size="sm" onClick={() => { setRejecting(false); setRejectReason(''); setRejectErr(null); }}>Cancel</Btn>
+            <Btn variant="danger" size="sm" disabled={rejectLoading} onClick={confirmReject}>{rejectLoading ? '…' : t('op.detail.confirmReject')}</Btn>
+            <Btn variant="secondary" size="sm" onClick={() => { setRejecting(false); setRejectReason(''); setRejectErr(null); }}>{t('common.cancel')}</Btn>
             {rejectErr && <span style={{ fontSize: T.xs, color: C.redText, fontFamily: F.sans }}>{rejectErr}</span>}
           </>
         ) : (
           <>
             <ApproveBtn campaign={c} setCampaigns={setCampaigns} onSuccess={() => { onBack(); onApprovalChange?.(); }} />
-            <Btn variant="danger" size="sm" onClick={() => setRejecting(true)}>✗ Reject</Btn>
+            <Btn variant="danger" size="sm" onClick={() => setRejecting(true)}>{t('op.detail.reject')}</Btn>
           </>
         )}
       </div>
@@ -181,24 +185,24 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
     <div>
       <PageHeader
         title={c.advertiser}
-        subtitle={`${c.screen} · ${c.city} · ${c.category}`}
-        back="All Campaigns" onBack={onBack}
+        subtitle={`${c.screen} · ${c.city} · ${tOr(`categories.${c.category}`, c.category)}`}
+        back={t('op.detail.back')} onBack={onBack}
         actions={<>
-          {onAddTargeting && c.campaign_id && <Btn variant="secondary" size="sm" onClick={() => onAddTargeting(c)}>+ Add targeting group</Btn>}
-          {onDuplicate && <Btn variant="secondary" size="sm" onClick={() => onDuplicate(c)}>⧉ Duplicate</Btn>}
+          {onAddTargeting && c.campaign_id && <Btn variant="secondary" size="sm" onClick={() => onAddTargeting(c)}>{t('op.detail.addTargeting')}</Btn>}
+          {onDuplicate && <Btn variant="secondary" size="sm" onClick={() => onDuplicate(c)}>{t('op.detail.duplicate')}</Btn>}
           {statusAction(c.status)}
-          <Btn variant="secondary" size="sm" onClick={() => setSharing(true)}>Share report</Btn>
-          <Btn variant="secondary" size="sm" icon={<IconEdit size={13} />} onClick={() => { setEditForm({ budget: c.budget, start: c.start, end: c.end }); setEditing(true); }}>Edit</Btn>
+          <Btn variant="secondary" size="sm" onClick={() => setSharing(true)}>{t('op.detail.share')}</Btn>
+          <Btn variant="secondary" size="sm" icon={<IconEdit size={13} />} onClick={() => { setEditForm({ budget: c.budget, start: c.start, end: c.end }); setEditing(true); }}>{t('op.detail.edit')}</Btn>
         </>}
       />
 
       {isAdvertiserView && isAwaitingPayment(c) && (
         <div role="status" style={{ background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', fontFamily: F.sans }}>
           <div style={{ flex: 1, minWidth: 200, fontSize: T.md, color: C.text }}>
-            <strong>{c.payment_status === 'failed' ? "Payment didn't go through." : 'Payment needed.'}</strong>{' '}
-            <span style={{ color: C.textSub }}>This campaign is approved but won't play until the charge goes through. Check your card under Billing, then retry.</span>
+            <strong>{c.payment_status === 'failed' ? t('op.detail.paymentFailedTitle') : t('op.detail.paymentNeededTitle')}</strong>{' '}
+            <span style={{ color: C.textSub }}>{t('op.detail.paymentBody')}</span>
           </div>
-          <Btn size="sm" onClick={payNow} disabled={paying}>{paying ? 'Charging…' : 'Pay now'}</Btn>
+          <Btn size="sm" onClick={payNow} disabled={paying}>{paying ? t('op.detail.charging') : t('op.detail.payNow')}</Btn>
         </div>
       )}
 
@@ -206,33 +210,33 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
         <div style={{ background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, fontFamily: F.sans }}>
           <span style={{ color: C.amberText, display: 'flex' }}><IconClock size={16} /></span>
           <div>
-            <div style={{ fontSize: T.base, fontWeight: 600, color: C.amberText }}>Awaiting Review</div>
-            <div style={{ fontSize: T.sm, color: C.textSub, marginTop: 1 }}>{canReview ? 'Review the creative and schedule below, then approve or reject.' : 'Your screen owner(s) are reviewing this campaign.'}</div>
+            <div style={{ fontSize: T.base, fontWeight: 600, color: C.amberText }}>{t('op.detail.awaitingReview')}</div>
+            <div style={{ fontSize: T.sm, color: C.textSub, marginTop: 1 }}>{canReview ? t('op.detail.reviewBelow') : t('op.detail.ownersReviewing')}</div>
           </div>
         </div>
       )}
       {c.status === 'rejected' && c.rejectReason && (
         <div style={{ background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontFamily: F.sans }}>
-          <div style={{ fontSize: T.base, fontWeight: 600, color: C.redText, marginBottom: 2 }}>Rejected</div>
+          <div style={{ fontSize: T.base, fontWeight: 600, color: C.redText, marginBottom: 2 }}>{t('op.detail.rejectedTitle')}</div>
           <div style={{ fontSize: T.sm, color: C.textSub }}>{c.rejectReason}</div>
         </div>
       )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12, marginBottom: 24 }}>
-        <KPI label="Budget Spent"   value={`$${c.spent.toLocaleString()}`}        sub={`of $${c.budget.toLocaleString()} (${pct}%)`} color={pct > 90 ? C.red : pct > 70 ? C.amber : C.text} />
-        <KPI label="Impressions"    value={`${(c.impressions / 1000).toFixed(1)}K`} sub="verified plays" />
-        <KPI label="QR Scans"       value={c.scans}                                 sub="total scans" color={C.purple} />
-        <KPI label="Scan Rate"      value={`${scanRate}%`}                          sub="scans per impression" />
-        <KPI label="Days Remaining" value={daysLeft}                                sub={`ends ${c.end}`} color={daysLeft < 7 ? C.amber : C.text} />
+        <KPI label={t('op.detail.kpiSpent')} value={money(c.spent)} sub={t('op.detail.kpiSpentSub', { budget: money(c.budget), pct })} color={pct > 90 ? C.red : pct > 70 ? C.amber : C.text} />
+        <KPI label={t('op.detail.kpiImpressions')} value={t('dash.thousands', { n: formatNumber(c.impressions / 1000, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) })} sub={t('op.detail.verifiedPlays')} />
+        <KPI label={t('op.detail.kpiScans')} value={c.scans} sub={t('op.detail.totalScans')} color={C.purple} />
+        <KPI label={t('op.detail.kpiScanRate')} value={formatPercent(Number(scanRate) / 100, { decimals: 2, minimumFractionDigits: 2 })} sub={t('op.detail.perImpression')} />
+        <KPI label={t('op.detail.kpiDaysLeft')} value={daysLeft} sub={t('op.detail.endsOn', { date: formatDate(c.end) })} color={daysLeft < 7 ? C.amber : C.text} />
       </div>
 
       <Card style={{ marginBottom: 20, padding: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <div style={TX.title}>Budget Utilisation</div>
+          <div style={TX.title}>{t('op.detail.utilisation')}</div>
           <Badge status={c.status} />
         </div>
         <ProgressBar value={c.spent} max={c.budget} showLabel height={10} />
         <div style={{ display: 'flex', gap: 28, marginTop: 14 }}>
-          {[['CPM', `$${cpm}`], ['Slot Share', c.slots + '%'], ['Ad Duration', c.duration + 's'], ['Schedule', scheduleLabel], ['Days', (c.days || []).join(', ')]].map(([l, v]) => (
+          {[[t('op.detail.cpm'), formatCurrency(Number(cpm))], [t('op.detail.slotShare'), c.slots + '%'], [t('op.detail.duration'), c.duration + 's'], [t('op.detail.schedule'), scheduleLabel], [t('op.detail.days'), (c.days || []).map(dayLabel).join(', ')]].map(([l, v]) => (
             <div key={l}>
               <div style={{ ...TX.caption, marginBottom: 2 }}>{l}</div>
               <div style={{ ...TX.body, fontWeight: 500 }}>{v}</div>
@@ -246,16 +250,16 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
       )}
 
       <Tabs tabs={[
-        { id: 'overview', label: 'Performance' },
-        { id: 'creative', label: 'Creative' },
-        ...(c.holdout_enabled ? [{ id: 'delivery-check', label: 'Delivery Check' }] : []),
-        { id: 'settings', label: 'Settings' },
+        { id: 'overview', label: t('op.detail.tabPerformance') },
+        { id: 'creative', label: t('op.detail.tabCreative') },
+        ...(c.holdout_enabled ? [{ id: 'delivery-check', label: t('op.detail.tabCheck') }] : []),
+        { id: 'settings', label: t('op.detail.tabSettings') },
       ]} active={tab} onChange={setTab} />
 
       {tab === 'overview' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
           <Card>
-            <div style={{ ...TX.title, marginBottom: 16 }}>Impressions by Hour</div>
+            <div style={{ ...TX.title, marginBottom: 16 }}>{t('op.detail.byHour')}</div>
             <div style={{ display: 'flex', gap: 2, alignItems: 'flex-end', height: 80, marginBottom: 8 }}>
               {hourly.map(({ h, v }) => (
                 <div key={h} title={`${String(h).padStart(2, '0')}:00`} style={{
@@ -266,12 +270,12 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
               ))}
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: T.xs, color: C.textMuted, fontFamily: F.mono }}>
-              {['00:00', '06:00', '12:00', '18:00', '23:00'].map(t => <span key={t}>{t}</span>)}
+              {['00:00', '06:00', '12:00', '18:00', '23:00'].map(h => <span key={h}>{h}</span>)}
             </div>
           </Card>
           <Card>
-            <div style={{ ...TX.title, marginBottom: 16 }}>Campaign Summary</div>
-            {[['Advertiser', c.advertiser], ['Screen', c.screen], ['City', c.city], ['Category', c.category], ['Campaign ID', c.id], ['Start Date', c.start], ['End Date', c.end], ['Destination', c.destination || '—']].map(([l, v]) => (
+            <div style={{ ...TX.title, marginBottom: 16 }}>{t('op.detail.summary')}</div>
+            {[[t('op.detail.advertiser'), c.advertiser], [t('op.detail.screen'), c.screen], [t('op.detail.city'), c.city], [t('op.detail.category'), tOr(`categories.${c.category}`, c.category)], [t('op.detail.campaignId'), c.id], [t('op.detail.startDate'), formatDate(c.start)], [t('op.detail.endDate'), formatDate(c.end)], [t('op.detail.destination'), c.destination || '—']].map(([l, v]) => (
               <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
                 <span style={{ fontSize: T.sm, color: C.textSub }}>{l}</span>
                 <span style={{ fontSize: T.sm, fontWeight: 500, color: C.text, maxWidth: 200, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v}</span>
@@ -283,27 +287,27 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
 
       {tab === 'creative' && (
         <Card>
-          <div style={{ ...TX.title, marginBottom: 16 }}>Ad Creative</div>
+          <div style={{ ...TX.title, marginBottom: 16 }}>{t('op.detail.adCreative')}</div>
           <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 24, alignItems: 'start' }}>
             <CreativePreview campaign={c} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {[['Headline', c.headline || '—'], ['Category', c.category], ['Accent Colour', c.color || '—'], ['QR Destination', c.destination || '—']].map(([l, v]) => (
+              {[['headline', c.headline || '—'], ['category', tOr(`categories.${c.category}`, c.category)], ['accent', c.color || '—'], ['qrDestination', c.destination || '—']].map(([k, v]) => [k, t(`op.detail.${k}`), v]).map(([k, l, v]) => (
                 <div key={l}>
                   <div style={{ ...TX.caption, marginBottom: 3 }}>{l}</div>
-                  <div style={{ fontSize: T.base, color: C.text, fontFamily: l === 'Accent Colour' ? F.mono : F.sans, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {l === 'Accent Colour' && <div style={{ width: 16, height: 16, borderRadius: 4, background: v, border: `1px solid ${C.border}`, flexShrink: 0 }} />}
+                  <div style={{ fontSize: T.base, color: C.text, fontFamily: k === 'accent' ? F.mono : F.sans, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {k === 'accent' && <div style={{ width: 16, height: 16, borderRadius: 4, background: v, border: `1px solid ${C.border}`, flexShrink: 0 }} />}
                     {v}
                   </div>
                 </div>
               ))}
-              <Btn variant="secondary" size="sm" icon={<IconEdit size={13} />} style={{ alignSelf: 'flex-start' }} onClick={() => { setTab('creative'); setCreativeForm({ accent_color: c.color ?? C.purple }); setEditingCreative(true); }}>Edit Creative</Btn>
+              <Btn variant="secondary" size="sm" icon={<IconEdit size={13} />} style={{ alignSelf: 'flex-start' }} onClick={() => { setTab('creative'); setCreativeForm({ accent_color: c.color ?? C.purple }); setEditingCreative(true); }}>{t('op.detail.editCreative')}</Btn>
             </div>
           </div>
           {editingCreative && (
             <div style={{ marginTop: 20, padding: 20, background: C.surface, borderRadius: 12, border: `1px solid ${C.border}` }}>
-              <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 16 }}>Edit Creative</div>
+              <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 16 }}>{t('op.detail.editCreative')}</div>
               <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: T.sm, color: C.textSub, marginBottom: 4 }}>Accent Colour</div>
+                <div style={{ fontSize: T.sm, color: C.textSub, marginBottom: 4 }}>{t('op.detail.accent')}</div>
                 <input
                   type="color"
                   value={creativeForm.accent_color}
@@ -312,15 +316,15 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
                 />
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                <Btn variant="secondary" size="sm" onClick={() => setEditingCreative(false)}>Cancel</Btn>
+                <Btn variant="secondary" size="sm" onClick={() => setEditingCreative(false)}>{t('common.cancel')}</Btn>
                 <Btn size="sm" onClick={async () => {
                   const { error } = await supabase.from('bookings').update({
                     accent_color: creativeForm.accent_color,
                   }).eq('id', c.id);
-                  if (error) { toast.error(`Save failed: ${error.message}`); return; }
+                  if (error) { toast.error(t('op.detail.saveFailed', { error: error.message })); return; }
                   onUpdate({ ...c, color: creativeForm.accent_color });
                   setEditingCreative(false);
-                }}>Save Creative</Btn>
+                }}>{t('op.detail.saveCreative')}</Btn>
               </div>
             </div>
           )}
@@ -334,8 +338,8 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
       {tab === 'settings' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <Card>
-            <div style={{ ...TX.title, marginBottom: 16 }}>Schedule</div>
-            {[['Days', (c.days || []).join(', ')], ['Time Window', scheduleLabel], ['Ad Duration', c.duration + 's per play'], ['Slot Share', c.slots + '% of airtime']].map(([l, v]) => (
+            <div style={{ ...TX.title, marginBottom: 16 }}>{t('op.detail.schedule')}</div>
+            {[[t('op.detail.days'), (c.days || []).map(dayLabel).join(', ')], [t('op.detail.timeWindow'), scheduleLabel], [t('op.detail.duration'), t('op.detail.perPlay', { s: c.duration })], [t('op.detail.slotShare'), t('op.detail.ofAirtime', { pct: c.slots })]].map(([l, v]) => (
               <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
                 <span style={{ fontSize: T.base, color: C.textSub }}>{l}</span>
                 <span style={{ fontSize: T.base, fontWeight: 500, color: C.text }}>{v}</span>
@@ -343,26 +347,26 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
             ))}
           </Card>
           <Card>
-            <div style={{ ...TX.title, marginBottom: 16 }}>Danger Zone</div>
+            <div style={{ ...TX.title, marginBottom: 16 }}>{t('op.detail.dangerZone')}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <Btn variant="danger" loading={statusActionLoading} onClick={() => runStatusAction(c.status === 'paused' ? 'resume' : 'pause')}>
-                {c.status === 'paused' ? '▶ Resume Campaign' : '⏸ Pause Campaign'}
+                {c.status === 'paused' ? t('op.detail.resumeCampaign') : t('op.detail.pauseCampaign')}
               </Btn>
-              <Btn variant="danger" loading={statusActionLoading} onClick={() => runStatusAction('cancel')}>✕ Cancel Campaign</Btn>
+              <Btn variant="danger" loading={statusActionLoading} onClick={() => runStatusAction('cancel')}>{t('op.detail.cancelCampaign')}</Btn>
             </div>
             <div style={{ ...TX.caption, marginTop: 12, lineHeight: 1.6 }}>
-              Cancelling stops the campaign immediately. Unused budget will be reviewed for refund per your agreement.
+              {t('op.detail.cancelHint')}
             </div>
           </Card>
         </div>
       )}
 
       {editing && (
-        <Modal title="Edit Campaign" maxWidth={400} zIndex={1000}>
+        <Modal title={t('op.detail.editTitle')} maxWidth={400} zIndex={1000}>
             {[
-              { label: 'Budget ($)', key: 'budget', type: 'number' },
-              { label: 'Start Date', key: 'start', type: 'date' },
-              { label: 'End Date', key: 'end', type: 'date' },
+              { label: t('op.detail.budget'), key: 'budget', type: 'number' },
+              { label: t('op.detail.startDate'), key: 'start', type: 'date' },
+              { label: t('op.detail.endDate'), key: 'end', type: 'date' },
             ].map(({ label, key, type }) => (
               <div key={key} style={{ marginBottom: 14 }}>
                 <label htmlFor={`edit-${key}`} style={{ display: 'block', fontSize: T.sm, color: C.textSub, marginBottom: 4 }}>{label}</label>
@@ -376,17 +380,17 @@ export function CampaignDetail({ campaign, onBack, onUpdate, onAddTargeting, onD
               </div>
             ))}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
-              <Btn variant="secondary" size="sm" onClick={() => setEditing(false)}>Cancel</Btn>
+              <Btn variant="secondary" size="sm" onClick={() => setEditing(false)}>{t('common.cancel')}</Btn>
               <Btn size="sm" onClick={async () => {
                 const { error } = await supabase.from('bookings').update({
                   budget: editForm.budget,
                   start_date: editForm.start,
                   end_date: editForm.end,
                 }).eq('id', c.id);
-                if (error) { toast.error(`Save failed: ${error.message}`); return; }
+                if (error) { toast.error(t('op.detail.saveFailed', { error: error.message })); return; }
                 onUpdate({ ...c, budget: editForm.budget, start: editForm.start, end: editForm.end });
                 setEditing(false);
-              }}>Save Changes</Btn>
+              }}>{t('op.detail.saveChanges')}</Btn>
             </div>
         </Modal>
       )}

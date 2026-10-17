@@ -86,6 +86,8 @@ const PublicScreens  = lazy(() => import('./views/public/PublicScreens.jsx').the
 
 import { C, F } from './design/tokens.js';
 import { Skeleton } from './components/primitives/Skeleton.jsx';
+import { useT } from './i18n/useT.js';
+import { t as tNow } from './i18n/core.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -109,6 +111,7 @@ const RECENT_ADVERTISER_BOOKINGS = 50;
 // ─── AppInner (auth-gated shell) ─────────────────────────────────────────────
 
 function AppInner() {
+  const { t } = useT()
   const { user, profile, activeMode, setActiveMode, loading, signOut, activeAccount, grants, refreshProfile } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
@@ -218,7 +221,7 @@ function AppInner() {
     supabase.from('bookings').select('*').eq('id', detailId).maybeSingle().then(({ data, error }) => {
       if (cancelled) return;
       if (error || !data) {
-        toast.error("That campaign couldn't be found, or you don't have access to it.");
+        toast.error(tNow('appMsg.notFound'));
         navigate('/app/' + active, { replace: true });
         return;
       }
@@ -278,13 +281,13 @@ function AppInner() {
 
     if (bookingsRes.error) {
       console.error('Failed to load campaigns:', bookingsRes.error.message)
-      setLoadError('Failed to load data. Please refresh.')
+      setLoadError(tNow('appMsg.loadFailed'))
       setDataLoading(false)
       return
     }
     if (screensRes.error || myScreensRes.error) {
       console.error('Failed to load screens:', (screensRes.error || myScreensRes.error).message)
-      setLoadError('Failed to load data. Please refresh.')
+      setLoadError(tNow('appMsg.loadFailed'))
       setDataLoading(false)
       return
     }
@@ -432,7 +435,7 @@ function AppInner() {
   const isAdv = impersonating ? true : activeMode === 'advertiser';
   // Approve/Reject is a screen owner's call, not the advertiser's — gate it on mode.
   const canReview = !isAdv;
-  const displayUser = { name: profile?.name || user.email?.split('@')[0] || 'User', email: user.email };
+  const displayUser = { name: profile?.name || user.email?.split('@')[0] || tNow('shell.user'), email: user.email };
 
   // ── Navigation helper ──────────────────────────────────────────────────────
   // B19: clears a stale "add targeting group" target on every navigation by
@@ -475,7 +478,7 @@ function AppInner() {
       });
       const json = await res.json();
       if (!res.ok) {
-        toast.error(`Payment failed: ${json.error ?? 'Unknown error'}`);
+        toast.error(tNow('appMsg.paymentFailed', { error: json.error ?? tNow('appMsg.unknownError') }));
         return;
       }
       // charge-campaign sets status to 'scheduled' on success — sync local state
@@ -684,7 +687,7 @@ function AppInner() {
               background: '#ff444433', border: '1px solid #ff4444', borderRadius: 6,
               color: '#ff8888', fontFamily: F.sans, fontSize: 12, padding: '4px 12px', cursor: 'pointer',
             }}
-          >Retry</button>
+          >{t('appMsg.retry')}</button>
         </div>
       )}
       <ErrorBoundary key={active}>
@@ -775,7 +778,7 @@ function AccountHubRoute() {
   const { setActiveAccount, setActiveMode, profile, user, signOut } = useAuth()
   const navigate = useNavigate()
 
-  const displayUser = { name: profile?.name || user?.email?.split('@')[0] || 'User', email: user?.email }
+  const displayUser = { name: profile?.name || user?.email?.split('@')[0] || tNow('shell.user'), email: user?.email }
 
   function handleSelect(account) {
     sessionStorage.setItem('adgrid_hub_visited', '1')
@@ -805,14 +808,15 @@ function AccountHubRoute() {
 // the whole document re-runs DisplayPlayer's initial fetch from scratch,
 // which is the same recovery path a fresh boot gets.
 function DisplayCrashFallback() {
+  const { t } = useT();
   useEffect(() => {
-    const t = setTimeout(() => window.location.reload(), 5000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => window.location.reload(), 5000);
+    return () => clearTimeout(timer);
   }, []);
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#050a10', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: 1 }}>
-        RECONNECTING…
+      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: 1, textTransform: 'uppercase' }}>
+        {t('display.connecting')}
       </div>
     </div>
   );

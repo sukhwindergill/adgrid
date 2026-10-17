@@ -11,8 +11,9 @@ import { Inp } from '../../components/primitives/Inp.jsx'
 import { compactField } from '../../components/primitives/field.js'
 import { Badge } from '../../components/primitives/Badge.jsx'
 import { DISPUTE_REASONS } from '../../lib/disputeReasons.js'
+import { useT } from '../../i18n/useT.js'
 
-const reasonLabel = code => DISPUTE_REASONS.find(r => r.value === code)?.label ?? code
+const reasonLabel = (code, tOr) => tOr(`widgets.dispute.reason.${code}`, DISPUTE_REASONS.find(r => r.value === code)?.label ?? code)
 
 function useDisputes() {
   const [disputes, setDisputes] = useState([])
@@ -48,6 +49,8 @@ function useDisputes() {
 export function DisputeQueue() {
   const navigate = useNavigate()
   const toast = useToast()
+  const { t, tOr, formatCurrency } = useT()
+  const money = n => formatCurrency(n, { minimumFractionDigits: 0 })
   const { disputes, bookings, loading, error, refresh } = useDisputes()
   const [busyId, setBusyId] = useState(null)
   const [amounts, setAmounts] = useState({}) // dispute id -> partial refund amount input
@@ -57,13 +60,13 @@ export function DisputeQueue() {
     const amount = resolution === 'refund_partial' ? Number(amounts[dispute.id]) : undefined
 
     if (resolution === 'refund_partial' && (!amount || amount <= 0)) {
-      toast.error('Enter a refund amount greater than $0.')
+      toast.error(t('admin.disputes.amountRequired'))
       return
     }
 
     setBusyId(dispute.id)
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { toast.error('Session expired. Please log in again.'); setBusyId(null); return }
+    if (!session) { toast.error(t('admin.sessionExpired')); setBusyId(null); return }
 
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/resolve-dispute`, {
       method: 'POST',
@@ -73,11 +76,11 @@ export function DisputeQueue() {
     const body = await res.json().catch(() => ({}))
     setBusyId(null)
 
-    if (!res.ok) { toast.error(body?.error ?? 'Failed to resolve dispute.'); return }
+    if (!res.ok) { toast.error(body?.error ?? t('admin.disputes.resolveFailed')); return }
     toast.success(
       resolution === 'denied'
-        ? 'Dispute denied.'
-        : `Refunded $${(amount ?? booking?.budget ?? 0).toLocaleString()}.`
+        ? t('admin.disputes.denied')
+        : t('admin.disputes.refunded', { amount: money(amount ?? booking?.budget ?? 0) })
     )
     refresh()
   }
@@ -88,18 +91,18 @@ export function DisputeQueue() {
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 20px' }}>
       <Btn variant="ghost" onClick={() => navigate('/app')} style={{ marginBottom: 16, paddingLeft: 0 }}>
-        ← Back
+        {t('admin.back')}
       </Btn>
       <h1 style={{ ...TX.pageTitle, marginBottom: 20 }}>
-        Disputes
+        {t('admin.disputes.title')}
       </h1>
 
       {loading ? (
-        <div style={TX.bodySub}>Loading…</div>
+        <div style={TX.bodySub}>{t('common.loading')}</div>
       ) : error ? (
-        <div style={{ color: C.redText, fontFamily: F.sans, fontSize: T.base }}>Couldn't load disputes — check your connection and try again.</div>
+        <div style={{ color: C.redText, fontFamily: F.sans, fontSize: T.base }}>{t('admin.disputes.loadError')}</div>
       ) : open.length === 0 ? (
-        <div style={{ ...TX.bodySub, marginBottom: 32 }}>No open disputes.</div>
+        <div style={{ ...TX.bodySub, marginBottom: 32 }}>{t('admin.disputes.empty')}</div>
       ) : (
         <div style={{ marginBottom: 32 }}>
           {open.map(d => {
@@ -108,12 +111,12 @@ export function DisputeQueue() {
               <Card key={d.id} style={{ marginBottom: 12, padding: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
                   <div>
-                    <div style={TX.strong}>{reasonLabel(d.reason_code)}</div>
+                    <div style={TX.strong}>{reasonLabel(d.reason_code, tOr)}</div>
                     <div style={{ ...TX.caption, marginTop: 2 }}>
-                      {booking ? `${booking.advertiser_name} · ${booking.screen_name} · $${Number(booking.budget).toLocaleString()} booked` : d.booking_id}
+                      {booking ? t('admin.disputes.booked', { advertiser: booking.advertiser_name, screen: booking.screen_name, amount: money(Number(booking.budget)) }) : d.booking_id}
                     </div>
                   </div>
-                  <Badge status="pending">Open</Badge>
+                  <Badge status="pending">{t('admin.disputes.open')}</Badge>
                 </div>
 
                 {d.reason_text && (
@@ -122,20 +125,20 @@ export function DisputeQueue() {
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
                   <Btn variant="success" size="sm" disabled={busyId === d.id} onClick={() => resolve(d, 'refund_full')}>
-                    {busyId === d.id ? '…' : `Refund Full ($${booking ? Number(booking.budget).toLocaleString() : '—'})`}
+                    {busyId === d.id ? '…' : t('admin.disputes.refundFull', { amount: booking ? money(Number(booking.budget)) : '—' })}
                   </Btn>
                   <Inp
-                    type="number" min="0.01" step="0.01" placeholder="Partial $" aria-label="Partial refund amount"
+                    type="number" min="0.01" step="0.01" placeholder={t('admin.disputes.partialPlaceholder')} aria-label={t('admin.disputes.partialLabel')}
                     value={amounts[d.id] ?? ''}
                     onChange={e => setAmounts(s => ({ ...s, [d.id]: e.target.value }))}
                     wrapperStyle={{ width: 90 }}
                     style={{ ...compactField, padding: '6px 8px', fontFamily: F.mono }}
                   />
                   <Btn variant="secondary" size="sm" disabled={busyId === d.id} onClick={() => resolve(d, 'refund_partial')}>
-                    {busyId === d.id ? '…' : 'Refund Partial'}
+                    {busyId === d.id ? '…' : t('admin.disputes.refundPartial')}
                   </Btn>
                   <Btn variant="danger" size="sm" disabled={busyId === d.id} onClick={() => resolve(d, 'denied')}>
-                    {busyId === d.id ? '…' : 'Deny'}
+                    {busyId === d.id ? '…' : t('admin.disputes.deny')}
                   </Btn>
                 </div>
               </Card>
@@ -147,20 +150,20 @@ export function DisputeQueue() {
       {resolved.length > 0 && (
         <>
           <h2 style={{ fontSize: T.lg, fontWeight: 600, color: C.text, fontFamily: F.display, marginBottom: 12 }}>
-            Resolved
+            {t('admin.disputes.resolved')}
           </h2>
           {resolved.map(d => {
             const booking = bookings[d.booking_id]
             return (
               <Card key={d.id} style={{ marginBottom: 8, padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
                 <div>
-                  <div style={TX.body}>{reasonLabel(d.reason_code)}</div>
+                  <div style={TX.body}>{reasonLabel(d.reason_code, tOr)}</div>
                   <div style={{ ...TX.caption, marginTop: 2 }}>
                     {booking ? `${booking.advertiser_name} · ${booking.screen_name}` : d.booking_id}
                   </div>
                 </div>
                 <Badge status={d.resolution === 'denied' ? 'rejected' : 'approved'}>
-                  {d.resolution === 'denied' ? 'Denied' : `Refunded $${Number(d.resolved_amount ?? 0).toLocaleString()}`}
+                  {d.resolution === 'denied' ? t('admin.disputes.deniedBadge') : t('admin.disputes.refundedBadge', { amount: money(Number(d.resolved_amount ?? 0)) })}
                 </Badge>
               </Card>
             )

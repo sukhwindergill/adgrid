@@ -15,6 +15,8 @@ import { SelInput } from "../../components/primitives/SelInput.jsx";
 import { Modal, CloseButton } from "../../components/primitives/Modal.jsx";
 import { T, SH, C, F } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
+import { useT } from "../../i18n/useT.js";
+import { t as tNow } from "../../i18n/core.js";
 
 // profiles.status/credits/rate_override are pinned by a BEFORE UPDATE
 // trigger (20260909194813_pin_profile_admin_columns.sql) to everyone
@@ -23,30 +25,33 @@ import { TX } from '../../design/text.js';
 // operator-manage-advertiser instead of writing to `profiles` directly.
 async function callManageAdvertiser(action, payload) {
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return { ok: false, error: "Session expired. Please log in again." };
+  if (!session) return { ok: false, error: tNow('settings.sessionExpired') };
   const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/operator-manage-advertiser`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
     body: JSON.stringify({ action, ...payload }),
   });
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) return { ok: false, error: body?.error ?? "Request failed." };
+  if (!res.ok) return { ok: false, error: body?.error ?? tNow('op.advertisers.requestFailed') };
   return { ok: true };
 }
 
 function StatusBadge({ status }) {
+  const { tOr } = useT();
+  const s = status ?? "active";
   return (
     <Pill tone={status === "suspended" ? "red" : "green"} style={{ textTransform: "capitalize" }}>
-      {status ?? "active"}
+      {tOr(`op.advertisers.status.${s}`, s)}
     </Pill>
   );
 }
 
 function ActionModal({ title, onClose, children }) {
+  const { t } = useT();
   return (
     <Modal title={title} onBackdropClick={onClose} maxWidth={400} zIndex={1000} panelStyle={{ borderRadius: 16 }}>
       {children}
-      <Btn variant="secondary" size="sm" style={{ marginTop: 16 }} onClick={onClose}>Cancel</Btn>
+      <Btn variant="secondary" size="sm" style={{ marginTop: 16 }} onClick={onClose}>{t('common.cancel')}</Btn>
     </Modal>
   );
 }
@@ -58,6 +63,7 @@ const td = { padding: "12px 16px" };
 function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate }) {
   const toast = useToast();
   const confirm = useConfirm();
+  const { t, formatCurrency, formatNumber } = useT();
   const [tab, setTab] = useState("overview");
   const [creditsAmount, setCreditsAmount] = useState("");
   const [rateAmount, setRateAmount] = useState(adv.rate_override ?? "");
@@ -72,13 +78,13 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
     setSaving(true);
     const { ok, error } = await callManageAdvertiser("set_status", { advertiserIds: [adv.id], status });
     setSaving(false);
-    if (!ok) { toast.error(error ?? "Failed to update status."); return; }
+    if (!ok) { toast.error(error ?? t('op.advertisers.statusFailed')); return; }
     onUpdated({ ...adv, status });
     setModal(null);
     if (status === "suspended") {
-      toast.undo(`${adv.name}'s account suspended.`, async () => {
+      toast.undo(t('op.advertisers.suspendedToast', { name: adv.name }), async () => {
         const undo = await callManageAdvertiser("set_status", { advertiserIds: [adv.id], status: previousStatus });
-        if (!undo.ok) { toast.error(undo.error ?? "Failed to undo suspension."); return; }
+        if (!undo.ok) { toast.error(undo.error ?? t('op.advertisers.undoFailed')); return; }
         onUpdated({ ...adv, status: previousStatus });
       });
     }
@@ -88,15 +94,15 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
     const amount = parseFloat(creditsAmount);
     if (isNaN(amount)) return;
     const ok = await confirm({
-      title: 'Add credits?',
-      message: `Add $${amount.toFixed(2)} in credits to ${adv.name}'s account?`,
-      confirmLabel: 'Add Credits',
+      title: t('op.advertisers.addCreditsTitle'),
+      message: t('op.advertisers.addCreditsMessage', { amount: formatCurrency(amount), name: adv.name }),
+      confirmLabel: t('op.advertisers.addCredits'),
     });
     if (!ok) return;
     setSaving(true);
     const { ok: succeeded, error } = await callManageAdvertiser("add_credits", { advertiserIds: [adv.id], amount });
     setSaving(false);
-    if (!succeeded) { toast.error(error ?? "Failed to add credits."); return; }
+    if (!succeeded) { toast.error(error ?? t('op.advertisers.creditsFailed')); return; }
     onUpdated({ ...adv, credits: (adv.credits ?? 0) + amount });
     setCreditsAmount("");
     setModal(null);
@@ -105,17 +111,17 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
   async function saveRate() {
     const rate = parseFloat(rateAmount) || null;
     const ok = await confirm({
-      title: 'Set custom CPM rate?',
+      title: t('op.advertisers.rateTitle'),
       message: rate
-        ? `Set ${adv.name}'s CPM rate to $${rate.toFixed(2)}, overriding the default rate?`
-        : `Clear ${adv.name}'s custom CPM rate and revert to the default rate?`,
-      confirmLabel: 'Save Rate',
+        ? t('op.advertisers.rateSet', { name: adv.name, rate: formatCurrency(rate) })
+        : t('op.advertisers.rateClear', { name: adv.name }),
+      confirmLabel: t('op.advertisers.saveRate'),
     });
     if (!ok) return;
     setSaving(true);
     const { ok: succeeded, error } = await callManageAdvertiser("set_rate_override", { advertiserIds: [adv.id], rate });
     setSaving(false);
-    if (!succeeded) { toast.error(error ?? "Failed to save rate."); return; }
+    if (!succeeded) { toast.error(error ?? t('op.advertisers.rateFailed')); return; }
     onUpdated({ ...adv, rate_override: rate });
     setModal(null);
   }
@@ -125,16 +131,16 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
       <div style={{ padding: "20px 24px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text }}>{adv.name}</div>
-          <div style={{ fontSize: T.base, color: C.textSub }}>{adv.email} · {adv.company_name ?? "No company"}</div>
+          <div style={{ fontSize: T.base, color: C.textSub }}>{adv.email} · {adv.company_name ?? t('op.advertisers.noCompany')}</div>
         </div>
         <StatusBadge status={adv.status} />
         <CloseButton onClick={onClose} style={{ color: C.textSub }} />
       </div>
 
       <div style={{ display: "flex", padding: "0 24px", borderBottom: `1px solid ${C.border}` }}>
-        {["overview", "billing", "actions"].map((t) => (
-          <Btn variant="unstyled" key={t} onClick={() => setTab(t)} hoverStyle={tab === t ? undefined : { color: C.text }} style={{ padding: "12px 16px", fontFamily: F.sans, fontSize: T.base, fontWeight: tab === t ? 600 : 400, color: tab === t ? C.purple : C.textSub, textTransform: "capitalize", borderBottom: tab === t ? `2px solid ${C.purple}` : "2px solid transparent", transition: "color 0.15s" }}
-          >{t}</Btn>
+        {["overview", "billing", "actions"].map((tb) => (
+          <Btn variant="unstyled" key={tb} onClick={() => setTab(tb)} hoverStyle={tab === tb ? undefined : { color: C.text }} style={{ padding: "12px 16px", fontFamily: F.sans, fontSize: T.base, fontWeight: tab === tb ? 600 : 400, color: tab === tb ? C.purple : C.textSub, textTransform: "capitalize", borderBottom: tab === t ? `2px solid ${C.purple}` : "2px solid transparent", transition: "color 0.15s" }}
+          >{t(`op.advertisers.tab.${tb}`)}</Btn>
         ))}
       </div>
 
@@ -143,10 +149,10 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
           <>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
               {[
-                { label: "Total Spend", value: `$${totalSpend.toLocaleString()}` },
-                { label: "Active Campaigns", value: activeCampaigns },
-                { label: "Total Scans", value: scans.length },
-                { label: "Credits", value: `$${(adv.credits ?? 0).toFixed(2)}` },
+                { label: t('op.advertisers.totalSpend'), value: formatCurrency(totalSpend, { minimumFractionDigits: 0 }) },
+                { label: t('op.advertisers.activeCampaigns'), value: activeCampaigns },
+                { label: t('op.advertisers.totalScans'), value: formatNumber(scans.length) },
+                { label: t('op.advertisers.credits'), value: formatCurrency(adv.credits ?? 0) },
               ].map(({ label, value }) => (
                 <div key={label} style={statTile}>
                   <div style={{ fontSize: T.sm, color: C.textSub }}>{label}</div>
@@ -154,14 +160,14 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
                 </div>
               ))}
             </div>
-            <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 10 }}>Campaigns</div>
+            <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 10 }}>{t('op.advertisers.campaigns')}</div>
             {campaigns.length === 0 ? (
-              <div style={{ fontSize: T.base, color: C.textMuted }}>No campaigns yet.</div>
+              <div style={{ fontSize: T.base, color: C.textMuted }}>{t('op.advertisers.noCampaigns')}</div>
             ) : campaigns.map((c) => (
               <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: T.base, fontWeight: 500, color: C.text }}>{c.advertiser_name}</div>
-                  <div style={{ fontSize: T.sm, color: C.textSub }}>${c.budget ?? 0} budget</div>
+                  <div style={{ fontSize: T.sm, color: C.textSub }}>{t('op.advertisers.budgetLine', { amount: formatCurrency(c.budget ?? 0, { minimumFractionDigits: 0 }) })}</div>
                 </div>
                 <StatusBadge status={c.status} />
               </div>
@@ -172,27 +178,27 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
         {tab === "billing" && (
           <>
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 4 }}>Stripe Customer ID</div>
+              <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 4 }}>{t('op.advertisers.stripeId')}</div>
               <div style={{ fontSize: T.base, color: C.text, fontFamily: F.mono }}>
                 {adv.stripe_customer_id ? (
                   <a href={`https://dashboard.stripe.com/customers/${adv.stripe_customer_id}`} target="_blank" rel="noreferrer" style={{ color: C.purple }}>{adv.stripe_customer_id}</a>
-                ) : "Not set"}
+                ) : t('op.advertisers.notSet')}
               </div>
             </div>
             <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
               <div style={{ ...statTile, flex: 1 }}>
-                <div style={{ fontSize: T.sm, color: C.textSub }}>Total Spend</div>
-                <div style={{ fontSize: T.xxl, fontWeight: 700, color: C.text }}>${totalSpend.toLocaleString()}</div>
+                <div style={{ fontSize: T.sm, color: C.textSub }}>{t('op.advertisers.totalSpend')}</div>
+                <div style={{ fontSize: T.xxl, fontWeight: 700, color: C.text }}>{formatCurrency(totalSpend, { minimumFractionDigits: 0 })}</div>
               </div>
               <div style={{ ...statTile, flex: 1 }}>
-                <div style={{ fontSize: T.sm, color: C.textSub }}>Credits Balance</div>
-                <div style={{ fontSize: T.xxl, fontWeight: 700, color: C.text }}>${(adv.credits ?? 0).toFixed(2)}</div>
+                <div style={{ fontSize: T.sm, color: C.textSub }}>{t('op.advertisers.creditsBalance')}</div>
+                <div style={{ fontSize: T.xxl, fontWeight: 700, color: C.text }}>{formatCurrency(adv.credits ?? 0)}</div>
               </div>
             </div>
             <div style={{ display: "flex", gap: 10 }}>
-              <Btn variant="success" onClick={() => setModal("credits")}>+ Add Credits</Btn>
+              <Btn variant="success" onClick={() => setModal("credits")}>{t('op.advertisers.addCreditsBtn')}</Btn>
               <Btn variant="secondary" onClick={() => setModal("rate")}>
-                {adv.rate_override ? `CPM: $${adv.rate_override}` : "Set Custom CPM"}
+                {adv.rate_override ? t('op.advertisers.cpmValue', { rate: formatCurrency(adv.rate_override) }) : t('op.advertisers.setCustomCpm')}
               </Btn>
             </div>
           </>
@@ -201,42 +207,42 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
         {tab === "actions" && (
           <>
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 8 }}>Account Status</div>
-              <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 12 }}>Currently: <StatusBadge status={adv.status} /></div>
+              <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 8 }}>{t('op.advertisers.accountStatus')}</div>
+              <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 12 }}>{t('op.advertisers.currently')} <StatusBadge status={adv.status} /></div>
               {(adv.status ?? "active") !== "suspended" ? (
-                <Btn variant="danger" onClick={() => setModal("suspend")}>Suspend Account</Btn>
+                <Btn variant="danger" onClick={() => setModal("suspend")}>{t('op.advertisers.suspend')}</Btn>
               ) : (
-                <Btn variant="success" onClick={() => updateStatus("active")}>Reactivate Account</Btn>
+                <Btn variant="success" onClick={() => updateStatus("active")}>{t('op.advertisers.reactivate')}</Btn>
               )}
             </div>
             <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 20 }}>
-              <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 8 }}>Impersonate</div>
-              <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 12 }}>View the platform as this advertiser. Your session is unchanged.</div>
-              <Btn onClick={() => onImpersonate(adv)}>View as {adv.name} →</Btn>
+              <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 8 }}>{t('op.advertisers.impersonate')}</div>
+              <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 12 }}>{t('op.advertisers.impersonateBody')}</div>
+              <Btn onClick={() => onImpersonate(adv)}>{t('op.advertisers.viewAs', { name: adv.name })}</Btn>
             </div>
           </>
         )}
       </div>
 
       {modal === "credits" && (
-        <ActionModal title="Add Credits" onClose={() => setModal(null)}>
+        <ActionModal title={t('op.advertisers.addCredits')} onClose={() => setModal(null)}>
           <Inp type="number" min="0" step="0.01" value={creditsAmount} onChange={(e) => setCreditsAmount(e.target.value)} placeholder="50.00"
-            aria-label="Credit amount" wrapperStyle={{ marginBottom: 12 }} style={amountField} />
-          <Btn variant="success" onClick={addCredits} loading={saving}>Add Credits</Btn>
+            aria-label={t('op.advertisers.creditAmount')} wrapperStyle={{ marginBottom: 12 }} style={amountField} />
+          <Btn variant="success" onClick={addCredits} loading={saving}>{t('op.advertisers.addCredits')}</Btn>
         </ActionModal>
       )}
       {modal === "rate" && (
-        <ActionModal title="Set Custom CPM Rate" onClose={() => setModal(null)}>
-          <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 10 }}>Leave blank to use default rate.</div>
-          <Inp type="number" min="0" step="0.01" value={rateAmount} onChange={(e) => setRateAmount(e.target.value)} placeholder="e.g. 12.50"
-            aria-label="CPM rate" wrapperStyle={{ marginBottom: 12 }} style={amountField} />
-          <Btn onClick={saveRate} loading={saving}>Save Rate</Btn>
+        <ActionModal title={t('op.advertisers.customCpmTitle')} onClose={() => setModal(null)}>
+          <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 10 }}>{t('op.advertisers.blankDefault')}</div>
+          <Inp type="number" min="0" step="0.01" value={rateAmount} onChange={(e) => setRateAmount(e.target.value)} placeholder={t('op.advertisers.rateExample')}
+            aria-label={t('op.advertisers.cpmRate')} wrapperStyle={{ marginBottom: 12 }} style={amountField} />
+          <Btn onClick={saveRate} loading={saving}>{t('op.advertisers.saveRate')}</Btn>
         </ActionModal>
       )}
       {modal === "suspend" && (
-        <ActionModal title="Suspend Account?" onClose={() => setModal(null)}>
-          <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 16 }}>{adv.name}'s campaigns will be paused and they will lose access to the platform.</div>
-          <Btn variant="danger" onClick={() => updateStatus("suspended")} loading={saving}>Yes, Suspend</Btn>
+        <ActionModal title={t('op.advertisers.suspendTitle')} onClose={() => setModal(null)}>
+          <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 16 }}>{t('op.advertisers.suspendBody', { name: adv.name })}</div>
+          <Btn variant="danger" onClick={() => updateStatus("suspended")} loading={saving}>{t('op.advertisers.yesSuspend')}</Btn>
         </ActionModal>
       )}
     </div>
@@ -245,6 +251,7 @@ function DetailPanel({ adv, campaigns, scans, onClose, onUpdated, onImpersonate 
 
 export default function AdvertisersView({ onImpersonate }) {
   const { user } = useAuth();
+  const { t, formatCurrency, formatDate } = useT();
   const [advertisers, setAdvertisers] = useState([]);
   const [allBookings, setAllBookings] = useState([]);
   const [screenIds, setScreenIds] = useState([]);
@@ -316,9 +323,9 @@ export default function AdvertisersView({ onImpersonate }) {
     const ids = [...checked];
     if (ids.length === 0) return;
     const ok = await confirm({
-      title: status === "suspended" ? "Suspend selected accounts?" : "Reactivate selected accounts?",
-      message: `This will ${status === "suspended" ? "suspend" : "reactivate"} ${ids.length} advertiser${ids.length !== 1 ? "s" : ""}.`,
-      confirmLabel: status === "suspended" ? "Suspend" : "Reactivate",
+      title: status === "suspended" ? t('op.advertisers.bulkSuspendTitle') : t('op.advertisers.bulkReactivateTitle'),
+      message: t(status === "suspended" ? 'op.advertisers.bulkSuspendMessage' : 'op.advertisers.bulkReactivateMessage', { count: ids.length }),
+      confirmLabel: status === "suspended" ? t('op.advertisers.suspendBtn') : t('op.advertisers.reactivateBtn'),
       danger: status === "suspended",
     });
     if (!ok) return;
@@ -326,10 +333,10 @@ export default function AdvertisersView({ onImpersonate }) {
     setBulkBusy(true);
     const { ok: succeeded, error } = await callManageAdvertiser("set_status", { advertiserIds: ids, status });
     setBulkBusy(false);
-    if (!succeeded) { toast.error(error ?? "Bulk update failed."); return; }
+    if (!succeeded) { toast.error(error ?? t('op.advertisers.bulkFailed')); return; }
     setAdvertisers((prev) => prev.map((a) => ids.includes(a.id) ? { ...a, status } : a));
     setChecked(new Set());
-    const label = `${ids.length} advertiser${ids.length !== 1 ? "s" : ""} ${status === "suspended" ? "suspended" : "reactivated"}.`;
+    const label = t(status === "suspended" ? 'op.advertisers.bulkSuspended' : 'op.advertisers.bulkReactivated', { count: ids.length });
     if (status === "suspended") {
       toast.undo(label, async () => {
         // Statuses being restored can differ per-row (a mixed
@@ -347,7 +354,7 @@ export default function AdvertisersView({ onImpersonate }) {
             callManageAdvertiser("set_status", { advertiserIds: groupIds, status: prevStatus })
           )
         );
-        if (undoResults.some((r) => !r.ok)) { toast.error("Some accounts failed to restore."); }
+        if (undoResults.some((r) => !r.ok)) { toast.error(t('op.advertisers.restoreFailed')); }
         setAdvertisers((prev) => prev.map((a) => ids.includes(a.id) ? { ...a, status: previousStatuses.get(a.id) } : a));
       });
     } else {
@@ -362,23 +369,23 @@ export default function AdvertisersView({ onImpersonate }) {
 
   return (
     <div style={{ maxWidth: 1100 }}>
-      <PageHeader title="Advertisers" subtitle="Every advertiser on your network — spend, status, and account actions" />
+      <PageHeader title={t('op.advertisers.title')} subtitle={t('op.advertisers.subtitle')} />
       <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
-        <Inp placeholder="Search name, email, company…" aria-label="Search advertisers" value={search} onChange={(e) => setSearch(e.target.value)}
+        <Inp placeholder={t('op.advertisers.searchPlaceholder')} aria-label={t('op.advertisers.searchLabel')} value={search} onChange={(e) => setSearch(e.target.value)}
           wrapperStyle={{ flex: 1 }} style={{ padding: "9px 14px", transition: "border-color 0.15s" }} />
-        <SelInput aria-label="Filter by status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+        <SelInput aria-label={t('op.advertisers.statusFilter')} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
           style={{ padding: "9px 14px", transition: "border-color 0.15s" }}>
-          <option value="all">All statuses</option>
-          <option value="active">Active</option>
-          <option value="suspended">Suspended</option>
+          <option value="all">{t('op.advertisers.allStatuses')}</option>
+          <option value="active">{t('op.advertisers.active')}</option>
+          <option value="suspended">{t('op.advertisers.suspended')}</option>
         </SelInput>
       </div>
       {checked.size > 0 && (
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", marginBottom: 12, background: C.purpleSoft, border: `1px solid ${C.purpleBorder}`, borderRadius: 10 }}>
-          <span style={{ fontSize: T.base, color: C.text, fontWeight: 500 }}>{checked.size} selected</span>
-          <Btn variant="danger" size="sm" onClick={() => bulkSetStatus("suspended")} disabled={bulkBusy}>Suspend</Btn>
-          <Btn variant="success" size="sm" onClick={() => bulkSetStatus("active")} disabled={bulkBusy}>Reactivate</Btn>
-          <Btn variant="secondary" size="sm" onClick={() => setChecked(new Set())}>Clear</Btn>
+          <span style={{ fontSize: T.base, color: C.text, fontWeight: 500 }}>{t('op.advertisers.selected', { count: checked.size })}</span>
+          <Btn variant="danger" size="sm" onClick={() => bulkSetStatus("suspended")} disabled={bulkBusy}>{t('op.advertisers.suspendBtn')}</Btn>
+          <Btn variant="success" size="sm" onClick={() => bulkSetStatus("active")} disabled={bulkBusy}>{t('op.advertisers.reactivateBtn')}</Btn>
+          <Btn variant="secondary" size="sm" onClick={() => setChecked(new Set())}>{t('op.advertisers.clear')}</Btn>
         </div>
       )}
       <Card style={{ padding: 0, overflow: "hidden" }}>
@@ -388,8 +395,8 @@ export default function AdvertisersView({ onImpersonate }) {
               <th style={{ padding: "10px 16px", borderBottom: `1px solid ${C.border}`, width: 32 }}>
                 <input type="checkbox" checked={filtered.length > 0 && checked.size === filtered.length} onChange={toggleAllChecked} />
               </th>
-              {["Name", "Email", "Company", "Status", "Total Spend", "Active Campaigns", "Joined"].map((h) => (
-                <th key={h} style={{ padding: "10px 16px", textAlign: "left", color: C.textSub, fontWeight: 500, borderBottom: `1px solid ${C.border}` }}>{h}</th>
+              {["name", "email", "company", "status", "spend", "active", "joined"].map((h) => (
+                <th key={h} style={{ padding: "10px 16px", textAlign: "left", color: C.textSub, fontWeight: 500, borderBottom: `1px solid ${C.border}` }}>{t(`op.advertisers.col.${h}`)}</th>
               ))}
             </tr>
           </thead>
@@ -409,15 +416,15 @@ export default function AdvertisersView({ onImpersonate }) {
                   <td style={{ ...td, color: C.textSub }}>{a.email}</td>
                   <td style={{ ...td, color: C.textSub }}>{a.company_name ?? "—"}</td>
                   <td style={td}><StatusBadge status={a.status} /></td>
-                  <td style={{ ...td, color: C.text }}>${spend.toLocaleString()}</td>
+                  <td style={{ ...td, color: C.text }}>{formatCurrency(spend, { minimumFractionDigits: 0 })}</td>
                   <td style={{ ...td, color: C.text }}>{active}</td>
-                  <td style={{ ...td, color: C.textSub, fontSize: T.sm }}>{a.created_at ? new Date(a.created_at).toLocaleDateString() : "—"}</td>
+                  <td style={{ ...td, color: C.textSub, fontSize: T.sm }}>{a.created_at ? formatDate(a.created_at) : "—"}</td>
                 </Hover>
               );
             })}
             {filtered.length === 0 && (
               <tr><td colSpan={8} style={{ padding: "32px 16px", textAlign: "center", color: loadError ? C.redText : C.textMuted }}>
-                {loadError ? "Couldn't load advertisers — check your connection and try again." : "No advertisers found."}
+                {loadError ? t('op.advertisers.loadError') : t('op.advertisers.none')}
               </td></tr>
             )}
           </tbody>

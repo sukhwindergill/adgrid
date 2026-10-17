@@ -10,6 +10,7 @@ import { createListing, createBundleListing } from '../../lib/marketplace.js';
 import { useToast } from '../../components/primitives/Toast.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
+import { useT } from '../../i18n/useT.js';
 
 // Simple heuristic: avg daily impressions over the window * $ per impression
 // floor, shown next to the op's own price input so they price with real
@@ -29,6 +30,7 @@ export function MarketplaceListingForm({ screenId, bundleScreens, onCreated, onC
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
   const toast = useToast();
+  const { t, formatCurrency, formatPercent } = useT();
   const ownerRevenueShare = useAuth()?.profile?.owner_revenue_share ?? DEFAULT_OWNER_REVENUE_SHARE;
   const priceDollars = Number(priceCents);
 
@@ -57,8 +59,8 @@ export function MarketplaceListingForm({ screenId, bundleScreens, onCreated, onC
       onCreated(listing);
     } catch (e) {
       console.error(e);
-      setErr(e.message || 'Failed to create listing.');
-      toast.error('Failed to create listing. Please try again.');
+      setErr(e.message || t('op.listingForm.failed'));
+      toast.error(t('op.listingForm.failedToast'));
     } finally {
       setSaving(false);
     }
@@ -68,44 +70,44 @@ export function MarketplaceListingForm({ screenId, bundleScreens, onCreated, onC
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 420 }}>
       {isBundle && (
         <div style={{ fontFamily: F.sans, fontSize: T.sm, color: C.text, background: C.purpleSoft, borderRadius: 8, padding: 10 }}>
-          Bundle of {bundleScreens.length} screens: {bundleScreens.map(s => s.name).join(', ')}
+          {t('op.listingForm.bundleOf', { count: bundleScreens.length, names: bundleScreens.map(s => s.name).join(', ') })}
         </div>
       )}
       {projected !== null && (
         <div style={{ ...TX.helper, background: C.surfaceAlt, borderRadius: 8, padding: 10 }}>
-          Projected shared-rotation earnings for a similar 30-day window: ~${projected}
+          {t('op.listingForm.projected', { amount: formatCurrency(projected, { decimals: 0 }) })}
         </div>
       )}
       <label style={TX.helper}>
-        Price ($){isBundle ? ' — for the whole bundle' : ''}
-        <Inp aria-label="price" type="number" value={priceCents} onChange={e => setPriceCents(e.target.value)}
+        {isBundle ? t('op.listingForm.priceBundle') : t('op.listingForm.price')}
+        <Inp aria-label={t('op.listingForm.priceLabel')} type="number" value={priceCents} onChange={e => setPriceCents(e.target.value)}
           wrapperStyle={{ marginTop: 4 }} style={listingField} />
         {priceDollars > 0 && (
           <span style={{ display: 'block', marginTop: 4, color: C.textMuted }}>
-            You receive ${computeRevenueSplit(priceDollars, ownerRevenueShare).owner.toLocaleString()} ({Math.round(ownerRevenueShare * 100)}% of the price)
+            {t('op.listingForm.youReceive', { amount: formatCurrency(computeRevenueSplit(priceDollars, ownerRevenueShare).owner, { minimumFractionDigits: 0 }), pct: formatPercent(ownerRevenueShare) })}
           </span>
         )}
       </label>
       <label style={TX.helper}>
-        Start date
-        <Inp aria-label="start date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+        {t('op.listingForm.startDate')}
+        <Inp aria-label={t('op.listingForm.startLabel')} type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
           wrapperStyle={{ marginTop: 4 }} style={listingField} />
       </label>
       <label style={TX.helper}>
-        End date
-        <Inp aria-label="end date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+        {t('op.listingForm.endDate')}
+        <Inp aria-label={t('op.listingForm.endLabel')} type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
           wrapperStyle={{ marginTop: 4 }} style={listingField} />
       </label>
       <label style={{ ...TX.helper, display: 'flex', alignItems: 'center', gap: 6 }}>
         <input type="checkbox" checked={autoRenew} onChange={e => setAutoRenew(e.target.checked)} />
-        Allow auto-renewal
+        {t('op.listingForm.autoRenew')}
       </label>
       {err && <div style={TX.error}>{err}</div>}
       <div style={{ display: 'flex', gap: 8 }}>
         <Btn variant="primary" onClick={handleSubmit} loading={saving} disabled={!priceCents || !startDate || !endDate}>
-          {isBundle ? 'Create bundle listing' : 'Create listing'}
+          {isBundle ? t('op.listingForm.createBundle') : t('op.listingForm.create')}
         </Btn>
-        <Btn variant="ghost" onClick={onCancel}>Cancel</Btn>
+        <Btn variant="ghost" onClick={onCancel}>{t('common.cancel')}</Btn>
       </div>
     </div>
   );

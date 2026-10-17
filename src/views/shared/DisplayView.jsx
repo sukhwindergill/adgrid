@@ -7,8 +7,12 @@ import { Badge } from '../../components/primitives/Badge.jsx';
 import { Hover } from '../../components/primitives/Hover.jsx';
 import { useOperatorScreenCampaignRows } from '../../hooks/useOperatorScreenCampaignRows.js';
 import { IconChart, IconClock, IconScreen } from '../../components/icons.jsx';
+import { useT } from '../../i18n/useT.js';
+import { formatTime } from '../../i18n/format.js';
 
-const HOUR_LABELS = ['12a','1','2','3','4','5','6','7','8','9','10','11','12p','1','2','3','4','5','6','7','8','9','10','11'];
+// Axis ticks every 6 hours, in the current locale's clock style.
+const AXIS_HOURS = [0, 6, 12, 18];
+const hourLabel = h => formatTime(new Date(2000, 0, 1, h), { hour: 'numeric' });
 
 function parseHour(t) {
   if (!t) return 0;
@@ -19,29 +23,29 @@ function parseHour(t) {
 function timeLabel(t) {
   if (!t) return '';
   const [h] = t.split(':').map(Number);
-  const ampm = h >= 12 ? 'pm' : 'am';
-  return `${h === 0 ? 12 : h > 12 ? h - 12 : h}${ampm}`;
+  return hourLabel(h);
 }
 
 function NowPlayingCard({ campaign }) {
+  const { t, tOr } = useT();
   if (!campaign) return (
     <div style={{ ...TX.bodyMuted, padding: '20px 0', textAlign: 'center' }}>
-      No active campaigns right now
+      {t('displayMgr.noActive')}
     </div>
   );
   return (
     <div style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${C.border}`, background: C.surface }}>
       <div style={{ height: 4, background: campaign.color || C.purple }} />
       <div style={{ padding: '14px 16px' }}>
-        <div style={{ ...TX.caption, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Now Playing</div>
+        <div style={{ ...TX.caption, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t('displayMgr.nowPlaying')}</div>
         <div style={{ ...TX.heading, marginBottom: 2 }}>{campaign.headline || campaign.advertiser || campaign.advertiser_name || ''}</div>
         {/* When there's no headline, the title above already shows the advertiser name --
             repeating it here would read as "Nike / Nike · Fashion", so drop it from the subtitle. */}
-        <div style={{ ...TX.helper, marginBottom: 10 }}>{campaign.headline ? `${campaign.advertiser} · ${campaign.category}` : campaign.category}</div>
+        <div style={{ ...TX.helper, marginBottom: 10 }}>{campaign.headline ? `${campaign.advertiser} · ${tOr(`categories.${campaign.category}`, campaign.category)}` : tOr(`categories.${campaign.category}`, campaign.category)}</div>
         <div style={{ ...TX.caption, display: 'flex', gap: 16 }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconClock size={14} /> {timeLabel(campaign.timeStart)} – {timeLabel(campaign.timeEnd)}</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconClock size={14} /> {campaign.duration}s slots</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconChart size={14} /> {campaign.slots}% share</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconClock size={14} /> {t('displayMgr.slots', { s: campaign.duration })}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconChart size={14} /> {t('displayMgr.share', { pct: campaign.slots })}</span>
         </div>
       </div>
     </div>
@@ -49,11 +53,12 @@ function NowPlayingCard({ campaign }) {
 }
 
 function TimelineBar({ campaigns }) {
+  const { t } = useT();
   const now = new Date();
   const nowPct = ((now.getHours() + now.getMinutes() / 60) / 24) * 100;
   return (
     <div>
-      <div style={{ fontSize: T.sm, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 10 }}>Today's Schedule</div>
+      <div style={{ fontSize: T.sm, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 10 }}>{t('displayMgr.todaySchedule')}</div>
       <div style={{ position: 'relative', height: 40, background: C.surfaceAlt, borderRadius: 6, overflow: 'hidden', marginBottom: 6 }}>
         {campaigns.map(c => {
           const start = parseHour(c.timeStart);
@@ -77,7 +82,7 @@ function TimelineBar({ campaigns }) {
         <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${nowPct}%`, width: 2, background: C.red, opacity: 0.8 }} />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: T.xs, color: C.textMuted, fontFamily: F.mono }}>
-        {HOUR_LABELS.filter((_, i) => i % 6 === 0).map((l, i) => <span key={i}>{l}</span>)}
+        {AXIS_HOURS.map(h => <span key={h}>{hourLabel(h)}</span>)}
       </div>
     </div>
   );
@@ -89,6 +94,7 @@ function TimelineBar({ campaigns }) {
 // useOperatorScreenCampaignRows flattens that junction into real
 // per-screen rows, each carrying a real screenId/screenName/city.
 export function DisplayView({ operatorScreenIds = [], screens: operatorScreens = [] }) {
+  const { t, formatDate } = useT();
   const now = new Date();
   const nowH = now.getHours() + now.getMinutes() / 60;
 
@@ -128,21 +134,24 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
   return (
     <div>
       <PageHeader
-        title="Display Manager"
-        subtitle={`${screens.length} screen${screens.length !== 1 ? 's' : ''} · ${campaigns.filter(c => c.status === 'active').length} campaigns live`}
+        title={t('displayMgr.title')}
+        subtitle={t('displayMgr.subtitle', {
+          screens: t('displayMgr.screens', { count: screens.length }),
+          live: t('displayMgr.live', { count: campaigns.filter(c => c.status === 'active').length }),
+        })}
       />
 
       {screens.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '64px 24px', background: C.surface, borderRadius: 12, border: `1px solid ${C.border}` }}>
           <div style={{ color: C.textMuted, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconScreen size={36} /></div>
-          <div style={{ ...TX.titleLg, marginBottom: 6 }}>No screens with campaigns</div>
-          <div style={TX.bodySub}>Create campaigns to see them here</div>
+          <div style={{ ...TX.titleLg, marginBottom: 6 }}>{t('displayMgr.emptyTitle')}</div>
+          <div style={TX.bodySub}>{t('displayMgr.emptySub')}</div>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 20, alignItems: 'start' }}>
           {/* Screen list */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ ...TX.caption, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Screens</div>
+            <div style={{ ...TX.caption, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{t('displayMgr.screensHeading')}</div>
             {screens.map(s => {
               const isSelected = s.id === selectedId;
               const liveCount  = s.campaigns.filter(c => c.status === 'active').length;
@@ -173,7 +182,7 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
                       <span style={{ fontSize: T.xs, color: C.textSub, fontFamily: F.sans, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nowLive.advertiser}</span>
                     </div>
                   ) : (
-                    <div style={TX.caption}>{s.campaigns.length} campaign{s.campaigns.length !== 1 ? 's' : ''}</div>
+                    <div style={TX.caption}>{t('displayMgr.campaigns', { count: s.campaigns.length })}</div>
                   )}
                 </Hover>
               );
@@ -200,10 +209,10 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
 
               <Card style={{ padding: '16px 20px' }}>
                 <div style={{ ...TX.strong, marginBottom: 12 }}>
-                  Queued ({queued.length})
+                  {t('displayMgr.queued', { count: queued.length })}
                 </div>
                 {queued.length === 0 ? (
-                  <div style={{ ...TX.helperMuted, padding: '12px 0' }}>No queued campaigns</div>
+                  <div style={{ ...TX.helperMuted, padding: '12px 0' }}>{t('displayMgr.noQueued')}</div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {queued.map((c, i) => (
@@ -216,12 +225,12 @@ export function DisplayView({ operatorScreenIds = [], screens: operatorScreens =
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ ...TX.body, fontWeight: 500 }}>{c.advertiser}</div>
                           <div style={TX.caption}>
-                            {timeLabel(c.timeStart)}–{timeLabel(c.timeEnd)} · {c.duration}s · {c.slots}% share
+                            {t('displayMgr.queuedLine', { start: timeLabel(c.timeStart), end: timeLabel(c.timeEnd), s: c.duration, pct: c.slots })}
                           </div>
                         </div>
                         <div style={{ textAlign: 'right', flexShrink: 0 }}>
                           <Badge status={c.status} />
-                          <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.mono, marginTop: 3 }}>{c.start}</div>
+                          <div style={{ fontSize: T.xs, color: C.textMuted, fontFamily: F.mono, marginTop: 3 }}>{formatDate(c.start)}</div>
                         </div>
                       </div>
                     ))}
