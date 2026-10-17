@@ -3,42 +3,44 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { usePageMeta } from '../../lib/usePageMeta.js';
 import { Breadcrumbs } from '../../components/shared/Breadcrumbs.jsx';
 import { useT } from '../../i18n/useT.js';
+import { T, C, D, F, alpha } from '../../design/tokens.js';
+import { Btn } from '../../components/primitives/Btn.jsx';
 
 const page = {
   minHeight: '100vh',
-  background: '#0b0d12',
-  color: 'rgba(255,255,255,0.85)',
-  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  background: D.bg,
+  color: D.text,
+  fontFamily: F.sans,
   padding: '48px 24px',
   display: 'flex',
   alignItems: 'center',
 };
 const inner = { maxWidth: 560, margin: '0 auto', width: '100%' };
-const h1 = { fontSize: 32, fontWeight: 700, color: '#fff', margin: '0 0 12px', textAlign: 'center' };
-const p = { fontSize: 15, lineHeight: 1.7, margin: '0 0 12px', textAlign: 'center' };
+const h1 = { fontSize: T.display, fontWeight: 700, color: C.white, margin: '0 0 12px', textAlign: 'center' };
+const p = { fontSize: T.lg, lineHeight: 1.7, margin: '0 0 12px', textAlign: 'center' };
 const promise = {
   ...p,
   marginTop: 24,
   padding: '14px 18px',
-  background: 'rgba(123,47,255,0.1)',
-  border: '1px solid rgba(123,47,255,0.3)',
+  background: alpha(C.purple, 0.1),
+  border: `1px solid ${alpha(C.purple, 0.3)}`,
   borderRadius: 10,
-  color: '#fff',
+  color: C.white,
 };
-const h2 = { fontSize: 13, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#B79CFF', margin: '36px 0 14px' };
+const h2 = { fontSize: T.base, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: D.link, margin: '36px 0 14px' };
 const list = { listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 10 };
 const item = {
-  padding: '14px 16px', borderRadius: 10, background: 'rgba(255,255,255,0.03)',
-  border: '1px solid rgba(255,255,255,0.08)', fontSize: 14, lineHeight: 1.6,
+  padding: '14px 16px', borderRadius: 10, background: alpha(C.white, 0.03),
+  border: `1px solid ${alpha(C.white, 0.08)}`, fontSize: T.md, lineHeight: 1.6,
 };
-const itemTitle = { color: '#fff', fontWeight: 600, display: 'block', marginBottom: 2 };
+const itemTitle = { color: C.white, fontWeight: 600, display: 'block', marginBottom: 2 };
 const actions = { display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginTop: 32 };
 const btn = {
   display: 'inline-block', padding: '13px 26px', borderRadius: 8, border: 'none', cursor: 'pointer',
-  background: '#7B2FFF', color: '#fff', textDecoration: 'none', fontWeight: 600, fontSize: 15,
+  background: C.purple, color: C.white, textDecoration: 'none', fontWeight: 600, fontSize: T.lg,
   fontFamily: 'inherit',
 };
-const btnSecondary = { ...btn, background: 'transparent', border: '1px solid rgba(255,255,255,0.18)' };
+const btnSecondary = { ...btn, background: 'transparent', border: `1px solid ${alpha(C.white, 0.18)}` };
 
 // What someone can usefully do while waiting, per side of the marketplace.
 // Only lists things that exist today -- no referral credit is promised.
@@ -66,9 +68,9 @@ function ShareButton({ text }) {
   };
 
   return (
-    <button type="button" style={btnSecondary} onClick={share}>
+    <Btn variant="unstyled" type="button" style={btnSecondary} onClick={share}>
       {copied ? t('legal.thankYou.copied') : t('legal.thankYou.share')}
-    </button>
+    </Btn>
   );
 }
 
@@ -81,7 +83,7 @@ export function ThankYou() {
   const [params] = useSearchParams();
   const role = params.get('role') === 'advertiser' ? 'advertiser' : 'operator';
   const ns = `legal.thankYou.${role}`;
-  const calcLink = chunk => <Link to="/#earnings" style={{ color: '#B79CFF' }}>{chunk}</Link>;
+  const calcLink = chunk => <Link to="/#earnings" style={{ color: D.link }}>{chunk}</Link>;
 
   return (
     <div id="main-content" style={page}>

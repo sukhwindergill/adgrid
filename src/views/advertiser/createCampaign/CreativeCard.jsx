@@ -1,6 +1,7 @@
 // src/views/advertiser/createCampaign/CreativeCard.jsx
 import { useRef, useState } from 'react';
-import { C, F } from '../../../design/tokens.js';
+import { C, F, T } from '../../../design/tokens.js';
+import { TX } from '../../../design/text.js';
 import { Inp } from '../../../components/primitives/Inp.jsx';
 import { SelInput } from '../../../components/primitives/SelInput.jsx';
 import { ColorField } from '../../../components/primitives/ColorField.jsx';
@@ -15,6 +16,7 @@ import { CATEGORIES } from '../../../lib/data.js';
 import { QR_CORNER_PRESETS, clampQrCenter } from '../../../lib/creativeQrPosition.js';
 import { MediaUpload } from './MediaUpload.jsx';
 import { useT } from '../../../i18n/useT.js';
+import { Btn } from '../../../components/primitives/Btn.jsx';
 
 const FRAME_ASPECT = 16 / 9;
 
@@ -119,8 +121,8 @@ export function CreativeCard({
     setPickField(null);
   };
 
-  const qrFgColor = creative.qr_fg_color || creative.accent_color || '#7c3aed';
-  const qrBgColor = creative.qr_bg_color || '#ffffff';
+  const qrFgColor = creative.qr_fg_color || creative.accent_color || C.purple;
+  const qrBgColor = creative.qr_bg_color || C.white;
   const qrContrastRatioValue = contrastRatio(qrFgColor, qrBgColor);
   const qrContrastWarning = qrContrastRatioValue < QR_CONTRAST_MIN_RATIO
     ? t('create.creative.lowContrast', {
@@ -152,18 +154,15 @@ export function CreativeCard({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <Inp label="" placeholder={t('create.creative.labelPlaceholder')} value={creative.label} onChange={e => setField('label', e.target.value)} />
         {onRemove && (
-          <button type="button" onClick={onRemove} style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, padding: '4px 10px', fontSize: 12, color: C.red, cursor: 'pointer', fontFamily: F.sans, marginLeft: 12, flexShrink: 0, transition: 'background 0.15s' }}
-            onMouseEnter={e => { e.currentTarget.style.background = C.redSoft; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
-          >
+          <Btn variant="secondary" type="button" onClick={onRemove} style={{ ...TX.error, background: 'none', borderRadius: 6, padding: '4px 10px', marginLeft: 12, flexShrink: 0, transition: 'background 0.15s', boxShadow: 'none', fontWeight: 400 }} hoverStyle={{ background: C.redSoft }}>
             {t('common.remove')}
-          </button>
+          </Btn>
         )}
       </div>
 
       <MediaUpload form={creative} setForm={setMediaForm} />
       {!creative.media_url && (
-        <div style={{ fontSize: 12, color: C.red, fontFamily: F.sans, marginTop: -14, marginBottom: 14 }}>
+        <div style={{ ...TX.error, marginTop: -14, marginBottom: 14 }}>
           {t('create.creative.needsUpload')}
         </div>
       )}
@@ -172,11 +171,11 @@ export function CreativeCard({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Inp label={t('create.creative.destination')} placeholder={t('create.creative.destinationPlaceholder')} type="url" value={creative.destination_url} onChange={e => setField('destination_url', e.target.value)} />
           {creative.destination_url.trim() !== '' && !isValidDestinationUrl(creative.destination_url) ? (
-            <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, marginTop: -8 }}>
+            <div style={{ fontSize: T.xs, color: C.redText, fontFamily: F.sans, marginTop: -8 }}>
               {t('create.creative.badUrl')}
             </div>
           ) : (
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: -8 }}>
+            <div style={{ ...TX.caption, marginTop: -8 }}>
               {t('create.creative.urlHint')}
             </div>
           )}
@@ -191,7 +190,7 @@ export function CreativeCard({
           />
           {hasDestination && (
             <div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 6 }}>{t('create.creative.qrColours')}</div>
+              <div style={{ ...TX.label, marginBottom: 6 }}>{t('create.creative.qrColours')}</div>
               <div style={{ display: 'flex', gap: 16 }}>
                 <ColorField
                   label={t('create.creative.dots')}
@@ -207,22 +206,22 @@ export function CreativeCard({
                 />
               </div>
               {armedPickField && (
-                <div style={{ fontSize: 11, color: C.purple, fontFamily: F.sans, marginTop: 6 }}>
+                <div style={{ fontSize: T.xs, color: C.purple, fontFamily: F.sans, marginTop: 6 }}>
                   {t('create.creative.pickHint')}
                 </div>
               )}
               {pickError && creative.media_url && (
-                <div style={{ fontSize: 11, color: C.red, fontFamily: F.sans, marginTop: 6 }}>{pickError}</div>
+                <div style={{ fontSize: T.xs, color: C.redText, fontFamily: F.sans, marginTop: 6 }}>{pickError}</div>
               )}
               {qrContrastWarning && (
-                <div style={{ fontSize: 11, color: C.amber, fontFamily: F.sans, marginTop: 6 }}>{qrContrastWarning}</div>
+                <div style={{ fontSize: T.xs, color: C.amberText, fontFamily: F.sans, marginTop: 6 }}>{qrContrastWarning}</div>
               )}
             </div>
           )}
         </div>
 
         <div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>{t('common.preview')}</div>
+          <div style={{ fontSize: T.xs, fontWeight: 600, color: C.textMid, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>{t('common.preview')}</div>
           <CreativePreview
             campaign={creative}
             editableQr={hasDestination}
@@ -235,19 +234,12 @@ export function CreativeCard({
             <>
               <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                 {Object.keys(QR_CORNER_PRESETS).map(corner => (
-                  <button key={corner} type="button" onClick={() => snapQrTo(corner)} style={{
-                    flex: 1, padding: '6px 4px', borderRadius: 6, border: `1px solid ${C.border}`,
-                    background: C.surface, color: C.textSub, fontSize: 11, fontFamily: F.sans, cursor: 'pointer',
-                    transition: 'background 0.15s',
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
-                  >
+                  <Btn variant="secondary" key={corner} type="button" onClick={() => snapQrTo(corner)} style={{ flex: 1, padding: '6px 4px', borderRadius: 6, color: C.textSub, fontSize: T.xs, transition: 'background 0.15s', boxShadow: 'none', fontWeight: 400, justifyContent: 'center' }}>
                     {t(`create.creative.corner.${corner}`)}
-                  </button>
+                  </Btn>
                 ))}
               </div>
-              <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 6 }}>
+              <div style={{ ...TX.caption, marginTop: 6 }}>
                 {t('create.creative.dragHint')}
               </div>
             </>
@@ -259,19 +251,16 @@ export function CreativeCard({
       {showAssignment && (
         <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: C.textMid, fontFamily: F.sans }}>
+            <div style={{ fontSize: T.sm, fontWeight: 600, color: C.textMid, fontFamily: F.sans }}>
               {t('create.creative.showOn', {
                 assigned: creative.assigned_screen_ids.length,
                 total: poolScreens.length,
                 screens: t('create.creativeStep.screenWord', { count: poolScreens.length }),
               })}
             </div>
-            <button type="button" onClick={onSplitByType} style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans, padding: 0, textDecoration: 'underline', transition: 'opacity 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = '0.75'; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-            >
+            <Btn variant="unstyled" type="button" onClick={onSplitByType} style={{ fontSize: T.sm, color: C.purple, fontFamily: F.sans, textDecoration: 'underline', transition: 'opacity 0.15s' }} hoverStyle={{ opacity: '0.75' }}>
               {t('create.creative.split')}
-            </button>
+            </Btn>
           </div>
           {overlapsAnother && (
             <div style={{ marginBottom: 10 }}>
@@ -288,7 +277,7 @@ export function CreativeCard({
             {poolScreens.map(s => {
               const checked = creative.assigned_screen_ids.includes(s.id);
               return (
-                <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.textSub, fontFamily: F.sans, cursor: 'pointer' }}>
+                <label key={s.id} style={{ ...TX.helper, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={checked}

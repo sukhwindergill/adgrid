@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase.js';
 import { SUPABASE_FUNCTIONS_URL } from '../../lib/constants.js';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -95,14 +96,14 @@ export function ScreenInvitePage() {
     <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <Card style={{ maxWidth: 460, padding: 36, textAlign: 'center' }}>
         {state === 'loading' && (
-          <div style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans }}>{t('common.loading')}</div>
+          <div style={{ fontSize: T.md, color: C.textSub, fontFamily: F.sans }}>{t('common.loading')}</div>
         )}
         {state === 'error' && (
           <>
-            <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 8 }}>
+            <div style={{ ...TX.titleLg, marginBottom: 8 }}>
               {t('invite.screen.errorTitle')}
             </div>
-            <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>
+            <div style={{ ...TX.bodySub, marginBottom: 20 }}>
               {t('invite.screen.errorBody')}
             </div>
             <Btn onClick={() => { setState('loading'); setRetryCount((n) => n + 1); }}>{t('common.retry')}</Btn>
@@ -110,10 +111,10 @@ export function ScreenInvitePage() {
         )}
         {state === 'invalid' && (
           <>
-            <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 8 }}>
+            <div style={{ ...TX.titleLg, marginBottom: 8 }}>
               {t('invite.screen.invalidTitle')}
             </div>
-            <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>
+            <div style={{ ...TX.bodySub, marginBottom: 20 }}>
               {t('invite.screen.invalidBody')}
             </div>
             <Btn onClick={() => navigate('/')}>{t('invite.screen.goToAdGrid')}</Btn>
@@ -121,10 +122,10 @@ export function ScreenInvitePage() {
         )}
         {state === 'booked' && (
           <>
-            <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 8 }}>
+            <div style={{ ...TX.titleLg, marginBottom: 8 }}>
               {t('invite.screen.usedTitle')}
             </div>
-            <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 20 }}>
+            <div style={{ ...TX.bodySub, marginBottom: 20 }}>
               {t('invite.screen.usedBody')}
             </div>
             <Btn onClick={() => navigate('/login?mode=signup&intent=advertiser')}>{t('invite.screen.signUp')}</Btn>
@@ -133,13 +134,13 @@ export function ScreenInvitePage() {
         {state === 'valid' && screen && (
           <>
             <div style={{ color: C.purple, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconScreen size={36} /></div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>
+            <div style={{ ...TX.titleLg, marginBottom: 4 }}>
               {t('invite.screen.invitedTo')}
             </div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: C.purple, fontFamily: F.sans, marginBottom: 4 }}>
+            <div style={{ fontSize: T.xl, fontWeight: 800, color: C.purple, fontFamily: F.sans, marginBottom: 4 }}>
               {screen.name}
             </div>
-            <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 24 }}>
+            <div style={{ ...TX.bodySub, marginBottom: 24 }}>
               {screen.city}{screen.venue_category ? ` · ${VENUE_TAXONOMY[screen.venue_category] ? t(`venue.category.${screen.venue_category}`) : screen.venue_category}` : ''}
             </div>
             <Btn onClick={getStarted} style={{ width: '100%' }}>{t('invite.screen.getStarted')}</Btn>

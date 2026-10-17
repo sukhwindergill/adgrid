@@ -2,9 +2,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase.js';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { Card } from '../../components/primitives/Card.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
+import { Notice } from '../../components/primitives/Notice.jsx';
 import { ErrorBanner } from '../../components/primitives/ErrorBanner.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -85,27 +87,24 @@ function StepSubmitted({ campaign, hasCard, onDone, onGoToBilling }) {
   return (
     <div style={{ maxWidth: 580, margin: '0 auto' }}>
       <Card style={{ padding: 32 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>{t('create.wizard.payTitle')}</h2>
-        <p style={{ fontSize: 14, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>
+        <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 8px' }}>{t('create.wizard.payTitle')}</h2>
+        <p style={{ fontSize: T.md, color: C.textSub, fontFamily: F.sans, margin: '0 0 24px' }}>
           {t('create.wizard.payBody', { amount })}
         </p>
         {!hasCard && (
-          <div style={{
-            padding: '14px 16px', borderRadius: 10, marginBottom: 16,
-            background: C.amberSoft, border: `1px solid ${C.amberBorder}`,
-          }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>
+          <Notice tone="warning" style={{ padding: '14px 16px', borderRadius: 10, marginBottom: 16 }}>
+            <div style={{ ...TX.title, marginBottom: 4 }}>
               {t('create.wizard.noCardTitle')}
             </div>
-            <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 12 }}>
+            <div style={{ ...TX.bodySub, marginBottom: 12 }}>
               {t('create.wizard.noCardBody')}
             </div>
-            <Btn onClick={onGoToBilling} style={{ fontSize: 13, padding: '8px 16px' }}>
+            <Btn onClick={onGoToBilling} style={{ fontSize: T.base, padding: '8px 16px' }}>
               {t('create.wizard.goToBilling')}
             </Btn>
-          </div>
+          </Notice>
         )}
-        <Btn onClick={onDone} variant={hasCard ? 'primary' : 'secondary'} style={{ width: '100%' }}>
+        <Btn onClick={onDone} variant={hasCard ? 'primary' : 'secondary'} style={{ width: '100%', justifyContent: 'center' }}>
           {t('create.wizard.done')}
         </Btn>
       </Card>
@@ -276,7 +275,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
       return {
         ...s,
         creatives: [makeBlankCreative({
-          accent_color: profile.brand_color_1 || '#7c3aed',
+          accent_color: profile.brand_color_1 || C.purple,
         })],
       };
     });
@@ -318,7 +317,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
       // requires a fresh upload before the wizard lets it advance.
       creatives: [makeBlankCreative({
         destination_url: c.destination_url || c.destination || '',
-        accent_color: c.accent_color || c.color || '#7c3aed',
+        accent_color: c.accent_color || c.color || C.purple,
         category: c.category || 'Food & Beverage',
         qr_x: c.qr_x ?? null,
         qr_y: c.qr_y ?? null,
@@ -650,7 +649,7 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
         advertiser_id: user.id,
         screen: firstScreen?.name || '',
         city: form.city || '',
-        color: preview.accent_color || '#7c3aed',
+        color: preview.accent_color || C.purple,
         qr_x: preview.qr_x,
         qr_y: preview.qr_y,
         qr_size_pct: preview.qr_size_pct,
@@ -704,13 +703,10 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
           borderRadius: 10, padding: '12px 16px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
         }}>
-          <span style={{ fontSize: 13, color: C.amber, fontFamily: F.sans }}>
+          <span style={{ fontSize: T.base, color: C.amberText, fontFamily: F.sans }}>
             {t('create.wizard.noBilling')}
           </span>
-          <button type="button" onClick={() => navigate('/app/adv-billing')} style={{
-            fontSize: 12, fontWeight: 600, color: C.amber, fontFamily: F.sans, background: 'none', border: 'none', cursor: 'pointer',
-            textDecoration: 'underline', whiteSpace: 'nowrap', padding: 0,
-          }}>{t('create.wizard.setUpBilling')}</button>
+          <Btn variant="unstyled" type="button" onClick={() => navigate('/app/adv-billing')} style={{ fontSize: T.sm, fontWeight: 600, color: C.amberText, fontFamily: F.sans, textDecoration: 'underline', whiteSpace: 'nowrap' }}>{t('create.wizard.setUpBilling')}</Btn>
         </div>
       )}
       {step < 3 && resumedDraft && (
@@ -720,33 +716,27 @@ export function CreateCampaign({ onSave, onCancel, dbScreens = [], screensLoadin
           borderRadius: 10, padding: '10px 16px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
         }}>
-          <span style={{ fontSize: 12, color: C.text, fontFamily: F.sans }}>
+          <span style={{ fontSize: T.sm, color: C.text, fontFamily: F.sans }}>
             {tx('create.wizard.continuingDraft', { b: chunk => <strong>{chunk}</strong>, name: resumedDraft.name })}
           </span>
-          <button onClick={startFresh} style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 12, fontWeight: 600, color: C.purple, fontFamily: F.sans, textDecoration: 'underline',
-          }}>{t('create.wizard.startFresh')}</button>
+          <Btn variant="unstyled" onClick={startFresh} style={{ fontSize: T.sm, fontWeight: 600, color: C.purple, fontFamily: F.sans, textDecoration: 'underline' }}>{t('create.wizard.startFresh')}</Btn>
         </div>
       )}
       {step < 3 && <Stepper step={step} labels={STEP_KEYS.map(k => t(`create.steps.${k}`))} onCancel={onCancel} />}
 
       {showDupModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
+        <div style={{ position: 'fixed', inset: 0, background: C.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
           <Card style={{ padding: 28, width: '100%', maxWidth: 480, maxHeight: '80vh', overflowY: 'auto' }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 16 }}>{t('create.wizard.dupTitle')}</div>
+            <div style={{ ...TX.heading, marginBottom: 16 }}>{t('create.wizard.dupTitle')}</div>
             {campaigns.length === 0 ? (
-              <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans }}>{t('create.wizard.dupEmpty')}</div>
+              <div style={TX.bodySub}>{t('create.wizard.dupEmpty')}</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {campaigns.map(c => (
-                  <button key={c.id} onClick={() => loadDuplicate(c)} style={{
-                    background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8,
-                    padding: '12px 16px', cursor: 'pointer', textAlign: 'left',
-                  }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: F.sans }}>{c.headline || c.advertiser}</div>
-                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{c.city} · {formatMoney(c.budget, c.currency)}</div>
-                  </button>
+                  <Btn variant="unstyled" key={c.id} onClick={() => loadDuplicate(c)} style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: '12px 16px', textAlign: 'left' }}>
+                    <div style={TX.strong}>{c.headline || c.advertiser}</div>
+                    <div style={{ ...TX.caption, marginTop: 2 }}>{c.city} · {formatMoney(c.budget, c.currency)}</div>
+                  </Btn>
                 ))}
               </div>
             )}

@@ -10,13 +10,13 @@ import {
   savePendingPairing,
 } from '../../lib/screenPairing.js';
 import { useT } from '../../i18n/useT.js';
+import { T, C, D, F, alpha } from '../../design/tokens.js';
 
 const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
   : '';
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
 // Module-level so the default prop is referentially stable -- an inline
 // arrow would re-run the pairing effect on every countdown tick.
@@ -121,17 +121,17 @@ export function PairScreen({ navigate = replaceLocation, pollIntervalMs = PAIR_P
 
   return (
     <div style={{
-      position: 'fixed', inset: 0, background: '#050a10', color: '#fff', fontFamily: FONT,
+      position: 'fixed', inset: 0, background: C.screen, color: C.white, fontFamily: F.sans,
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       padding: '5vh 5vw', textAlign: 'center', cursor: 'none',
     }}>
-      <div style={{ fontSize: 'clamp(14px, 1.6vw, 22px)', letterSpacing: '0.3em', color: 'rgba(255,255,255,0.45)', fontWeight: 600, marginBottom: '4vh' }}>
+      <div style={{ fontSize: 'clamp(14px, 1.6vw, 22px)', letterSpacing: '0.3em', color: alpha(C.white, 0.45), fontWeight: 600, marginBottom: '4vh' }}>
         ADGRID
       </div>
 
       {phase === 'code' && pairing && (
         <>
-          <div style={{ fontSize: 'clamp(18px, 2.4vw, 34px)', color: 'rgba(255,255,255,0.75)', marginBottom: '3vh' }}>
+          <div style={{ fontSize: 'clamp(18px, 2.4vw, 34px)', color: alpha(C.white, 0.75), marginBottom: '3vh' }}>
             {t('display.pair.instruction')}
           </div>
           <div
@@ -141,34 +141,34 @@ export function PairScreen({ navigate = replaceLocation, pollIntervalMs = PAIR_P
               fontFamily: "'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace",
               fontSize: 'clamp(64px, 13vw, 220px)', fontWeight: 700, letterSpacing: '0.12em',
               lineHeight: 1, padding: '3vh 4vw', borderRadius: 24,
-              background: 'rgba(255,255,255,0.06)', border: '2px solid rgba(255,255,255,0.12)',
+              background: alpha(C.white, 0.06), border: `2px solid ${alpha(C.white, 0.12)}`,
               whiteSpace: 'nowrap',
             }}
           >
             {formatPairingCode(pairing.code)}
           </div>
-          <div style={{ fontSize: 'clamp(14px, 1.6vw, 24px)', color: 'rgba(255,255,255,0.55)', marginTop: '4vh', lineHeight: 1.6, maxWidth: 1100 }}>
-            {tx('display.pair.howTo', { b: chunk => <strong style={{ color: '#fff' }}>{chunk}</strong>, host })}
+          <div style={{ fontSize: 'clamp(14px, 1.6vw, 24px)', color: alpha(C.white, 0.55), marginTop: '4vh', lineHeight: 1.6, maxWidth: 1100 }}>
+            {tx('display.pair.howTo', { b: chunk => <strong style={{ color: C.white }}>{chunk}</strong>, host })}
           </div>
-          <div style={{ fontSize: 'clamp(12px, 1.2vw, 18px)', color: 'rgba(255,255,255,0.35)', marginTop: '2vh' }}>
+          <div style={{ fontSize: 'clamp(12px, 1.2vw, 18px)', color: D.textFaint, marginTop: '2vh' }}>
             {t('display.pair.newCodeIn', { time: formatCountdown(pairing.expires_at, now) })}
           </div>
         </>
       )}
 
       {phase === 'loading' && (
-        <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, textTransform: 'uppercase' }}>{t('display.pair.gettingCode')}</div>
+        <div style={{ fontSize: T.md, color: D.textFaint, letterSpacing: 2, textTransform: 'uppercase' }}>{t('display.pair.gettingCode')}</div>
       )}
 
       {phase === 'offline' && (
-        <div style={{ fontSize: 'clamp(16px, 2vw, 28px)', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
+        <div style={{ fontSize: 'clamp(16px, 2vw, 28px)', color: alpha(C.white, 0.6), lineHeight: 1.6 }}>
           {t('display.pair.offline')}<br />
-          <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.8em' }}>{t('display.pair.offlineHint')}</span>
+          <span style={{ color: D.textFaint, fontSize: '0.8em' }}>{t('display.pair.offlineHint')}</span>
         </div>
       )}
 
       {phase === 'paired' && (
-        <div style={{ fontSize: 'clamp(18px, 2.4vw, 34px)', color: '#4ade80' }}>{t('display.pair.paired')}</div>
+        <div style={{ fontSize: 'clamp(18px, 2.4vw, 34px)', color: D.success }}>{t('display.pair.paired')}</div>
       )}
     </div>
   );

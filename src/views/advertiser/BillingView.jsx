@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { C, F, SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
+import { SUPABASE_FUNCTIONS_URL } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
 import { useToast } from "../../components/primitives/Toast.jsx";
 import { useConfirm } from "../../components/primitives/ConfirmModal.jsx";
@@ -9,11 +9,13 @@ import { defaultCardExpiryWarning } from "../../lib/cardExpiry.js";
 import { PageHeader } from "../../components/primitives/PageHeader.jsx";
 import { Btn } from "../../components/primitives/Btn.jsx";
 import { useT } from "../../i18n/useT.js";
+import { T, C, F } from '../../design/tokens.js';
+import { Card } from '../../components/primitives/Card.jsx';
 
 const STATUS_COLORS = {
-  paid: { bg: C.greenSoft, color: C.green },
-  open: { bg: C.amberSoft, color: C.amber },
-  failed: { bg: C.redSoft, color: C.red },
+  paid: { bg: C.greenSoft, color: C.greenText },
+  open: { bg: C.amberSoft, color: C.amberText },
+  failed: { bg: C.redSoft, color: C.redText },
   void: { bg: C.surfaceAlt, color: C.textMuted },
 };
 
@@ -25,7 +27,7 @@ function Badge({ status }) {
   const style = STATUS_COLORS[status] ?? STATUS_COLORS.void;
   return (
     <span style={{
-      padding: "2px 9px", borderRadius: 12, fontSize: 11, fontWeight: 600,
+      padding: "2px 9px", borderRadius: 12, fontSize: T.xs, fontWeight: 600,
       background: style.bg, color: style.color, textTransform: "capitalize",
     }}>{INVOICE_STATUSES.includes(status) ? t(`billing.invoiceStatus.${status}`) : status}</span>
   );
@@ -217,7 +219,7 @@ export default function BillingView() {
 
   if (error) return (
     <div style={{ padding: 40, fontFamily: F.sans }}>
-      <div style={{ color: C.red, marginBottom: 12 }}>{error}</div>
+      <div style={{ color: C.redText, marginBottom: 12 }}>{error}</div>
       <Btn onClick={() => load()}>{t('billing.retry')}</Btn>
     </div>
   );
@@ -233,12 +235,12 @@ export default function BillingView() {
           padding: "16px 24px", marginBottom: 24,
         }}>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: C.green, marginBottom: 2 }}>{t('billing.accountCredit')}</div>
-            <div style={{ fontSize: 12, color: C.textSub }}>
+            <div style={{ fontSize: T.base, fontWeight: 600, color: C.greenText, marginBottom: 2 }}>{t('billing.accountCredit')}</div>
+            <div style={{ fontSize: T.sm, color: C.textSub }}>
               {t('billing.creditHint')}
             </div>
           </div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: C.green, fontFamily: F.mono }}>
+          <div style={{ fontSize: T.xxl, fontWeight: 700, color: C.greenText, fontFamily: F.mono }}>
             {formatCurrency(accountCredit)}
           </div>
         </div>
@@ -252,9 +254,9 @@ export default function BillingView() {
           <div style={{
             display: "flex", gap: 8, padding: "12px 16px", marginBottom: 20,
             background: C.amberSoft, border: `1px solid ${C.amber}44`, borderRadius: 8,
-            fontSize: 13, color: C.text, lineHeight: 1.5,
+            fontSize: T.base, color: C.text, lineHeight: 1.5,
           }}>
-            <span style={{ flexShrink: 0, color: C.amber }}><IconWarning size={16} /></span>
+            <span style={{ flexShrink: 0, color: C.amberText }}><IconWarning size={16} /></span>
             <span>
               {warning.status === "expired"
                 ? tx('billing.cardExpired', { b: chunk => <strong>{chunk}</strong>, card: cardName(pm), exp: `${pm.expMonth}/${pm.expYear}` })
@@ -265,15 +267,12 @@ export default function BillingView() {
         );
       })()}
 
-      <div style={{
-        background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-        padding: "20px 24px", marginBottom: 24,
-      }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: C.text, marginBottom: 16 }}>
+      <Card style={{ padding: "20px 24px", marginBottom: 24 }}>
+        <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, marginBottom: 16 }}>
           {t('billing.paymentMethods')}
         </div>
         {data.paymentMethods.length === 0 ? (
-          <div style={{ color: C.textMuted, fontSize: 13 }}>{t('billing.noMethods')}</div>
+          <div style={{ color: C.textMuted, fontSize: T.base }}>{t('billing.noMethods')}</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {data.paymentMethods.map((pm) => (
@@ -283,15 +282,15 @@ export default function BillingView() {
                 border: `1px solid ${pm.isDefault ? C.purple : C.border}`,
               }}>
                 <span style={{ color: C.textSub, display: 'flex' }}><IconCard size={20} /></span>
-                <span style={{ fontSize: 14, fontWeight: 500, color: C.text, textTransform: "capitalize" }}>
+                <span style={{ fontSize: T.md, fontWeight: 500, color: C.text, textTransform: "capitalize" }}>
                   {pm.brand} ···· {pm.last4}
                 </span>
-                <span style={{ fontSize: 13, color: C.textSub }}>
+                <span style={{ fontSize: T.base, color: C.textSub }}>
                   {t('billing.expires', { exp: `${pm.expMonth}/${pm.expYear}` })}
                 </span>
                 {pm.isDefault && (
                   <span style={{
-                    fontSize: 11, fontWeight: 600, color: C.purple, background: C.purpleSoft,
+                    fontSize: T.xs, fontWeight: 600, color: C.purple, background: C.purpleSoft,
                     padding: "2px 8px", borderRadius: 10,
                   }}>{t('billing.default')}</span>
                 )}
@@ -301,7 +300,7 @@ export default function BillingView() {
                       {pmBusyId === pm.id ? "…" : t('billing.setDefault')}
                     </Btn>
                   )}
-                  <Btn variant="secondary" size="sm" onClick={() => removeMethod(pm)} disabled={pmBusyId === pm.id} style={{ color: C.red }}>
+                  <Btn variant="secondary" size="sm" onClick={() => removeMethod(pm)} disabled={pmBusyId === pm.id} style={{ color: C.redText }}>
                     {pmBusyId === pm.id ? "…" : t('common.remove')}
                   </Btn>
                 </div>
@@ -318,22 +317,19 @@ export default function BillingView() {
             <Btn onClick={startSetup} loading={setupLoading}>{t('billing.addMethod')}</Btn>
           )}
         </div>
-      </div>
+      </Card>
 
-      <div style={{
-        background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-        overflow: "hidden",
-      }}>
-        <div style={{ padding: "14px 24px", borderBottom: `1px solid ${C.border}`, fontSize: 15, fontWeight: 600, color: C.text }}>
+      <Card style={{ padding: 0, overflow: "hidden" }}>
+        <div style={{ padding: "14px 24px", borderBottom: `1px solid ${C.border}`, fontSize: T.lg, fontWeight: 600, color: C.text }}>
           {t('billing.invoiceHistory')}
         </div>
         {data.invoices.length === 0 ? (
-          <div style={{ padding: "32px 24px", color: C.textMuted, fontSize: 13 }}>
+          <div style={{ padding: "32px 24px", color: C.textMuted, fontSize: T.base }}>
             {t('billing.noInvoices')}
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 500 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: T.base, minWidth: 500 }}>
             <thead>
               <tr style={{ background: C.bg }}>
                 {["date", "description", "amount", "status", "pdf"].map((h) => (
@@ -344,7 +340,7 @@ export default function BillingView() {
             <tbody>
               {data.invoices.map((inv) => (
                 <tr key={inv.id} style={{ borderBottom: `1px solid ${C.border}` }}>
-                  <td style={{ padding: "12px 20px", color: C.text, fontFamily: F.mono, fontSize: 12 }}>
+                  <td style={{ padding: "12px 20px", color: C.text, fontFamily: F.mono, fontSize: T.sm }}>
                     {formatDate(new Date(inv.date * 1000))}
                   </td>
                   <td style={{ padding: "12px 20px", color: C.text }}>{inv.description}</td>
@@ -354,7 +350,7 @@ export default function BillingView() {
                   <td style={{ padding: "12px 20px" }}><Badge status={inv.status} /></td>
                   <td style={{ padding: "12px 20px" }}>
                     {inv.pdf ? (
-                      <a href={inv.pdf} target="_blank" rel="noreferrer" style={{ color: C.purple, fontSize: 12 }}>
+                      <a href={inv.pdf} target="_blank" rel="noreferrer" style={{ color: C.purple, fontSize: T.sm }}>
                         {t('billing.download')}
                       </a>
                     ) : "—"}
@@ -365,27 +361,24 @@ export default function BillingView() {
           </table>
           </div>
         )}
-      </div>
+      </Card>
 
       {!creditsLoading && creditsError && (
         <div style={{
           background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 12,
-          padding: "14px 24px", marginTop: 24, fontSize: 13, color: C.red,
+          padding: "14px 24px", marginTop: 24, fontSize: T.base, color: C.redText,
         }}>
           {t('billing.creditsError')}
         </div>
       )}
 
       {!creditsLoading && !creditsError && creditRows.length > 0 && (
-        <div style={{
-          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-          overflow: "hidden", marginTop: 24,
-        }}>
-          <div style={{ padding: "14px 24px", borderBottom: `1px solid ${C.border}`, fontSize: 15, fontWeight: 600, color: C.text }}>
+        <Card style={{ padding: 0, overflow: "hidden", marginTop: 24 }}>
+          <div style={{ padding: "14px 24px", borderBottom: `1px solid ${C.border}`, fontSize: T.lg, fontWeight: 600, color: C.text }}>
             {t('billing.deliveryCredits')}
           </div>
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 560 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: T.base, minWidth: 560 }}>
               <thead>
                 <tr style={{ background: C.bg }}>
                   {["day", "campaign", "screen", "reason", "credited"].map((h) => (
@@ -396,11 +389,11 @@ export default function BillingView() {
               <tbody>
                 {creditRows.map((r) => (
                   <tr key={`${r.campaign_id}-${r.screen_id}-${r.day}`} style={{ borderBottom: `1px solid ${C.border}` }}>
-                    <td style={{ padding: "12px 20px", color: C.text, fontFamily: F.mono, fontSize: 12 }}>{formatDate(r.day)}</td>
+                    <td style={{ padding: "12px 20px", color: C.text, fontFamily: F.mono, fontSize: T.sm }}>{formatDate(r.day)}</td>
                     <td style={{ padding: "12px 20px", color: C.text }}>{r.campaignName}</td>
                     <td style={{ padding: "12px 20px", color: C.text }}>{r.screenName}</td>
                     <td style={{ padding: "12px 20px", color: C.textSub }}>{REASONS.includes(r.reason) ? t(`billing.reason.${r.reason}`) : r.reason}</td>
-                    <td style={{ padding: "12px 20px", color: C.green, fontWeight: 600, fontFamily: F.mono }}>
+                    <td style={{ padding: "12px 20px", color: C.greenText, fontWeight: 600, fontFamily: F.mono }}>
                       +{formatMoney(r.credit_amount, r.currency ?? "CAD")}
                     </td>
                   </tr>
@@ -408,7 +401,7 @@ export default function BillingView() {
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

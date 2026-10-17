@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { C, F } from '../../../design/tokens.js';
+import { C, F, T } from '../../../design/tokens.js';
 import { useAuth } from '../../../context/AuthContext.jsx';
 import { useToast } from '../../../components/primitives/Toast.jsx';
 import { listTargetingTemplates, saveTargetingTemplate, deleteTargetingTemplate, applyTargetingTemplate } from '../../../lib/targetingTemplates.js';
 import { IconBookmark } from '../../../components/icons.jsx';
 import { useT } from '../../../i18n/useT.js';
+import { Btn } from '../../../components/primitives/Btn.jsx';
 
 // A media buyer running recurring campaigns previously rebuilt targeting
 // (area + screen type) from scratch every time — the only "reuse" was
@@ -56,7 +57,7 @@ export function SavedAudiencesBar({ form, onApply }) {
 
   return (
     <div style={{ marginBottom: 20, padding: '12px 14px', background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8 }}>
-      <div style={{ fontSize: 12, fontWeight: 600, color: C.textMid, fontFamily: F.sans, marginBottom: templates.length > 0 || nameInput !== null ? 8 : 0 }}>
+      <div style={{ fontSize: T.sm, fontWeight: 600, color: C.textMid, fontFamily: F.sans, marginBottom: templates.length > 0 || nameInput !== null ? 8 : 0 }}>
         {t('create.audiences.title')}
       </div>
 
@@ -67,25 +68,15 @@ export function SavedAudiencesBar({ form, onApply }) {
               display: 'flex', alignItems: 'center', gap: 6, padding: '5px 6px 5px 12px',
               border: `1px solid ${C.border}`, borderRadius: 20, background: C.surface,
             }}>
-              <button onClick={() => onApply(applyTargetingTemplate(tpl))} style={{
-                background: 'none', border: 'none', cursor: 'pointer', fontSize: 12,
-                color: C.text, fontFamily: F.sans, fontWeight: 500, padding: 0,
-              }}>{tpl.name}</button>
-              <button onClick={() => handleDelete(tpl.id, tpl.name)} aria-label={t('create.audiences.deleteLabel', { name: tpl.name })} style={{
-                background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted,
-                fontSize: 13, lineHeight: 1, padding: '0 2px',
-              }}>✕</button>
+              <Btn variant="unstyled" onClick={() => onApply(applyTargetingTemplate(tpl))} style={{ fontSize: T.sm, color: C.text, fontFamily: F.sans, fontWeight: 500 }}>{tpl.name}</Btn>
+              <Btn variant="unstyled" onClick={() => handleDelete(tpl.id, tpl.name)} aria-label={t('create.audiences.deleteLabel', { name: tpl.name })} style={{ color: C.textMuted, fontSize: T.base, lineHeight: 1, padding: '0 2px' }}>✕</Btn>
             </div>
           ))}
         </div>
       )}
 
       {nameInput === null ? (
-        <button onClick={() => setNameInput('')} style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer',
-          fontFamily: F.sans, padding: 0, fontWeight: 500,
-        }}><IconBookmark size={13} /> {t('create.audiences.saveCurrent')}</button>
+        <Btn variant="unstyled" onClick={() => setNameInput('')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: T.sm, color: C.purple, fontFamily: F.sans, fontWeight: 500 }}><IconBookmark size={13} /> {t('create.audiences.saveCurrent')}</Btn>
       ) : (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <input
@@ -96,17 +87,11 @@ export function SavedAudiencesBar({ form, onApply }) {
             placeholder={t('create.audiences.placeholder')}
             style={{
               flex: 1, minWidth: 0, padding: '6px 10px', border: `1px solid ${C.border}`,
-              borderRadius: 6, fontSize: 12, fontFamily: F.sans, color: C.text,
+              borderRadius: 6, fontSize: T.sm, fontFamily: F.sans, color: C.text,
             }}
           />
-          <button onClick={handleSave} disabled={saving || !nameInput.trim()} style={{
-            padding: '6px 12px', borderRadius: 6, border: 'none', background: C.purple,
-            color: '#fff', fontSize: 12, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
-            opacity: saving || !nameInput.trim() ? 0.6 : 1, whiteSpace: 'nowrap',
-          }}>{saving ? t('common.saving') : t('common.save')}</button>
-          <button onClick={() => setNameInput(null)} style={{
-            background: 'none', border: 'none', color: C.textMuted, fontSize: 12, cursor: 'pointer', fontFamily: F.sans,
-          }}>{t('common.cancel')}</button>
+          <Btn onClick={handleSave} disabled={saving || !nameInput.trim()} style={{ padding: '6px 12px', borderRadius: 6, fontSize: T.sm, fontWeight: 600, whiteSpace: 'nowrap' }}>{saving ? t('common.saving') : t('common.save')}</Btn>
+          <Btn variant="unstyled" onClick={() => setNameInput(null)} style={{ color: C.textMuted, fontSize: T.sm, fontFamily: F.sans }}>{t('common.cancel')}</Btn>
         </div>
       )}
     </div>

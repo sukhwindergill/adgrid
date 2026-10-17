@@ -7,6 +7,7 @@ import { fetchPublicScreens, summarizePublicScreens, PUBLIC_MAP_MIN_SCREENS } fr
 import { VENUE_TAXONOMY } from '../../lib/venueTypes.js';
 import { Nav } from '../marketing/sections/Nav.jsx';
 import { useT } from '../../i18n/useT.js';
+import { C } from '../../design/tokens.js';
 
 const DEFAULT_CENTER = [49.5, -101]; // fits Toronto and Vancouver
 const money = (formatCurrency, n) => formatCurrency(n, { decimals: Number(n) % 1 ? 2 : 0 });
@@ -47,7 +48,7 @@ function ScreenMap({ rows }) {
         for (const line of [r.city, Number(r.cpm_floor) > 0 && t('public.screens.fromPerThousand', { price: money(formatCurrency, r.cpm_floor) })]) {
           if (line) popup.append(document.createElement('br'), document.createTextNode(line));
         }
-        L.circleMarker([r.lat, r.lon], { radius: 9, color: '#7B2FFF', weight: 1.5, fillOpacity: 0.35 })
+        L.circleMarker([r.lat, r.lon], { radius: 9, color: C.purple, weight: 1.5, fillOpacity: 0.35 })
           .bindPopup(popup)
           .addTo(layer);
       }

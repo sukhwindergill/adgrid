@@ -1,6 +1,7 @@
 // src/views/advertiser/createCampaign/StepTargeting.jsx
 import { useEffect, useMemo, useRef } from 'react';
-import { C, F } from '../../../design/tokens.js';
+import { C, F, T } from '../../../design/tokens.js';
+import { TX } from '../../../design/text.js';
 import { Card } from '../../../components/primitives/Card.jsx';
 import { Inp } from '../../../components/primitives/Inp.jsx';
 import { SelInput } from '../../../components/primitives/SelInput.jsx';
@@ -14,6 +15,7 @@ import { ScreenMap } from './ScreenMap.jsx';
 import { TopScreensInsight } from './TopScreensInsight.jsx';
 import { SavedAudiencesBar } from './SavedAudiencesBar.jsx';
 import { useT } from '../../../i18n/useT.js';
+import { Btn } from '../../../components/primitives/Btn.jsx';
 
 export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount, allScreens, screensLoading = false, onPrevCampaigns, existingCampaign = null, pastCampaignIds = [] }) {
   const { t, tx, regionName } = useT();
@@ -70,7 +72,7 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
     <div style={{ maxWidth: 620, margin: '0 auto' }}>
       <Card style={{ padding: 32 }}>
         {existingCampaign ? (
-          <div style={{ marginBottom: 24, padding: '10px 14px', background: C.purpleSoft, borderRadius: 8, fontSize: 13, color: C.purple, fontFamily: F.sans }}>
+          <div style={{ marginBottom: 24, padding: '10px 14px', background: C.purpleSoft, borderRadius: 8, fontSize: T.base, color: C.purple, fontFamily: F.sans }}>
             {tx('create.targeting.addingGroup', { b: chunk => <strong>{chunk}</strong>, name: existingCampaign.name })}
           </div>
         ) : (
@@ -84,30 +86,27 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
           </div>
         )}
 
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>{t('create.targeting.heading')}</h2>
-        <p style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, margin: '0 0 20px' }}>{t('create.targeting.sub')}</p>
+        <h2 style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>{t('create.targeting.heading')}</h2>
+        <p style={{ ...TX.bodySub, margin: '0 0 20px' }}>{t('create.targeting.sub')}</p>
 
         {noInventory && (
-          <div style={{ marginBottom: 20, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder ?? '#fde68a'}`, borderRadius: 8, fontSize: 13, color: C.amber, fontFamily: F.sans }}>
+          <div style={{ marginBottom: 20, padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: T.base, color: C.amberText, fontFamily: F.sans }}>
             {t('create.targeting.noInventory')}
           </div>
         )}
 
         {onPrevCampaigns && (
           <div style={{ marginBottom: 20 }}>
-            <button onClick={onPrevCampaigns} style={{ background: 'none', border: 'none', fontSize: 12, color: C.purple, cursor: 'pointer', fontFamily: F.sans, padding: 0, transition: 'opacity 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = '0.75'; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-            >
+            <Btn variant="unstyled" onClick={onPrevCampaigns} style={{ fontSize: T.sm, color: C.purple, fontFamily: F.sans, transition: 'opacity 0.15s' }} hoverStyle={{ opacity: '0.75' }}>
               {t('create.targeting.fromPrevious')}
-            </button>
+            </Btn>
           </div>
         )}
 
         <SavedAudiencesBar form={form} onApply={fields => setForm(s => ({ ...s, ...fields }))} />
 
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>{t('create.targeting.areaType')}</div>
+          <div style={{ ...TX.label, marginBottom: 8 }}>{t('create.targeting.areaType')}</div>
           <PillGroup
             options={[
               { value: 'location', label: t('create.targeting.areaLocation') },
@@ -121,7 +120,7 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {form.area_type !== 'radius' && (
             <div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 5 }}>{t('create.targeting.where')}</div>
+              <div style={{ ...TX.label, marginBottom: 5 }}>{t('create.targeting.where')}</div>
               <LocationSearch
                 options={flatLocationOptions}
                 value={form.city || form.state || (form.country ? regionName(form.country) : '')}
@@ -142,7 +141,7 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
 
           {form.area_type === 'radius' && (
             <div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 5 }}>{t('create.targeting.city')}</div>
+              <div style={{ ...TX.label, marginBottom: 5 }}>{t('create.targeting.city')}</div>
               <LocationSearch
                 options={radiusLocations.map(e => ({ level: 'city', ...e }))}
                 value={form.city}
@@ -159,7 +158,7 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
               />
               {radiusResolved && (
                 <div style={{ marginTop: 12 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: C.textMid, fontFamily: F.sans, marginBottom: 8 }}>
+                  <div style={{ ...TX.label, marginBottom: 8 }}>
                     {t('create.targeting.radiusLabel', { km: form.radius_km, city: form.city })}
                   </div>
                   <PillGroup
@@ -190,12 +189,12 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
         </div>
 
         <div style={{ marginTop: 24, paddingTop: 20, borderTop: `1px solid ${C.border}` }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: C.textMid, fontFamily: F.sans, marginBottom: 12 }}>
+          <div style={{ fontSize: T.base, fontWeight: 600, color: C.textMid, fontFamily: F.sans, marginBottom: 12 }}>
             {t('create.targeting.screenType')} <span style={{ color: C.textMuted, fontWeight: 400 }}>{t('common.optional')}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>{t('create.targeting.environment')}</div>
+              <div style={{ ...TX.helperMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>{t('create.targeting.environment')}</div>
               <PillGroup
                 options={[{ value: 'any', label: t('common.env.any') }, { value: 'indoor', label: t('common.env.indoor') }, { value: 'outdoor', label: t('common.env.outdoor') }]}
                 value={form.env_filter}
@@ -220,7 +219,7 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
         </div>
 
         {reachSummary && (
-          <div style={{ marginTop: 16, padding: '10px 14px', background: C.purpleSoft, borderRadius: 8, fontSize: 13, color: C.purple, fontFamily: F.sans }}>
+          <div style={{ marginTop: 16, padding: '10px 14px', background: C.purpleSoft, borderRadius: 8, fontSize: T.base, color: C.purple, fontFamily: F.sans }}>
             {reachSummary}
           </div>
         )}
@@ -236,7 +235,7 @@ export function StepTargeting({ form, setForm, reachSummary, matchedScreenCount,
               onChange={e => setForm(s => ({ ...s, holdout_enabled: e.target.checked }))}
               style={{ marginTop: 2 }}
             />
-            <span style={{ fontSize: 13, color: C.text, fontFamily: F.sans }}>
+            <span style={TX.body}>
               {tx('create.targeting.holdout', { b: chunk => <strong>{chunk}</strong> })}
             </span>
           </label>

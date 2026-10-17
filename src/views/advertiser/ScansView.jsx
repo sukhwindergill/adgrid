@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { C, F } from "../../lib/constants.js";
 import { supabase } from "../../lib/supabase.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { downloadCsv } from "../../lib/csv.js";
@@ -9,6 +8,10 @@ import { Card } from "../../components/primitives/Card.jsx";
 import { KPI } from "../../components/primitives/KPI.jsx";
 import { Btn } from "../../components/primitives/Btn.jsx";
 import { useT } from "../../i18n/useT.js";
+import { T, C, F } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
+import { Inp } from '../../components/primitives/Inp.jsx';
+import { SelInput } from '../../components/primitives/SelInput.jsx';
 
 // Header labels are translated; cell values (yes/no, ISO timestamps) stay
 // machine-readable for remarketing tools.
@@ -153,7 +156,7 @@ export default function ScansView({ impersonatingId }) {
   );
 
   if (loadError) return (
-    <div style={{ padding: 40, fontFamily: F.sans, color: C.red }}>{t('scans.loadError')}</div>
+    <div style={{ padding: 40, fontFamily: F.sans, color: C.redText }}>{t('scans.loadError')}</div>
   );
 
   return (
@@ -168,7 +171,7 @@ export default function ScansView({ impersonatingId }) {
       </div>
 
       <Card style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 16, fontFamily: F.sans }}>
+        <div style={{ ...TX.title, marginBottom: 16 }}>
           {t('scans.chartTitle')}
         </div>
         <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 80 }}>
@@ -186,48 +189,27 @@ export default function ScansView({ impersonatingId }) {
       </Card>
 
       <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
-        <select
-          value={filterCampaign}
-          onChange={(e) => setFilterCampaign(e.target.value)}
-          style={{
-            border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 12px",
-            fontFamily: F.sans, fontSize: 13, color: C.text, background: C.surface,
-            outline: 'none', transition: 'border-color 0.15s',
-          }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-        >
+        <SelInput value={filterCampaign} onChange={(e) => setFilterCampaign(e.target.value)} style={{ borderRadius: 8, padding: "6px 12px", fontFamily: F.sans, fontSize: T.base, color: C.text, background: C.surface, transition: 'border-color 0.15s' }}>
           <option value="all">{t('scans.allCampaigns')}</option>
           {campaigns.map((c) => (
             <option key={c.id} value={c.id}>{c.advertiser_name}</option>
           ))}
-        </select>
-        <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-          style={{ border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 10px", fontFamily: F.sans, fontSize: 13, color: C.text, outline: 'none', transition: 'border-color 0.15s' }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-        />
-        <span style={{ color: C.textSub, fontSize: 13 }}>{t('scans.to')}</span>
-        <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-          style={{ border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 10px", fontFamily: F.sans, fontSize: 13, color: C.text, outline: 'none', transition: 'border-color 0.15s' }}
-          onFocus={e => { e.currentTarget.style.borderColor = C.purple; }}
-          onBlur={e => { e.currentTarget.style.borderColor = C.border; }}
-        />
+        </SelInput>
+        <Inp type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} style={{ ...TX.body, borderRadius: 8, padding: "6px 10px", transition: 'border-color 0.15s' }} />
+        <span style={{ color: C.textSub, fontSize: T.base }}>{t('scans.to')}</span>
+        <Inp type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={{ ...TX.body, borderRadius: 8, padding: "6px 10px", transition: 'border-color 0.15s' }} />
         <div style={{ marginLeft: "auto" }}>
           <Btn onClick={() => exportCSV(filtered, t)}>{t('scans.exportCsv')}</Btn>
         </div>
       </div>
 
       {filterCampaign !== "all" && variantPerf && variantPerf.length > 0 && (
-        <div style={{
-          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-          overflow: "hidden", marginBottom: 24,
-        }}>
-          <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.border}`, fontSize: 14, fontWeight: 600, color: C.text }}>
+        <Card style={{ padding: 0, overflow: "hidden", marginBottom: 24 }}>
+          <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.border}`, fontSize: T.md, fontWeight: 600, color: C.text }}>
             {t('scans.variantPerformance')}
           </div>
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: T.base }}>
               <thead>
                 <tr style={{ background: C.bg }}>
                   {["variant", "plays", "scans", "scanRate", "costPerScan"].map((h) => (
@@ -248,18 +230,15 @@ export default function ScansView({ impersonatingId }) {
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       )}
 
-      <div style={{
-        background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-        overflow: "hidden", marginBottom: 24,
-      }}>
-        <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.border}`, fontSize: 14, fontWeight: 600, color: C.text }}>
+      <Card style={{ padding: 0, overflow: "hidden", marginBottom: 24 }}>
+        <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.border}`, fontSize: T.md, fontWeight: 600, color: C.text }}>
           {t('scans.scanLog', { count: filtered.length })}
         </div>
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: T.base }}>
             <thead>
               <tr style={{ background: C.bg }}>
                 {["timestamp", "campaign", "screen", "device", "country", "utmSource"].map((h) => (
@@ -270,7 +249,7 @@ export default function ScansView({ impersonatingId }) {
             <tbody>
               {filtered.slice(0, 100).map((s) => (
                 <tr key={s.id} style={{ borderBottom: `1px solid ${C.border}` }}>
-                  <td style={{ padding: "10px 16px", color: C.text, fontFamily: F.mono, fontSize: 12 }}>
+                  <td style={{ padding: "10px 16px", color: C.text, fontFamily: F.mono, fontSize: T.sm }}>
                     {formatDateTime(s.scanned_at)}
                   </td>
                   <td style={{ padding: "10px 16px", color: C.text }}>{s.bookings?.advertiser_name ?? "—"}</td>
@@ -290,18 +269,15 @@ export default function ScansView({ impersonatingId }) {
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
       {emailCaptures.length > 0 && (
-        <div style={{
-          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-          overflow: "hidden",
-        }}>
-          <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.border}`, fontSize: 14, fontWeight: 600, color: C.text }}>
+        <Card style={{ padding: 0, overflow: "hidden" }}>
+          <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.border}`, fontSize: T.md, fontWeight: 600, color: C.text }}>
             {t('scans.emailCaptures', { count: emailCaptures.length })}
           </div>
           <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 400 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: T.base, minWidth: 400 }}>
             <thead>
               <tr style={{ background: C.bg }}>
                 {["email", "consent", "campaign", "date"].map((h) => (
@@ -315,13 +291,13 @@ export default function ScansView({ impersonatingId }) {
                   <td style={{ padding: "10px 16px", color: C.text }}>{s.email}</td>
                   <td style={{ padding: "10px 16px" }}>
                     <span style={{
-                      padding: "2px 8px", borderRadius: 12, fontSize: 11, fontWeight: 600,
+                      padding: "2px 8px", borderRadius: 12, fontSize: T.xs, fontWeight: 600,
                       background: s.consent ? C.greenLight : C.redLight,
-                      color: s.consent ? C.green : C.red,
+                      color: s.consent ? C.greenText : C.redText,
                     }}>{s.consent ? t('scans.yes') : t('scans.no')}</span>
                   </td>
                   <td style={{ padding: "10px 16px", color: C.text }}>{s.bookings?.advertiser_name ?? "—"}</td>
-                  <td style={{ padding: "10px 16px", color: C.textSub, fontSize: 12 }}>
+                  <td style={{ padding: "10px 16px", color: C.textSub, fontSize: T.sm }}>
                     {formatDate(s.scanned_at)}
                   </td>
                 </tr>
@@ -329,7 +305,7 @@ export default function ScansView({ impersonatingId }) {
             </tbody>
           </table>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

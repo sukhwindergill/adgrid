@@ -1,6 +1,8 @@
 // src/views/advertiser/createCampaign/LocationSearch.jsx
 import { useState, useRef, useEffect } from 'react';
-import { C, F } from '../../../design/tokens.js';
+import { C, F, T, SH } from '../../../design/tokens.js';
+import { Inp } from '../../../components/primitives/Inp.jsx';
+import { TX } from '../../../design/text.js';
 import { useT } from '../../../i18n/useT.js';
 
 // Display name + level badge for a flattened location option (see
@@ -14,11 +16,11 @@ function describe(entry, t, regionName) {
 }
 
 const BADGE_COLOR = {
-  country: { bg: C.purpleSoft ?? '#f3e8ff', fg: C.purple ?? '#7c3aed' },
-  city: { bg: C.blueSoft ?? '#e0f2fe', fg: C.blue ?? '#0284c7' },
+  country: { bg: C.purpleSoft, fg: C.purple },
+  city: { bg: C.blueSoft, fg: C.blueText },
 };
 const badgeColor = kind => BADGE_COLOR[kind] ?? BADGE_COLOR.city; // any State/Province/Region word falls back to a neutral tone below
-const BADGE_DEFAULT = { bg: C.surfaceAlt ?? '#f1f5f9', fg: C.textMid ?? '#475569' };
+const BADGE_DEFAULT = { bg: C.surfaceAlt, fg: C.textMid };
 
 // Single consolidated typeahead over country + state + city, all in one
 // dropdown, each row tagged with which level it resolves to (Country /
@@ -78,7 +80,7 @@ export function LocationSearch({ options, value, onSelect, placeholder, loading 
 
   return (
     <div ref={rootRef} style={{ position: 'relative' }}>
-      <input
+      <Inp
         type="text"
         value={query}
         disabled={loading}
@@ -87,22 +89,16 @@ export function LocationSearch({ options, value, onSelect, placeholder, loading 
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         onKeyDown={onKeyDown}
-        style={{
-          padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8,
-          fontSize: 13, fontFamily: F.sans, color: C.text, background: C.surface,
-          outline: 'none', width: '100%', boxSizing: 'border-box', transition: 'border-color 0.15s',
-        }}
-        onFocusCapture={e => { e.currentTarget.style.borderColor = C.purple; }}
-        onBlurCapture={e => { e.currentTarget.style.borderColor = C.border; }}
+        style={{ boxSizing: 'border-box', transition: 'border-color 0.15s' }}
       />
       {open && q && (
         <div style={{
           position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
           background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)', zIndex: 10, maxHeight: 260, overflowY: 'auto',
+          boxShadow: SH.hover, zIndex: 10, maxHeight: 260, overflowY: 'auto',
         }}>
           {matches.length === 0 ? (
-            <div style={{ padding: '10px 12px', fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>
+            <div style={{ ...TX.helperMuted, padding: '10px 12px' }}>
               {t('create.location.noMatches')}
             </div>
           ) : matches.map(({ entry, d }, i) => {
@@ -123,21 +119,21 @@ export function LocationSearch({ options, value, onSelect, placeholder, loading 
                 onMouseEnter={() => setHighlight(i)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '8px 12px', fontSize: 13, fontFamily: F.sans, cursor: 'pointer',
+                  padding: '8px 12px', fontSize: T.base, fontFamily: F.sans, cursor: 'pointer',
                   background: i === highlight ? C.surfaceAlt : C.surface, color: C.text,
                 }}
               >
                 <span style={{
-                  flexShrink: 0, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em',
+                  flexShrink: 0, fontSize: T.xs, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em',
                   padding: '2px 6px', borderRadius: 4, background: bc.bg, color: bc.fg,
                 }}>
                   {d.badge}
                 </span>
                 <span>
                   {d.name}
-                  {d.sub && <span style={{ color: C.textMuted, fontSize: 12 }}> — {d.sub}</span>}
+                  {d.sub && <span style={{ color: C.textMuted, fontSize: T.sm }}> — {d.sub}</span>}
                 </span>
-                <span style={{ marginLeft: 'auto', color: C.textMuted, fontSize: 12, flexShrink: 0 }}>
+                <span style={{ marginLeft: 'auto', color: C.textMuted, fontSize: T.sm, flexShrink: 0 }}>
                   {t('common.screensCount', { count: entry.count ?? 0 })}
                 </span>
               </div>

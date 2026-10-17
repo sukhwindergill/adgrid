@@ -2,20 +2,22 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { supabase } from '../../lib/supabase.js'
 import { summarizeAccountBookings } from '../../lib/accountRollup.js'
-import { C, F } from '../../design/tokens.js'
+import { C, F, T, alpha } from '../../design/tokens.js';
+import { Hover } from '../../components/primitives/Hover.jsx';
+import { TX } from '../../design/text.js';
 import { useT } from '../../i18n/useT.js'
 
 function RoleBadge({ role }) {
   const { t } = useT()
   const colors = {
     admin:   { bg: C.purpleSoft, color: C.purple },
-    manager: { bg: C.blueSoft,   color: C.blue },
+    manager: { bg: C.blueSoft,   color: C.blueText },
     viewer:  { bg: C.surfaceAlt, color: C.textMuted },
   }
   const s = colors[role] ?? colors.viewer
   return (
     <span style={{
-      padding: '2px 9px', borderRadius: 10, fontSize: 11, fontWeight: 600,
+      padding: '2px 9px', borderRadius: 10, fontSize: T.xs, fontWeight: 600,
       background: s.bg, color: s.color,
     }}>{t(`accounts.roles.${role}`)}</span>
   )
@@ -25,7 +27,7 @@ function AccountCard({ account, isCurrent, onClick, rollup }) {
   const { t, formatCurrency, formatNumber } = useT()
   const initials = (account.name || account.company_name || '?').slice(0, 2).toUpperCase()
   return (
-    <div
+    <Hover
       onClick={onClick}
       style={{
         background: C.surface,
@@ -34,13 +36,13 @@ function AccountCard({ account, isCurrent, onClick, rollup }) {
         padding: '24px 20px',
         cursor: 'pointer',
         transition: 'border-color 0.15s, box-shadow 0.15s',
-        boxShadow: isCurrent ? `0 0 0 3px rgba(123,47,255,0.12)` : 'none',
+        boxShadow: isCurrent ? `0 0 0 3px ${alpha(C.purple, 0.12)}` : 'none',
         display: 'flex',
         flexDirection: 'column',
         gap: 12,
       }}
-      onMouseEnter={e => { if (!isCurrent) e.currentTarget.style.borderColor = C.textMuted }}
-      onMouseLeave={e => { if (!isCurrent) e.currentTarget.style.borderColor = C.border }}
+      hoverStyle={{ border: `2px solid ${C.textMuted}` }}
+      disabled={isCurrent}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {account.logo_url ? (
@@ -50,11 +52,11 @@ function AccountCard({ account, isCurrent, onClick, rollup }) {
             width: 40, height: 40, borderRadius: 10, flexShrink: 0,
             background: C.grad,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: F.sans,
+            color: C.white, fontSize: T.md, fontWeight: 700, fontFamily: F.sans,
           }}>{initials}</div>
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.sans }}>
+          <div style={TX.title}>
             {account.company_name || account.name || t('accounts.hub.unnamed')}
           </div>
           {account.role && (
@@ -64,25 +66,25 @@ function AccountCard({ account, isCurrent, onClick, rollup }) {
           )}
         </div>
         {isCurrent && (
-          <span style={{ fontSize: 11, color: C.purple, fontFamily: F.sans, fontWeight: 600 }}>{t('accounts.hub.active')}</span>
+          <span style={{ fontSize: T.xs, color: C.purple, fontFamily: F.sans, fontWeight: 600 }}>{t('accounts.hub.active')}</span>
         )}
       </div>
       {account.isOwn && (
-        <div style={{ fontSize: 12, color: C.textMuted, fontFamily: F.sans }}>{t('accounts.hub.yours')}</div>
+        <div style={TX.helperMuted}>{t('accounts.hub.yours')}</div>
       )}
       {rollup && (
         <div style={{ display: 'flex', gap: 16, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{formatNumber(rollup.activeCampaigns)}</div>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{t('accounts.hub.activeCampaigns', { count: rollup.activeCampaigns })}</div>
+            <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{formatNumber(rollup.activeCampaigns)}</div>
+            <div style={TX.caption}>{t('accounts.hub.activeCampaigns', { count: rollup.activeCampaigns })}</div>
           </div>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{formatCurrency(rollup.spend, { minimumFractionDigits: 0 })}</div>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans }}>{t('accounts.hub.spend')}</div>
+            <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{formatCurrency(rollup.spend, { minimumFractionDigits: 0 })}</div>
+            <div style={TX.caption}>{t('accounts.hub.spend')}</div>
           </div>
         </div>
       )}
-    </div>
+    </Hover>
   )
 }
 
@@ -141,8 +143,8 @@ export function AccountHub({ onSelectAccount }) {
 
   return (
     <div style={{ padding: '48px 40px', maxWidth: 860, margin: '0 auto', fontFamily: F.sans }}>
-      <h1 style={{ fontSize: 26, fontWeight: 700, color: C.text, margin: '0 0 8px' }}>{t('accounts.hub.title')}</h1>
-      <p style={{ fontSize: 14, color: C.textSub, margin: '0 0 32px' }}>
+      <h1 style={{ fontSize: T.xxl, fontWeight: 700, color: C.text, margin: '0 0 8px' }}>{t('accounts.hub.title')}</h1>
+      <p style={{ fontSize: T.md, color: C.textSub, margin: '0 0 32px' }}>
         {t('accounts.hub.sub')}
       </p>
 

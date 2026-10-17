@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { C, F } from '../../design/tokens.js';
+import { C, F, T } from '../../design/tokens.js';
+import { TX } from '../../design/text.js';
 import { downloadCsv } from '../../lib/csv.js';
 import { DeliveryCheckPanel } from '../../components/shared/DeliveryCheckPanel.jsx';
+import { Btn } from '../../components/primitives/Btn.jsx';
 import './CampaignReport.css';
 import { useT } from '../../i18n/useT.js';
 import { t as tNow } from '../../i18n/core.js';
@@ -52,11 +54,10 @@ export function CampaignReport() {
   return (
     <div className="report-page">
       <div className="report-actions">
-        <button onClick={() => window.print()} style={btnStyle}
-          onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
-          onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
-        >{t('public.report.print')}</button>
-        <button
+        <Btn variant="secondary" size="sm" onClick={() => window.print()} style={btnStyle}>{t('public.report.print')}</Btn>
+        <Btn
+          variant="secondary"
+          size="sm"
           onClick={() => downloadCsv(`${campaign.name}-delivery.csv`, [
             { key: 'day', label: t('public.report.day') },
             { key: 'plays', label: t('public.report.plays') },
@@ -65,16 +66,14 @@ export function CampaignReport() {
             { key: 'basis', label: t('public.report.basis') },
           ], daily)}
           style={btnStyle}
-          onMouseEnter={e => { e.currentTarget.style.background = C.surfaceAlt; }}
-          onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
-        >{t('public.report.exportCsv')}</button>
+        >{t('public.report.exportCsv')}</Btn>
       </div>
 
-      <div style={{ fontSize: 11, letterSpacing: 3, color: C.textMuted, fontFamily: F.sans, textTransform: 'uppercase', marginBottom: 8 }}>
+      <div style={{ ...TX.caption, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>
         {t('public.report.eyebrow')}
       </div>
-      <h1 style={{ fontSize: 28, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>{campaign.name}</h1>
-      <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 28 }}>
+      <h1 style={{ fontSize: T.display, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 4px' }}>{campaign.name}</h1>
+      <div style={{ ...TX.bodySub, marginBottom: 28 }}>
         {campaign.category ? `${campaign.category} · ` : ''}{formatDate(campaign.start_date)} → {formatDate(campaign.end_date)}
       </div>
 
@@ -85,7 +84,7 @@ export function CampaignReport() {
       </div>
 
       {health?.delivery_pct != null && (
-        <div style={{ fontSize: 13, color: C.textSub, fontFamily: F.sans, marginBottom: 28 }}>
+        <div style={{ ...TX.bodySub, marginBottom: 28 }}>
           {tx('public.report.health', {
             strong: chunk => <strong style={{ color: C.text }}>{chunk}</strong>,
             pct: formatPercent(Number(health.delivery_pct) / 100, { decimals: 1, minimumFractionDigits: 1 }),
@@ -104,7 +103,7 @@ export function CampaignReport() {
       )}
 
       {daily.length > 0 ? (
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: F.sans, fontSize: 12 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: F.sans, fontSize: T.sm }}>
           <thead>
             <tr style={{ borderBottom: `2px solid ${C.border}`, textAlign: 'left', color: C.textSub }}>
               <th style={cell}>{t('public.report.day')}</th><th style={cell}>{t('public.report.plays')}</th><th style={cell}>{t('public.report.impressions')}</th>
@@ -124,7 +123,7 @@ export function CampaignReport() {
           </tbody>
         </table>
       ) : (
-        <div style={{ fontSize: 13, color: C.textMuted, fontFamily: F.sans, padding: '24px 0' }}>
+        <div style={{ ...TX.bodyMuted, padding: '24px 0' }}>
           {t('public.report.noDelivery')}
         </div>
       )}
@@ -133,18 +132,14 @@ export function CampaignReport() {
 }
 
 const cell = { padding: '8px 6px' };
-const btnStyle = {
-  padding: '7px 14px', borderRadius: 8, border: `1px solid ${C.border}`,
-  background: C.surface, color: C.textSub, fontFamily: F.sans, fontSize: 12, cursor: 'pointer',
-  transition: 'background 0.15s',
-};
+const btnStyle = { padding: '7px 14px', color: C.textSub, fontWeight: 400, boxShadow: 'none' };
 
 function Stat({ label, value, sub }) {
   return (
     <div>
-      <div style={{ fontSize: 11, color: C.textSub, fontFamily: F.sans, marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 24, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{value}</div>
-      <div style={{ fontSize: 11, color: C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{sub}</div>
+      <div style={{ fontSize: T.xs, color: C.textSub, fontFamily: F.sans, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: T.xxl, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{value}</div>
+      <div style={{ ...TX.caption, marginTop: 2 }}>{sub}</div>
     </div>
   );
 }
