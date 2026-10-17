@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { operatorSharePct, operatorCutAmount, countServingScreensByCampaign } from './payoutSharing.ts';
+import {
+  operatorSharePct, operatorCutAmount, countServingScreensByCampaign,
+  frozenScreenCount, screenPayoutCents, unservedScreenCredit,
+} from './payoutSharing.ts';
 
 describe('operatorSharePct', () => {
   it('returns the full share when the operator owns every serving screen', () => {
@@ -60,5 +63,36 @@ describe('countServingScreensByCampaign', () => {
 
   it('returns an empty map for no rows', () => {
     expect(countServingScreensByCampaign([]).size).toBe(0);
+  });
+});
+
+describe('per-screen payouts', () => {
+  it('freezes N over approved and pending non-control screens only', () => {
+    expect(frozenScreenCount([
+      { status: 'approved' }, { status: 'auto_approved' }, { status: 'pending' },
+      { status: 'rejected' }, { status: 'expired' }, { status: 'approved', is_control: true },
+    ])).toBe(3);
+  });
+
+  it('pays budget * share / N per screen, rounded down to the cent', () => {
+    expect(screenPayoutCents(100, 0.7, 4)).toBe(1750);
+    expect(screenPayoutCents(100, 0.7, 3)).toBe(2333);
+    expect(screenPayoutCents(100, 0.7, 0)).toBe(0);
+  });
+
+  it('never lets payouts plus credits exceed the budget, whatever settles late', () => {
+    for (const [budget, share, n] of [[100, 0.7, 3], [99.99, 0.7, 7], [1, 0.7, 6], [250.5, 0.65, 11]]) {
+      for (let paid = 0; paid <= n; paid++) {
+        const operators = (screenPayoutCents(budget, share, n) / 100) * paid;
+        const credits = unservedScreenCredit(budget, n) * (n - paid);
+        expect(operators + credits).toBeLessThanOrEqual(budget + 1e-9);
+        expect(operators).toBeLessThanOrEqual(budget * share + 1e-9);
+      }
+    }
+  });
+
+  it('credits an unserved screen its 1/N of the budget, rounded down', () => {
+    expect(unservedScreenCredit(100, 3)).toBe(33.33);
+    expect(unservedScreenCredit(100, 0)).toBe(0);
   });
 });
