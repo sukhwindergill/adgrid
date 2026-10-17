@@ -36,7 +36,7 @@ export function countServingScreensByCampaign(rows: { campaign_id: string }[]): 
   return counts;
 }
 
-// ── Per-screen payouts (see 20261017000000_per_screen_payouts.sql) ─────────
+// ── Per-screen payouts (see 20261017024043_per_screen_payouts.sql) ─────────
 // The budget is split across N screens frozen at charge time. Everything is
 // rounded DOWN to the cent, so payouts + advertiser credits can never total
 // more than what was charged, however many screens settle late.

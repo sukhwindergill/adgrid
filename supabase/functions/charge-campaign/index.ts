@@ -451,7 +451,7 @@ Deno.serve(async (req: Request) => {
   // Freeze N, the number of screens the budget is split across: non-control
   // screens that are approved or still pending review. Later approvals are
   // paid 1/N each; screens that never serve are credited back (see
-  // 20261017000000_per_screen_payouts.sql).
+  // 20261017024043_per_screen_payouts.sql).
   const frozenCount = frozenScreenCount((screenLinks ?? []) as { status: string; is_control?: boolean | null }[]);
 
   // Atomic lock: flip payment_status to 'charging' only if currently not paid/charging.
