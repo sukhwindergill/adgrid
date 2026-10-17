@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { isBreached, hoursRemaining, policyApproves, shouldSweep } from "../_shared/approvalSla.ts";
 import { requireCronSecret } from "../_shared/cronGuard.ts";
+import { unservedScreenCredit } from "../_shared/payoutSharing.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -45,7 +46,7 @@ Deno.serve(async (_req: Request) => {
 
   const { data: campaigns } = await supabase
     .from("bookings")
-    .select("id, advertiser_id, billed_to_profile_id, campaign_name, advertiser_name, category, budget, currency, status, payment_status, start_when")
+    .select("id, advertiser_id, billed_to_profile_id, campaign_name, advertiser_name, category, budget, currency, status, payment_status, start_when, payout_screen_count")
     .in("id", campaignIds);
 
   const { data: screens } = await supabase
@@ -213,7 +214,13 @@ Deno.serve(async (_req: Request) => {
     // screen's share is computed against the exposed screen count only, to
     // match what the advertiser's budget actually bought.
     let creditLabel = "No charge";
-    if (campaign.payment_status === "paid" && !row.is_control) {
+    if (campaign.payment_status === "paid" && !row.is_control && campaign.payout_screen_count) {
+      // Charged under per-screen payouts: the credit_unserved_screen trigger
+      // on campaign_screens already credited this screen's 1/N, exactly once,
+      // when the update above set it to 'expired'. Only report it here.
+      const credit = unservedScreenCredit(Number(campaign.budget), Number(campaign.payout_screen_count));
+      if (credit > 0) creditLabel = `${credit.toFixed(2)} ${String(campaign.currency ?? "CAD").toUpperCase()}`;
+    } else if (campaign.payment_status === "paid" && !row.is_control) {
       const { count: totalScreens } = await supabase
         .from("campaign_screens")
         .select("id", { count: "exact", head: true })

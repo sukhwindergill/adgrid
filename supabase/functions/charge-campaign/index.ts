@@ -1,6 +1,10 @@
 import Stripe from "https://esm.sh/stripe@14?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { DEFAULT_OWNER_REVENUE_SHARE, operatorCutAmount } from "../_shared/payoutSharing.ts";
+import {
+  DEFAULT_OWNER_REVENUE_SHARE,
+  frozenScreenCount,
+  screenPayoutCents,
+} from "../_shared/payoutSharing.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
   apiVersion: "2023-10-16",
@@ -30,10 +34,110 @@ const CORS = {
   "Content-Type": "application/json",
 };
 
+// Ledger of what each screen was paid (screen_payouts), so a late approval
+// settles only its own share and nothing is paid twice.
+async function recordScreenPayouts(
+  bookingId: string,
+  operatorId: string,
+  screenIds: string[],
+  amountPerScreen: number,
+  currency: string,
+  transferId: string | null,
+  status: "transferred" | "failed",
+  late: boolean,
+): Promise<void> {
+  if (screenIds.length === 0) return;
+  await supabase.from("screen_payouts").upsert(
+    screenIds.map((screen_id) => ({
+      booking_id: bookingId,
+      screen_id,
+      operator_id: operatorId,
+      amount: amountPerScreen,
+      currency,
+      stripe_transfer_id: transferId,
+      status,
+      late,
+    })),
+    { onConflict: "booking_id,screen_id" },
+  );
+}
+
+// Pays every approved, non-control screen that hasn't been paid yet (screens
+// that approved after the charge, plus charge-time transfers that failed),
+// one transfer per screen at the same frozen per-screen share. Idempotent:
+// transferred screens are skipped and Stripe's idempotency key is per screen.
+async function settleLatePayouts(
+  bookingId: string,
+  budget: number,
+  currency: string,
+  frozenCount: number,
+): Promise<void> {
+  const { data: approved } = await supabase
+    .from("campaign_screens")
+    .select("screen_id")
+    .eq("campaign_id", bookingId)
+    .eq("is_control", false)
+    .in("status", ["approved", "auto_approved"]);
+  if (!approved || approved.length === 0) return;
+
+  const { data: ledger } = await supabase
+    .from("screen_payouts")
+    .select("screen_id, status")
+    .eq("booking_id", bookingId);
+  const paid = new Set((ledger ?? []).filter((r) => r.status === "transferred").map((r) => r.screen_id as string));
+  const alreadyFailed = new Set((ledger ?? []).filter((r) => r.status === "failed").map((r) => r.screen_id as string));
+  const owing = (approved as { screen_id: string }[]).map((r) => r.screen_id).filter((id) => !paid.has(id));
+  if (owing.length === 0) return;
+
+  const { data: screenRows } = await supabase.from("screens").select("id, operator_id").in("id", owing);
+  const operatorIds = [...new Set((screenRows ?? []).map((s) => s.operator_id as string).filter(Boolean))];
+  if (operatorIds.length === 0) return;
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, stripe_connect_account_id, connect_status, owner_revenue_share")
+    .in("id", operatorIds);
+  const profileById = new Map((profiles ?? []).map((p) => [p.id as string, p]));
+
+  for (const s of (screenRows ?? []) as { id: string; operator_id: string }[]) {
+    const profile = profileById.get(s.operator_id);
+    // No active Connect account yet: nothing to send. The screen stays
+    // unpaid in the ledger and is picked up the next time this runs.
+    if (!profile?.stripe_connect_account_id || profile.connect_status !== "active") continue;
+
+    const revenueShare = (profile.owner_revenue_share as number | null) ?? DEFAULT_OWNER_REVENUE_SHARE;
+    const cents = screenPayoutCents(budget, revenueShare, frozenCount);
+    if (cents <= 0) continue;
+
+    try {
+      const transfer = await stripe.transfers.create(
+        {
+          amount: cents,
+          currency,
+          destination: profile.stripe_connect_account_id as string,
+          metadata: { booking_id: bookingId, operator_id: s.operator_id, screen_id: s.id, total_screens: String(frozenCount) },
+        },
+        { idempotencyKey: `screen-payout:${bookingId}:${s.id}` },
+      );
+      await recordScreenPayouts(bookingId, s.operator_id, [s.id], cents / 100, currency, transfer.id, "transferred", true);
+    } catch (e) {
+      console.error(`[charge-campaign] late payout failed for screen ${s.id}:`, e instanceof Error ? e.message : e);
+      await recordScreenPayouts(bookingId, s.operator_id, [s.id], cents / 100, currency, null, "failed", true);
+      if (!alreadyFailed.has(s.id)) {
+        await notifyAdvertiser(s.operator_id, "payout_transfer_failed", {
+          amount: (cents / 100).toFixed(2),
+          currency,
+          appUrl: `${Deno.env.get("PUBLIC_APP_URL") ?? ""}/app/op-settings`,
+        });
+      }
+    }
+  }
+}
+
 async function distributeOperatorCuts(
   bookingId: string,
   budget: number,
   currency: string,
+  frozenCount: number,
 ): Promise<void> {
   // 1. Find all screens for this campaign
   // Control screens (holdout test) never served this campaign's creative --
@@ -55,7 +159,6 @@ async function distributeOperatorCuts(
   if (!csRows || csRows.length === 0) return;
 
   const screenIds = csRows.map((r: { screen_id: string }) => r.screen_id);
-  const totalScreens = screenIds.length;
 
   // 2. Fetch operator info for each screen
   const { data: screenRows } = await supabase
@@ -67,9 +170,11 @@ async function distributeOperatorCuts(
 
   // 3. Group screens by operator
   const byOperator = new Map<string, number>();
+  const screensByOperator = new Map<string, string[]>();
   for (const s of screenRows as { id: string; operator_id: string }[]) {
     if (!s.operator_id) continue;
     byOperator.set(s.operator_id, (byOperator.get(s.operator_id) ?? 0) + 1);
+    screensByOperator.set(s.operator_id, [...(screensByOperator.get(s.operator_id) ?? []), s.id]);
   }
 
   if (byOperator.size === 0) return;
@@ -99,8 +204,11 @@ async function distributeOperatorCuts(
     if (operatorScreenCount === 0) continue;
 
     const revenueShare = profile.owner_revenue_share ?? DEFAULT_OWNER_REVENUE_SHARE;
-    const operatorCut = operatorCutAmount(budget, revenueShare, operatorScreenCount, totalScreens);
-    const amountCents = Math.round(operatorCut * 100);
+    // Per-screen share of the budget frozen at charge time (N counts
+    // screens still pending review too), not of the screens approved right
+    // now: that is what lets a late approval be paid later without the
+    // total ever exceeding the budget share. Rounded down to the cent.
+    const amountCents = screenPayoutCents(budget, revenueShare, frozenCount) * operatorScreenCount;
 
     if (amountCents <= 0) continue;
 
@@ -117,7 +225,7 @@ async function distributeOperatorCuts(
             booking_id: bookingId,
             operator_id: profile.id,
             screen_count: String(operatorScreenCount),
-            total_screens: String(totalScreens),
+            total_screens: String(frozenCount),
           },
         },
         { idempotencyKey },
@@ -133,10 +241,11 @@ async function distributeOperatorCuts(
           stripe_transfer_id: transfer.id,
           status: "transferred",
           screen_count: operatorScreenCount,
-          total_screens: totalScreens,
+          total_screens: frozenCount,
         },
         { onConflict: "booking_id,operator_id" },
       );
+      await recordScreenPayouts(bookingId, profile.id, screensByOperator.get(profile.id) ?? [], amountCents / operatorScreenCount / 100, currency, transfer.id, "transferred", false);
     } catch (e) {
       console.error(
         `[charge-campaign] transfer failed for operator ${profile.id}:`,
@@ -152,10 +261,11 @@ async function distributeOperatorCuts(
           stripe_transfer_id: null,
           status: "failed",
           screen_count: operatorScreenCount,
-          total_screens: totalScreens,
+          total_screens: frozenCount,
         },
         { onConflict: "booking_id,operator_id" },
       );
+      await recordScreenPayouts(bookingId, profile.id, screensByOperator.get(profile.id) ?? [], amountCents / operatorScreenCount / 100, currency, null, "failed", false);
       // B16: this used to be logged nowhere an operator could ever see it —
       // "connected" in Settings, then a payout that just never arrives with
       // zero explanation. Tell them at the moment it happens.
@@ -226,7 +336,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
-    .select("id, status, budget, currency, advertiser_id, advertiser_name, screen_name, payment_status, is_demo")
+    .select("id, status, budget, currency, advertiser_id, advertiser_name, screen_name, payment_status, is_demo, payout_screen_count")
     .eq("id", campaign_id)
     .single();
 
@@ -325,6 +435,25 @@ Deno.serve(async (req: Request) => {
     );
   }
 
+  // Already charged, and the budget split was frozen at charge time (the
+  // "go live as screens approve" case): a screen approving now is not charged
+  // again, it is paid its own share. Safe for any caller who passed the
+  // ownership checks above -- the amounts come from the ledger, not the caller.
+  if (booking.payment_status === "paid" && booking.payout_screen_count) {
+    try {
+      await settleLatePayouts(campaign_id, Number(booking.budget), String(booking.currency ?? "cad").toLowerCase(), booking.payout_screen_count as number);
+    } catch (e) {
+      console.error("[charge-campaign] late payout settlement error:", e);
+    }
+    return new Response(JSON.stringify({ success: true, settled: true }), { headers: CORS });
+  }
+
+  // Freeze N, the number of screens the budget is split across: non-control
+  // screens that are approved or still pending review. Later approvals are
+  // paid 1/N each; screens that never serve are credited back (see
+  // 20261017024043_per_screen_payouts.sql).
+  const frozenCount = frozenScreenCount((screenLinks ?? []) as { status: string; is_control?: boolean | null }[]);
+
   // Atomic lock: flip payment_status to 'charging' only if currently not paid/charging.
   // Concurrent requests both reading 'unpaid' would race; only one UPDATE wins.
   // B23: this UPDATE was dead code from day one -- bookings_payment_status_check
@@ -339,7 +468,7 @@ Deno.serve(async (req: Request) => {
   // else already has the lock" again.
   const { data: locked, error: lockError } = await supabase
     .from("bookings")
-    .update({ payment_status: "charging" })
+    .update({ payment_status: "charging", payout_screen_count: frozenCount })
     .eq("id", campaign_id)
     .neq("payment_status", "paid")
     .neq("payment_status", "charging")
@@ -469,7 +598,7 @@ Deno.serve(async (req: Request) => {
 
   // Distribute operator cuts — fire and forget so a transfer hiccup
   // doesn't block the advertiser's success response.
-  distributeOperatorCuts(campaign_id, booking.budget, currency).catch((e) =>
+  distributeOperatorCuts(campaign_id, booking.budget, currency, frozenCount).catch((e) =>
     console.error("[charge-campaign] operator transfer error:", e)
   );
 
