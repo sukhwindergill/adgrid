@@ -31,6 +31,7 @@ import { CATEGORIES } from '../../lib/data.js';
 import { SENSITIVE_CATEGORIES, isCategoryBlocked, toggleBlockedCategory } from '../../lib/adGuardrails.js';
 import { T, C, F } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
+import { useT } from '../../i18n/useT.js';
 
 // Rounded filter/option pill used by the option pickers on this page.
 const pillChip = { padding: '7px 16px', borderRadius: 20, fontWeight: 500, transition: 'all 0.15s' };
@@ -91,6 +92,8 @@ function DetailsTab({ screen, onSaved }) {
   });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
+  const { t, tOr } = useT();
+  const stateLabel = code => tOr(`venue.stateWord.${code}`, STATE_LABEL[code]);
 
   const set = (key, val) => setFields(s => ({ ...s, [key]: val }));
   const handleCategoryChange = (val) => setFields(s => ({ ...s, venue_category: val, venue_subtype: '' }));
@@ -122,7 +125,7 @@ function DetailsTab({ screen, onSaved }) {
     }).eq('id', screen.id);
     setSaving(false);
     if (error) { setMsg({ ok: false, text: error.message }); return; }
-    setMsg({ ok: true, text: 'Changes saved.' });
+    setMsg({ ok: true, text: t('op.screen.saved') });
     onSaved?.({ ...screen, ...fields });
   };
 
@@ -140,67 +143,66 @@ function DetailsTab({ screen, onSaved }) {
 
       {/* Venue details */}
       <Card style={{ padding: 24 }}>
-        <div style={{ ...TX.titleLg, marginBottom: 20 }}>Venue Details</div>
+        <div style={{ ...TX.titleLg, marginBottom: 20 }}>{t('op.screen.venueDetails')}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
-          <SelInput label="Country" value={fields.country} onChange={e => setFields(s => ({ ...s, country: e.target.value, state: '' }))}>
-            {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+          <SelInput label={t('scr.onboard.country')} value={fields.country} onChange={e => setFields(s => ({ ...s, country: e.target.value, state: '' }))}>
+            {COUNTRIES.map(c => <option key={c.code} value={c.code}>{tOr(`scr.country.${c.code}`, c.label)}</option>)}
           </SelInput>
-          <Inp label={STATE_LABEL[fields.country] || 'Province / State'} placeholder="e.g. Ontario"
+          <Inp label={STATE_LABEL[fields.country] ? stateLabel(fields.country) : t('scr.onboard.stateFallback')} placeholder={t('scr.onboard.statePh')}
             value={fields.state} onChange={e => set('state', e.target.value)} />
-          <Inp label="City" placeholder="e.g. Toronto"
+          <Inp label={t('scr.onboard.city')} placeholder={t('scr.onboard.cityPh')}
             value={fields.city} onChange={e => set('city', e.target.value)} />
-          <SelInput label="Venue Category" value={fields.venue_category} onChange={e => handleCategoryChange(e.target.value)}>
-            <option value="">None</option>
+          <SelInput label={t('scr.onboard.category')} value={fields.venue_category} onChange={e => handleCategoryChange(e.target.value)}>
+            <option value="">{t('op.screen.none')}</option>
             {Object.entries(VENUE_TAXONOMY).map(([key, { label }]) => (
-              <option key={key} value={key}>{label}</option>
+              <option key={key} value={key}>{tOr(`venue.category.${key}`, label)}</option>
             ))}
           </SelInput>
           {subtypes.length > 0 && (
-            <SelInput label="Venue Type" value={fields.venue_subtype} onChange={e => set('venue_subtype', e.target.value)}>
-              <option value="">None</option>
-              {subtypes.map(s => <option key={s} value={s}>{s}</option>)}
+            <SelInput label={t('scr.onboard.type')} value={fields.venue_subtype} onChange={e => set('venue_subtype', e.target.value)}>
+              <option value="">{t('op.screen.none')}</option>
+              {subtypes.map(s => <option key={s} value={s}>{tOr(`venue.subtype.${s}`, s)}</option>)}
             </SelInput>
           )}
           <div>
-            <div style={{ ...TX.label, marginBottom: 8 }}>Environment</div>
+            <div style={{ ...TX.label, marginBottom: 8 }}>{t('scr.onboard.environment')}</div>
             <PillGroup
-              options={[{ value: 'indoor', label: 'Indoor' }, { value: 'outdoor', label: 'Outdoor' }]}
+              options={[{ value: 'indoor', label: t('scr.onboard.indoor') }, { value: 'outdoor', label: t('scr.onboard.outdoor') }]}
               value={fields.environment}
               onChange={val => set('environment', val)}
             />
           </div>
           <div>
-            <div style={{ ...TX.label, marginBottom: 8 }}>Screen Position</div>
-            <PillGroup options={SCREEN_POSITION_OPTIONS} value={fields.screen_position} onChange={val => set('screen_position', val)} />
+            <div style={{ ...TX.label, marginBottom: 8 }}>{t('scr.onboard.screenPosition')}</div>
+            <PillGroup options={SCREEN_POSITION_OPTIONS.map(o => ({ ...o, label: tOr(`scr.position.${o.value}`, o.label) }))} value={fields.screen_position} onChange={val => set('screen_position', val)} />
           </div>
           <div>
             <div style={{ ...TX.label, marginBottom: 8 }}>
-              Screen Location
+              {t('scr.onboard.screenLocation')}
             </div>
             <div style={{ ...TX.caption, marginBottom: 8 }}>
-              Advertisers searching by radius can't find this screen without a pinned location, and it's
-              excluded from audience reach estimates.
+              {t('op.screen.locationHint')}
             </div>
             <ScreenLocationPicker
               value={fields.lat != null && fields.lon != null ? { lat: fields.lat, lng: fields.lon } : null}
               onChange={({ lat, lng }) => setFields(s => ({ ...s, lat, lon: lng }))}
             />
           </div>
-          <Inp label="Max house-ad share of loop (%)" type="number" min="0" max="100"
+          <Inp label={t('op.screen.houseAdMax')} type="number" min="0" max="100"
             value={fields.house_ad_max_pct}
             onChange={e => set('house_ad_max_pct', Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0)))} />
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: T.base, color: C.textMid, fontFamily: F.sans, cursor: 'pointer' }}>
             <input type="checkbox" checked={fields.programmatic_backfill_enabled}
               onChange={e => set('programmatic_backfill_enabled', e.target.checked)} />
-            Allow programmatic backfill on this screen
+            {t('op.screen.backfill')}
           </label>
           <div style={{ ...TX.caption, marginTop: -8 }}>
-            When there's no paid campaign or house ad to play, fill with external programmatic demand instead of the idle slide. Never bumps a paid campaign or house ad.
+            {t('op.screen.backfillHint')}
           </div>
           <div>
-            <div style={{ ...TX.label, marginBottom: 4 }}>Blocked ad categories</div>
+            <div style={{ ...TX.label, marginBottom: 4 }}>{t('op.screen.blockedCats')}</div>
             <div style={{ ...TX.caption, marginBottom: 8 }}>
-              Advertisers in these categories can't target this screen, and it will never play their ads. Campaigns already in your approval queue are flagged.
+              {t('op.screen.blockedCatsHint')}
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {blockableCategories.map(cat => {
@@ -213,7 +215,7 @@ function DetailsTab({ screen, onSaved }) {
                       // blocked = red, not the purple "selected" look
                       ...(active ? { border: `1px solid ${C.red}`, background: C.redSoft, color: C.redText } : null),
                     }}
-                  >{active ? '⊘ ' : ''}{cat}</Chip>
+                  >{active ? '⊘ ' : ''}{tOr(`categories.${cat}`, cat)}</Chip>
                 );
               })}
             </div>
@@ -224,7 +226,7 @@ function DetailsTab({ screen, onSaved }) {
             {msg.text}
           </div>
         )}
-        <Btn onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</Btn>
+        <Btn onClick={handleSave} disabled={saving}>{saving ? t('common.saving') : t('op.screen.saveChanges')}</Btn>
       </Card>
     </div>
   );
@@ -252,6 +254,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
   const [creatingInvite, setCreatingInvite] = useState(false);
   const [inviteError, setInviteError] = useState(null);
   const [qrInviteId, setQrInviteId] = useState(null);
+  const { t, tx, tOr, formatCurrency, formatMoney, formatNumber, formatPercent, formatDate } = useT();
 
   // Fetch screen record. screen_token is no longer column-readable (it is a
   // bearer secret); fetch it via the owner-scoped get_screen_token RPC.
@@ -445,9 +448,9 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
     return (
       <div style={{ padding: '48px 24px', textAlign: 'center' }}>
         <div style={{ fontSize: T.md, color: screenLoadError ? C.redText : C.textSub, fontFamily: F.sans }}>
-          {screenLoadError ? "Couldn't load this screen — check your connection and try again." : 'Screen not found.'}
+          {screenLoadError ? t('op.screen.loadError') : t('op.screen.notFound')}
         </div>
-        <Btn variant="secondary" style={{ marginTop: 16 }} onClick={onBack}>← Back</Btn>
+        <Btn variant="secondary" style={{ marginTop: 16 }} onClick={onBack}>{t('scr.onboard.back')}</Btn>
       </div>
     );
   }
@@ -477,7 +480,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       <PageHeader
         title={screen.name}
         subtitle={`${screen.neighbourhood || screen.location || ''} · ${screen.city} · ${screen.owner || ''}`}
-        back="All Screens"
+        back={t('op.screen.allScreens')}
         onBack={onBack}
         actions={
           <>
@@ -498,8 +501,8 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
             })() : (
               <Badge status={screen.status} />
             )}
-            <Btn variant="secondary" size="sm" onClick={() => setShowEdit(true)} icon={<IconEdit size={13} />}>Edit</Btn>
-            <Btn variant="secondary" size="sm" onClick={() => setShowHouseAdWizard(true)}>Create House Ad</Btn>
+            <Btn variant="secondary" size="sm" onClick={() => setShowEdit(true)} icon={<IconEdit size={13} />}>{t('op.screen.edit')}</Btn>
+            <Btn variant="secondary" size="sm" onClick={() => setShowHouseAdWizard(true)}>{t('op.screen.createHouseAd')}</Btn>
             {(screen.status === 'live' || screen.status === 'inactive') && (
               <Btn
                 variant={screen.status === 'live' ? 'danger' : 'primary'}
@@ -515,7 +518,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
                   // of "set up payouts" on a screen whose profile, not its
                   // Connect status, is actually the problem.
                   if (newStatus === 'live' && !isProfileComplete(screen)) {
-                    setReactivateError("This screen's profile is incomplete (location, environment, display size, or foot traffic) — finish it via Edit above before reactivating.");
+                    setReactivateError(t('op.screen.incompleteProfile'));
                     return;
                   }
                   const { error } = await supabase.from('screens').update({ status: newStatus }).eq('id', screen.id);
@@ -528,11 +531,11 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
                     // require_connect_active_for_live_screen — Connect isn't
                     // (or is no longer) active. Same fix either way: the
                     // Payout Setup card below.
-                    setReactivateError('Set up payouts (below) before reactivating this screen.');
+                    setReactivateError(t('op.screen.needsPayout'));
                   }
                 }}
               >
-                {screen.status === 'live' ? '⏸ Deactivate' : '▶ Reactivate'}
+                {screen.status === 'live' ? t('op.screen.deactivate') : t('op.screen.reactivate')}
               </Btn>
             )}
           </>
@@ -550,44 +553,44 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
           fires when the screen has NEVER connected, not the realistic case of
           "was live, went dark" (power blip, crashed kiosk, unplugged cable).
           This banner covers that gap and jumps straight to the reconnect tool. */}
-      {screen.status === 'live' && healthSignal(screen).label !== 'Live' && (
+      {screen.status === 'live' && healthSignal(screen).state !== 'live' && (
         <div style={{
           marginBottom: 16, padding: '10px 14px', display: 'flex', alignItems: 'center',
           justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
           background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8,
         }}>
           <span style={TX.error}>
-            {healthSignal(screen).label === 'Offline'
-              ? "This screen isn't sending heartbeats. Check that its display is powered on and connected to the internet."
-              : "This screen's last heartbeat is stale — it may be about to go offline."}
+            {healthSignal(screen).state === 'offline'
+              ? t('op.screen.offlineBanner')
+              : t('op.screen.staleBanner')}
           </span>
-          <Btn variant="danger" size="sm" onClick={() => setTab('setup')}>Reconnect →</Btn>
+          <Btn variant="danger" size="sm" onClick={() => setTab('setup')}>{t('op.screen.reconnect')}</Btn>
         </div>
       )}
 
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: `1px solid ${C.border}`, paddingBottom: 0 }}>
         {[
-          { key: 'overview', label: 'Overview' },
-          { key: 'details',  label: 'Details' },
-          { key: 'cv',       label: 'CV Insights' },
-          { key: 'setup',    label: 'Setup Guide' },
-        ].map(t => (
+          { key: 'overview', label: t('op.screen.tabs.overview') },
+          { key: 'details',  label: t('op.screen.tabs.details') },
+          { key: 'cv',       label: t('op.screen.tabs.cv') },
+          { key: 'setup',    label: t('op.screen.tabs.setup') },
+        ].map(tb => (
           <Btn
             variant="unstyled"
-            key={t.key}
+            key={tb.key}
             role="tab"
-            aria-selected={tab === t.key}
-            onClick={() => setTab(t.key)}
-            hoverStyle={tab === t.key ? undefined : { color: C.text }}
+            aria-selected={tab === tb.key}
+            onClick={() => setTab(tb.key)}
+            hoverStyle={tab === tb.key ? undefined : { color: C.text }}
             style={{
               padding: '9px 18px',
-              fontFamily: F.sans, fontSize: T.base, fontWeight: tab === t.key ? 600 : 400,
-              color: tab === t.key ? C.purple : C.textSub,
-              borderBottom: `2px solid ${tab === t.key ? C.purple : 'transparent'}`,
+              fontFamily: F.sans, fontSize: T.base, fontWeight: tab === tb.key ? 600 : 400,
+              color: tab === tb.key ? C.purple : C.textSub,
+              borderBottom: `2px solid ${tab === tb.key ? C.purple : 'transparent'}`,
               marginBottom: -1, transition: 'all 0.15s',
             }}
-          >{t.label}</Btn>
+          >{tb.label}</Btn>
         ))}
       </div>
 
@@ -596,27 +599,27 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       {/* KPI row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
         <KPI
-          label="Total Ad Revenue"
-          value={`$${totalCampRevenue.toLocaleString()}`}
-          sub="all campaigns"
+          label={t('op.screen.kpiRevenue')}
+          value={formatCurrency(totalCampRevenue, { minimumFractionDigits: 0 })}
+          sub={t('op.screen.allCampaigns')}
           color={C.green}
         />
         <KPI
-          label="Active Campaigns"
+          label={t('op.screen.kpiActive')}
           value={screenCampaigns.filter(c => c.status === 'active' || c.status === 'scheduled').length}
-          sub={`${screenCampaigns.length} total`}
+          sub={t('op.screen.total', { count: screenCampaigns.length })}
           color={C.purple}
         />
         <KPI
-          label="7-Day Uptime"
-          value={uptimePct !== null ? `${uptimePct}%` : screen.status === 'live' ? '99.2%' : '—'}
-          sub={uptimePct !== null ? 'from heartbeats' : 'estimated'}
+          label={t('op.screen.kpiUptime')}
+          value={uptimePct !== null ? formatPercent(Number(uptimePct) / 100, { decimals: 1, minimumFractionDigits: 1 }) : screen.status === 'live' ? formatPercent(0.992, { decimals: 1, minimumFractionDigits: 1 }) : '—'}
+          sub={uptimePct !== null ? t('op.screen.fromHeartbeats') : t('op.screen.estimated')}
           color={uptimePct !== null ? (parseFloat(uptimePct) > 95 ? C.green : parseFloat(uptimePct) > 80 ? C.amber : C.red) : C.textMuted}
         />
         <KPI
           label="CPM"
-          value={`$${(screen.cpm_floor ?? screen.cpm ?? 3.00).toFixed(2)}`}
-          sub="floor price"
+          value={formatCurrency(screen.cpm_floor ?? screen.cpm ?? 3.00)}
+          sub={t('op.screen.floorPrice')}
         />
       </div>
 
@@ -624,9 +627,9 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
         <Card>
           <div style={{ ...TX.title, marginBottom: 14 }}>
-            7-Day Uptime
+            {t('op.screen.kpiUptime')}
             {heartbeats.length === 0 && !loadingData && (
-              <span style={{ fontSize: T.xs, color: C.textMuted, fontWeight: 400, marginLeft: 8 }}>(no heartbeat data — screen may be offline)</span>
+              <span style={{ fontSize: T.xs, color: C.textMuted, fontWeight: 400, marginLeft: 8 }}>{t('op.screen.noHeartbeatData')}</span>
             )}
           </div>
           {loadingData
@@ -636,15 +639,15 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         </Card>
 
         <Card>
-          <div style={{ ...TX.title, marginBottom: 16 }}>Screen Details</div>
+          <div style={{ ...TX.title, marginBottom: 16 }}>{t('op.screen.screenDetails')}</div>
           {[
-            ['Screen ID', screen.id?.slice(0, 8) + '…'],
-            ['Owner', screen.owner || '—'],
-            ['City', screen.city],
-            ['Neighbourhood', screen.neighbourhood || screen.location || '—'],
-            ['Display Size', screen.display_size || '—'],
-            ['Max Ad Duration', (screen.maxDuration || screen.max_ad_duration || 30) + 's'],
-            ['CPM Floor', `$${(screen.cpm_floor ?? screen.cpm ?? 3.00).toFixed(2)}`],
+            [t('op.screen.row.id'), screen.id?.slice(0, 8) + '…'],
+            [t('op.screen.row.owner'), screen.owner || '—'],
+            [t('op.screen.row.city'), screen.city],
+            [t('op.screen.row.neighbourhood'), screen.neighbourhood || screen.location || '—'],
+            [t('op.screen.row.displaySize'), screen.display_size || '—'],
+            [t('op.screen.row.maxDuration'), t('op.screen.seconds', { n: screen.maxDuration || screen.max_ad_duration || 30 })],
+            [t('op.screen.row.cpmFloor'), formatCurrency(screen.cpm_floor ?? screen.cpm ?? 3.00)],
           ].map(([l, v]) => (
             <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
               <span style={{ fontSize: T.sm, color: C.textSub }}>{l}</span>
@@ -657,14 +660,14 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       {/* Revenue split + payout */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
         <Card>
-          <div style={{ ...TX.title, marginBottom: 12 }}>Revenue Split</div>
+          <div style={{ ...TX.title, marginBottom: 12 }}>{t('op.screen.revenueSplit')}</div>
           <div style={{ height: 6, borderRadius: 3, overflow: 'hidden', display: 'flex', marginBottom: 12 }}>
             <div style={{ width: `${ownerPct}%`, background: C.green }} />
             <div style={{ flex: 1, background: C.blue }} />
           </div>
           {[
-            [`Owner (${ownerPct}%)`, `$${ownerSplit.toLocaleString()}`, C.green],
-            [`Platform (${100 - ownerPct}%)`, `$${platformSplit.toLocaleString()}`, C.blue],
+            [t('op.screen.ownerShare', { pct: ownerPct }), formatCurrency(ownerSplit, { minimumFractionDigits: 0 }), C.green],
+            [t('op.screen.platformShare', { pct: 100 - ownerPct }), formatCurrency(platformSplit, { minimumFractionDigits: 0 }), C.blue],
           ].map(([l, v, c]) => (
             <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
               <span style={{ fontSize: T.sm, color: C.textSub }}>{l}</span>
@@ -674,18 +677,18 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         </Card>
 
         <Card>
-          <div style={{ ...TX.title, marginBottom: 12 }}>Payout Setup</div>
+          <div style={{ ...TX.title, marginBottom: 12 }}>{t('op.screen.payoutSetup')}</div>
           {profile?.connect_status === 'active' ? (
             <div style={{ padding: '10px 12px', background: C.greenSoft, border: `1px solid ${C.greenBorder}`, borderRadius: 8, fontSize: T.sm, color: C.greenText, fontFamily: F.sans }}>
-              ✓ Stripe Connect active — payouts enabled
+              {t('op.screen.stripeActive')}
             </div>
           ) : (
             <>
               <div style={{ ...TX.helper, marginBottom: 10 }}>
-                Connect a Stripe account to receive payouts for ad revenue on your screens.
+                {t('op.screen.stripePrompt')}
               </div>
               <Btn size="sm" disabled={connecting} onClick={() => startStripeConnect(setConnecting)}>
-                {connecting ? 'Redirecting…' : 'Connect Stripe Account'}
+                {connecting ? t('op.screen.redirecting') : t('op.screen.connectStripe')}
               </Btn>
             </>
           )}
@@ -695,17 +698,17 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       {/* Screen referral invite (BYOA) */}
       <Card style={{ padding: '16px 20px', marginBottom: 20 }}>
         <div style={{ ...TX.title, marginBottom: 4 }}>
-          Invite an advertiser
+          {t('op.screen.inviteTitle')}
         </div>
         <div style={{ ...TX.helper, marginBottom: 12, lineHeight: 1.5 }}>
-          Know a local business that would want to advertise here? Send them a link scoped to this exact screen — no search, no signup friction.
+          {t('op.screen.inviteBody')}
         </div>
         <Btn onClick={createInvite} disabled={creatingInvite} style={{ marginBottom: 12 }}>
-          {creatingInvite ? 'Creating…' : '+ Get invite link'}
+          {creatingInvite ? t('op.screen.creating') : t('op.screen.getInvite')}
         </Btn>
         {inviteError && <div style={{ ...TX.error, marginBottom: 12 }}>{inviteError}</div>}
         {invites.length === 0 ? (
-          <div style={TX.helperMuted}>No invites sent yet.</div>
+          <div style={TX.helperMuted}>{t('op.screen.noInvites')}</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {invites.map(inv => {
@@ -714,19 +717,19 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
                 <div key={inv.id} style={{ padding: '8px 10px', background: C.surfaceAlt, borderRadius: 8 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontSize: T.sm, fontWeight: 500, color: C.text, fontFamily: F.sans, textTransform: 'capitalize' }}>{inv.status.replace('_', ' ')}</div>
-                      <div style={TX.caption}>{inv.view_count} view{inv.view_count !== 1 ? 's' : ''} · {new Date(inv.created_at).toLocaleDateString()}</div>
+                      <div style={{ fontSize: T.sm, fontWeight: 500, color: C.text, fontFamily: F.sans, textTransform: 'capitalize' }}>{tOr(`op.screen.inviteStatus.${inv.status}`, inv.status.replace('_', ' '))}</div>
+                      <div style={TX.caption}>{t('op.screen.views', { count: inv.view_count })} · {formatDate(inv.created_at)}</div>
                       {inv.advertiser_name && (
                         <div style={{ fontSize: T.xs, color: C.textSub, fontFamily: F.sans, marginTop: 2 }}>
-                          {inv.status === 'booked' ? 'Booked by ' : 'Signed up: '}{inv.advertiser_name}
+                          {inv.status === 'booked' ? t('op.screen.bookedBy', { name: inv.advertiser_name }) : t('op.screen.signedUp', { name: inv.advertiser_name })}
                         </div>
                       )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <CopyButton
                         value={buildScreenInviteShareText({ screenName: screen?.name, url: inviteUrl })}
-                        label="Copy message"
-                        copiedLabel="✓ Copied"
+                        label={t('op.screen.copyMessage')}
+                        copiedLabel={t('scr.pairing.copied')}
                         variant="ghost"
                         size="sm"
                         style={{ fontSize: T.xs, color: C.textSub, padding: 0, border: 'none', background: 'none' }}
@@ -736,12 +739,12 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
                         onClick={() => setQrInviteId(id => id === inv.id ? null : inv.id)}
                         style={{ fontSize: T.xs, fontWeight: 400 }}
                       >
-                        {qrInviteId === inv.id ? 'Hide QR' : 'Show QR'}
+                        {qrInviteId === inv.id ? t('op.screen.hideQr') : t('op.screen.showQr')}
                       </Btn>
                       <CopyButton
                         value={inviteUrl}
-                        label="Copy link"
-                        copiedLabel="✓ Copied"
+                        label={t('op.screen.copyLink')}
+                        copiedLabel={t('scr.pairing.copied')}
                         variant="ghost"
                         size="sm"
                         style={{ fontSize: T.xs, color: C.purple, padding: 0, border: 'none', background: 'none' }}
@@ -763,24 +766,24 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       {/* Campaign history */}
       <Card style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ ...TX.title, padding: '14px 20px', borderBottom: `1px solid ${C.border}` }}>
-          Campaign History
-          <span style={{ fontSize: T.sm, fontWeight: 400, color: C.textMuted, marginLeft: 8 }}>{screenCampaigns.length} total</span>
+          {t('op.screen.history')}
+          <span style={{ fontSize: T.sm, fontWeight: 400, color: C.textMuted, marginLeft: 8 }}>{t('op.screen.total', { count: screenCampaigns.length })}</span>
         </div>
         {loadingData ? (
           <div style={{ padding: 20 }}><Skeleton height={120} radius={6} /></div>
         ) : screenCampaigns.length === 0 ? (
           <div style={{ ...TX.bodyMuted, padding: '32px 20px', textAlign: 'center' }}>
-            No campaigns have run on this screen yet.
+            {t('op.screen.noHistory')}
           </div>
         ) : (
           <Table
             columns={[
-              { key: 'advertiser_name', label: 'Advertiser', render: v => <span style={{ fontWeight: 500, color: C.text, fontFamily: F.sans }}>{v}</span> },
-              { key: 'status', label: 'Status', render: v => <Badge status={v} /> },
-              { key: 'budget', label: 'Budget', render: v => <span style={{ fontFamily: F.mono, fontWeight: 600 }}>${(v || 0).toLocaleString()}</span> },
-              { key: 'impressions', label: 'Impressions', render: v => <span style={{ fontFamily: F.mono }}>{v ? `${(v/1000).toFixed(1)}K` : '—'}</span> },
-              { key: 'scans', label: 'Scans', render: v => <span style={{ fontFamily: F.mono, color: C.purple }}>{v ?? '—'}</span> },
-              { key: 'start_date', label: 'Dates', render: (v, r) => <span style={TX.mono}>{v} → {r.end_date}</span> },
+              { key: 'advertiser_name', label: t('op.screen.col.advertiser'), render: v => <span style={{ fontWeight: 500, color: C.text, fontFamily: F.sans }}>{v}</span> },
+              { key: 'status', label: t('op.screen.col.status'), render: v => <Badge status={v} /> },
+              { key: 'budget', label: t('op.screen.col.budget'), render: v => <span style={{ fontFamily: F.mono, fontWeight: 600 }}>{formatCurrency(v || 0, { minimumFractionDigits: 0 })}</span> },
+              { key: 'impressions', label: t('op.screen.col.impressions'), render: v => <span style={{ fontFamily: F.mono }}>{v ? t('dash.thousands', { n: formatNumber(v / 1000, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }) : '—'}</span> },
+              { key: 'scans', label: t('op.screen.col.scans'), render: v => <span style={{ fontFamily: F.mono, color: C.purple }}>{v ?? '—'}</span> },
+              { key: 'start_date', label: t('op.screen.col.dates'), render: (v, r) => <span style={TX.mono}>{v ? formatDate(v) : '—'} → {r.end_date ? formatDate(r.end_date) : '—'}</span> },
             ]}
             rows={screenCampaigns}
           />
@@ -790,17 +793,17 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       {downtime.length > 0 && (
         <Card style={{ padding: 0, overflow: 'hidden', marginTop: 20 }}>
           <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.border}` }}>
-            <div style={TX.title}>Missed delivery</div>
+            <div style={TX.title}>{t('op.screen.missed')}</div>
             <div style={{ ...TX.helperMuted, marginTop: 2 }}>
-              Days this screen delivered fewer plays than campaigns had scheduled. Advertisers were credited for the shortfall.
+              {t('op.screen.missedHint')}
             </div>
           </div>
           <Table
             columns={[
-              { key: 'day', label: 'Day', render: v => <span style={{ fontFamily: F.mono, fontSize: T.xs }}>{v}</span> },
-              { key: 'delivered_plays', label: 'Delivered', render: (v, r) => <span style={{ fontFamily: F.mono }}>{v} of {r.expected_plays}</span> },
-              { key: 'reason', label: 'Cause', render: v => <span style={{ fontFamily: F.sans }}>{v === 'screen_offline' ? 'Screen offline' : 'Under-delivered'}</span> },
-              { key: 'credit_amount', label: 'Credited back', render: (v, r) => <span style={{ fontFamily: F.mono, color: C.redText }}>${Number(v || 0).toFixed(2)} {String(r.currency ?? '').toUpperCase()}</span> },
+              { key: 'day', label: t('op.screen.col.day'), render: v => <span style={{ fontFamily: F.mono, fontSize: T.xs }}>{formatDate(v)}</span> },
+              { key: 'delivered_plays', label: t('op.screen.col.delivered'), render: (v, r) => <span style={{ fontFamily: F.mono }}>{t('op.screen.deliveredOf', { delivered: v, expected: r.expected_plays })}</span> },
+              { key: 'reason', label: t('op.screen.col.cause'), render: v => <span style={{ fontFamily: F.sans }}>{v === 'screen_offline' ? t('op.screen.causeOffline') : t('op.screen.causeUnder')}</span> },
+              { key: 'credit_amount', label: t('op.screen.col.credited'), render: (v, r) => <span style={{ fontFamily: F.mono, color: C.redText }}>{r.currency ? formatMoney(Number(v || 0), String(r.currency).toUpperCase()) : formatCurrency(Number(v || 0))}</span> },
             ]}
             rows={downtime}
           />
@@ -819,10 +822,10 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       {tab === 'cv' && (
         <div>
           {cvLoading ? (
-            <div style={{ ...TX.bodyMuted, padding: '48px 0', textAlign: 'center' }}>Loading CV data…</div>
+            <div style={{ ...TX.bodyMuted, padding: '48px 0', textAlign: 'center' }}>{t('op.screen.cvLoading')}</div>
           ) : cvEvents.length === 0 ? (
-            <EmptyState size="lg" icon={<IconCamera size={28} />} title="No CV data yet"
-              description="Requires screen-agent with USB camera. See Setup Guide tab." />
+            <EmptyState size="lg" icon={<IconCamera size={28} />} title={t('op.screen.cvEmpty')}
+              description={t('op.screen.cvEmptySub')} />
           ) : (() => {
             const totalPeople  = cvEvents.reduce((a, e) => a + (e.people_count ?? 0), 0);
             const avgDwell     = cvEvents.length ? (cvEvents.reduce((a, e) => a + (e.avg_dwell_seconds ?? 0), 0) / cvEvents.length).toFixed(1) : '—';
@@ -838,9 +841,9 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
             const maxAge = Math.max(...ageBuckets.map(b => b.val), 1);
 
             const genderBuckets = [
-              { label: 'Male',    val: cvEvents.reduce((a, e) => a + (e.gender_male ?? 0), 0),    color: C.blue },
-              { label: 'Female',  val: cvEvents.reduce((a, e) => a + (e.gender_female ?? 0), 0),  color: C.purple },
-              { label: 'Unknown', val: cvEvents.reduce((a, e) => a + (e.gender_unknown ?? 0), 0), color: C.border },
+              { label: t('op.screen.male'),    val: cvEvents.reduce((a, e) => a + (e.gender_male ?? 0), 0),    color: C.blue },
+              { label: t('op.screen.female'),  val: cvEvents.reduce((a, e) => a + (e.gender_female ?? 0), 0),  color: C.purple },
+              { label: t('op.screen.unknown'), val: cvEvents.reduce((a, e) => a + (e.gender_unknown ?? 0), 0), color: C.border },
             ];
             const maxGender = Math.max(...genderBuckets.map(b => b.val), 1);
 
@@ -856,39 +859,39 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
             return (
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 24 }}>
-                  <KPI label="People Seen (30d)" value={totalPeople.toLocaleString()} color={C.purple} />
-                  <KPI label="Avg Dwell" value={`${avgDwell}s`} sub="per impression event" />
-                  <KPI label="Avg Attention" value={`${avgAttention}%`} color={avgAttention === '—' ? C.textMuted : (avgAttention > 60 ? C.green : C.amber)} />
+                  <KPI label={t('op.screen.peopleSeen')} value={formatNumber(totalPeople)} color={C.purple} />
+                  <KPI label={t('op.screen.avgDwell')} value={avgDwell === '—' ? '—' : t('op.screen.seconds', { n: formatNumber(Number(avgDwell), { minimumFractionDigits: 1, maximumFractionDigits: 1 }) })} sub={t('op.screen.perEvent')} />
+                  <KPI label={t('op.screen.avgAttention')} value={avgAttention === '—' ? '—' : formatPercent(avgAttention / 100)} color={avgAttention === '—' ? C.textMuted : (avgAttention > 60 ? C.green : C.amber)} />
                 </div>
 
                 <Card style={{ marginBottom: 16 }}>
-                  <div style={{ ...TX.title, marginBottom: 16 }}>Age Breakdown</div>
+                  <div style={{ ...TX.title, marginBottom: 16 }}>{t('op.screen.ageBreakdown')}</div>
                   {ageBuckets.map(b => (
                     <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
                       <div style={{ ...TX.helper, width: 44, textAlign: 'right', flexShrink: 0 }}>{b.label}</div>
                       <div style={{ flex: 1, background: C.surfaceAlt, borderRadius: 4, height: 12, overflow: 'hidden' }}>
                         <div style={{ width: `${(b.val / maxAge) * 100}%`, height: '100%', background: C.purple, borderRadius: 4, transition: 'width 0.3s' }} />
                       </div>
-                      <div style={{ width: 40, fontSize: T.sm, color: C.text, fontFamily: F.mono, textAlign: 'right', flexShrink: 0 }}>{b.val.toLocaleString()}</div>
+                      <div style={{ width: 40, fontSize: T.sm, color: C.text, fontFamily: F.mono, textAlign: 'right', flexShrink: 0 }}>{formatNumber(b.val)}</div>
                     </div>
                   ))}
                 </Card>
 
                 <Card style={{ marginBottom: 16 }}>
-                  <div style={{ ...TX.title, marginBottom: 16 }}>Gender Split</div>
+                  <div style={{ ...TX.title, marginBottom: 16 }}>{t('op.screen.genderSplit')}</div>
                   {genderBuckets.map(b => (
                     <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
                       <div style={{ ...TX.helper, width: 60, textAlign: 'right', flexShrink: 0 }}>{b.label}</div>
                       <div style={{ flex: 1, background: C.surfaceAlt, borderRadius: 4, height: 12, overflow: 'hidden' }}>
                         <div style={{ width: `${(b.val / maxGender) * 100}%`, height: '100%', background: b.color, borderRadius: 4, transition: 'width 0.3s' }} />
                       </div>
-                      <div style={{ width: 40, fontSize: T.sm, color: C.text, fontFamily: F.mono, textAlign: 'right', flexShrink: 0 }}>{b.val.toLocaleString()}</div>
+                      <div style={{ width: 40, fontSize: T.sm, color: C.text, fontFamily: F.mono, textAlign: 'right', flexShrink: 0 }}>{formatNumber(b.val)}</div>
                     </div>
                   ))}
                 </Card>
 
                 <Card>
-                  <div style={{ ...TX.title, marginBottom: 16 }}>7-Day People Trend</div>
+                  <div style={{ ...TX.title, marginBottom: 16 }}>{t('op.screen.trend')}</div>
                   <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 80 }}>
                     {days7.map(d => (
                       <div key={d.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
@@ -912,11 +915,11 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
       {tab === 'setup' && screen && (
   <div>
     <Card style={{ marginBottom: 16 }}>
-      <div style={{ ...TX.title, marginBottom: 12 }}>Connect a display</div>
+      <div style={{ ...TX.title, marginBottom: 12 }}>{t('op.screen.connectDisplay')}</div>
       {/* Hardware selector */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
         {HARDWARE_OPTIONS.map(hw => (
-          <Chip key={hw} selected={hwType === hw} onClick={() => setHwType(hw)} style={pillChip}>{hw}</Chip>
+          <Chip key={hw} selected={hwType === hw} onClick={() => setHwType(hw)} style={pillChip}>{tOr(`scr.hw.${hw}`, hw)}</Chip>
         ))}
       </div>
       <HardwareInstructions hardware={hwType} screen={{ ...screen, screen_token: screenToken }} />
@@ -925,21 +928,15 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
     {(hwType === 'Raspberry Pi 5' || hwType === 'Mini PC') && (
       <Card style={{ marginBottom: 16 }}>
         <div style={{ ...TX.title, marginBottom: 12 }}>
-          Audience Measurement Camera (optional)
+          {t('op.screen.cameraTitle')}
         </div>
         <div style={{ ...TX.bodySub, lineHeight: 1.7, marginBottom: 12 }}>
-          Plug in a USB camera and run the screen-agent Docker stack to get real audience
-          counts instead of estimated reach. All face detection runs on the device — no
-          images or video ever leave it, only anonymous aggregate stats (person count,
-          dwell time, attention, age/gender brackets) every 30 seconds. See{' '}
-          <code style={{ background: C.surfaceAlt, padding: '1px 5px', borderRadius: 3, fontFamily: F.mono, fontSize: T.sm }}>
-            screen-agent/README.md
-          </code>{' '}for the Docker Compose setup steps.
+          {tx('op.screen.cameraBody', { code: chunk => (
+            <code style={{ background: C.surfaceAlt, padding: '1px 5px', borderRadius: 3, fontFamily: F.mono, fontSize: T.sm }}>{chunk}</code>
+          ) })}
         </div>
         <div style={{ padding: '10px 14px', background: C.amberSoft, border: `1px solid ${C.amberBorder}`, borderRadius: 8, fontSize: T.sm, color: C.amberText, fontFamily: F.sans, lineHeight: 1.6, marginBottom: 12 }}>
-          <strong>Required if you enable this:</strong> post a visible notice at the venue
-          disclosing that anonymous audience-analytics camera is in use. This is a condition
-          of enabling the feature, not optional signage.
+          {tx('op.screen.cameraNotice', { b: chunk => <strong>{chunk}</strong> })}
         </div>
         {/* S19: this is deliberately a separate signal from the screen's main
             Live/Offline badge above — the camera box can be up or down
@@ -950,7 +947,7 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
           return (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: T.sm, fontFamily: F.sans, color: cv.connected ? C.greenText : C.textSub }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: cv.connected ? C.green : C.border }} />
-              Camera agent: {cv.label}
+              {t('op.screen.cameraAgent', { status: cv.label })}
             </div>
           );
         })()}
@@ -959,14 +956,14 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
 
     {/* Screen token -- the camera agent (screen-agent/.env) still needs it. */}
     <Card style={{ marginBottom: 16 }}>
-      <div style={{ ...TX.title, marginBottom: 4 }}>Screen Token</div>
+      <div style={{ ...TX.title, marginBottom: 4 }}>{t('op.screen.tokenTitle')}</div>
       <div style={{ ...TX.helperMuted, marginBottom: 12 }}>
-        Only needed for the audience camera agent or the advanced player URL. Keep it private — it authenticates your display.
+        {t('op.screen.tokenHint')}
       </div>
       <div style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', fontFamily: F.mono, fontSize: T.base, color: C.text, wordBreak: 'break-all', letterSpacing: '0.5px', marginBottom: 8 }}>
         {screenToken}
       </div>
-      <CopyButton value={screenToken} label="Copy Token" size="sm" />
+      <CopyButton value={screenToken} label={t('op.screen.copyToken')} size="sm" />
     </Card>
 
     {/* Test connection — for a screen that isn't live yet, a successful
@@ -974,11 +971,11 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
         checkAndGoLive / the require_connect_active_for_live_screen trigger).
         For an already-live screen this is a plain diagnostic check. */}
     <Card>
-      <div style={{ ...TX.title, marginBottom: 12 }}>Test Connection</div>
+      <div style={{ ...TX.title, marginBottom: 12 }}>{t('op.screen.testTitle')}</div>
       <div style={{ ...TX.bodySub, marginBottom: 12 }}>
         {screen.status === 'live'
-          ? 'Verify your screen is still sending heartbeats.'
-          : 'After completing setup, click below to verify your screen is sending heartbeats and go live.'}
+          ? t('op.screen.testLive')
+          : t('op.screen.testNotLive')}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <Btn
@@ -1013,28 +1010,28 @@ export function ScreenDetailView({ screenId, onBack, profile, onScreenUpdated })
             }
           }}
         >
-          {connStatus === 'checking' ? 'Checking…' : 'Check Connection'}
+          {connStatus === 'checking' ? t('op.screen.checking') : t('op.screen.check')}
         </Btn>
         {connStatus === 'ok' && (
           <span style={{ fontSize: T.base, color: C.greenText, fontFamily: F.sans }}>
-            {screen.status === 'live' ? '✓ Connected — heartbeat received' : '✓ Screen is now live'}
+            {screen.status === 'live' ? t('op.screen.okLive') : t('op.screen.okNowLive')}
           </span>
         )}
         {connStatus === 'no_heartbeat' && (
-          <span style={{ fontSize: T.base, color: C.amberText, fontFamily: F.sans }}>No heartbeat in last 5 minutes — check your setup</span>
+          <span style={{ fontSize: T.base, color: C.amberText, fontFamily: F.sans }}>{t('op.screen.noHeartbeat')}</span>
         )}
         {connStatus === 'needs_payout' && (
           <span style={{ fontSize: T.base, color: C.amberText, fontFamily: F.sans }}>
-            Heartbeat received — set up payouts below before this screen can go live.
+            {t('op.screen.hbNeedsPayout')}
           </span>
         )}
         {connStatus === 'needs_profile' && (
           <span style={{ fontSize: T.base, color: C.amberText, fontFamily: F.sans }}>
-            Heartbeat received — finish this screen's profile (Edit above) before it can go live.
+            {t('op.screen.hbNeedsProfile')}
           </span>
         )}
         {connStatus === 'check_failed' && (
-          <span style={{ fontSize: T.base, color: C.redText, fontFamily: F.sans }}>Couldn't check your connection — check your network and try again.</span>
+          <span style={{ fontSize: T.base, color: C.redText, fontFamily: F.sans }}>{t('op.screen.checkFailed')}</span>
         )}
       </div>
     </Card>

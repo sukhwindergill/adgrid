@@ -1,6 +1,7 @@
 import { C, F, T } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { Card } from '../primitives/Card.jsx';
+import { useT } from '../../i18n/useT.js';
 
 function hoursLeft(dueAt, now) {
   if (!dueAt) return null;
@@ -13,16 +14,17 @@ function hoursLeft(dueAt, now) {
 // that were dropped for missing their window, and screens the owner turned
 // down outright. Approved screens are not news.
 export function ApprovalTracker({ rows = [], now = new Date() }) {
+  const { t } = useT();
   const interesting = rows.filter(r => r.status === 'pending' || r.status === 'expired' || r.status === 'rejected');
   if (interesting.length === 0) return null;
 
   return (
     <Card style={{ padding: 20, marginBottom: 24 }}>
       <div style={{ ...TX.title, marginBottom: 4 }}>
-        Waiting on screen owners
+        {t('cards.approvals.title')}
       </div>
       <div style={{ ...TX.helperMuted, marginBottom: 14 }}>
-        Each owner has a review window. A screen that misses it is dropped and credited back to you.
+        {t('cards.approvals.sub')}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -32,18 +34,18 @@ export function ApprovalTracker({ rows = [], now = new Date() }) {
           let color = C.textSub;
 
           if (r.status === 'rejected') {
-            label = `Declined — ${r.reject_reason || 'no reason given, contact the venue'}`;
+            label = t('cards.approvals.declined', { reason: r.reject_reason || t('cards.approvals.noReason') });
             color = C.red;
           } else if (r.status === 'expired') {
-            label = 'Dropped — not reviewed in time';
+            label = t('cards.approvals.dropped');
             color = C.red;
           } else if (left === null) {
-            label = 'Awaiting review';
+            label = t('cards.approvals.awaiting');
           } else if (left <= 0) {
-            label = 'Overdue — will be dropped shortly';
+            label = t('cards.approvals.overdue');
             color = C.amber;
           } else {
-            label = `${left}h left to review`;
+            label = t('cards.approvals.hoursLeft', { hours: left });
             color = left <= 4 ? C.amber : C.textSub;
           }
 

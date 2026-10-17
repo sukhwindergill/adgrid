@@ -23,12 +23,14 @@ import { summarizeInviteFunnel } from '../../lib/inviteFunnel.js';
 import { operatorSteps } from '../../lib/gettingStarted.js';
 import { GettingStartedCard } from '../../components/shared/GettingStartedCard.jsx';
 import { IconDollar, IconClipboard, IconQr, IconWarning, IconScreen } from '../../components/icons.jsx';
+import { useT } from '../../i18n/useT.js';
 
 // B14 fix: nothing previously told an operator their payouts weren't set
 // up — money was captured from advertisers but the transfer to the
 // operator was silently skipped. Surface it loudly on the page they land
 // on first.
 function PayoutsWarningBanner({ onFix }) {
+  const { tx, t } = useT();
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px',
@@ -37,11 +39,10 @@ function PayoutsWarningBanner({ onFix }) {
     }}>
       <span style={{ color: C.amberText, flexShrink: 0 }}><IconWarning size={18} /></span>
       <div style={{ flex: 1, fontSize: T.base, color: C.amberText }}>
-        <strong>Payouts aren't set up.</strong> Advertisers are being charged for campaigns on your
-        screens, but you won't receive any money until you connect a payout account.
+        {tx('op.dash.payoutsWarning', { b: chunk => <strong>{chunk}</strong> })}
       </div>
       <Btn onClick={onFix} style={{ padding: '7px 16px', fontSize: T.sm, whiteSpace: 'nowrap' }}>
-        Set up payouts
+        {t('op.dash.setUpPayouts')}
       </Btn>
     </div>
   );
@@ -49,6 +50,7 @@ function PayoutsWarningBanner({ onFix }) {
 
 
 function LiveCounter({ base }) {
+  const { formatNumber } = useT();
   const [val, setVal] = useState(0);
 
   useEffect(() => {
@@ -70,7 +72,7 @@ function LiveCounter({ base }) {
 
   return (
     <div style={{ fontFamily: F.mono, fontSize: T.jumbo, fontWeight: 600, color: C.text, lineHeight: 1 }}>
-      {val.toLocaleString()}
+      {formatNumber(val)}
     </div>
   );
 }
@@ -96,6 +98,9 @@ function HourlyChart({ data }) {
 export function Dashboard({ dbScreens = [], setNav, loading }) {
   const { isMobile } = useBreakpoint();
   const { profile } = useAuth();
+  const { t, formatCurrency, formatNumber, formatDate } = useT();
+  const money = n => formatCurrency(n, { minimumFractionDigits: 0 });
+  const thousands = (n, d = 1) => t('dash.thousands', { n: formatNumber(n / 1000, { minimumFractionDigits: d, maximumFractionDigits: d }) });
   const [hourlyData, setHourlyData] = useState(Array(24).fill(0));
   const { data: billing } = useOperatorBilling();
 
@@ -175,7 +180,7 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
   const totalSpent  = currentCampaigns.reduce((a, c) => a + c.spent, 0);
   const liveScreens = dbScreens.filter(s => s.status === 'live');
   const allImpr     = currentCampaigns.reduce((a, c) => a + (c.impressions || 0), 0);
-  const avgCPM      = allImpr > 0 ? `$${((totalSpend / allImpr) * 1000).toFixed(2)}` : '—';
+  const avgCPM      = allImpr > 0 ? formatCurrency((totalSpend / allImpr) * 1000) : '—';
 
   const kpiCols = isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)';
 
@@ -193,14 +198,14 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
   return (
     <div>
       <PageHeader
-        title="Dashboard"
-        subtitle={new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        title={t('op.dash.title')}
+        subtitle={formatDate(new Date(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
       />
 
       {profile?.id && (
         <GettingStartedCard
-          title="Get your first screen live"
-          steps={operatorSteps({ screens: dbScreens, connectStatus: profile.connect_status })}
+          title={t('op.dash.gettingStarted')}
+          steps={operatorSteps({ screens: dbScreens, connectStatus: profile.connect_status }).map(step => ({ ...step, title: t(`op.dash.steps.${step.id}.title`), body: t(`op.dash.steps.${step.id}.body`) }))}
           storageKey={`adgrid_getting_started_hidden:op:${profile.id}`}
           onGo={step => setNav?.(step.nav)}
         />
@@ -221,15 +226,15 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
       {/* Hero: live counter */}
       <Card style={{ marginBottom: 24, padding: 28, background: C.gradWash }}>
         <div style={{ fontSize: T.sm, fontWeight: 600, color: C.purple, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: F.sans, marginBottom: 8 }}>
-          Live Impressions
+          {t('op.dash.liveImpressions')}
         </div>
         <LiveCounter base={totalImpr} />
         <div style={{ display: 'flex', gap: 28, marginTop: 16, flexWrap: 'wrap' }}>
           {[
-            ['Active Campaigns', active.length],
-            ['Screens Online', liveScreens.length],
-            ['Avg CPM', avgCPM],
-            ['Total Scans', totalScans.toLocaleString()],
+            [t('op.dash.activeCampaigns'), active.length],
+            [t('op.dash.screensOnline'), liveScreens.length],
+            [t('op.dash.avgCpm'), avgCPM],
+            [t('op.dash.totalScans'), formatNumber(totalScans)],
           ].map(([l, v]) => (
             <div key={l}>
               <div style={{ fontFamily: F.mono, fontSize: T.xl, fontWeight: 600, color: C.textMid }}>{v}</div>
@@ -239,27 +244,27 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
         </div>
 
         <div style={{ marginTop: 20 }}>
-          <div style={{ ...TX.caption, marginBottom: 6 }}>Impressions by hour (today)</div>
+          <div style={{ ...TX.caption, marginBottom: 6 }}>{t('op.dash.byHour')}</div>
           <HourlyChart data={hourlyData} />
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: T.xs, color: C.textMuted, fontFamily: F.mono, marginTop: 4 }}>
-            {['00:00', '06:00', '12:00', '18:00', '23:00'].map(t => <span key={t}>{t}</span>)}
+            {['00:00', '06:00', '12:00', '18:00', '23:00'].map(h => <span key={h}>{h}</span>)}
           </div>
         </div>
       </Card>
 
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: kpiCols, gap: 14, marginBottom: 24 }}>
-        <KPI label="Network Revenue"  value={`$${totalRev.toLocaleString()}`}               sub="this month" icon={<IconDollar size={16} />} />
-        <KPI label="Active Campaigns" value={active.length}                                  sub="running now" icon="▶" />
-        <KPI label="Active Budget"    value={`$${totalSpend.toLocaleString()}`}              sub="running + scheduled" icon={<IconClipboard size={16} />} />
-        <KPI label="Active Scans"     value={totalScans}                                     sub="running + scheduled" color={C.green} icon={<IconQr size={16} />} />
+        <KPI label={t('op.dash.networkRevenue')} value={money(totalRev)} sub={t('op.dash.thisMonth')} icon={<IconDollar size={16} />} />
+        <KPI label={t('op.dash.activeCampaigns')} value={active.length} sub={t('op.dash.runningNow')} icon="▶" />
+        <KPI label={t('op.dash.activeBudget')} value={money(totalSpend)} sub={t('op.dash.runningScheduled')} icon={<IconClipboard size={16} />} />
+        <KPI label={t('op.dash.activeScans')} value={formatNumber(totalScans)} sub={t('op.dash.runningScheduled')} color={C.green} icon={<IconQr size={16} />} />
       </div>
 
       {/* Budget strip */}
       <Card style={{ marginBottom: 24, padding: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div style={TX.title}>Network Budget Utilisation</div>
-          <div style={TX.bodySub}>${totalSpent.toLocaleString()} spent of ${totalSpend.toLocaleString()}</div>
+          <div style={TX.title}>{t('op.dash.utilisation')}</div>
+          <div style={TX.bodySub}>{t('op.dash.spentOf', { spent: money(totalSpent), total: money(totalSpend) })}</div>
         </div>
         <ProgressBar value={totalSpent} max={totalSpend} height={8} />
       </Card>
@@ -267,14 +272,14 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
       {inviteFunnel && inviteFunnel.sent > 0 && (
         <Card style={{ marginBottom: 24, padding: 20 }}>
           <div style={{ ...TX.title, marginBottom: 12 }}>
-            Screen Invite Performance
+            {t('op.dash.invitePerformance')}
           </div>
           <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap' }}>
             {[
-              ['Sent', inviteFunnel.sent],
-              ['Viewed', inviteFunnel.viewed],
-              ['Signed Up', inviteFunnel.signedUp],
-              ['Booked', inviteFunnel.booked],
+              [t('op.dash.sent'), inviteFunnel.sent],
+              [t('op.dash.viewed'), inviteFunnel.viewed],
+              [t('op.dash.signedUp'), inviteFunnel.signedUp],
+              [t('op.dash.booked'), inviteFunnel.booked],
             ].map(([l, v]) => (
               <div key={l}>
                 <div style={{ fontFamily: F.mono, fontSize: T.xl, fontWeight: 600, color: C.textMid }}>{v}</div>
@@ -288,7 +293,7 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
       {/* Active campaigns + screen health */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 320px', gap: 20 }}>
         <div>
-          <SectionHeader title="Active Campaigns" action={<Btn variant="ghost" size="sm" onClick={() => setNav('campaigns')}>View all →</Btn>} />
+          <SectionHeader title={t('op.dash.activeCampaigns')} action={<Btn variant="ghost" size="sm" onClick={() => setNav('campaigns')}>{t('op.dash.viewAll')}</Btn>} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {active.slice(0, 5).map(c => {
               const pct = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
@@ -302,7 +307,7 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
                     <Badge status={c.status} />
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 10 }}>
-                    {[['Budget', `$${c.budget.toLocaleString()}`], ['Spent', `$${c.spent.toLocaleString()}`], ['Impressions', `${(c.impressions / 1000).toFixed(1)}K`], ['Scans', c.scans]].map(([l, v]) => (
+                    {[[t('op.dash.budget'), money(c.budget)], [t('op.dash.spent'), money(c.spent)], [t('op.dash.impressions'), thousands(c.impressions)], [t('op.dash.scans'), c.scans]].map(([l, v]) => (
                       <div key={l}>
                         <div style={TX.caption}>{l}</div>
                         <div style={{ fontSize: T.base, fontWeight: 600, color: C.text, fontFamily: F.mono, marginTop: 2 }}>{v}</div>
@@ -310,14 +315,14 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
                     ))}
                   </div>
                   <ProgressBar value={c.spent} max={c.budget} height={4} />
-                  <div style={{ fontSize: T.xs, color: pct > 90 ? C.redText : pct > 70 ? C.amberText : C.textMuted, fontFamily: F.sans, marginTop: 3 }}>{pct}% used</div>
+                  <div style={{ fontSize: T.xs, color: pct > 90 ? C.redText : pct > 70 ? C.amberText : C.textMuted, fontFamily: F.sans, marginTop: 3 }}>{t('op.dash.used', { pct })}</div>
                 </Card>
               );
             })}
             {active.length === 0 && (
               activeLoadError ? (
                 <Card style={{ textAlign: 'center', padding: 32 }}>
-                  <div style={{ fontSize: T.md, color: C.redText, fontFamily: F.sans }}>Couldn't load your active campaigns — check your connection and try again.</div>
+                  <div style={{ fontSize: T.md, color: C.redText, fontFamily: F.sans }}>{t('op.dash.activeError')}</div>
                 </Card>
               ) : dbScreens.length === 0 ? (
                 <Card style={{
@@ -329,21 +334,21 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
                     <div style={{ color: C.purple }}><IconScreen size={40} /></div>
                     <div style={{ flex: 1, minWidth: 200 }}>
                       <div style={{ ...TX.heading, marginBottom: 4 }}>
-                        No screens yet
+                        {t('op.dash.noScreens')}
                       </div>
                       <div style={{ ...TX.bodySub, lineHeight: 1.5 }}>
-                        Register your first screen to start receiving campaign bookings.
+                        {t('op.dash.noScreensBody')}
                       </div>
                     </div>
                     <Btn onClick={() => setNav('screen-onboard')}>
-                      Set up your first screen →
+                      {t('op.dash.firstScreen')}
                     </Btn>
                   </div>
                 </Card>
               ) : (
                 <Card style={{ textAlign: 'center', padding: 32 }}>
                   <div style={{ color: C.textMuted, marginBottom: 8 }}><IconScreen size={28} /></div>
-                  <div style={{ fontSize: T.md, color: C.textSub, fontFamily: F.sans }}>No active campaigns</div>
+                  <div style={{ fontSize: T.md, color: C.textSub, fontFamily: F.sans }}>{t('op.dash.noActive')}</div>
                 </Card>
               )
             )}
@@ -352,7 +357,7 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
 
         {/* Screen health */}
         <div>
-          <SectionHeader title="Network Health" />
+          <SectionHeader title={t('op.dash.networkHealth')} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {liveScreens.slice(0, 5).map(s => {
               const hs = healthSignal(s);
@@ -381,7 +386,7 @@ export function Dashboard({ dbScreens = [], setNav, loading }) {
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 16 }}>
-                  {[['Revenue', `$${(s.revenue ?? 0).toLocaleString()}`], ['Impr.', `${((s.impressions ?? 0) / 1000).toFixed(0)}K`], ['Campaigns', s.campaigns]].map(([l, v]) => (
+                  {[[t('op.dash.revenue'), money(s.revenue ?? 0)], [t('op.dash.impr'), thousands(s.impressions ?? 0, 0)], [t('op.dash.campaigns'), s.campaigns]].map(([l, v]) => (
                     <div key={l}>
                       <div style={TX.caption}>{l}</div>
                       <div style={{ fontSize: T.sm, fontWeight: 600, color: C.text, fontFamily: F.mono }}>{v}</div>

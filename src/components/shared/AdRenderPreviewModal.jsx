@@ -4,10 +4,12 @@ import { TX } from '../../design/text.js';
 import { AdRenderPreview } from './AdRenderPreview.jsx';
 import { Btn } from '../primitives/Btn.jsx';
 import { Modal } from '../primitives/Modal.jsx';
+import { useT } from '../../i18n/useT.js';
 
 // Modal shell around AdRenderPreview -- lets the advertiser switch between
 // a screen's marked photos (if it has more than one) while previewing.
 export function AdRenderPreviewModal({ screenName, markedPhotos, mediaUrl, mediaType, onClose }) {
+  const { t } = useT();
   const [activeIndex, setActiveIndex] = useState(0);
   if (!markedPhotos || markedPhotos.length === 0) return null;
   const active = markedPhotos[activeIndex];
@@ -30,14 +32,14 @@ export function AdRenderPreviewModal({ screenName, markedPhotos, mediaUrl, media
                   border: `2px solid ${i === activeIndex ? C.purple : C.border}`,
                 }}
               >
-                <img src={p.url} alt={`Photo ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <img src={p.url} alt={t('widgets.preview.photoAlt', { n: i + 1 })} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
               </Btn>
             ))}
           </div>
         )}
 
         <div style={{ ...TX.caption, marginTop: 12, lineHeight: 1.5 }}>
-          Approximate preview — actual on-screen appearance depends on your display's brightness, viewing angle, and ambient light.
+          {t('widgets.preview.approx')}
         </div>
     </Modal>
   );

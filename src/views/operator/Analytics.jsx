@@ -25,6 +25,7 @@ const toolbarField = { padding: '6px 10px', borderRadius: 8, fontSize: T.sm, tra
 const filterSelect = { ...TX.body, padding: '6px 10px', transition: 'border-color 0.15s' };
 const toolbarCard = { display: 'flex', alignItems: 'center', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12 };
 import { normalizeBooking } from '../../lib/normalizeBooking.js';
+import { useT } from '../../i18n/useT.js';
 
 const RECENT_CAMPAIGNS_LIMIT = 50;
 
@@ -35,11 +36,12 @@ const EMPTY_DAY    = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
 const DAY_NAMES    = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function HeatmapGrid({ data }) {
+  const { t } = useT();
   const max = Math.max(...data, 1);
   return (
     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
       {data.map((v, i) => (
-        <Hover key={i} title={`${String(i).padStart(2, '0')}:00 — ${v} people`} hoverStyle={{ transform: 'scale(1.15)' }} style={{
+        <Hover key={i} title={t('op.analytics.heatTitle', { hour: String(i).padStart(2, '0'), count: v })} hoverStyle={{ transform: 'scale(1.15)' }} style={{
           width: 36, height: 36, borderRadius: 6, background: v === 0 ? C.surfaceAlt : C.purple,
           opacity: v === 0 ? 1 : 0.20 + (v / max) * 0.80,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -52,6 +54,7 @@ function HeatmapGrid({ data }) {
 }
 
 function DayBars({ data }) {
+  const { tOr } = useT();
   const max = Math.max(...Object.values(data), 1);
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', height: 80 }}>
@@ -59,7 +62,7 @@ function DayBars({ data }) {
         <div key={day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
           <div style={{ fontSize: T.xs, fontFamily: F.mono, color: C.textMuted }}>{v}</div>
           <div style={{ width: '100%', height: `${(v / max) * 60}px`, background: C.purple, borderRadius: '3px 3px 0 0', opacity: 0.7, minHeight: 4 }} />
-          <div style={TX.caption}>{day}</div>
+          <div style={TX.caption}>{tOr(`common.days.short.${day}`, day)}</div>
         </div>
       ))}
     </div>
@@ -181,6 +184,7 @@ function useImpressionStats(period = 7, customFrom = '', customTo = '') {
 // "recent activity" context, not an all-time ledger -- Revenue.jsx is
 // where exact historical totals live.
 export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
+  const { t, tOr, formatNumber, formatCurrency } = useT();
   const [filters, setFilters] = useState({ gender: '', age: '' });
   const [period, setPeriod] = useState(7); // 7 | 30 | 90 | 'custom'
   const [customFrom, setCustomFrom] = useState('');
@@ -258,19 +262,19 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
 
   return (
     <div>
-      <PageHeader title="Analytics"
-        subtitle={hasReal ? `Real impression data · ${period === 'custom' ? 'custom range' : period + '-day window'}` : 'Impression tracking, scan rates, demographics, and campaign performance'}
+      <PageHeader title={t('op.analytics.title')}
+        subtitle={hasReal ? t('op.analytics.subtitleReal', { window: period === 'custom' ? t('op.analytics.customRange') : t('op.analytics.dayWindow', { days: period }) }) : t('op.analytics.subtitle')}
         actions={
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', gap: 4 }}>
               {[7, 30, 90].map(d => (
                 <Chip key={d} selected={period === d} onClick={() => { setPeriod(d); setCustomFrom(''); setCustomTo(''); }} style={{
                   padding: '5px 12px', borderRadius: 8, fontWeight: 500, transition: 'background 0.15s',
-                }}>{d}d</Chip>
+                }}>{t('op.analytics.days', { n: d })}</Chip>
               ))}
             </div>
             <SelInput
-              aria-label="Date range"
+              aria-label={t('op.analytics.dateRange')}
               value={period === 'custom' ? 'custom' : period}
               onChange={e => setPeriod(e.target.value === 'custom' ? 'custom' : Number(e.target.value))}
               style={{
@@ -283,7 +287,7 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
                 transition: 'border-color 0.15s',
               }}
             >
-              <option value="custom">Custom…</option>
+              <option value="custom">{t('op.analytics.custom')}</option>
             </SelInput>
           </div>
         }
@@ -291,35 +295,35 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
 
       {period === 'custom' && (
         <div style={{ ...toolbarCard, gap: 8, padding: '12px 16px', marginBottom: 16 }}>
-          <span style={{ ...TX.helper, fontWeight: 600 }}>Date range:</span>
-          <Inp type="date" aria-label="From date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} style={{ ...toolbarField, width: 'auto' }} />
-          <span style={TX.helper}>to</span>
-          <Inp type="date" aria-label="To date" value={customTo} onChange={e => setCustomTo(e.target.value)} style={{ ...toolbarField, width: 'auto' }} />
+          <span style={{ ...TX.helper, fontWeight: 600 }}>{t('op.analytics.dateRangeLabel')}</span>
+          <Inp type="date" aria-label={t('op.analytics.from')} value={customFrom} onChange={e => setCustomFrom(e.target.value)} style={{ ...toolbarField, width: 'auto' }} />
+          <span style={TX.helper}>{t('op.analytics.to')}</span>
+          <Inp type="date" aria-label={t('op.analytics.toDate')} value={customTo} onChange={e => setCustomTo(e.target.value)} style={{ ...toolbarField, width: 'auto' }} />
         </div>
       )}
 
       {!hasReal && !loading && loadError && (
         <Notice tone="error" style={bannerNotice}>
-          Couldn't load verified impression data — check your connection and try again. Showing estimated data below in the meantime.
+          {t('op.analytics.loadError')}
         </Notice>
       )}
 
       {!hasReal && !loading && !loadError && (
         <Notice tone="warning" style={bannerNotice}>
-          No impression data yet — connect a Screen Agent to start tracking verified impressions. Showing estimated data below.
+          {t('op.analytics.noData')}
         </Notice>
       )}
 
       {/* Filter bar */}
       <div style={{ ...toolbarCard, gap: 12, flexWrap: 'wrap', padding: '14px 16px', marginBottom: 24 }}>
-        <span style={{ ...TX.helper, fontWeight: 600 }}>Filter by:</span>
-        <SelInput aria-label="Gender" value={filters.gender} onChange={e => setFilters(f => ({ ...f, gender: e.target.value }))} style={filterSelect}>
-          <option value="">All Genders</option>
-          <option value="Female">Female</option>
-          <option value="Male">Male</option>
+        <span style={{ ...TX.helper, fontWeight: 600 }}>{t('op.analytics.filterBy')}</span>
+        <SelInput aria-label={t('op.analytics.gender')} value={filters.gender} onChange={e => setFilters(f => ({ ...f, gender: e.target.value }))} style={filterSelect}>
+          <option value="">{t('op.analytics.allGenders')}</option>
+          <option value="Female">{t('op.analytics.female')}</option>
+          <option value="Male">{t('op.analytics.male')}</option>
         </SelInput>
-        <SelInput aria-label="Age" value={filters.age} onChange={e => setFilters(f => ({ ...f, age: e.target.value }))} style={filterSelect}>
-          <option value="">All Ages</option>
+        <SelInput aria-label={t('op.analytics.age')} value={filters.age} onChange={e => setFilters(f => ({ ...f, age: e.target.value }))} style={filterSelect}>
+          <option value="">{t('op.analytics.allAges')}</option>
           <option value="18-24">18–24</option>
           <option value="25-34">25–34</option>
           <option value="35-44">35–44</option>
@@ -330,25 +334,25 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
           style={{ ...TX.bodySub, padding: '6px 14px', background: 'none', boxShadow: 'none' }}
           hoverStyle={{ background: C.surfaceAlt }}
         >
-          Reset
+          {t('op.analytics.reset')}
         </Btn>
         {hasReal && (
           <span style={{ marginLeft: 'auto', fontSize: T.xs, color: C.greenText, fontFamily: F.sans, fontWeight: 600 }}>
-            ✓ Verified impressions
+            {t('op.analytics.verified')}
           </span>
         )}
       </div>
 
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
-        <KPI label="Total Impressions" value={hasReal ? totalPeople.toLocaleString() : `${(totalImpr / 1000).toFixed(1)}K`} sub={hasReal ? 'verified by CV' : 'estimated'} trend={hasReal ? impressionTrend : null} trendLabel={`vs prior ${period === 'custom' ? 'range' : period + ' days'}`} icon={<IconEye size={16} />} />
-        <KPI label={hasReal ? 'Avg Dwell Time' : 'Avg CPM'} value={hasReal ? `${avgDwell}s` : `$${avgCPM} CPM`} sub={hasReal ? 'seconds on screen' : 'cost per 1,000'} color={C.blue} icon={hasReal ? <IconClock size={16} /> : <IconDollar size={16} />} />
-        <KPI label="QR Scans"          value={totalScans} sub="recent campaigns" color={C.green} icon={<IconQr size={16} />} />
-        <KPI label={hasReal ? 'Avg Attention' : 'Scan Rate'} value={hasReal ? `${avgAttn}%` : `${scanRate}%`} sub={hasReal ? 'frontal attention score' : 'scans / impressions'} icon={<IconChart size={16} />} />
+        <KPI label={t('op.analytics.totalImpressions')} value={hasReal ? formatNumber(totalPeople) : t('dash.thousands', { n: formatNumber(totalImpr / 1000, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) })} sub={hasReal ? t('op.analytics.verifiedByCv') : t('op.analytics.estimated')} trend={hasReal ? impressionTrend : null} trendLabel={period === 'custom' ? t('op.analytics.vsPriorRange') : t('op.analytics.vsPriorDays', { days: period })} icon={<IconEye size={16} />} />
+        <KPI label={hasReal ? t('op.analytics.avgDwell') : t('op.analytics.avgCpm')} value={hasReal ? t('op.analytics.dwellValue', { s: avgDwell }) : t('op.analytics.cpmValue', { amount: formatCurrency(Number(avgCPM)) })} sub={hasReal ? t('op.analytics.secondsOnScreen') : t('op.analytics.costPer1000')} color={C.blue} icon={hasReal ? <IconClock size={16} /> : <IconDollar size={16} />} />
+        <KPI label={t('op.analytics.qrScans')} value={totalScans} sub={t('op.analytics.recentCampaigns')} color={C.green} icon={<IconQr size={16} />} />
+        <KPI label={hasReal ? t('op.analytics.avgAttention') : t('op.analytics.scanRate')} value={hasReal ? `${avgAttn}%` : `${scanRate}%`} sub={hasReal ? t('op.analytics.attentionScore') : t('op.analytics.scansPerImpr')} icon={<IconChart size={16} />} />
       </div>
 
       <BenchmarkRow
-        label="Scan rate"
+        label={t('op.analytics.benchmarkLabel')}
         value={Number(scanRate)}
         stats={benchmark && {
           p25: benchmark.scan_rate_p25,
@@ -364,16 +368,16 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <Card>
           <div style={{ ...TX.title, marginBottom: 14 }}>
-            {hasReal ? 'People by Hour' : 'Scans by Hour'}
-            {!hasReal && <span style={{ fontSize: T.xs, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>(estimated)</span>}
+            {hasReal ? t('op.analytics.peopleByHour') : t('op.analytics.scansByHour')}
+            {!hasReal && <span style={{ fontSize: T.xs, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>{t('op.analytics.estimatedParen')}</span>}
           </div>
           <HeatmapGrid data={hourlyData} />
-          <div style={{ ...TX.caption, marginTop: 10 }}>Hover a block to see count · Darker = more activity</div>
+          <div style={{ ...TX.caption, marginTop: 10 }}>{t('op.analytics.heatHint')}</div>
         </Card>
         <Card>
           <div style={{ ...TX.title, marginBottom: 14 }}>
-            {hasReal ? 'People by Day of Week' : 'Scans by Day of Week'}
-            {!hasReal && <span style={{ fontSize: T.xs, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>(estimated)</span>}
+            {hasReal ? t('op.analytics.peopleByDay') : t('op.analytics.scansByDay')}
+            {!hasReal && <span style={{ fontSize: T.xs, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>{t('op.analytics.estimatedParen')}</span>}
           </div>
           <DayBars data={dailyData} />
         </Card>
@@ -382,9 +386,9 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
       {/* Demographics */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20, marginBottom: 20 }}>
         <Card>
-          <div style={{ ...TX.title, marginBottom: 4 }}>Gender Split</div>
-          {!hasReal && <div style={{ ...TX.caption, marginBottom: 12 }}>estimated</div>}
-          {[['Female', femalePct, C.pink], ['Male', malePct, C.blue]].map(([g, pct, col]) => (
+          <div style={{ ...TX.title, marginBottom: 4 }}>{t('op.analytics.genderSplit')}</div>
+          {!hasReal && <div style={{ ...TX.caption, marginBottom: 12 }}>{t('op.analytics.estimated')}</div>}
+          {[[t('op.analytics.female'), femalePct, C.pink], [t('op.analytics.male'), malePct, C.blue]].map(([g, pct, col]) => (
             <div key={g} style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                 <span style={TX.body}>{g}</span>
@@ -398,8 +402,8 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
         </Card>
 
         <Card>
-          <div style={{ ...TX.title, marginBottom: 4 }}>Age Distribution</div>
-          {!hasReal && <div style={{ ...TX.caption, marginBottom: 8 }}>estimated</div>}
+          <div style={{ ...TX.title, marginBottom: 4 }}>{t('op.analytics.ageDistribution')}</div>
+          {!hasReal && <div style={{ ...TX.caption, marginBottom: 8 }}>{t('op.analytics.estimated')}</div>}
           <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 80, marginBottom: 8 }}>
             {ageData.map(([label, pct]) => {
               const maxPct = Math.max(...ageData.map(d => d[1]), 1);
@@ -415,12 +419,12 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
         </Card>
 
         <Card>
-          <div style={{ ...TX.title, marginBottom: 16 }}>Campaign Performance</div>
+          <div style={{ ...TX.title, marginBottom: 16 }}>{t('op.analytics.campaignPerformance')}</div>
           {campaigns.slice(0, 5).map(c => (
             <div key={c.id} style={{ marginBottom: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
                 <span style={{ fontSize: T.sm, color: C.textMid, fontFamily: F.sans, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.advertiser}</span>
-                <span style={{ fontSize: T.sm, fontWeight: 600, color: C.purple, fontFamily: F.mono }}>{c.scans} scans</span>
+                <span style={{ fontSize: T.sm, fontWeight: 600, color: C.purple, fontFamily: F.mono }}>{t('op.analytics.scansCount', { count: c.scans })}</span>
               </div>
               <ProgressBar value={c.scans || 0} max={Math.max(...campaigns.map(x => x.scans || 0), 1)} height={4} />
             </div>
@@ -431,22 +435,22 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
       {/* Impressions by city + 24h pattern */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <Card>
-          <div style={{ ...TX.title, marginBottom: 14 }}>Impressions by City</div>
+          <div style={{ ...TX.title, marginBottom: 14 }}>{t('op.analytics.byCity')}</div>
           {byCity.length > 0 ? byCity.map(({ city, impr, scans }) => (
             <div key={city} style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
                 <span style={{ ...TX.body, fontWeight: 500 }}>{city}</span>
-                <span style={TX.helper}>{(impr / 1000).toFixed(0)}K impr · {scans} scans</span>
+                <span style={TX.helper}>{t('op.analytics.cityLine', { impr: t('dash.thousands', { n: formatNumber(Math.round(impr / 1000)) }), scans })}</span>
               </div>
               <ProgressBar value={impr} max={maxImpr} height={5} />
             </div>
-          )) : <div style={TX.bodyMuted}>No campaign data</div>}
+          )) : <div style={TX.bodyMuted}>{t('op.analytics.noCampaignData')}</div>}
         </Card>
 
         <Card>
           <div style={{ ...TX.title, marginBottom: 14 }}>
-            24h Activity Pattern
-            {!hasReal && <span style={{ fontSize: T.xs, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>(estimated)</span>}
+            {t('op.analytics.pattern')}
+            {!hasReal && <span style={{ fontSize: T.xs, color: C.textMuted, fontWeight: 400, marginLeft: 6 }}>{t('op.analytics.estimatedParen')}</span>}
           </div>
           <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end', height: 80, marginBottom: 8 }}>
             {hourlyData.map((v, h) => {
@@ -463,7 +467,7 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
             })}
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: T.xs, color: C.textMuted, fontFamily: F.mono }}>
-            {['00:00', '06:00', '12:00', '18:00', '23:00'].map(t => <span key={t}>{t}</span>)}
+            {['00:00', '06:00', '12:00', '18:00', '23:00'].map(h => <span key={h}>{h}</span>)}
           </div>
         </Card>
       </div>
@@ -471,17 +475,17 @@ export function Analytics({ operatorScreenIds = [], advertiserId = null }) {
       {/* Campaign table */}
       <Table
         columns={[
-          { key: 'advertiser', label: 'Campaign', render: (v, r) => <div><div style={{ fontWeight: 500, color: C.text, fontFamily: F.sans }}>{v}</div><div style={TX.caption}>{r.category} · {r.city}</div></div> },
-          { key: 'screen',     label: 'Screen' },
-          { key: 'impressions',label: 'Impressions', render: v => <span style={{ fontWeight: 600, fontFamily: F.mono }}>{(v / 1000).toFixed(1)}K</span> },
-          { key: 'scans',      label: 'Scans', render: v => <span style={{ color: C.purple, fontWeight: 600, fontFamily: F.mono }}>{v}</span> },
-          { key: 'scans',      label: 'Scan Rate', render: (v, r) => <span style={{ fontFamily: F.sans }}>{r.impressions > 0 ? ((v / r.impressions) * 100).toFixed(2) : '0.00'}%</span> },
-          { key: 'spent',      label: 'Spend', render: v => <span style={{ fontFamily: F.sans }}>${(v || 0).toLocaleString()}</span> },
-          { key: 'status',     label: 'Status', render: v => <Badge status={v} /> },
+          { key: 'advertiser', label: t('op.analytics.col.campaign'), render: (v, r) => <div><div style={{ fontWeight: 500, color: C.text, fontFamily: F.sans }}>{v}</div><div style={TX.caption}>{tOr(`categories.${r.category}`, r.category)} · {r.city}</div></div> },
+          { key: 'screen',     label: t('op.analytics.col.screen') },
+          { key: 'impressions',label: t('op.analytics.col.impressions'), render: v => <span style={{ fontWeight: 600, fontFamily: F.mono }}>{t('dash.thousands', { n: formatNumber(v / 1000, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) })}</span> },
+          { key: 'scans',      label: t('op.analytics.col.scans'), render: v => <span style={{ color: C.purple, fontWeight: 600, fontFamily: F.mono }}>{v}</span> },
+          { key: 'scans',      label: t('op.analytics.col.scanRate'), render: (v, r) => <span style={{ fontFamily: F.sans }}>{r.impressions > 0 ? ((v / r.impressions) * 100).toFixed(2) : '0.00'}%</span> },
+          { key: 'spent',      label: t('op.analytics.col.spend'), render: v => <span style={{ fontFamily: F.sans }}>{formatCurrency(v || 0, { minimumFractionDigits: 0 })}</span> },
+          { key: 'status',     label: t('op.analytics.col.status'), render: v => <Badge status={v} /> },
         ]}
         rows={campaigns}
-        emptyTitle="No campaign data"
-        emptyDescription="Campaigns will appear here once active"
+        emptyTitle={t('op.analytics.noCampaignData')}
+        emptyDescription={t('op.analytics.emptyDesc')}
       />
     </div>
   );

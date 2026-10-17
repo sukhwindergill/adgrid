@@ -7,6 +7,7 @@ import { Btn } from '../primitives/Btn.jsx';
 import { CopyButton } from '../primitives/CopyButton.jsx';
 import { useToast } from '../primitives/Toast.jsx';
 import { ScheduledReportsSection } from './ScheduledReportsSection.jsx';
+import { useT } from '../../i18n/useT.js';
 
 // base64url token, generated client-side. The value is only ever a lookup key
 // for the campaign-report function; it grants nothing on its own, and the
@@ -22,6 +23,7 @@ const DEFAULT_DAYS = 90;
 
 export function ShareReportModal({ campaignId, userId, audience = 'advertiser', onClose }) {
   const toast = useToast();
+  const { t, formatDate } = useT();
   const [links, setLinks] = useState([]);
   const [loadError, setLoadError] = useState(false);
 
@@ -47,7 +49,7 @@ export function ShareReportModal({ campaignId, userId, audience = 'advertiser', 
       token, campaign_id: campaignId, created_by: userId, expires_at: expires,
     });
     if (error) { toast.error(error.message); return; }
-    toast.success('Share link created');
+    toast.success(t('widgets.share.created'));
     load();
   };
 
@@ -57,25 +59,25 @@ export function ShareReportModal({ campaignId, userId, audience = 'advertiser', 
       .update({ revoked_at: new Date().toISOString() })
       .eq('token', token);
     if (error) { toast.error(error.message); return; }
-    toast.success('Link revoked');
+    toast.success(t('widgets.share.revokedToast'));
     load();
   };
 
   const urlFor = (token) => `${window.location.origin}/report/${token}`;
 
   return (
-    <Modal title="Share this report" maxWidth={560} padding={24} zIndex={100} headerStyle={{ marginBottom: 4 }}
+    <Modal title={t('widgets.share.title')} maxWidth={560} padding={24} zIndex={100} headerStyle={{ marginBottom: 4 }}
       panelStyle={{ borderRadius: 12, border: `1px solid ${C.border}`, maxHeight: '80vh', boxShadow: 'none' }}>
         <div style={{ ...TX.helperMuted, marginBottom: 18 }}>
-          Anyone with the link can view delivery results for this campaign — no sign-in, and no account or billing data.
+          {t('widgets.share.body')}
           Links expire after {DEFAULT_DAYS} days and can be revoked at any time.
         </div>
 
-        <Btn onClick={create} style={{ marginBottom: 18 }}>Create share link</Btn>
+        <Btn onClick={create} style={{ marginBottom: 18 }}>{t('widgets.share.create')}</Btn>
 
         {loadError && (
           <div style={{ ...TX.error, marginBottom: 12 }}>
-            Couldn't load existing share links — check your connection and try again.
+            {t('widgets.share.loadError')}
           </div>
         )}
 
@@ -88,19 +90,19 @@ export function ShareReportModal({ campaignId, userId, audience = 'advertiser', 
                   {urlFor(l.token)}
                 </div>
                 <div style={{ ...TX.caption, margin: '4px 0 8px' }}>
-                  {l.revoked_at ? 'Revoked' : l.expires_at ? `Expires ${new Date(l.expires_at).toLocaleDateString()}` : 'No expiry'}
-                  {' · '}{l.view_count} view{l.view_count === 1 ? '' : 's'}
+                  {l.revoked_at ? t('widgets.share.revoked') : l.expires_at ? t('widgets.share.expires', { date: formatDate(l.expires_at) }) : t('widgets.share.noExpiry')}
+                  {t('widgets.share.views', { count: l.view_count })}
                 </div>
                 {!dead && (
                   <div style={{ display: 'flex', gap: 8 }}>
                     <CopyButton
                       value={urlFor(l.token)}
-                      label="Copy"
+                      label={t('ui.copy')}
                       size="sm"
-                      onCopied={() => toast.success('Link copied')}
-                      onError={() => toast.error('Could not copy — select the link and copy manually')}
+                      onCopied={() => toast.success(t('widgets.share.linkCopied'))}
+                      onError={() => toast.error(t('widgets.share.copyFailed'))}
                     />
-                    <Btn size="sm" variant="ghost" onClick={() => revoke(l.token)}>Revoke</Btn>
+                    <Btn size="sm" variant="ghost" onClick={() => revoke(l.token)}>{t('widgets.share.revoke')}</Btn>
                   </div>
                 )}
               </div>
@@ -111,7 +113,7 @@ export function ShareReportModal({ campaignId, userId, audience = 'advertiser', 
         <ScheduledReportsSection campaignId={campaignId} userId={userId} audience={audience} />
 
         <div style={{ marginTop: 20, textAlign: 'right' }}>
-          <Btn variant="secondary" onClick={onClose}>Close</Btn>
+          <Btn variant="secondary" onClick={onClose}>{t('common.close')}</Btn>
         </div>
     </Modal>
   );

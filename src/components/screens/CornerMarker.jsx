@@ -3,14 +3,15 @@ import { C, F, T, alpha } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { Btn } from '../primitives/Btn.jsx';
 import { validateQuadOrientation } from '../../lib/quadWarp.js';
+import { useT } from '../../i18n/useT.js';
 
 const DEFAULT_CORNERS = [[0.2, 0.2], [0.8, 0.2], [0.8, 0.8], [0.2, 0.8]];
-const HANDLE_LABELS = ['Top-left', 'Top-right', 'Bottom-right', 'Bottom-left'];
 
 // Lets an operator mark the 4 corners of the actual screen within an
 // uploaded photo, so AdRenderPreview can later warp an advertiser's
 // creative onto exactly that quad.
 export function CornerMarker({ photoUrl, initialCorners, onSave, onSkip }) {
+  const { t, tList } = useT();
   const containerRef = useRef(null);
   const [corners, setCorners] = useState(initialCorners ?? DEFAULT_CORNERS);
   const [draggingIndex, setDraggingIndex] = useState(null);
@@ -78,11 +79,12 @@ export function CornerMarker({ photoUrl, initialCorners, onSave, onSkip }) {
   }, []);
 
   const valid = validateQuadOrientation(corners);
+  const handleLabels = tList('scr.corners.handles');
 
   return (
     <div>
       <div ref={containerRef} style={{ position: 'relative', width: '100%', lineHeight: 0, borderRadius: 8, overflow: 'hidden' }}>
-        <img src={photoUrl} alt="Mark the screen's corners" draggable={false}
+        <img src={photoUrl} alt={t('scr.corners.alt')} draggable={false}
           style={{ width: '100%', display: 'block', userSelect: 'none' }} />
         <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
           <polygon
@@ -96,7 +98,7 @@ export function CornerMarker({ photoUrl, initialCorners, onSave, onSkip }) {
           <div
             key={i}
             onPointerDown={handlePointerDown(i)}
-            title={HANDLE_LABELS[i]}
+            title={handleLabels[i]}
             style={{
               position: 'absolute', left: `${x * 100}%`, top: `${y * 100}%`,
               width: 20, height: 20, marginLeft: -10, marginTop: -10,
@@ -109,20 +111,20 @@ export function CornerMarker({ photoUrl, initialCorners, onSave, onSkip }) {
 
       {!valid && (
         <div style={{ ...TX.error, marginTop: 8 }}>
-          Corners cross over each other — drag them so they form a simple, non-crossing shape around the screen.
+          {t('scr.corners.crossing')}
         </div>
       )}
 
       <div style={{ ...TX.helper, marginTop: 8, marginBottom: 16 }}>
-        Drag each dot onto the actual edge of the screen in the photo.
+        {t('scr.corners.hint')}
       </div>
 
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         <Btn variant="unstyled" type="button" onClick={onSkip} style={TX.helperMuted}>
-          Skip — no clear screen edge
+          {t('scr.corners.skip')}
         </Btn>
         <div style={{ flex: 1 }} />
-        <Btn onClick={() => onSave(corners)} disabled={!valid}>Save corners</Btn>
+        <Btn onClick={() => onSave(corners)} disabled={!valid}>{t('scr.corners.save')}</Btn>
       </div>
     </div>
   );

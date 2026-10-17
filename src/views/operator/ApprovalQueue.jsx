@@ -21,44 +21,34 @@ import { useBreakpoint } from '../../lib/useBreakpoint.js';
 import { IconBolt, IconWarning } from '../../components/icons.jsx';
 import { computeRevenueSplit, DEFAULT_OWNER_REVENUE_SHARE } from '../../lib/revenueSplit.js';
 import { isCategoryBlocked } from '../../lib/adGuardrails.js';
+import { useT } from '../../i18n/useT.js';
+import { t as tr } from '../../i18n/core.js';
+import { timeAgo } from '../../lib/timeAgo.js';
 
-const REJECT_REASONS = [
-  'Inappropriate content',
-  'Competitor brand',
-  'Not relevant to my venue',
-  'Other',
-];
+const REJECT_REASONS = ['inappropriate', 'competitor', 'irrelevant', 'other'];
 
-function timeAgo(isoString) {
-  if (!isoString) return '';
-  const diff = Date.now() - new Date(isoString).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
 
 function healthLabel(screen) {
   if (!screen) return null;
   // screen-health-cron writes health_status online/idle/offline ('degraded' kept
   // for back-compat); fall back to last_seen freshness.
-  if (screen.health_status === 'offline') return { label: 'Offline', color: C.red };
-  if (screen.health_status === 'idle' || screen.health_status === 'degraded') return { label: 'Stale', color: C.amber };
-  if (!screen.last_seen) return { label: 'Offline', color: C.red };
+  if (screen.health_status === 'offline') return { label: tr('health.offline'), color: C.red };
+  if (screen.health_status === 'idle' || screen.health_status === 'degraded') return { label: tr('health.stale'), color: C.amber };
+  if (!screen.last_seen) return { label: tr('health.offline'), color: C.red };
   const minsAgo = (Date.now() - new Date(screen.last_seen).getTime()) / 60000;
   if (minsAgo <= 5) return null;
-  if (minsAgo <= 60) return { label: 'Stale', color: C.amber };
-  return { label: 'Offline', color: C.red };
+  if (minsAgo <= 60) return { label: tr('health.stale'), color: C.amber };
+  return { label: tr('health.offline'), color: C.red };
 }
 
 function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByScreen, onApproved, onRejected, setCampaigns, index = 0, ownerRevenueShare = DEFAULT_OWNER_REVENUE_SHARE, isAdvertiserVerified = false, approvalPolicy = null, refreshPolicy }) {
   const { isMobile } = useBreakpoint();
   const { user } = useAuth();
   const confirm = useConfirm();
+  const { t, tOr, formatCurrency, formatDate } = useT();
   const [rejectScreenId, setRejectScreenId] = useState(null);
-  const [rejectReason, setRejectReason] = useState(REJECT_REASONS[0]);
+  // Holds the reason text in the operator's language -- it's what the advertiser is shown.
+  const [rejectReason, setRejectReason] = useState(() => t(`op.approval.reasons.${REJECT_REASONS[0]}`));
   const [acting, setActing] = useState(false);
   const [actionErr, setActionErr] = useState(null);
   const [showNudge, setShowNudge] = useState(false);
@@ -79,13 +69,13 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
       return;
     }
     const body = await res.json().catch(() => ({}));
-    const msg = body.error ?? 'Charge failed';
+    const msg = body.error ?? t('op.approval.chargeFailedDefault');
     const isNoPayment = msg.toLowerCase().includes('no payment') || msg.toLowerCase().includes('no card');
     if (isNoPayment) {
       const confirmed = await confirm({
-        title: 'Approve without charging?',
-        message: `${msg}\n\nYou can collect payment manually.`,
-        confirmLabel: 'Approve anyway',
+        title: t('op.approval.noChargeTitle'),
+        message: t('op.approval.collectManually', { msg }),
+        confirmLabel: t('op.approval.approveAnyway'),
         danger: false,
       });
       if (confirmed) {
@@ -109,7 +99,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
           // to worry about double-charging -- but a failure still silently
           // left the booking at its real status while the UI optimistically
           // showed "scheduled" regardless of whether the write happened.
-          setActionErr(`Failed to update booking status: ${schedResult?.error ?? schedBody?.error ?? 'Unknown error'}. Try again.`);
+          setActionErr(t('op.approval.bookingFailed', { error: schedResult?.error ?? schedBody?.error ?? t('appMsg.unknownError') }));
           return;
         }
         setCampaigns(prev => prev.map(x =>
@@ -121,7 +111,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
     // Screen approval already committed at this point -- the charge is what
     // failed, so say so explicitly rather than a bare message that reads
     // like the whole action didn't happen.
-    setActionErr(`Approved, but charge failed: ${msg}`);
+    setActionErr(t('op.approval.chargeFailed', { msg }));
   };
 
   const myRows = (campaign.campaign_screens || []).filter(
@@ -165,7 +155,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
       .eq('campaign_id', campaign.id)
       .eq('screen_id', screenId);
     if (updateErr) {
-      setActionErr(`Approve failed: ${updateErr.message}`);
+      setActionErr(t('op.approval.approveFailed', { error: updateErr.message }));
       setActing(false);
       return;
     }
@@ -189,9 +179,9 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
 
   const approveAll = async () => {
     const ok = await confirm({
-      title: 'Approve all your screens?',
-      message: `Approve "${campaign.advertiser_name || campaign.advertiser}" on all ${myRows.length} of your screens?`,
-      confirmLabel: 'Approve all',
+      title: t('op.approval.approveAllTitle'),
+      message: t('op.approval.approveAllMessage', { name: campaign.advertiser_name || campaign.advertiser, count: myRows.length }),
+      confirmLabel: t('op.approval.approveAll'),
     });
     if (!ok) return;
     setActing(true);
@@ -204,7 +194,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
       .eq('campaign_id', campaign.id)
       .in('screen_id', myRows.map(row => row.screen_id));
     if (updateErr) {
-      setActionErr(`Approve all failed: ${updateErr.message}`);
+      setActionErr(t('op.approval.approveAllFailed', { error: updateErr.message }));
       setActing(false);
       return;
     }
@@ -227,7 +217,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
       .eq('campaign_id', campaign.id)
       .eq('screen_id', rejectScreenId);
     if (updateErr) {
-      setActionErr(`Reject failed: ${updateErr.message}`);
+      setActionErr(t('op.approval.rejectFailed', { error: updateErr.message }));
       setActing(false);
       return;
     }
@@ -254,7 +244,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
 
   const totalScreens = (campaign.campaign_screens || []).length;
   const earned = campaign.budget
-    ? `~$${Math.round(computeRevenueSplit(campaign.budget, ownerRevenueShare).owner / Math.max(1, totalScreens)).toLocaleString()}`
+    ? t('op.approval.earned', { amount: formatCurrency(Math.round(computeRevenueSplit(campaign.budget, ownerRevenueShare).owner / Math.max(1, totalScreens)), { decimals: 0 }) })
     : null;
 
   return (
@@ -267,39 +257,39 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
         <div style={{ width: 8, height: 8, borderRadius: '50%', background: campaign.accent_color || campaign.color || C.purple, flexShrink: 0 }} />
         <span style={{ fontSize: T.md, fontWeight: 700, color: C.text, fontFamily: F.sans, flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
           {campaign.advertiser_name || campaign.advertiser}
-          {isAdvertiserVerified && <Badge status="verified">Verified</Badge>}
+          {isAdvertiserVerified && <Badge status="verified">{t('op.approval.verified')}</Badge>}
         </span>
-        <span style={{ fontSize: T.xs, background: C.amber, color: C.white, padding: '2px 8px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>PENDING</span>
-        <span style={{ fontSize: T.xs, color: C.textSub, fontFamily: F.sans }}>{campaign.category}</span>
+        <span style={{ fontSize: T.xs, background: C.amber, color: C.white, padding: '2px 8px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600, textTransform: 'uppercase' }}>{t('op.approval.pending')}</span>
+        <span style={{ fontSize: T.xs, color: C.textSub, fontFamily: F.sans }}>{tOr(`categories.${campaign.category}`, campaign.category)}</span>
         {blockedScreenIds.size > 0 && (
           <span style={{ fontSize: T.xs, background: C.redSoft, color: C.redText, border: `1px solid ${C.redBorder}`, padding: '2px 8px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-            <IconWarning size={10} /> BLOCKED CATEGORY
+            <IconWarning size={10} /> <span style={{ textTransform: 'uppercase' }}>{t('op.approval.blocked')}</span>
           </span>
         )}
-        <span style={TX.caption}>{timeAgo(campaign.created_at)}</span>
+        <span style={TX.caption}>{campaign.created_at ? timeAgo(campaign.created_at) : ''}</span>
       </div>
 
       {showNudge && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '10px 16px', background: C.purpleSoft, borderBottom: `1px solid ${C.purpleBorder}`, fontFamily: F.sans, flexWrap: 'wrap' }}>
-          <div style={{ fontSize: T.sm, color: C.text }}>Auto-approve verified advertisers like this one?</div>
+          <div style={{ fontSize: T.sm, color: C.text }}>{t('op.approval.nudge')}</div>
           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
             <Btn size="sm" variant="primary" onClick={async () => {
               await supabase.from('operator_approval_rules').upsert({ operator_id: user.id, auto_approve_verified_advertisers: true, updated_at: new Date().toISOString() }, { onConflict: 'operator_id' });
               setShowNudge(false);
               refreshPolicy?.();
-            }}>Enable</Btn>
+            }}>{t('op.approval.enable')}</Btn>
             <Btn size="sm" variant="ghost" onClick={async () => {
               const in30days = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
               await supabase.from('operator_approval_rules').upsert({ operator_id: user.id, auto_approve_prompt_snoozed_until: in30days, updated_at: new Date().toISOString() }, { onConflict: 'operator_id' });
               setShowNudge(false);
               refreshPolicy?.();
-            }}>Remind in 30 days</Btn>
+            }}>{t('op.approval.remind')}</Btn>
             <Btn size="sm" variant="ghost" onClick={async () => {
               const farFuture = new Date('2099-01-01').toISOString();
               await supabase.from('operator_approval_rules').upsert({ operator_id: user.id, auto_approve_prompt_snoozed_until: farFuture, updated_at: new Date().toISOString() }, { onConflict: 'operator_id' });
               setShowNudge(false);
               refreshPolicy?.();
-            }}>Don't ask again</Btn>
+            }}>{t('op.approval.dontAsk')}</Btn>
           </div>
         </div>
       )}
@@ -315,7 +305,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
           borderRight: isMobile ? 'none' : `1px solid ${C.border}`,
           borderBottom: isMobile ? `1px solid ${C.border}` : 'none',
         }}>
-          <div style={{ ...TX.caption, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Creative Preview</div>
+          <div style={{ ...TX.caption, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>{t('op.approval.creativePreview')}</div>
           <CreativePreview campaign={campaign} />
           <ReadabilityPanel campaign={campaign} score={readability.score} issues={readability.issues} tiers={readabilityTiers} />
         </div>
@@ -324,20 +314,20 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
         <div style={{ padding: 14 }}>
           <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 14 }}>
             {[
-              ['Budget', campaign.budget ? `$${campaign.budget.toLocaleString()} (${campaign.budget_mode || 'total'})` : '—'],
-              ['Dates', [campaign.start_date || campaign.start, campaign.end_date || campaign.end].filter(Boolean).join(' – ') || '—'],
-              ['You earn', earned || '—'],
+              [t('op.approval.budget'), campaign.budget ? t('op.approval.budgetValue', { amount: formatCurrency(campaign.budget, { minimumFractionDigits: 0 }), mode: campaign.budget_mode === 'daily' ? t('op.approval.modeDaily') : t('op.approval.modeTotal') }) : '—'],
+              [t('op.approval.dates'), [campaign.start_date || campaign.start, campaign.end_date || campaign.end].filter(Boolean).map(d => formatDate(d)).join(' – ') || '—'],
+              [t('op.approval.youEarn'), earned || '—'],
             ].map(([l, v]) => (
               <div key={l}>
                 <div style={{ ...TX.caption, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{l}</div>
-                <div style={{ fontSize: T.sm, fontWeight: 600, color: l === 'You earn' ? C.purple : C.text, fontFamily: F.mono, marginTop: 2 }}>{v}</div>
+                <div style={{ fontSize: T.sm, fontWeight: 600, color: l === t('op.approval.youEarn') ? C.purple : C.text, fontFamily: F.mono, marginTop: 2 }}>{v}</div>
               </div>
             ))}
           </div>
 
           <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
             <div style={{ fontSize: T.xs, fontWeight: 600, color: C.textMid, fontFamily: F.sans, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Your screens
+              {t('op.approval.yourScreens')}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {myRows.map(row => {
@@ -388,12 +378,12 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
                         {health && <span style={{ fontSize: T.xs, color: readable(health.color), fontFamily: F.sans, display: 'inline-flex', alignItems: 'center', gap: 3 }}><IconWarning size={10} /> {health.label}</span>}
                         {blockedScreenIds.has(row.screen_id) && (
                           <div style={{ fontSize: T.xs, color: C.redText, fontFamily: F.sans, display: 'flex', alignItems: 'center', gap: 3 }}>
-                            <IconWarning size={10} /> You block {campaign.category} ads on this screen — it won't play here even if approved
+                            <IconWarning size={10} /> {t('op.approval.blockedHere', { category: tOr(`categories.${campaign.category}`, campaign.category) })}
                           </div>
                         )}
                       </div>
-                      <Btn size="sm" onClick={() => approveScreen(row.screen_id)} disabled={acting}>✓ Approve</Btn>
-                      <Btn variant="danger" size="sm" onClick={() => setRejectScreenId(row.screen_id)} disabled={acting}>✗ Reject</Btn>
+                      <Btn size="sm" onClick={() => approveScreen(row.screen_id)} disabled={acting}>{t('op.approval.approve')}</Btn>
+                      <Btn variant="danger" size="sm" onClick={() => setRejectScreenId(row.screen_id)} disabled={acting}>{t('op.approval.reject')}</Btn>
                     </div>
 
                     {screenCreatives.length > 0 && (
@@ -403,9 +393,9 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
                           return (
                             <div key={cr.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: T.xs, color: C.textSub, fontFamily: F.sans }}>
                               <div style={{ width: 6, height: 6, borderRadius: '50%', background: cr.accent_color || C.purple, flexShrink: 0 }} />
-                              <span>{cr.label || cr.headline || 'Untitled creative'} · {cr.weight}%</span>
+                              <span>{cr.label || cr.headline || t('op.approval.untitledCreative')} · {cr.weight}%</span>
                               {check?.status === 'mismatch' && (
-                                <span style={{ color: C.amberText, display: 'inline-flex', alignItems: 'center', gap: 3 }}><IconWarning size={10} /> {check.reasons.map(r => REASON_LABEL[r] ?? r).join(', ')}</span>
+                                <span style={{ color: C.amberText, display: 'inline-flex', alignItems: 'center', gap: 3 }}><IconWarning size={10} /> {check.reasons.map(r => tOr(`cards.fit.reason.${r}`, REASON_LABEL[r] ?? r)).join(', ')}</span>
                               )}
                             </div>
                           );
@@ -415,7 +405,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
 
                     {screenCreatives.length === 0 && fitChecks[0]?.status === 'mismatch' && (
                       <span style={{ fontSize: T.xs, color: C.amberText, fontFamily: F.sans, paddingLeft: 4, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                        <IconWarning size={10} /> Creative may not fit ({fitChecks[0].reasons.map(r => REASON_LABEL[r] ?? r).join(', ')})
+                        <IconWarning size={10} /> {t('op.approval.mayNotFit', { reasons: fitChecks[0].reasons.map(r => tOr(`cards.fit.reason.${r}`, REASON_LABEL[r] ?? r)).join(', ') })}
                       </span>
                     )}
                   </Hover>
@@ -424,7 +414,7 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
             </div>
             {myRows.length > 1 && (
               <Btn variant="secondary" size="sm" onClick={approveAll} disabled={acting} style={{ marginTop: 10 }}>
-                ✓ Approve all my screens ({myRows.length})
+                {t('op.approval.approveAllMine', { count: myRows.length })}
               </Btn>
             )}
             {actionErr && (
@@ -439,9 +429,9 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
       {/* Reject reason panel */}
       {rejectScreenId && (
         <div style={{ padding: '14px 16px', borderTop: `1px solid ${C.border}`, background: C.redSoft }}>
-          <div style={{ ...TX.error, fontWeight: 600, marginBottom: 8 }}>Select a reason for rejection:</div>
+          <div style={{ ...TX.error, fontWeight: 600, marginBottom: 8 }}>{t('op.approval.selectReason')}</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
-            {REJECT_REASONS.map(r => (
+            {REJECT_REASONS.map(k => t(`op.approval.reasons.${k}`)).map(r => (
               <Btn variant="unstyled" key={r} type="button" aria-pressed={rejectReason === r} onClick={() => setRejectReason(r)} style={{
                 padding: '5px 12px', borderRadius: 20, fontSize: T.sm, fontFamily: F.sans,
                 border: `1px solid ${rejectReason === r ? C.redStrong : C.redBorder}`,
@@ -451,8 +441,8 @@ function MultiScreenCampaignCard({ campaign, myScreens, allScreens, creativesByS
             ))}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <Btn variant="danger" size="sm" onClick={rejectScreen} disabled={acting}>Confirm rejection</Btn>
-            <Btn variant="secondary" size="sm" onClick={() => setRejectScreenId(null)}>Cancel</Btn>
+            <Btn variant="danger" size="sm" onClick={rejectScreen} disabled={acting}>{t('op.approval.confirmRejection')}</Btn>
+            <Btn variant="secondary" size="sm" onClick={() => setRejectScreenId(null)}>{t('common.cancel')}</Btn>
           </div>
         </div>
       )}
@@ -464,6 +454,7 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
   const { user, profile } = useAuth();
   const ownerRevenueShare = profile?.owner_revenue_share ?? DEFAULT_OWNER_REVENUE_SHARE;
   const confirm = useConfirm();
+  const { t, tx } = useT();
   const [autoApprove, setAutoApprove] = useState(false);
   const [togglingAuto, setTogglingAuto] = useState(false);
   const [campaignScreens, setCampaignScreens] = useState({});
@@ -674,9 +665,9 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
     const totalPending = enriched.reduce((a, c) =>
       a + (c.campaign_screens.filter(r => myScreens.some(s => s.id === r.screen_id) && r.status === 'pending').length), 0);
     const ok = await confirm({
-      title: 'Approve all pending?',
-      message: `Approve ${totalPending} pending campaign-screen pairs across all ${enriched.length} campaigns?`,
-      confirmLabel: 'Approve all',
+      title: t('op.approval.bulkTitle'),
+      message: t('op.approval.bulkMessage', { pairs: totalPending, campaigns: enriched.length }),
+      confirmLabel: t('op.approval.approveAll'),
     });
     if (!ok) return;
     setBulkApproving(true);
@@ -737,9 +728,9 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
     if (needsConsent.length > 0) {
       const names = needsConsent.map(c => c.advertiser_name || c.advertiser).join(', ');
       const scheduleAnyway = await confirm({
-        title: `Approve ${needsConsent.length} without charging?`,
-        message: `${names} — no payment method on file.\n\nYou can collect payment manually.`,
-        confirmLabel: 'Approve anyway',
+        title: t('op.approval.bulkNoChargeTitle', { count: needsConsent.length }),
+        message: t('op.approval.bulkNoChargeMessage', { names }),
+        confirmLabel: t('op.approval.approveAnyway'),
         danger: false,
       });
       if (scheduleAnyway) {
@@ -762,7 +753,7 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
         for (const campaign of needsConsent) {
           const result = resultById.get(campaign.id);
           if (!schedRes?.ok || !result?.ok) {
-            failures.push({ id: campaign.id, name: campaign.advertiser_name || campaign.advertiser, message: result?.error ?? schedBody?.error ?? 'Unknown error' });
+            failures.push({ id: campaign.id, name: campaign.advertiser_name || campaign.advertiser, message: result?.error ?? schedBody?.error ?? t('appMsg.unknownError') });
           } else {
             scheduledIds.add(campaign.id);
           }
@@ -789,11 +780,11 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
   return (
     <div>
       <PageHeader
-        title="Approval Queue"
-        subtitle={loadError ? "Couldn't load the queue" : totalPending === 0 ? 'No campaigns pending review' : `${totalPending} campaign${totalPending !== 1 ? 's' : ''} pending review`}
+        title={t('op.approval.title')}
+        subtitle={loadError ? t('op.approval.loadErrorShort') : totalPending === 0 ? t('op.approval.nonePending') : t('op.approval.pendingCount', { count: totalPending })}
         actions={totalPending > 1 ? (
           <Btn variant="secondary" size="sm" onClick={bulkApproveAll} disabled={bulkApproving}>
-            {bulkApproving ? '…Approving' : `✓ Approve all pending (${totalPending})`}
+            {bulkApproving ? t('op.approval.approving') : t('op.approval.approveAllPending', { count: totalPending })}
           </Btn>
         ) : undefined}
       />
@@ -801,7 +792,7 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
       {loadError && (
         <div style={{ ...TX.error, display: 'flex', gap: 8, padding: '10px 14px', marginBottom: 16, background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8 }}>
           <span style={{ flexShrink: 0 }}><IconWarning size={14} /></span>
-          <span>Couldn't load your approval queue — check your connection and try again.</span>
+          <span>{t('op.approval.loadError')}</span>
         </div>
       )}
 
@@ -809,7 +800,7 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
         <div style={{ ...TX.error, display: 'flex', gap: 8, padding: '10px 14px', marginBottom: 16, background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8, lineHeight: 1.6 }}>
           <span style={{ flexShrink: 0 }}><IconWarning size={14} /></span>
           <span>
-          <strong>{bulkErrors.length} approval{bulkErrors.length !== 1 ? 's' : ''} failed</strong> — still pending, nothing was charged for these. Click "Approve all pending" again to retry.
+          {tx('op.approval.bulkFailed', { b: chunk => <strong>{chunk}</strong>, count: bulkErrors.length })}
           <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
             {bulkErrors.map(f => <li key={f.id}>{f.name}: {f.message}</li>)}
           </ul>
@@ -820,12 +811,12 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
       {/* Auto-approve toggle */}
       <Card style={{ padding: '16px 20px', marginBottom: 20, display: 'flex', gap: 16, alignItems: 'flex-start' }}>
         <div style={{ flex: 1 }}>
-          <div style={{ ...TX.title, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}><IconBolt size={14} /> Auto-approve campaigns for my screens</div>
+          <div style={{ ...TX.title, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}><IconBolt size={14} /> {t('op.approval.autoTitle')}</div>
           <div style={{ ...TX.helper, lineHeight: 1.5 }}>
-            Campaigns go live instantly without manual review.
+            {t('op.approval.autoSub')}
             {autoApprove && (
               <span style={{ display: 'block', marginTop: 4, color: C.amberText, fontSize: T.xs }}>
-                By enabling auto-approve you accept responsibility for ensuring advertised content complies with local advertising regulations applicable to your location.
+                {t('op.approval.autoResponsibility')}
               </span>
             )}
           </div>
@@ -836,13 +827,13 @@ export function ApprovalQueue({ setCampaigns, dbScreens = [], onApprovalChange }
           background: autoApprove ? C.greenSoft : C.surface,
           color: autoApprove ? C.greenText : C.textSub,
           fontSize: T.sm, fontWeight: 600, fontFamily: F.sans, flexShrink: 0,
-        }}>{togglingAuto ? '…' : autoApprove ? 'ON' : 'OFF'}</Btn>
+        }}>{togglingAuto ? '…' : autoApprove ? t('op.approval.on') : t('op.approval.off')}</Btn>
       </Card>
 
       {totalPending === 0 ? (
         <EmptyState className="fade-in" size="lg" padding="64px 24px"
           icon={<span style={{ fontSize: T.display, color: C.text }}>✓</span>}
-          title="All clear" description="No campaigns are waiting for review." />
+          title={t('op.approval.allClear')} description={t('op.approval.allClearSub')} />
       ) : (
         enriched.map((c, i) => (
           <MultiScreenCampaignCard

@@ -4,17 +4,15 @@
 // full breakdown (that lives on CampaignDetail).
 import { flightProgress, pacingRatio, pacingStatus } from '../../lib/pacing.js';
 import { C } from '../../design/tokens.js';
+import { t } from '../../i18n/core.js';
 
-const STATUS_COPY = {
-  behind: { color: C.amber, label: 'Behind pace' },
-  on_pace: { color: C.green, label: 'On pace' },
-  ahead: { color: C.red, label: 'Ahead of pace' },
-};
+const STATUS_COLOR = { behind: C.amber, on_pace: C.green, ahead: C.red };
 
 export function PacingDot({ startDate, endDate, spent, budget }) {
   const status = pacingStatus(pacingRatio(spent, budget, flightProgress(startDate, endDate)));
   if (status === null) return null;
-  const { color, label } = STATUS_COPY[status];
+  const color = STATUS_COLOR[status];
+  const label = t(`cards.pacing.${status}.label`);
   return (
     <span
       title={label}

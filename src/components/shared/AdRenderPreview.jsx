@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { C, F, T } from '../../design/tokens.js';
 import { computeHomography, cssMatrix3dString, validateQuadOrientation } from '../../lib/quadWarp.js';
+import { useT } from '../../i18n/useT.js';
 
 // Composites an advertiser's creative onto an operator-uploaded photo of the
 // physical board, warped to the 4 corners the operator marked. Pure
@@ -10,6 +11,7 @@ import { computeHomography, cssMatrix3dString, validateQuadOrientation } from '.
 // corners: 4 normalized [x,y] points ([TL,TR,BR,BL], each 0-1) or an empty/
 // invalid array, in which case only the plain photo renders.
 export function AdRenderPreview({ photoUrl, corners, mediaUrl, mediaType }) {
+  const { t } = useT();
   const imgRef = useRef(null);
   const [box, setBox] = useState({ width: 0, height: 0 });
   const [creativeFailed, setCreativeFailed] = useState(false);
@@ -59,10 +61,10 @@ export function AdRenderPreview({ photoUrl, corners, mediaUrl, mediaType }) {
 
   return (
     <div style={{ position: 'relative', width: '100%', lineHeight: 0 }}>
-      <img ref={imgRef} src={photoUrl} alt="Screen placement"
+      <img ref={imgRef} src={photoUrl} alt={t('widgets.preview.placementAlt')}
         style={{ width: '100%', display: 'block', borderRadius: 8 }} />
       {ready && mediaType === 'image' && !creativeFailed && (
-        <img src={mediaUrl} alt="Ad creative preview"
+        <img src={mediaUrl} alt={t('widgets.preview.creativeAlt')}
           onError={handleCreativeError}
           style={overlayStyle} />
       )}
@@ -78,7 +80,7 @@ export function AdRenderPreview({ photoUrl, corners, mediaUrl, mediaType }) {
           position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: T.sm, color: C.textMuted, fontFamily: F.sans, textAlign: 'center', padding: '0 12px',
         }}>
-          Couldn't load creative preview
+          {t('widgets.preview.failed')}
         </div>
       )}
       {!ready && (
@@ -86,7 +88,7 @@ export function AdRenderPreview({ photoUrl, corners, mediaUrl, mediaType }) {
           position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: T.sm, color: C.textMuted, fontFamily: F.sans,
         }}>
-          Loading preview…
+          {t('widgets.preview.loading')}
         </div>
       )}
     </div>

@@ -8,21 +8,17 @@ import { Tabs } from '../../components/primitives/Tabs.jsx';
 import { fetchOperatorListings, fetchOperatorBookings, cancelListing } from '../../lib/marketplace.js';
 import { MarketplaceListingForm } from './MarketplaceListingForm.jsx';
 import { useToast } from '../../components/primitives/Toast.jsx';
+import { useT } from '../../i18n/useT.js';
 
 const LISTING_STATUS = {
-  draft:     { label: 'Draft',     color: 'textMuted', bg: 'surfaceAlt' },
-  active:    { label: 'Active',    color: 'green',     bg: 'greenSoft' },
-  booked:    { label: 'Booked',    color: 'purple',    bg: 'purpleSoft' },
-  expired:   { label: 'Expired',   color: 'textMuted', bg: 'surfaceAlt' },
-  cancelled: { label: 'Cancelled', color: 'red',        bg: 'redSoft' },
+  draft:     { color: 'textMuted', bg: 'surfaceAlt' },
+  active:    { color: 'green',     bg: 'greenSoft' },
+  booked:    { color: 'purple',    bg: 'purpleSoft' },
+  expired:   { color: 'textMuted', bg: 'surfaceAlt' },
+  cancelled: { color: 'red',        bg: 'redSoft' },
 };
 
-const BOOKING_STATUS_LABEL = {
-  confirmed: 'Confirmed',
-  active: 'Active',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-};
+const BOOKING_STATUSES = ['confirmed', 'active', 'completed', 'cancelled'];
 
 // This is the operator's own *payout* status (marketplace_operator_transfers),
 // not the advertiser's payment_status on the booking -- that's always "paid"
@@ -30,10 +26,10 @@ const BOOKING_STATUS_LABEL = {
 // a successful charge), so showing it here would tell an operator nothing
 // about whether they actually got paid.
 const PAYOUT_STATUS = {
-  transferred:      { label: 'Payout sent',                          color: 'green' },
-  failed:           { label: 'Payout failed — check Connect account', color: 'red' },
-  pending_connect:  { label: 'Payout pending — set up Connect payouts', color: 'amber' },
-  null:             { label: 'Payout pending',                        color: 'amber' },
+  transferred:      { color: 'green' },
+  failed:           { color: 'red' },
+  pending_connect:  { color: 'amber' },
+  null:             { color: 'amber' },
 };
 
 // No advertiser name/email is shown here -- the rest of the marketplace
@@ -42,6 +38,7 @@ const PAYOUT_STATUS = {
 // accessor for it from the operator side. Booking id is enough for an
 // operator to match a payout against.
 function OperatorBookings({ operatorId }) {
+  const { t, formatCurrency, formatDate } = useT();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -56,12 +53,12 @@ function OperatorBookings({ operatorId }) {
       .catch(() => { setLoadError(true); setLoading(false); });
   }, [operatorId]);
 
-  if (loading) return <div style={{ fontFamily: F.sans, color: C.textMuted, padding: '24px 0' }}>Loading bookings…</div>;
+  if (loading) return <div style={{ fontFamily: F.sans, color: C.textMuted, padding: '24px 0' }}>{t('op.listings.loadingBookings')}</div>;
 
   if (loadError) {
     return (
       <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.redText, padding: '24px 0' }}>
-        Couldn't load your bookings — check your connection and try again.
+        {t('op.listings.bookingsError')}
       </div>
     );
   }
@@ -69,7 +66,7 @@ function OperatorBookings({ operatorId }) {
   if (bookings.length === 0) {
     return (
       <div style={{ ...TX.bodyMuted, padding: '24px 0' }}>
-        None of your listings have been booked yet.
+        {t('op.listings.noBookings')}
       </div>
     );
   }
@@ -77,12 +74,15 @@ function OperatorBookings({ operatorId }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {bookings.map(b => {
-        const payout = PAYOUT_STATUS[b.payout_status ?? 'null'] ?? { label: b.payout_status, color: 'amber' };
+        const payoutKey = b.payout_status ?? 'null';
+        const payout = PAYOUT_STATUS[payoutKey]
+          ? { ...PAYOUT_STATUS[payoutKey], label: t(`op.listings.payout.${payoutKey}`) }
+          : { label: b.payout_status, color: 'amber' };
         return (
           <Card key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, padding: 12 }}>
             <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.textMid }}>
-              {b.listing?.is_bundle && <span style={{ color: C.purple, fontWeight: 600 }}>Bundle · </span>}
-              ${(b.price_cents / 100).toFixed(0)} · {b.listing ? `${b.listing.start_date} – ${b.listing.end_date}` : 'listing removed'}
+              {b.listing?.is_bundle && <span style={{ color: C.purple, fontWeight: 600 }}>{t('op.listings.bundlePrefix')}</span>}
+              {formatCurrency(b.price_cents / 100, { decimals: 0 })} · {b.listing ? `${formatDate(b.listing.start_date)} – ${formatDate(b.listing.end_date)}` : t('op.listings.listingRemoved')}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: F.sans, fontSize: T.sm }}>
               <span style={{ color: C[payout.color] }}>{payout.label}</span>
@@ -91,7 +91,7 @@ function OperatorBookings({ operatorId }) {
                 color: b.status === 'cancelled' ? C.redText : C.purple,
                 background: b.status === 'cancelled' ? C.redSoft : C.purpleSoft,
               }}>
-                {BOOKING_STATUS_LABEL[b.status] ?? b.status}
+                {BOOKING_STATUSES.includes(b.status) ? t(`market.bookingStatus.${b.status}`) : b.status}
               </span>
             </div>
           </Card>
@@ -113,6 +113,7 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
 
   const resetBundle = () => { setBundling(false); setBundleSelection([]); setBundleReady(false); };
   const toast = useToast();
+  const { t, formatCurrency, formatDate } = useT();
 
   // Same unhandled-rejection risk as OperatorBookings above: fetchOperatorListings
   // throws on a Supabase error, so without a .catch here `listings` would
@@ -142,7 +143,7 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
       reload();
     } catch (err) {
       console.error('Failed to cancel listing:', err);
-      toast.error('Failed to cancel listing. Please try again.');
+      toast.error(t('op.listings.cancelFailed'));
     } finally {
       setCancellingId(null);
     }
@@ -150,10 +151,10 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
 
   return (
     <div>
-      <PageHeader title="Marketplace listings" subtitle="Sell exclusive placements outside the open auction" />
+      <PageHeader title={t('op.listings.title')} subtitle={t('op.listings.subtitle')} />
 
       <Tabs
-        tabs={[{ id: 'listings', label: 'Listings' }, { id: 'bookings', label: 'Bookings' }]}
+        tabs={[{ id: 'listings', label: t('op.listings.tabListings') }, { id: 'bookings', label: t('op.listings.tabBookings') }]}
         active={tab}
         onChange={setTab}
       />
@@ -177,11 +178,11 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
           {!bundling && (
             <>
               <div style={{ ...TX.strong, marginBottom: 10 }}>
-                Available to list
+                {t('op.listings.available')}
               </div>
               {availableScreens.length === 0 ? (
                 <div style={{ ...TX.bodyMuted, marginBottom: 24 }}>
-                  Every screen you own already has a live listing.
+                  {t('op.listings.allListed')}
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginBottom: 24 }}>
@@ -190,11 +191,11 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
                       <div>
                         <div style={{ ...TX.title, marginBottom: 2 }}>{s.name}</div>
                         <div style={TX.helperMuted}>
-                          {[s.neighbourhood, s.city].filter(Boolean).join(', ') || 'No location set'}
+                          {[s.neighbourhood, s.city].filter(Boolean).join(', ') || t('op.listings.noLocation')}
                         </div>
                       </div>
                       <Btn variant="secondary" size="sm" onClick={() => setCreatingFor(s.id)}>
-                        List as exclusive
+                        {t('op.listings.listExclusive')}
                       </Btn>
                     </Card>
                   ))}
@@ -208,7 +209,7 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
               {bundling ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
                   <div style={{ fontFamily: F.sans, fontSize: T.sm, fontWeight: 600, color: C.text }}>
-                    Select screens for this bundle
+                    {t('op.listings.selectBundle')}
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {(myScreens ?? []).map(s => {
@@ -229,41 +230,43 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <Btn variant="primary" size="sm" disabled={bundleSelection.length < 2} onClick={() => setBundleReady(true)}>
-                      Continue with {bundleSelection.length} screen{bundleSelection.length === 1 ? '' : 's'}
+                      {t('op.listings.continueWith', { count: bundleSelection.length })}
                     </Btn>
-                    <Btn variant="ghost" size="sm" onClick={resetBundle}>Cancel</Btn>
+                    <Btn variant="ghost" size="sm" onClick={resetBundle}>{t('common.cancel')}</Btn>
                   </div>
                 </div>
               ) : (
-                <Btn variant="secondary" size="sm" onClick={() => setBundling(true)}>+ Create bundle listing</Btn>
+                <Btn variant="secondary" size="sm" onClick={() => setBundling(true)}>{t('op.listings.createBundle')}</Btn>
               )}
             </div>
           )}
           <div style={{ ...TX.strong, marginBottom: 10 }}>
-            Your listings
+            {t('op.listings.yours')}
           </div>
           {listingsError ? (
             <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.redText }}>
-              Couldn't load your listings — check your connection and try again.
+              {t('op.listings.listingsError')}
             </div>
           ) : listings.length === 0 ? (
             <div style={TX.bodyMuted}>
-              No listings yet — list a screen above to sell it as an exclusive placement.
+              {t('op.listings.noListings')}
             </div>
           ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {listings.map(l => {
-              const st = LISTING_STATUS[l.status] ?? { label: l.status, color: 'textMuted', bg: 'surfaceAlt' };
+              const st = LISTING_STATUS[l.status]
+                ? { ...LISTING_STATUS[l.status], label: t(`op.listings.status.${l.status}`) }
+                : { label: l.status, color: 'textMuted', bg: 'surfaceAlt' };
               return (
               <Card key={l.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, padding: 12 }}>
                 <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.textMid }}>
-                  {l.is_bundle && <span style={{ color: C.purple, fontWeight: 600 }}>Bundle · </span>}
+                  {l.is_bundle && <span style={{ color: C.purple, fontWeight: 600 }}>{t('op.listings.bundlePrefix')}</span>}
                   <span style={{ fontWeight: 600, color: C.text }}>
                     {l.is_bundle
-                      ? (l.screen_ids ?? [l.screen_id]).map(id => screenNameById.get(id) ?? 'Screen').join(', ')
-                      : screenNameById.get(l.screen_id) ?? 'Screen'}
+                      ? (l.screen_ids ?? [l.screen_id]).map(id => screenNameById.get(id) ?? t('op.listings.screen')).join(', ')
+                      : screenNameById.get(l.screen_id) ?? t('op.listings.screen')}
                   </span>
-                  {' · '}${(l.price_cents / 100).toFixed(0)} · {l.start_date} – {l.end_date}
+                  {' · '}{formatCurrency(l.price_cents / 100, { decimals: 0 })} · {formatDate(l.start_date)} – {formatDate(l.end_date)}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{
@@ -274,7 +277,7 @@ export function MarketplaceListingsView({ operatorId, myScreens }) {
                   </span>
                   {l.status === 'active' && (
                     <Btn variant="ghost" size="sm" loading={cancellingId === l.id} onClick={() => handleCancel(l.id)}>
-                      Cancel
+                      {t('common.cancel')}
                     </Btn>
                   )}
                 </div>

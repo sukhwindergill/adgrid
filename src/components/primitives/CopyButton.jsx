@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Btn } from './Btn.jsx';
+import { t } from '../../i18n/core.js';
 
-export function CopyButton({ value, label = 'Copy', copiedLabel = 'Copied!', variant = 'secondary', size = 'sm', style = {}, onCopied, onError }) {
+export function CopyButton({ value, label = t('ui.copy'), copiedLabel = t('ui.copied'), variant = 'secondary', size = 'sm', style = {}, onCopied, onError }) {
   const [copied, setCopied] = useState(false);
   const timerRef = useRef(null);
 

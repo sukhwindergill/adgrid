@@ -3,6 +3,7 @@ import { C, F, T } from '../../design/tokens.js';
 import { isValidHexColor } from '../../lib/qrColor.js';
 import { TX } from '../../design/text.js';
 import { Btn } from './Btn.jsx';
+import { t } from '../../i18n/core.js';
 
 // Swatch + hex input + eyedropper, shared by CreativeCard's Accent Colour
 // and QR Dots/Background fields.
@@ -96,7 +97,7 @@ export function ColorField({ label, value, onChange, onPickFromCreative }) {
             variant="unstyled" type="button" onClick={onPickFromCreative} title="Pick color from your creative"
             style={{ ...SWATCH_BTN, padding: '0 10px', fontSize: T.xs, fontFamily: F.sans, whiteSpace: 'nowrap' }}
           >
-            From creative
+            {t('ui.fromCreative')}
           </Btn>
         )}
       </div>

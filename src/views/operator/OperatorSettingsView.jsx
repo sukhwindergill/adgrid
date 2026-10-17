@@ -13,6 +13,8 @@ import { TeamClientRoles } from '../accounts/TeamClientRoles.jsx';
 import { EVENTS, normalizeChannelPrefs } from '../../lib/notificationPrefs.js';
 import { T, C, F } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
+import { useT } from '../../i18n/useT.js';
+import { t } from '../../i18n/core.js';
 
 const TIMEZONES = [
   'UTC', 'America/New_York', 'America/Chicago', 'America/Denver',
@@ -60,7 +62,7 @@ function SettingsInput({ value, onChange, type = 'text', readOnly, placeholder }
   );
 }
 
-function SaveBtn({ onClick, saving, label = 'Save Changes' }) {
+function SaveBtn({ onClick, saving, label = t('settings.saveChanges') }) {
   return (
     <Btn onClick={onClick} loading={saving}>{label}</Btn>
   );
@@ -72,6 +74,7 @@ export function ProfileTab({ profile, onSaved }) {
   const [companyName, setCompanyName] = useState(profile?.company_name ?? '');
   const [companyWebsite, setCompanyWebsite] = useState(profile?.company_website ?? '');
   const [timezone, setTimezone] = useState(profile?.timezone ?? 'UTC');
+  const { t } = useT();
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
 
@@ -82,7 +85,7 @@ export function ProfileTab({ profile, onSaved }) {
       .update({ name, company_name: companyName, company_website: companyWebsite, timezone })
       .eq('id', profile.id);
     setSaving(false);
-    setMsg(error ? 'Error saving.' : 'Saved.');
+    setMsg(error ? { text: t('settings.errorSaving'), ok: false } : { text: t('settings.saved'), ok: true });
     if (!error) {
       onSaved({ name, company_name: companyName, company_website: companyWebsite, timezone });
       refreshProfile();
@@ -92,22 +95,22 @@ export function ProfileTab({ profile, onSaved }) {
 
   return (
     <div style={{ maxWidth: 480 }}>
-      <Field label="Full Name">
+      <Field label={t('settings.fullName')}>
         <SettingsInput value={name} onChange={e => setName(e.target.value)} />
       </Field>
-      <Field label="Email">
+      <Field label={t('settings.email')}>
         <SettingsInput value={profile?.email ?? ''} readOnly />
-        <div style={{ fontSize: T.xs, color: C.textMuted, marginTop: 4 }}>Change email in Security tab.</div>
+        <div style={{ fontSize: T.xs, color: C.textMuted, marginTop: 4 }}>{t('settings.changeEmailHint')}</div>
       </Field>
-      <Field label="Company Name">
-        <SettingsInput value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Acme Inc." />
+      <Field label={t('settings.companyName')}>
+        <SettingsInput value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder={t('settings.companyPlaceholder')} />
       </Field>
-      <Field label="Company Website">
-        <SettingsInput value={companyWebsite} onChange={e => setCompanyWebsite(e.target.value)} placeholder="https://acme.com" />
+      <Field label={t('settings.companyWebsite')}>
+        <SettingsInput value={companyWebsite} onChange={e => setCompanyWebsite(e.target.value)} placeholder={t('settings.websitePlaceholder')} />
       </Field>
-      <Field label="Timezone">
+      <Field label={t('settings.timezone')}>
         <SelInput
-          aria-label="Timezone"
+          aria-label={t('settings.timezone')}
           value={timezone}
           onChange={e => setTimezone(e.target.value)}
           style={{ ...TX.body, width: '100%', transition: 'border-color 0.15s' }}
@@ -117,7 +120,7 @@ export function ProfileTab({ profile, onSaved }) {
       </Field>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <SaveBtn onClick={save} saving={saving} />
-        {msg && <span style={{ fontSize: T.base, color: msg === 'Saved.' ? C.greenText : C.redText }}>{msg}</span>}
+        {msg && <span style={{ fontSize: T.base, color: msg.ok ? C.greenText : C.redText }}>{msg.text}</span>}
       </div>
     </div>
   );
@@ -125,6 +128,7 @@ export function ProfileTab({ profile, onSaved }) {
 
 export function SecurityTab() {
   const { updatePassword } = useAuth();
+  const { t } = useT();
   const [newEmail, setNewEmail] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
@@ -139,7 +143,7 @@ export function SecurityTab() {
     setEmailMsg(null);
     const { error } = await supabase.auth.updateUser({ email: newEmail });
     setEmailSaving(false);
-    setEmailMsg(error ? { text: error.message, ok: false } : { text: 'Confirmation email sent. Check your inbox.', ok: true });
+    setEmailMsg(error ? { text: error.message, ok: false } : { text: t('settings.emailSent'), ok: true });
     if (!error) setNewEmail('');
     setTimeout(() => setEmailMsg(null), 5000);
   }
@@ -151,8 +155,8 @@ export function SecurityTab() {
   // page does. It signs the current session out too once that's done, so
   // this intentionally ends on the login screen rather than staying here.
   async function changePassword() {
-    if (newPw !== confirmPw) { setPwMsg({ text: 'Passwords do not match.', ok: false }); return; }
-    if (newPw.length < 8) { setPwMsg({ text: 'Password must be at least 8 characters.', ok: false }); return; }
+    if (newPw !== confirmPw) { setPwMsg({ text: t('settings.pwMismatch'), ok: false }); return; }
+    if (newPw.length < 8) { setPwMsg({ text: t('settings.pwTooShort'), ok: false }); return; }
     setPwSaving(true);
     setPwMsg(null);
     const { error } = await updatePassword(newPw);
@@ -167,12 +171,12 @@ export function SecurityTab() {
 
   return (
     <div style={{ maxWidth: 480 }}>
-      <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, marginBottom: 16 }}>Change Email</div>
-      <Field label="New Email">
-        <SettingsInput type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="new@email.com" />
+      <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, marginBottom: 16 }}>{t('settings.changeEmail')}</div>
+      <Field label={t('settings.newEmail')}>
+        <SettingsInput type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder={t('settings.newEmailPlaceholder')} />
       </Field>
       <div style={{ marginBottom: 32 }}>
-        <SaveBtn onClick={changeEmail} saving={emailSaving} label="Update Email" />
+        <SaveBtn onClick={changeEmail} saving={emailSaving} label={t('settings.updateEmail')} />
         {emailMsg && (
           <div style={{ fontSize: T.base, color: emailMsg.ok ? C.greenText : C.redText, fontFamily: F.sans, marginTop: 8 }}>
             {emailMsg.text}
@@ -180,15 +184,15 @@ export function SecurityTab() {
         )}
       </div>
       <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 24 }}>
-        <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, marginBottom: 16 }}>Change Password</div>
-        <Field label="New Password">
+        <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, marginBottom: 16 }}>{t('settings.changePassword')}</div>
+        <Field label={t('settings.newPassword')}>
           <SettingsInput type="password" value={newPw} onChange={e => setNewPw(e.target.value)} />
         </Field>
-        <Field label="Confirm Password">
+        <Field label={t('settings.confirmPassword')}>
           <SettingsInput type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} />
         </Field>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <SaveBtn onClick={changePassword} saving={pwSaving} label="Update Password" />
+          <SaveBtn onClick={changePassword} saving={pwSaving} label={t('settings.updatePassword')} />
           {pwMsg && <span style={{ fontSize: T.base, color: pwMsg.ok ? C.greenText : C.redText }}>{pwMsg.text}</span>}
         </div>
       </div>
@@ -197,6 +201,7 @@ export function SecurityTab() {
 }
 
 export function ReviewTab({ profile, setNav }) {
+  const { t, tx, tOr } = useT();
   const [policy, setPolicy] = useState({ enabled: false, auto_approve_categories: [], min_completed_campaigns: 1, auto_approve_verified_advertisers: false });
   const [slaHours, setSlaHours] = useState(24);
   const [categories, setCategories] = useState([]);
@@ -262,7 +267,7 @@ export function ReviewTab({ profile, setNav }) {
       .eq('operator_id', profile.id);
 
     setSaving(false);
-    setMsg(error || slaError ? 'Error saving.' : 'Saved.');
+    setMsg(error || slaError ? { text: t('settings.errorSaving'), ok: false } : { text: t('settings.saved'), ok: true });
     setTimeout(() => setMsg(null), 3000);
   }
 
@@ -276,8 +281,7 @@ export function ReviewTab({ profile, setNav }) {
   return (
     <div style={{ maxWidth: 520 }}>
       <div style={{ ...TX.bodySub, marginBottom: 20, lineHeight: 1.5 }}>
-        How long you get to review a campaign before it is dropped from your screens.
-        A dropped campaign is revenue you do not earn.
+        {t('op.settings.reviewIntro')}
       </div>
 
       {setNav && (
@@ -287,31 +291,30 @@ export function ReviewTab({ profile, setNav }) {
           borderRadius: 8, fontFamily: F.sans,
         }}>
           <div style={{ fontSize: T.sm, color: C.textSub, lineHeight: 1.5 }}>
-            This is auto-approval for <strong>campaigns</strong>. For budget pacing, cost-per-scan, or
-            offline-screen alerts, that's a separate page.
+            {tx('op.settings.rulesHint', { b: chunk => <strong>{chunk}</strong> })}
           </div>
           <Btn variant="outline" size="sm" onClick={() => setNav('rules')} style={{ padding: '6px 14px', borderRadius: 6, fontWeight: 600 }}>
-            Open Alerts & Rules →
+            {t('op.settings.openRules')}
           </Btn>
         </div>
       )}
 
-      <Field label="Review window (hours)">
+      <Field label={t('op.settings.reviewWindow')}>
         <SettingsInput type="number" value={slaHours} onChange={e => setSlaHours(e.target.value)} />
       </Field>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderTop: `1px solid ${C.border}` }}>
         <div>
-          <div style={{ fontSize: T.md, fontWeight: 500, color: C.text }}>Auto-approve matching campaigns</div>
-          <div style={{ fontSize: T.sm, color: C.textSub, marginTop: 2 }}>Skip manual review for work you already trust</div>
+          <div style={{ fontSize: T.md, fontWeight: 500, color: C.text }}>{t('op.settings.autoMatching')}</div>
+          <div style={{ fontSize: T.sm, color: C.textSub, marginTop: 2 }}>{t('op.settings.autoMatchingSub')}</div>
         </div>
         <Toggle checked={policy.enabled} onChange={() => setPolicy(p => ({ ...p, enabled: !p.enabled }))} />
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderTop: `1px solid ${C.border}` }}>
         <div>
-          <div style={{ fontSize: T.md, fontWeight: 500, color: C.text }}>Auto-approve verified advertisers</div>
-          <div style={{ fontSize: T.sm, color: C.textSub, marginTop: 2 }}>Skip review for advertisers with a verified business — independent of the category rule above</div>
+          <div style={{ fontSize: T.md, fontWeight: 500, color: C.text }}>{t('op.settings.autoVerified')}</div>
+          <div style={{ fontSize: T.sm, color: C.textSub, marginTop: 2 }}>{t('op.settings.autoVerifiedSub')}</div>
         </div>
         <Toggle
           checked={policy.auto_approve_verified_advertisers}
@@ -321,13 +324,13 @@ export function ReviewTab({ profile, setNav }) {
 
       {policy.enabled && (
         <div style={{ paddingTop: 16 }}>
-          <Field label="Categories to auto-approve">
+          <Field label={t('op.settings.categories')}>
             <div style={{ fontSize: T.sm, color: C.textSub, marginBottom: 10 }}>
-              Nothing selected means nothing is auto-approved.
+              {t('op.settings.categoriesHint')}
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {categories.length === 0 && (
-                <span style={TX.helper}>No campaign categories yet.</span>
+                <span style={TX.helper}>{t('op.settings.noCategories')}</span>
               )}
               {categories.map(cat => {
                 const active = policy.auto_approve_categories.includes(cat);
@@ -340,13 +343,13 @@ export function ReviewTab({ profile, setNav }) {
                     fontSize: T.sm, fontFamily: F.sans, transition: 'background 0.15s',
                   }}
                     hoverStyle={active ? undefined : { background: C.surfaceAlt }}
-                  >{cat}</Btn>
+                  >{tOr(`categories.${cat}`, cat)}</Btn>
                 );
               })}
             </div>
           </Field>
 
-          <Field label="Only for advertisers with at least this many completed campaigns">
+          <Field label={t('op.settings.minCompleted')}>
             <SettingsInput
               type="number"
               value={policy.min_completed_campaigns}
@@ -358,13 +361,14 @@ export function ReviewTab({ profile, setNav }) {
 
       <div style={{ marginTop: 20, display: 'flex', gap: 12, alignItems: 'center' }}>
         <SaveBtn onClick={save} saving={saving} />
-        {msg && <span style={{ fontSize: T.base, color: msg === 'Saved.' ? C.greenText : C.redText }}>{msg}</span>}
+        {msg && <span style={{ fontSize: T.base, color: msg.ok ? C.greenText : C.redText }}>{msg.text}</span>}
       </div>
     </div>
   );
 }
 
 export function NotificationsTab({ profile }) {
+  const { t, tOr } = useT();
   const [prefs, setPrefs] = useState(() => normalizeChannelPrefs(profile?.notification_prefs));
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -377,7 +381,7 @@ export function NotificationsTab({ profile }) {
     setSaving(true);
     const { error } = await supabase.from('profiles').update({ notification_prefs: prefs }).eq('id', profile.id);
     setSaving(false);
-    setMsg(error ? 'Error saving.' : 'Saved.');
+    setMsg(error ? { text: t('settings.errorSaving'), ok: false } : { text: t('settings.saved'), ok: true });
     setTimeout(() => setMsg(null), 3000);
   }
 
@@ -389,8 +393,8 @@ export function NotificationsTab({ profile }) {
     <div style={{ maxWidth: 560 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 70px', padding: '0 0 8px', borderBottom: `1px solid ${C.border}` }}>
         <span />
-        <span style={{ fontSize: T.xs, fontWeight: 600, color: C.textSub, textAlign: 'center' }}>In-app</span>
-        <span style={{ fontSize: T.xs, fontWeight: 600, color: C.textSub, textAlign: 'center' }}>Email</span>
+        <span style={{ fontSize: T.xs, fontWeight: 600, color: C.textSub, textAlign: 'center' }}>{t('settings.inApp')}</span>
+        <span style={{ fontSize: T.xs, fontWeight: 600, color: C.textSub, textAlign: 'center' }}>{t('settings.emailChannel')}</span>
       </div>
       {EVENTS.map(item => (
         <div key={item.key} style={{
@@ -398,8 +402,8 @@ export function NotificationsTab({ profile }) {
           padding: '16px 0', borderBottom: `1px solid ${C.border}`,
         }}>
           <div>
-            <div style={{ fontSize: T.md, fontWeight: 500, color: C.text }}>{item.label}</div>
-            <div style={{ fontSize: T.sm, color: C.textSub, marginTop: 2 }}>{item.desc}</div>
+            <div style={{ fontSize: T.md, fontWeight: 500, color: C.text }}>{tOr(`notif.${item.key}.label`, item.label)}</div>
+            <div style={{ fontSize: T.sm, color: C.textSub, marginTop: 2 }}>{tOr(`notif.${item.key}.desc`, item.desc)}</div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <Toggle checked={prefs[item.key].inApp} onChange={() => toggle(item.key, 'inApp')} />
@@ -411,13 +415,14 @@ export function NotificationsTab({ profile }) {
       ))}
       <div style={{ marginTop: 20, display: 'flex', gap: 12, alignItems: 'center' }}>
         <SaveBtn onClick={save} saving={saving} />
-        {msg && <span style={{ fontSize: T.base, color: msg === 'Saved.' ? C.greenText : C.redText }}>{msg}</span>}
+        {msg && <span style={{ fontSize: T.base, color: msg.ok ? C.greenText : C.redText }}>{msg.text}</span>}
       </div>
     </div>
   );
 }
 
 function TeamTab({ profile }) {
+  const { t, tOr } = useT();
   const [members, setMembers] = useState([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('viewer');
@@ -443,7 +448,7 @@ function TeamTab({ profile }) {
   async function invite() {
     if (!inviteEmail) return;
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setMsg('Session expired. Please log in again.'); return; }
+    if (!session) { setMsg({ text: t('settings.sessionExpired'), ok: false }); return; }
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/invite-team-member`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
@@ -451,28 +456,28 @@ function TeamTab({ profile }) {
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setMsg(body?.error || 'Error sending invite.');
+      setMsg({ text: body?.error || t('settings.inviteError'), ok: false });
       return;
     }
-    setMsg('Invite sent to ' + inviteEmail);
+    setMsg({ text: t('settings.inviteSent', { email: inviteEmail }), ok: true });
     setInviteEmail('');
     setTimeout(() => setMsg(null), 4000);
   }
 
   async function removeMember(id) {
     const { error } = await supabase.from('team_members').delete().eq('id', id);
-    if (error) { setMsg('Failed to remove member.'); return; }
+    if (error) { setMsg({ text: t('op.settings.removeFailed'), ok: false }); return; }
     setMembers(m => m.filter(x => x.id !== id));
   }
 
-  if (loading) return <div style={{ color: C.textSub, fontSize: T.base }}>Loading team…</div>;
-  if (loadError) return <div style={{ color: C.redText, fontSize: T.base }}>Couldn't load your team — check your connection and try again.</div>;
+  if (loading) return <div style={{ color: C.textSub, fontSize: T.base }}>{t('settings.loadingTeam')}</div>;
+  if (loadError) return <div style={{ color: C.redText, fontSize: T.base }}>{t('settings.teamError')}</div>;
 
   return (
     <div style={{ maxWidth: 560 }}>
       {members.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 12 }}>Team Members</div>
+          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 12 }}>{t('settings.teamMembers')}</div>
           {members.map(m => (
             <div key={m.id} style={{
               display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
@@ -486,38 +491,38 @@ function TeamTab({ profile }) {
                 padding: '2px 8px', borderRadius: 10, fontSize: T.xs, fontWeight: 600,
                 background: m.role === 'admin' ? C.purpleLight : C.bg,
                 color: m.role === 'admin' ? C.purple : C.textSub, textTransform: 'capitalize',
-              }}>{m.role}</span>
-              <Btn variant="ghost" size="sm" onClick={() => removeMember(m.id)} style={{ color: C.redText }}>Remove</Btn>
+              }}>{tOr(`accounts.roles.${m.role}`, m.role)}</span>
+              <Btn variant="ghost" size="sm" onClick={() => removeMember(m.id)} style={{ color: C.redText }}>{t('common.remove')}</Btn>
             </div>
           ))}
         </div>
       )}
       <div style={{ borderTop: members.length > 0 ? `1px solid ${C.border}` : 'none', paddingTop: members.length > 0 ? 20 : 0 }}>
-        <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 12 }}>Invite Teammate</div>
+        <div style={{ fontSize: T.md, fontWeight: 600, color: C.text, marginBottom: 12 }}>{t('settings.inviteTeammate')}</div>
         <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
           <Inp
             type="email"
-            placeholder="colleague@company.com"
-            aria-label="Teammate email"
+            placeholder={t('settings.invitePlaceholder')}
+            aria-label={t('op.settings.teammateEmail')}
             value={inviteEmail}
             onChange={e => setInviteEmail(e.target.value)}
             wrapperStyle={{ flex: 1 }}
             style={{ ...TX.body, transition: 'border-color 0.15s' }}
           />
           <SelInput
-            aria-label="Teammate role"
+            aria-label={t('op.settings.teammateRole')}
             value={inviteRole}
             onChange={e => setInviteRole(e.target.value)}
             style={{ ...TX.body, transition: 'border-color 0.15s' }}
           >
-            <option value="viewer">Viewer — read only</option>
-            <option value="manager">Manager — create &amp; edit campaigns</option>
-            <option value="admin">Admin — full access</option>
+            <option value="viewer">{t('op.settings.roleViewer')}</option>
+            <option value="manager">{t('op.settings.roleManager')}</option>
+            <option value="admin">{t('op.settings.roleAdmin')}</option>
           </SelInput>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Btn onClick={invite}>Send Invite</Btn>
-          {msg && <span style={{ fontSize: T.base, color: msg.startsWith('Error') ? C.redText : C.greenText }}>{msg}</span>}
+          <Btn onClick={invite}>{t('settings.sendInvite')}</Btn>
+          {msg && <span style={{ fontSize: T.base, color: msg.ok ? C.greenText : C.redText }}>{msg.text}</span>}
         </div>
       </div>
     </div>
@@ -526,6 +531,7 @@ function TeamTab({ profile }) {
 
 function PayoutsTab({ profile }) {
   const { refreshProfile } = useAuth();
+  const { t } = useT();
   const [connecting, setConnecting] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -550,7 +556,7 @@ function PayoutsTab({ profile }) {
     };
 
     if (connect === 'refresh') {
-      setMsg({ text: 'Stripe onboarding was interrupted — click Connect with Stripe to try again.', ok: false });
+      setMsg({ text: t('op.settings.stripeInterrupted'), ok: false });
       cleanUrl();
       return;
     }
@@ -560,26 +566,26 @@ function PayoutsTab({ profile }) {
       const expectedState = sessionStorage.getItem('stripe_connect_state');
       cleanUrl();
       if (!returnedState || !expectedState || returnedState !== expectedState) {
-        setMsg({ text: 'Could not verify the Stripe redirect — if you just finished onboarding, refresh in a minute.', ok: false });
+        setMsg({ text: t('op.settings.stripeVerifyRedirect'), ok: false });
         return;
       }
       sessionStorage.removeItem('stripe_connect_state');
       setConfirming(true);
       (async () => {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) { setMsg({ text: 'Session expired. Please log in again.', ok: false }); setConfirming(false); return; }
+        if (!session) { setMsg({ text: t('settings.sessionExpired'), ok: false }); setConfirming(false); return; }
         const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/confirm-connect-account`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         });
         const json = await res.json().catch(() => ({}));
         setConfirming(false);
-        if (!res.ok) { setMsg({ text: json.error ?? 'Could not confirm your Stripe account.', ok: false }); return; }
+        if (!res.ok) { setMsg({ text: json.error ?? t('op.settings.stripeConfirmFailed'), ok: false }); return; }
         await refreshProfile();
         setMsg(
           json.connectStatus === 'active'
-            ? { text: 'Stripe account connected — payouts are now active.', ok: true }
-            : { text: "Stripe onboarding submitted, but your account isn't fully verified yet. We'll update your status once Stripe finishes reviewing it.", ok: true }
+            ? { text: t('op.settings.stripeConnected'), ok: true }
+            : { text: t('op.settings.stripeSubmitted'), ok: true }
         );
       })();
     }
@@ -593,7 +599,7 @@ function PayoutsTab({ profile }) {
     sessionStorage.setItem('stripe_connect_state', state);
     const returnUrl = window.location.origin + window.location.pathname;
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setMsg({ text: 'Session expired. Please log in again.', ok: false }); setConnecting(false); return; }
+    if (!session) { setMsg({ text: t('settings.sessionExpired'), ok: false }); setConnecting(false); return; }
     let res;
     try {
       res = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-connect-account`, {
@@ -602,7 +608,7 @@ function PayoutsTab({ profile }) {
         body: JSON.stringify({ returnUrl, state }),
       });
     } catch {
-      setMsg({ text: 'Could not reach Stripe. Check your connection and try again.', ok: false });
+      setMsg({ text: t('op.settings.stripeUnreachable'), ok: false });
       setConnecting(false);
       return;
     }
@@ -613,7 +619,7 @@ function PayoutsTab({ profile }) {
     // body degrade to a generic message instead of hanging.
     const json = await res.json().catch(() => ({}));
     if (!res.ok || !json.url) {
-      setMsg({ text: json.error ?? 'Failed to start Stripe Connect', ok: false });
+      setMsg({ text: json.error ?? t('op.settings.stripeStartFailed'), ok: false });
       setConnecting(false);
       return;
     }
@@ -622,9 +628,9 @@ function PayoutsTab({ profile }) {
 
   return (
     <div style={{ maxWidth: 480 }}>
-      <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, marginBottom: 8 }}>Stripe Connect</div>
+      <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, marginBottom: 8 }}>{t('op.settings.stripeTitle')}</div>
       <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 24, lineHeight: 1.6 }}>
-        Connect your bank account to receive campaign payouts. Powered by Stripe.
+        {t('op.settings.stripeIntro')}
       </div>
 
       <Card style={{ padding: 20, marginBottom: 20 }}>
@@ -634,26 +640,26 @@ function PayoutsTab({ profile }) {
             background: connectStatus === 'active' ? C.green : connectStatus ? C.amber : C.border,
           }} />
           <div style={{ fontSize: T.md, fontWeight: 600, color: C.text }}>
-            {connectStatus === 'active' ? 'Connected' : connectStatus ? 'Pending verification' : 'Not connected'}
+            {connectStatus === 'active' ? t('op.settings.connected') : connectStatus ? t('op.settings.pendingVerification') : t('op.settings.notConnected')}
           </div>
         </div>
         {confirming ? (
-          <div style={{ fontSize: T.base, color: C.textSub }}>Confirming your Stripe account…</div>
+          <div style={{ fontSize: T.base, color: C.textSub }}>{t('op.settings.confirmingStripe')}</div>
         ) : connectStatus === 'active' ? (
           <div style={{ fontSize: T.base, color: C.textSub }}>
-            Your Stripe account is connected. Payouts are processed automatically when campaigns complete.
+            {t('op.settings.connectedBody')}
           </div>
         ) : connectStatus ? (
           <div style={{ fontSize: T.base, color: C.textSub }}>
-            Your Stripe account is under review. You'll be notified once verified.
+            {t('op.settings.underReviewBody')}
           </div>
         ) : (
           <>
             <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 16 }}>
-              Connect your bank account to start receiving payouts from approved campaigns.
+              {t('op.settings.connectBody')}
             </div>
             <Btn onClick={startConnect} disabled={connecting}>
-              {connecting ? 'Redirecting to Stripe…' : 'Connect with Stripe'}
+              {connecting ? t('op.settings.redirectingStripe') : t('op.settings.connectStripe')}
             </Btn>
           </>
         )}
@@ -661,33 +667,34 @@ function PayoutsTab({ profile }) {
       </Card>
 
       <div style={{ fontSize: T.sm, color: C.textMuted, lineHeight: 1.5 }}>
-        Payouts are sent to your connected bank account. You receive 70% of what advertisers pay per screen; AdGrid keeps 30%.
-        View detailed payout history in the Billing section.
+        {t('op.settings.payoutsFootnote')}
       </div>
     </div>
   );
 }
 
 const VERIFICATION_META = {
-  unverified:      { label: 'Not verified',      color: C.textMuted, dot: C.border },
-  pending_stripe:  { label: 'Verification in progress', color: C.amberText, dot: C.amber },
-  pending_manual:  { label: 'Under manual review',      color: C.amberText, dot: C.amber },
-  verified:        { label: 'Verified',          color: C.greenText, dot: C.green },
-  rejected:        { label: 'Verification rejected',    color: C.redText,  dot: C.red },
+  unverified:      { color: C.textMuted, dot: C.border },
+  pending_stripe:  { color: C.amberText, dot: C.amber },
+  pending_manual:  { color: C.amberText, dot: C.amber },
+  verified:        { color: C.greenText, dot: C.green },
+  rejected:        { color: C.redText,  dot: C.red },
 };
 
 function VerificationTab({ profile }) {
+  const { t, formatDate } = useT();
   const [starting, setStarting] = useState(false);
   const [msg, setMsg] = useState(null);
   const status = profile?.verification_status ?? 'unverified';
-  const meta = VERIFICATION_META[status] ?? VERIFICATION_META.unverified;
+  const metaKey = VERIFICATION_META[status] ? status : 'unverified';
+  const meta = VERIFICATION_META[metaKey];
 
   // Stripe Identity redirects back with ?identity=complete — the actual status
   // update happens async via the stripe-identity-webhook, so just acknowledge.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('identity') === 'complete') {
-      setMsg({ text: "Verification submitted. We'll update your status shortly — refresh in a minute if it doesn't change.", ok: true });
+      setMsg({ text: t('op.settings.verifSubmitted'), ok: true });
       params.delete('identity');
       const rest = params.toString();
       window.history.replaceState({}, '', window.location.pathname + (rest ? `?${rest}` : ''));
@@ -698,7 +705,7 @@ function VerificationTab({ profile }) {
     setStarting(true);
     setMsg(null);
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setMsg({ text: 'Session expired. Please log in again.', ok: false }); setStarting(false); return; }
+    if (!session) { setMsg({ text: t('settings.sessionExpired'), ok: false }); setStarting(false); return; }
     const returnUrl = window.location.origin + window.location.pathname;
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-identity-session`, {
       method: 'POST',
@@ -707,7 +714,7 @@ function VerificationTab({ profile }) {
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok || !json.url) {
-      setMsg({ text: json.error ?? 'Failed to start verification.', ok: false });
+      setMsg({ text: json.error ?? t('op.settings.verifStartFailed'), ok: false });
       setStarting(false);
       return;
     }
@@ -716,42 +723,41 @@ function VerificationTab({ profile }) {
 
   return (
     <div style={{ maxWidth: 480 }}>
-      <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, marginBottom: 8 }}>Identity Verification</div>
+      <div style={{ fontSize: T.lg, fontWeight: 600, color: C.text, marginBottom: 8 }}>{t('op.settings.idTitle')}</div>
       <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 24, lineHeight: 1.6 }}>
-        Verifying your identity builds trust with advertisers and speeds up support requests.
-        Powered by Stripe Identity — a government ID photo and a live selfie.
+        {t('op.settings.idIntro')}
       </div>
 
       <Card style={{ padding: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <div style={{ width: 10, height: 10, borderRadius: '50%', background: meta.dot }} />
-          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text }}>{meta.label}</div>
+          <div style={{ fontSize: T.md, fontWeight: 600, color: C.text }}>{t(`op.settings.verif.${metaKey}`)}</div>
         </div>
 
         {status === 'verified' && (
           <div style={{ fontSize: T.base, color: C.textSub }}>
-            Your identity is verified{profile?.verified_at ? ` as of ${new Date(profile.verified_at).toLocaleDateString()}` : ''}.
+            {profile?.verified_at ? t('op.settings.idVerifiedOn', { date: formatDate(profile.verified_at) }) : t('op.settings.idVerified')}
           </div>
         )}
 
         {(status === 'pending_stripe' || status === 'pending_manual') && (
           <div style={{ fontSize: T.base, color: C.textSub }}>
             {status === 'pending_manual'
-              ? "Your submission needs a closer look. We'll email you once it's reviewed."
-              : "We're processing your verification. This usually takes a few minutes."}
+              ? t('op.settings.idManual')
+              : t('op.settings.idProcessing')}
           </div>
         )}
 
         {status === 'rejected' && (
           <>
             <div style={{ fontSize: T.base, color: C.textSub, marginBottom: profile?.verification_rejection_reason ? 8 : 16 }}>
-              Your last verification attempt was rejected.
+              {t('op.settings.idRejected')}
             </div>
             {profile?.verification_rejection_reason && (
-              <div style={{ fontSize: T.sm, color: C.redText, marginBottom: 16 }}>Reason: {profile.verification_rejection_reason}</div>
+              <div style={{ fontSize: T.sm, color: C.redText, marginBottom: 16 }}>{t('op.settings.reason', { reason: profile.verification_rejection_reason })}</div>
             )}
             <Btn onClick={startVerification} disabled={starting}>
-              {starting ? 'Redirecting…' : 'Try again'}
+              {starting ? t('op.settings.redirecting') : t('op.settings.tryAgain')}
             </Btn>
           </>
         )}
@@ -759,10 +765,10 @@ function VerificationTab({ profile }) {
         {status === 'unverified' && (
           <>
             <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 16 }}>
-              Start verification — takes about 2 minutes.
+              {t('op.settings.idStart')}
             </div>
             <Btn onClick={startVerification} disabled={starting}>
-              {starting ? 'Redirecting…' : 'Verify Identity'}
+              {starting ? t('op.settings.redirecting') : t('op.settings.verifyIdentity')}
             </Btn>
           </>
         )}
@@ -773,8 +779,7 @@ function VerificationTab({ profile }) {
       </Card>
 
       <div style={{ fontSize: T.sm, color: C.textMuted, lineHeight: 1.5 }}>
-        Identity verification is separate from Stripe Connect payout onboarding. Both are optional
-        but recommended for operators running screens at scale.
+        {t('op.settings.idFootnote')}
       </div>
     </div>
   );
@@ -784,32 +789,33 @@ export function OperatorSettingsView({ setNav, initialTab } = {}) {
   const { profile: authProfile } = useAuth();
   const [profile, setProfile] = useState(authProfile);
   const [tab, setTab] = useState(initialTab ?? 'profile');
+  const { t } = useT();
 
   useEffect(() => { if (authProfile) setProfile(authProfile); }, [authProfile]);
 
-  if (!profile) return <div style={{ padding: 40, fontFamily: F.sans, color: C.textSub }}>Loading…</div>;
+  if (!profile) return <div style={{ padding: 40, fontFamily: F.sans, color: C.textSub }}>{t('common.loading')}</div>;
 
   const tabs = [
-    { id: 'profile',       label: 'Profile' },
-    { id: 'security',      label: 'Security' },
-    { id: 'review',        label: 'Review' },
-    { id: 'notifications', label: 'Notifications' },
-    { id: 'team',          label: 'Team' },
-    { id: 'payouts',       label: 'Payouts' },
-    { id: 'verification',  label: 'Verification' },
-    { id: 'client-access', label: 'Client Access' },
+    { id: 'profile',       label: t('settings.tabs.profile') },
+    { id: 'security',      label: t('settings.tabs.security') },
+    { id: 'review',        label: t('op.settings.tabs.review') },
+    { id: 'notifications', label: t('settings.tabs.notifications') },
+    { id: 'team',          label: t('settings.tabs.team') },
+    { id: 'payouts',       label: t('op.settings.tabs.payouts') },
+    { id: 'verification',  label: t('op.settings.tabs.verification') },
+    { id: 'client-access', label: t('op.settings.tabs.clientAccess') },
   ];
 
   return (
     <div>
-      <PageHeader title="Settings" subtitle="Manage your operator account" />
+      <PageHeader title={t('op.settings.title')} subtitle={t('op.settings.subtitle')} />
       <div style={{ overflowX: 'auto', maxWidth: '100%', marginBottom: 32 }}>
         <div style={{
           display: 'flex', gap: 4, background: C.bg, padding: 4, borderRadius: 10,
           border: `1px solid ${C.border}`, width: 'fit-content',
         }}>
-          {tabs.map(t => (
-            <TabBtn key={t.id} label={t.label} active={tab === t.id} onClick={() => setTab(t.id)} />
+          {tabs.map(tb => (
+            <TabBtn key={tb.id} label={tb.label} active={tab === tb.id} onClick={() => setTab(tb.id)} />
           ))}
         </div>
       </div>

@@ -9,6 +9,7 @@ import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { Btn } from '../../components/primitives/Btn.jsx';
 import { Chip } from '../../components/primitives/Chip.jsx';
 import { useOperatorScreenCampaignRows } from '../../hooks/useOperatorScreenCampaignRows.js';
+import { useT } from '../../i18n/useT.js';
 
 const BOOSTS = { 'Food & Beverage': { morning: 2, cold: 1, highFoot: 2 }, 'Health & Fitness': { morning: 3, weekend: 2, sunny: 2 }, 'Fashion & Retail': { weekend: 2, highFoot: 3, sunny: 1 }, 'Finance & Banking': { morning: 3, weekday: 2 }, Entertainment: { evening: 3, weekend: 3 }, Technology: { morning: 1, weekday: 2 } };
 
@@ -20,6 +21,7 @@ const BOOSTS = { 'Food & Beverage': { morning: 2, cold: 1, highFoot: 2 }, 'Healt
 // SCREENS fixture) drives the screen picker.
 export function SignalsView({ operatorScreenIds = [], screens = [] }) {
   const { isMobile } = useBreakpoint();
+  const { t, tOr } = useT();
   const now = new Date();
   const [hour, setHour]     = useState(now.getHours());
   const [day, setDay]       = useState(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][now.getDay()]);
@@ -56,7 +58,7 @@ export function SignalsView({ operatorScreenIds = [], screens = [] }) {
 
   const winner = ranked[0];
   const scoreColor = s => s >= 75 ? C.green : s >= 50 ? C.amber : C.textSub;
-  const timeLabel = h => h < 6 ? 'Late Night' : h < 11 ? 'Morning' : h < 14 ? 'Midday' : h < 17 ? 'Afternoon' : h < 21 ? 'Evening' : 'Night';
+  const timeLabel = h => t(`signals.${h < 6 ? 'late' : h < 11 ? 'morning' : h < 14 ? 'midday' : h < 17 ? 'afternoon' : h < 21 ? 'evening' : 'night'}`);
 
   const runSim = () => {
     setLive(false); setSimming(true); let i = 0;
@@ -66,41 +68,41 @@ export function SignalsView({ operatorScreenIds = [], screens = [] }) {
 
   return (
     <div>
-      <PageHeader title="Live Signals" subtitle="Real-time context engine — weather, footfall, and ad ranking" />
+      <PageHeader title={t('signals.title')} subtitle={t('signals.subtitle')} />
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '320px 1fr', gap: 20, alignItems: 'start' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Card>
-            <div style={{ ...TX.title, marginBottom: 14 }}>Context Signals</div>
-            <SelInput label="Screen" value={screen} onChange={e => setScreen(e.target.value)} style={{ marginBottom: 12 }}>
+            <div style={{ ...TX.title, marginBottom: 14 }}>{t('signals.context')}</div>
+            <SelInput label={t('signals.screen')} value={screen} onChange={e => setScreen(e.target.value)} style={{ marginBottom: 12 }}>
               {liveScreens.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </SelInput>
             <div style={{ marginBottom: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <label style={TX.label}>Time of Day</label>
+                <label style={TX.label}>{t('signals.timeOfDay')}</label>
                 <span style={{ fontSize: T.sm, color: C.purple, fontFamily: F.sans, fontWeight: 500 }}>{String(hour).padStart(2, '0')}:00 · {timeLabel(hour)}</span>
               </div>
               <input type="range" min={0} max={23} value={hour} onChange={e => { setLive(false); setHour(parseInt(e.target.value)); }} style={{ width: '100%', accentColor: C.purple }} />
             </div>
             <div style={{ marginBottom: 12 }}>
-              <label style={{ ...TX.label, display: 'block', marginBottom: 6 }}>Day of Week</label>
+              <label style={{ ...TX.label, display: 'block', marginBottom: 6 }}>{t('signals.dayOfWeek')}</label>
               <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                 {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
                   <Chip key={d} selected={day === d} onClick={() => { setLive(false); setDay(d); }} style={{
                     padding: '5px 9px', borderRadius: 6, fontSize: T.xs, fontWeight: 500, transition: 'background 0.15s',
-                  }}>{d}</Chip>
+                  }}>{t(`common.days.short.${d}`)}</Chip>
                 ))}
               </div>
             </div>
-            <SelInput label="Weather" value={weather} onChange={e => setWeather(e.target.value)}>
-              {['Sunny', 'Cloudy', 'Rainy', 'Cold', 'Hot', 'Windy'].map(w => <option key={w}>{w}</option>)}
+            <SelInput label={t('signals.weather')} value={weather} onChange={e => setWeather(e.target.value)}>
+              {['Sunny', 'Cloudy', 'Rainy', 'Cold', 'Hot', 'Windy'].map(w => <option key={w} value={w}>{t(`signals.weatherValue.${w}`)}</option>)}
             </SelInput>
           </Card>
           <div style={{ display: 'flex', gap: 8 }}>
             <Btn variant={liveMode ? 'success' : 'secondary'} size="sm" onClick={() => setLive(!liveMode)} style={{ flex: 1, justifyContent: 'center' }}>
-              {liveMode ? '● Live' : '○ Manual'}
+              {liveMode ? t('signals.live') : t('signals.manual')}
             </Btn>
             <Btn size="sm" onClick={runSim} disabled={simming} style={{ flex: 1, justifyContent: 'center' }}>
-              {simming ? 'Simulating…' : '▶ Simulate Day'}
+              {simming ? t('signals.simulating') : t('signals.simulate')}
             </Btn>
           </div>
         </div>
@@ -108,21 +110,21 @@ export function SignalsView({ operatorScreenIds = [], screens = [] }) {
         <div>
           {winner && (
             <div style={{ background: `linear-gradient(135deg, ${C.purpleSoft}, ${C.greenSoft})`, border: `1px solid ${C.purpleBorder}`, borderRadius: 12, padding: 20, marginBottom: 16 }}>
-              <div style={{ fontSize: T.xs, fontWeight: 600, color: C.purple, letterSpacing: '0.5px', marginBottom: 4, fontFamily: F.sans }}>NOW PLAYING — HIGHEST SIGNAL MATCH</div>
+              <div style={{ fontSize: T.xs, fontWeight: 600, color: C.purple, letterSpacing: '0.5px', marginBottom: 4, fontFamily: F.sans, textTransform: 'uppercase' }}>{t('signals.nowPlaying')}</div>
               <div style={{ fontSize: T.xl, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 2 }}>{winner.advertiser}</div>
-              <div style={{ ...TX.helper, marginBottom: 12 }}>{winner.category} · {winner.screenName}</div>
+              <div style={{ ...TX.helper, marginBottom: 12 }}>{tOr(`categories.${winner.category}`, winner.category)} · {winner.screenName}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ fontSize: T.jumbo, fontWeight: 800, color: scoreColor(winner.score), fontFamily: F.mono, lineHeight: 1 }}>{winner.score}</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ ...TX.caption, marginBottom: 4 }}>Signal match score</div>
+                  <div style={{ ...TX.caption, marginBottom: 4 }}>{t('signals.matchScore')}</div>
                   <ProgressBar value={winner.score} max={100} height={8} color={scoreColor(winner.score)} />
                 </div>
               </div>
             </div>
           )}
 
-          <div style={{ ...TX.title, marginBottom: 12 }}>All Campaigns — Ranked by Signal Match</div>
-          {ranked.length === 0 && <Card style={{ textAlign: 'center', padding: 32, color: C.textMuted, fontFamily: F.sans }}>No active campaigns on this screen</Card>}
+          <div style={{ ...TX.title, marginBottom: 12 }}>{t('signals.ranked')}</div>
+          {ranked.length === 0 && <Card style={{ textAlign: 'center', padding: 32, color: C.textMuted, fontFamily: F.sans }}>{t('signals.noActive')}</Card>}
           {ranked.map((c, i) => (
             <Card key={c.id} style={{ marginBottom: 10, padding: '14px 18px', border: i === 0 ? `1px solid ${C.purpleBorder}` : undefined }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
@@ -130,7 +132,7 @@ export function SignalsView({ operatorScreenIds = [], screens = [] }) {
                   <div style={{ width: 24, height: 24, borderRadius: '50%', background: i === 0 ? C.purple : C.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: T.xs, fontWeight: 700, color: i === 0 ? C.white : C.textSub, fontFamily: F.sans }}>#{i + 1}</div>
                   <div>
                     <div style={{ fontWeight: 600, color: C.text, fontFamily: F.sans }}>{c.advertiser}</div>
-                    <div style={TX.caption}>{c.category} · {c.timeStart}–{c.timeEnd}</div>
+                    <div style={TX.caption}>{tOr(`categories.${c.category}`, c.category)} · {c.timeStart}–{c.timeEnd}</div>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>

@@ -1,6 +1,7 @@
 import { Component } from 'react';
 import { C, F, T } from '../../design/tokens.js';
 import { Btn } from './Btn.jsx';
+import { t } from '../../i18n/core.js';
 
 export class ErrorBoundary extends Component {
   constructor(props) {
@@ -26,13 +27,13 @@ export class ErrorBoundary extends Component {
           fontFamily: F.sans,
         }}>
           <div style={{ fontSize: T.lg, fontWeight: 700, color: C.redText, marginBottom: 8 }}>
-            Something went wrong
+            {t('ui.somethingWrong')}
           </div>
           <div style={{ fontSize: T.base, color: C.textSub, marginBottom: 16 }}>
             {this.state.error.message}
           </div>
           <Btn variant="dangerSolid" onClick={() => this.setState({ error: null })}>
-            Try again
+            {t('ui.tryAgain')}
           </Btn>
         </div>
       );

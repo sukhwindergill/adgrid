@@ -6,6 +6,7 @@ import { CountBadge } from '../primitives/CountBadge.jsx';
 import { ModeSwitcher } from './Sidebar.jsx';
 import { ICONS } from './navIcons.jsx';
 import { navFor, tabsFor, highlightedNavId } from './navConfig.js';
+import { useT } from '../../i18n/useT.js';
 
 const MORE_ICON = (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
@@ -16,10 +17,11 @@ const Badge = ({ count }) => <CountBadge count={count} style={{ position: 'absol
 // Phone navigation: four primary destinations plus a More sheet holding the
 // full grouped nav, the operator/advertiser switch and sign out.
 export function MobileTabBar({ active, activeMode, onModeSwitch, onNavigate, onSignOut, pendingCount = 0 }) {
+  const { t } = useT();
   const [moreOpen, setMoreOpen] = useState(false);
   const current = highlightedNavId(active);
   const tabs = tabsFor(activeMode);
-  const inTabs = tabs.some(t => t.id === current);
+  const inTabs = tabs.some(tab => tab.id === current);
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -43,7 +45,7 @@ export function MobileTabBar({ active, activeMode, onModeSwitch, onNavigate, onS
         <div onClick={() => setMoreOpen(false)} style={{ position: 'fixed', inset: 0, background: C.overlay, zIndex: 140 }} />
       )}
       {moreOpen && (
-        <div role="dialog" aria-modal="true" aria-label="All pages" style={{
+        <div role="dialog" aria-modal="true" aria-label={t('nav.allPages')} style={{
           position: 'fixed', left: 0, right: 0, bottom: 'calc(60px + env(safe-area-inset-bottom))',
           maxHeight: '70vh', overflowY: 'auto', zIndex: 150, background: C.surface,
           borderTop: `1px solid ${C.border}`, borderRadius: '16px 16px 0 0', padding: '16px 16px 8px',
@@ -75,26 +77,26 @@ export function MobileTabBar({ active, activeMode, onModeSwitch, onNavigate, onS
           <Btn variant="unstyled" onClick={() => { setMoreOpen(false); onSignOut(); }} style={{
             width: '100%', padding: '12px 8px', borderTop: `1px solid ${C.border}`,
             color: C.redText, fontFamily: F.sans, fontSize: T.md, textAlign: 'left', marginTop: 4,
-          }}>Sign out</Btn>
+          }}>{t('shell.signOut')}</Btn>
         </div>
       )}
-      <nav aria-label="Main" style={{
+      <nav aria-label={t('nav.main')} style={{
         position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 160, display: 'flex',
         background: C.surface, borderTop: `1px solid ${C.border}`,
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
-        {tabs.map(t => (
-          <Btn variant="unstyled" key={t.id} onClick={() => go(t.id)} aria-current={current === t.id ? 'page' : undefined} style={tabBtn(current === t.id && !moreOpen)}>
+        {tabs.map(tab => (
+          <Btn variant="unstyled" key={tab.id} onClick={() => go(tab.id)} aria-current={current === tab.id ? 'page' : undefined} style={tabBtn(current === tab.id && !moreOpen)}>
             <span style={{ display: 'flex', position: 'relative' }}>
-              {ICONS[t.icon]}
-              {t.badge && <Badge count={pendingCount} />}
+              {ICONS[tab.icon]}
+              {tab.badge && <Badge count={pendingCount} />}
             </span>
-            {t.id.endsWith('overview') ? 'Home' : t.id === 'approval' ? 'Approvals' : t.label}
+            {tab.id.endsWith('overview') ? t('nav.home') : tab.id === 'approval' ? t('nav.approvals') : tab.label}
           </Btn>
         ))}
         <Btn variant="unstyled" onClick={() => setMoreOpen(o => !o)} aria-expanded={moreOpen} style={tabBtn(moreOpen || !inTabs)}>
           <span style={{ display: 'flex' }}>{MORE_ICON}</span>
-          More
+          {t('nav.more')}
         </Btn>
       </nav>
     </>

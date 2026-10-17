@@ -1,9 +1,11 @@
 import { C, F, T, alpha } from '../../design/tokens.js';
 import { Btn } from '../primitives/Btn.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { useT } from '../../i18n/useT.js';
 
 export function AppShell({ sidebar, header, children, impersonating, onStopImpersonation }) {
   const { isMobile, width } = useBreakpoint();
+  const { t } = useT();
   // Phones carry a fixed bottom tab bar (see MobileTabBar); keep content clear of it.
   const bottomPad = width < 768 ? 'calc(88px + env(safe-area-inset-bottom))' : (isMobile ? '40px' : '60px');
   return (
@@ -27,7 +29,7 @@ export function AppShell({ sidebar, header, children, impersonating, onStopImper
           fontSize: T.base,
           fontWeight: 500,
         }}>
-          <span>👁 Viewing as {impersonating.name}</span>
+          <span>{t('shell.viewingAs', { name: impersonating.name })}</span>
           <Btn
             variant="unstyled"
             onClick={onStopImpersonation}
@@ -40,7 +42,7 @@ export function AppShell({ sidebar, header, children, impersonating, onStopImper
               fontSize: T.sm,
               fontWeight: 600,
             }}
-          >Exit</Btn>
+          >{t('shell.exit')}</Btn>
         </div>
       )}
 

@@ -7,9 +7,9 @@ import { Btn } from '../../components/primitives/Btn.jsx';
 import { Hover } from '../../components/primitives/Hover.jsx';
 import { ProgressBar } from '../../components/primitives/ProgressBar.jsx';
 import { ApproveBtn } from '../../lib/campaignActions.jsx';
-import { pluralize } from '../../lib/pluralize.js';
 import { useConfirm } from '../../components/primitives/ConfirmModal.jsx';
 import { useToast } from '../../components/primitives/Toast.jsx';
+import { useT } from '../../i18n/useT.js';
 
 export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel, canReview, setDetail, setCampaigns, onApprovalChange, compareMode = false, compareSelected = false, onToggleCompare }) {
   const pct = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
@@ -20,6 +20,8 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
   const badgeStatus = c.badgeStatus ?? c.status;
   const confirm = useConfirm();
   const toast = useToast();
+  const { t, tOr, formatCurrency, formatNumber, formatDate } = useT();
+  const money = n => formatCurrency(n, { minimumFractionDigits: 0 });
 
   return (
     <Hover
@@ -39,7 +41,7 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
           checked={compareSelected}
           onChange={() => onToggleCompare?.(c.id)}
           onClick={e => e.stopPropagation()}
-          aria-label={`Select ${c.advertiser} for comparison`}
+          aria-label={t('op.row.selectForCompare', { name: c.advertiser })}
           style={{ marginTop: 3, width: 16, height: 16, flexShrink: 0, cursor: 'pointer', accentColor: C.purple }}
         />
       )}
@@ -47,31 +49,31 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
             <div style={{ fontWeight: 600, color: C.text, fontFamily: F.sans }}>{c.advertiser}</div>
-            {isPending && <span style={{ fontSize: T.xs, background: C.amber, color: C.white, padding: '1px 6px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600 }}>REVIEW</span>}
+            {isPending && <span style={{ fontSize: T.xs, background: C.amber, color: C.white, padding: '1px 6px', borderRadius: 10, fontFamily: F.sans, fontWeight: 600, textTransform: 'uppercase' }}>{t('op.row.review')}</span>}
           </div>
-          <div style={TX.caption}>{c.category} · {screenCount} {pluralize(screenCount, 'screen')} · {displayCity}</div>
+          <div style={TX.caption}>{t('op.row.meta', { category: tOr(`categories.${c.category}`, c.category), screens: t('common.screensCount', { count: screenCount }), city: displayCity })}</div>
         </div>
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-            <span style={{ fontSize: T.sm, fontWeight: 600, color: C.text, fontFamily: F.mono }}>${c.spent.toLocaleString()}</span>
-            <span style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.mono }}>${c.budget.toLocaleString()}</span>
+            <span style={{ fontSize: T.sm, fontWeight: 600, color: C.text, fontFamily: F.mono }}>{money(c.spent)}</span>
+            <span style={{ fontSize: T.sm, color: C.textMuted, fontFamily: F.mono }}>{money(c.budget)}</span>
           </div>
           <ProgressBar value={c.spent} max={c.budget} height={4} />
-          <div style={{ fontSize: T.xs, color: pct > 90 ? C.redText : pct > 70 ? C.amberText : C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{pct}% used</div>
+          <div style={{ fontSize: T.xs, color: pct > 90 ? C.redText : pct > 70 ? C.amberText : C.textMuted, fontFamily: F.sans, marginTop: 2 }}>{t('op.row.used', { pct })}</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: F.mono, fontSize: T.md, fontWeight: 600, color: C.text }}>{(c.impressions / 1000).toFixed(1)}K</div>
-          <div style={TX.caption}>impressions</div>
+          <div style={{ fontFamily: F.mono, fontSize: T.md, fontWeight: 600, color: C.text }}>{t('dash.thousands', { n: formatNumber(c.impressions / 1000, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) })}</div>
+          <div style={TX.caption}>{t('op.row.impressions')}</div>
         </div>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontFamily: F.mono, fontSize: T.md, fontWeight: 600, color: C.purple }}>{c.scans}</div>
-          <div style={TX.caption}>scans</div>
+          <div style={TX.caption}>{t('op.row.scans')}</div>
         </div>
-        <div style={{ ...TX.mono, whiteSpace: 'nowrap' }}>{c.start} →<br />{c.end}</div>
+        <div style={{ ...TX.mono, whiteSpace: 'nowrap' }}>{formatDate(c.start)} →<br />{formatDate(c.end)}</div>
         {isPending && canReview ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }} onClick={e => e.preventDefault()}>
             <ApproveBtn campaign={c} setCampaigns={setCampaigns} onSuccess={onApprovalChange} />
-            <Btn variant="danger" size="sm" onClick={e => { e.preventDefault(); e.stopPropagation(); setDetail(c); }}>✗ Reject…</Btn>
+            <Btn variant="danger" size="sm" onClick={e => { e.preventDefault(); e.stopPropagation(); setDetail(c); }}>{t('op.row.reject')}</Btn>
           </div>
         ) : allowCancel && (c.status === 'scheduled' || c.status === 'active') ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }} onClick={e => e.preventDefault()}>
@@ -79,9 +81,9 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
             <Btn variant="danger" size="sm" onClick={async e => {
               e.preventDefault(); e.stopPropagation();
               const ok = await confirm({
-                title: 'Cancel campaign?',
-                message: `Cancel campaign "${c.advertiser}"? This stops it immediately and can't be undone -- unused budget will be reviewed for refund per your agreement.`,
-                confirmLabel: 'Cancel Campaign',
+                title: t('op.row.cancelTitle'),
+                message: t('op.row.cancelMessage', { name: c.advertiser }),
+                confirmLabel: t('op.row.cancelConfirm'),
                 danger: true,
               });
               if (!ok) return;
@@ -102,10 +104,10 @@ export function CampaignRow({ c, screenCount, displayCity, isMobile, allowCancel
                 body: JSON.stringify({ campaign_id: c.id, action: 'cancel' }),
               });
               const json = await res.json().catch(() => ({}));
-              if (!res.ok) { toast.error(json.error ?? 'Failed to cancel campaign.'); return; }
+              if (!res.ok) { toast.error(json.error ?? t('op.row.cancelFailed')); return; }
               setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: json.status } : x));
-              toast.success(`Campaign "${c.advertiser}" cancelled.`);
-            }}>✕ Cancel</Btn>
+              toast.success(t('op.row.cancelled', { name: c.advertiser }));
+            }}>{t('op.row.cancel')}</Btn>
           </div>
         ) : (
           <Badge status={badgeStatus} />

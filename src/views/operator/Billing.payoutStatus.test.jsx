@@ -36,7 +36,7 @@ describe('Billing payout status', () => {
     render(<Billing />);
 
     await waitFor(() => expect(screen.getByText(/Next payout/)).toBeInTheDocument());
-    expect(screen.getByText(/2026-09-12/)).toBeInTheDocument();
+    expect(screen.getByText(/Sep 12, 2026/)).toBeInTheDocument();
   });
 
   it('says no payout is scheduled and names the last one when nothing is in flight', async () => {

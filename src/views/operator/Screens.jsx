@@ -17,11 +17,13 @@ import { IconScreen } from '../../components/icons.jsx';
 import { BulkImportModal } from '../../components/screens/BulkImportModal.jsx';
 import { T, SH, C, F } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
+import { useT } from '../../i18n/useT.js';
+import { t, tList } from '../../i18n/core.js';
 
 function uptime(screen) {
   if (!screen.last_seen) return '—';
   const minsAgo = (Date.now() - new Date(screen.last_seen).getTime()) / 60000;
-  if (minsAgo <= 5) return 'Live';
+  if (minsAgo <= 5) return t('op.screens.live');
   return '—';
 }
 
@@ -30,21 +32,23 @@ function uptime(screen) {
 // which was flagged as an investor/operator confidence issue.
 function impressionsHint(screen) {
   if (screen.impressions > 0) return null;
-  if (screen.status === 'pending') return 'Pending approval — no delivery data yet';
-  return 'No traffic estimate set — add one in this screen’s settings';
+  if (screen.status === 'pending') return t('op.screens.hintPending');
+  return t('op.screens.hintNoTraffic');
 }
 
 function uptimeHint(screen) {
-  if (screen.status !== 'live') return 'Not yet approved to go live';
-  if (!screen.last_seen) return 'No signal received since going live';
-  return 'No signal in the last 5 minutes';
+  if (screen.status !== 'live') return t('op.screens.hintNotApproved');
+  if (!screen.last_seen) return t('op.screens.hintNoSignal');
+  return t('op.screens.hintNoRecent');
 }
 
 function ScreenCard({ screen, onClick }) {
   const hs = healthSignal(screen);
   const firstPhoto = screen.screen_photos?.[0];
-  const venueLabel = screen.venue_subtype ||
-    (screen.venue_category ? VENUE_TAXONOMY[screen.venue_category]?.label : null);
+  const { tOr, formatCurrency, formatNumber } = useT();
+  const venueLabel = screen.venue_subtype
+    ? tOr(`venue.subtype.${screen.venue_subtype}`, screen.venue_subtype)
+    : (screen.venue_category && VENUE_TAXONOMY[screen.venue_category] ? t(`venue.category.${screen.venue_category}`) : null);
 
   return (
     <Card lift style={{ padding: 0, transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'pointer', overflow: 'hidden' }}
@@ -68,7 +72,7 @@ function ScreenCard({ screen, onClick }) {
               <div style={{ ...TX.caption, marginTop: 2 }}>
                 {screen.neighbourhood} · {screen.city}
                 {screen.environment && (
-                  <span style={{ marginLeft: 6, color: C.textMuted }}>· {screen.environment === 'indoor' ? 'Indoor' : 'Outdoor'}</span>
+                  <span style={{ marginLeft: 6, color: C.textMuted }}>· {screen.environment === 'indoor' ? t('common.env.indoor') : t('common.env.outdoor')}</span>
                 )}
               </div>
             </div>
@@ -101,20 +105,20 @@ function ScreenCard({ screen, onClick }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 12 }}>
           <div>
-            <div style={TX.caption}>Impressions/mo</div>
+            <div style={TX.caption}>{t('op.screens.imprPerMonth')}</div>
             <div
               title={impressionsHint(screen) ?? undefined}
               style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.mono, marginTop: 2, cursor: impressionsHint(screen) ? 'help' : undefined }}
             >
-              {screen.impressions > 0 ? `${(screen.impressions / 1000).toFixed(0)}K` : '—'}
+              {screen.impressions > 0 ? t('dash.thousands', { n: formatNumber(Math.round(screen.impressions / 1000)) }) : '—'}
             </div>
           </div>
           <div>
-            <div style={TX.caption}>CPM</div>
-            <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.mono, marginTop: 2 }}>${screen.cpm?.toFixed(2) || '4.20'}</div>
+            <div style={TX.caption}>{t('op.screens.cpm')}</div>
+            <div style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.mono, marginTop: 2 }}>{formatCurrency(screen.cpm ?? 4.2)}</div>
           </div>
           <div>
-            <div style={TX.caption}>Uptime</div>
+            <div style={TX.caption}>{t('op.screens.uptime')}</div>
             <div
               title={uptime(screen) === '—' ? uptimeHint(screen) : undefined}
               style={{ fontSize: T.lg, fontWeight: 700, color: screen.status === 'live' ? C.greenText : C.textMuted, fontFamily: F.mono, marginTop: 2, cursor: uptime(screen) === '—' ? 'help' : undefined }}
@@ -126,10 +130,10 @@ function ScreenCard({ screen, onClick }) {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: T.xs, color: C.textSub, fontFamily: F.sans }}>
-            {screen.campaigns} active campaign{screen.campaigns !== 1 ? 's' : ''}
+            {t('op.screens.activeCampaigns', { count: screen.campaigns ?? 0 })}
           </div>
           <div style={{ fontSize: T.sm, fontWeight: 600, color: C.greenText, fontFamily: F.mono }}>
-            {screen.revenue > 0 ? `$${screen.revenue.toLocaleString()}/mo` : ''}
+            {screen.revenue > 0 ? t('op.screens.perMonth', { amount: formatCurrency(screen.revenue, { minimumFractionDigits: 0 }) }) : ''}
           </div>
         </div>
       </div>
@@ -138,7 +142,7 @@ function ScreenCard({ screen, onClick }) {
 }
 
 function screensToCsv(screens) {
-  const header = ['Name', 'City', 'Neighbourhood', 'Status', 'Impressions/mo', 'CPM', 'Active Campaigns', 'Revenue/mo'];
+  const header = tList('op.screens.csv');
   const rows = screens.map(s => [
     s.name, s.city, s.neighbourhood ?? '', s.status,
     s.impressions ?? 0, s.cpm ?? '', s.campaigns ?? 0, s.revenue ?? 0,
@@ -156,6 +160,7 @@ function downloadCsv(csv, filename) {
 }
 
 export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelectScreen, onStartOnboard }) {
+  const { formatNumber } = useT();
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
   const [showBulkImport, setShowBulkImport] = useState(false);
@@ -186,12 +191,12 @@ export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelect
 
   return (
     <div>
-      <PageHeader title="Screens"
-        subtitle={`${allScreens.length} registered · ${allScreens.filter(s => s.status === 'live').length} live · ${allScreens.filter(s => s.status === 'pending').length} pending`}
+      <PageHeader title={t('op.screens.title')}
+        subtitle={t('op.screens.subtitle', { registered: allScreens.length, live: allScreens.filter(s => s.status === 'live').length, pending: allScreens.filter(s => s.status === 'pending').length })}
         actions={<>
-          <Btn variant="secondary" size="sm" onClick={() => downloadCsv(screensToCsv(shown), 'screens.csv')}>↓ Export</Btn>
-          <Btn variant="secondary" size="sm" onClick={() => setShowBulkImport(true)}>↑ Import CSV</Btn>
-          <Btn onClick={onStartOnboard}>+ Register Screen</Btn>
+          <Btn variant="secondary" size="sm" onClick={() => downloadCsv(screensToCsv(shown), 'screens.csv')}>{t('op.screens.export')}</Btn>
+          <Btn variant="secondary" size="sm" onClick={() => setShowBulkImport(true)}>{t('op.screens.import')}</Btn>
+          <Btn onClick={onStartOnboard}>{t('op.screens.register')}</Btn>
         </>} />
 
       {showBulkImport && (
@@ -209,30 +214,29 @@ export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelect
       {allScreens.some(s => s.lat == null || s.lon == null) && (
         <Card style={{ padding: 16, marginBottom: 20, borderLeft: `3px solid ${C.amber}` }}>
           <div style={TX.strong}>
-            {allScreens.filter(s => s.lat == null || s.lon == null).length} screen(s) missing coordinates
+            {t('op.screens.missingCoords', { count: allScreens.filter(s => s.lat == null || s.lon == null).length })}
           </div>
           <div style={{ ...TX.helper, marginTop: 4 }}>
-            Advertisers searching by radius cannot find these screens, and they are excluded from
-            audience reach estimates. Add coordinates from each screen&apos;s settings.
+            {t('op.screens.missingCoordsBody')}
           </div>
         </Card>
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
-        <KPI label="Total Screens"     value={allScreens.length} />
-        <KPI label="Online"            value={allScreens.filter(s => s.status === 'live').length} color={C.green} />
-        <KPI label="Impressions/mo"    value={`${(totalImpr / 1000).toFixed(0)}K`} />
-        <KPI label="Active Campaigns"  value={activeCampaigns} color={C.purple} />
+        <KPI label={t('op.screens.kpiTotal')} value={allScreens.length} />
+        <KPI label={t('op.screens.kpiOnline')} value={allScreens.filter(s => s.status === 'live').length} color={C.green} />
+        <KPI label={t('op.screens.imprPerMonth')} value={t('dash.thousands', { n: formatNumber(Math.round(totalImpr / 1000)) })} />
+        <KPI label={t('op.screens.kpiActive')} value={activeCampaigns} color={C.purple} />
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, alignItems: 'center', flexWrap: 'wrap' }}>
-        <Inp placeholder="Search screens by name, neighbourhood, venue…" value={search}
+        <Inp placeholder={t('op.screens.searchPlaceholder')} value={search}
           onChange={e => setSearch(e.target.value)} style={{ minWidth: 240, width: 320, maxWidth: '100%' }} />
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {cities.map(c => (
             <Chip key={c} selected={filter === c} onClick={() => setFilter(c)} style={{
               padding: '6px 14px', borderRadius: 20, fontWeight: 500, transition: 'all 0.15s',
-            }}>{c}</Chip>
+            }}>{c === 'All' ? t('op.screens.all') : c}</Chip>
           ))}
         </div>
       </div>
@@ -241,17 +245,17 @@ export function ScreensView({ dbScreens, setDbScreens, loading = false, onSelect
         <EmptyState size="lg" icon={<IconScreen size={32} />}>
           {isFiltered ? (
             <>
-              <div style={{ ...TX.titleLg, marginBottom: 6 }}>No screens match</div>
+              <div style={{ ...TX.titleLg, marginBottom: 6 }}>{t('op.screens.noMatch')}</div>
               <div style={{ ...TX.bodySub, marginBottom: 20 }}>
-                No registered screens match {q ? `“${search}”` : `city “${filter}”`}. Try a different search or clear the filter.
+                {q ? t('op.screens.noMatchSearch', { query: search }) : t('op.screens.noMatchCity', { city: filter })}
               </div>
-              <Btn variant="secondary" onClick={() => { setSearch(''); setFilter('All'); }}>Clear filters</Btn>
+              <Btn variant="secondary" onClick={() => { setSearch(''); setFilter('All'); }}>{t('op.screens.clearFilters')}</Btn>
             </>
           ) : (
             <>
-              <div style={{ ...TX.titleLg, marginBottom: 6 }}>No screens registered yet</div>
-              <div style={{ ...TX.bodySub, marginBottom: 20 }}>Register your first screen to start running campaigns on the network.</div>
-              <Btn onClick={onStartOnboard}>+ Register Screen</Btn>
+              <div style={{ ...TX.titleLg, marginBottom: 6 }}>{t('op.screens.emptyTitle')}</div>
+              <div style={{ ...TX.bodySub, marginBottom: 20 }}>{t('op.screens.emptyBody')}</div>
+              <Btn onClick={onStartOnboard}>{t('op.screens.register')}</Btn>
             </>
           )}
         </EmptyState>

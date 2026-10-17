@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { C, T, SH } from '../../design/tokens.js';
 import { Btn } from '../primitives/Btn.jsx';
+import { useT } from '../../i18n/useT.js';
 
 const THRESHOLD = 400;
 
 export function ScrollToTopButton() {
+  const { t } = useT();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -21,7 +23,7 @@ export function ScrollToTopButton() {
       variant="unstyled"
       type="button"
       className="scroll-top-btn"
-      aria-label="Scroll to top"
+      aria-label={t('shell.scrollToTop')}
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       style={{
         position: 'fixed',

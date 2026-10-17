@@ -3,6 +3,7 @@ import { C, F, T, SH } from '../../design/tokens.js';
 import { scopedBookings, applyBookingSearch } from '../../lib/bookingsQuery.js';
 import { navItems } from './navConfig.js';
 import { rankMatches } from '../../lib/commandSearch.js';
+import { useT } from '../../i18n/useT.js';
 
 // Cmd/Ctrl+K jump-to: pages, screens and campaigns from one box. Pages and
 // screens are matched locally; campaigns are looked up on the server
@@ -10,6 +11,7 @@ import { rankMatches } from '../../lib/commandSearch.js';
 // works however many there are. Mounted only while open, so each opening
 // starts from fresh state.
 export function CommandPalette({ onClose, activeMode, screens = [], advertiserId, onNavigate }) {
+  const { t, tOr } = useT();
   const [query, setQuery] = useState('');
   // Tagged with the query they answer, so stale rows never show for a
   // different (or too-short) query.
@@ -43,12 +45,12 @@ export function CommandPalette({ onClose, activeMode, screens = [], advertiserId
 
   const results = useMemo(() => {
     const pages = rankMatches(query, navItems(activeMode), i => i.label)
-      .map(i => ({ key: `p-${i.id}`, kind: 'Page', label: i.label, to: i.id }));
+      .map(i => ({ key: `p-${i.id}`, kind: t('shell.palette.page'), label: i.label, to: i.id }));
     const screenHits = isAdv ? [] : rankMatches(query, screens, s => `${s.name} ${s.city ?? ''}`).slice(0, 6)
-      .map(s => ({ key: `s-${s.id}`, kind: 'Screen', label: s.name, sub: s.city, to: `screen-detail/${s.id}` }));
+      .map(s => ({ key: `s-${s.id}`, kind: t('shell.palette.screen'), label: s.name, sub: s.city, to: `screen-detail/${s.id}` }));
     const rows = campaigns.q === query.trim() ? campaigns.rows : [];
     const campaignHits = rows.map(c => ({
-      key: `c-${c.id}`, kind: 'Campaign', label: c.campaign_name || c.advertiser_name || 'Campaign', sub: c.status,
+      key: `c-${c.id}`, kind: t('shell.palette.campaign'), label: c.campaign_name || c.advertiser_name || t('shell.palette.campaign'), sub: c.status ? tOr(`ui.status.${c.status}`, c.status) : c.status,
       to: `${isAdv ? 'adv-campaigns' : 'campaigns'}/${c.id}`,
     }));
     return [...pages.slice(0, query ? 6 : 12), ...screenHits, ...campaignHits];
@@ -65,7 +67,7 @@ export function CommandPalette({ onClose, activeMode, screens = [], advertiserId
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: C.overlay, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '12vh 16px 16px' }}>
-      <div role="dialog" aria-modal="true" aria-label="Search" onClick={e => e.stopPropagation()} style={{
+      <div role="dialog" aria-modal="true" aria-label={t('shell.search')} onClick={e => e.stopPropagation()} style={{
         width: '100%', maxWidth: 560, background: C.surface, borderRadius: 12, border: `1px solid ${C.border}`,
         boxShadow: SH.modal, overflow: 'hidden', fontFamily: F.sans,
       }}>
@@ -74,8 +76,8 @@ export function CommandPalette({ onClose, activeMode, screens = [], advertiserId
           value={query}
           onChange={e => { setQuery(e.target.value); setCursor(0); }}
           onKeyDown={onKeyDown}
-          placeholder={isAdv ? 'Search pages and campaigns…' : 'Search pages, screens and campaigns…'}
-          aria-label="Search"
+          placeholder={isAdv ? t('shell.palette.placeholderAdv') : t('shell.palette.placeholderOp')}
+          aria-label={t('shell.search')}
           role="combobox"
           aria-expanded="true"
           aria-controls="cmdk-results"
@@ -84,7 +86,7 @@ export function CommandPalette({ onClose, activeMode, screens = [], advertiserId
         />
         <ul id="cmdk-results" role="listbox" style={{ listStyle: 'none', margin: 0, padding: 6, maxHeight: 360, overflowY: 'auto' }}>
           {results.length === 0 && (
-            <li style={{ padding: '14px 12px', fontSize: T.md, color: C.textMuted }}>No matches.</li>
+            <li style={{ padding: '14px 12px', fontSize: T.md, color: C.textMuted }}>{t('shell.palette.noMatches')}</li>
           )}
           {results.map((r, i) => (
             <li
@@ -106,7 +108,7 @@ export function CommandPalette({ onClose, activeMode, screens = [], advertiserId
           ))}
         </ul>
         <div style={{ padding: '8px 14px', borderTop: `1px solid ${C.border}`, fontSize: T.sm, color: C.textMuted }}>
-          ↑↓ to move · Enter to open · Esc to close
+          {t('shell.palette.help')}
         </div>
       </div>
     </div>

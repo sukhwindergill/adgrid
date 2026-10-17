@@ -4,6 +4,7 @@ import { TX } from '../../design/text.js';
 import { Card } from '../primitives/Card.jsx';
 import { Btn } from '../primitives/Btn.jsx';
 import { checklistProgress } from '../../lib/gettingStarted.js';
+import { useT } from '../../i18n/useT.js';
 
 function readDismissed(key) {
   try { return localStorage.getItem(key) === '1'; } catch { return false; }
@@ -13,7 +14,9 @@ function readDismissed(key) {
 // the user hides it. `steps` come from lib/gettingStarted.js; `onGo(step)`
 // opens the step's destination. Dismissal is per browser, keyed by
 // `storageKey` (include the user id so shared machines don't leak it).
-export function GettingStartedCard({ title = 'Get started', steps, storageKey, onGo }) {
+export function GettingStartedCard({ title: titleProp, steps, storageKey, onGo }) {
+  const { t } = useT();
+  const title = titleProp ?? t('cards.gettingStarted.title');
   const [dismissed, setDismissed] = useState(() => readDismissed(storageKey));
   const { done, total, complete, next } = checklistProgress(steps);
 
@@ -29,9 +32,9 @@ export function GettingStartedCard({ title = 'Get started', steps, storageKey, o
       <section aria-label={title}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 10 }}>
           <h2 style={{ margin: 0, fontFamily: F.display, fontSize: T.lg, fontWeight: 600, color: C.text }}>{title}</h2>
-          <span style={TX.helperMuted}>{done} of {total} done</span>
+          <span style={TX.helperMuted}>{t('cards.gettingStarted.progress', { done, total })}</span>
           <Btn variant="unstyled" type="button" onClick={dismiss} style={{ ...TX.helperMuted, marginLeft: 'auto' }}>
-            Hide
+            {t('cards.gettingStarted.hide')}
           </Btn>
         </div>
 
@@ -61,11 +64,11 @@ export function GettingStartedCard({ title = 'Get started', steps, storageKey, o
                     color: step.done ? C.textMuted : C.text,
                     textDecoration: step.done ? 'line-through' : 'none',
                   }}>
-                    {step.title}<span style={{ position: 'absolute', left: -9999 }}>{step.done ? ' (done)' : ''}</span>
+                    {step.title}<span style={{ position: 'absolute', left: -9999 }}>{step.done ? t('cards.gettingStarted.done') : ''}</span>
                   </div>
                   {!step.done && <div style={{ fontSize: T.sm, color: C.textMuted, marginTop: 2 }}>{step.body}</div>}
                 </div>
-                {isNext && <Btn size="sm" onClick={() => onGo(step)}>Start</Btn>}
+                {isNext && <Btn size="sm" onClick={() => onGo(step)}>{t('cards.gettingStarted.start')}</Btn>}
               </li>
             );
           })}

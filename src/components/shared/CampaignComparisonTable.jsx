@@ -3,6 +3,7 @@ import { TX } from '../../design/text.js';
 import { Card } from '../primitives/Card.jsx';
 import { Badge } from '../primitives/Badge.jsx';
 import { Btn } from '../primitives/Btn.jsx';
+import { useT } from '../../i18n/useT.js';
 
 // Side-by-side comparison for campaigns a media buyer selects from the list
 // — the list itself only ever showed one campaign's numbers at a time, with
@@ -11,24 +12,26 @@ import { Btn } from '../primitives/Btn.jsx';
 // (no extra fetch); efficiency columns are null, not a fake $0, when there's
 // nothing to divide by yet — same convention as the dashboard KPIs.
 export function CampaignComparisonTable({ campaigns, onRemove }) {
+  const { t, formatCurrency, formatNumber, formatDate } = useT();
   if (campaigns.length === 0) return null;
+  const money = n => formatCurrency(n, { minimumFractionDigits: 0 });
 
   const rows = [
-    { label: 'Status',          render: c => <Badge status={c.badgeStatus ?? c.status} /> },
-    { label: 'Budget',          render: c => `$${c.budget.toLocaleString()}` },
-    { label: 'Spent',           render: c => `$${c.spent.toLocaleString()}` },
-    { label: 'Impressions',     render: c => c.impressions.toLocaleString() },
-    { label: 'Scans',           render: c => c.scans.toLocaleString() },
-    { label: 'CPM',             render: c => c.impressions > 0 ? `$${((c.spent / c.impressions) * 1000).toFixed(2)}` : '—' },
-    { label: 'Cost per Scan',   render: c => c.scans > 0 ? `$${(c.spent / c.scans).toFixed(2)}` : '—' },
-    { label: 'Screens',         render: c => c.screenCount },
-    { label: 'Flight',          render: c => <span style={{ whiteSpace: 'nowrap' }}>{c.start} → {c.end}</span> },
+    { label: t('widgets.compare.status'), render: c => <Badge status={c.badgeStatus ?? c.status} /> },
+    { label: t('widgets.compare.budget'), render: c => money(c.budget) },
+    { label: t('widgets.compare.spent'), render: c => money(c.spent) },
+    { label: t('widgets.compare.impressions'), render: c => formatNumber(c.impressions) },
+    { label: t('widgets.compare.scans'), render: c => formatNumber(c.scans) },
+    { label: t('widgets.compare.cpm'), render: c => c.impressions > 0 ? formatCurrency((c.spent / c.impressions) * 1000) : '—' },
+    { label: t('widgets.compare.costPerScan'), render: c => c.scans > 0 ? formatCurrency(c.spent / c.scans) : '—' },
+    { label: t('widgets.compare.screens'), render: c => c.screenCount },
+    { label: t('widgets.compare.flight'), render: c => <span style={{ whiteSpace: 'nowrap' }}>{formatDate(c.start)} → {formatDate(c.end)}</span> },
   ];
 
   return (
     <Card style={{ padding: 0, marginBottom: 20, overflow: 'hidden' }}>
       <div style={{ ...TX.title, padding: '14px 20px', borderBottom: `1px solid ${C.border}` }}>
-        Comparing {campaigns.length} campaign{campaigns.length !== 1 ? 's' : ''}
+        {t('widgets.compare.title', { count: campaigns.length })}
       </div>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: T.base, minWidth: 480 + campaigns.length * 140 }}>
@@ -40,7 +43,7 @@ export function CampaignComparisonTable({ campaigns, onRemove }) {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                     <span style={{ fontWeight: 600, color: C.text, fontFamily: F.sans }}>{c.advertiser}</span>
                     {onRemove && (
-                      <Btn variant="unstyled" onClick={() => onRemove(c.id)} aria-label={`Remove ${c.advertiser} from comparison`}
+                      <Btn variant="unstyled" onClick={() => onRemove(c.id)} aria-label={t('widgets.compare.remove', { name: c.advertiser })}
                         style={{ color: C.textMuted, fontSize: T.md, lineHeight: 1, padding: 2 }}>✕</Btn>
                     )}
                   </div>

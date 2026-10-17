@@ -9,24 +9,17 @@ import { SelInput } from '../../components/primitives/SelInput.jsx';
 import { PageHeader } from '../../components/primitives/PageHeader.jsx';
 import { useToast } from '../../components/primitives/Toast.jsx';
 import { useBreakpoint } from '../../lib/useBreakpoint.js';
+import { useT } from '../../i18n/useT.js';
 
-const METRIC_LABELS = {
-  cost_per_scan:          'Cost per scan',
-  pacing_ratio:           'Pacing (1.0 = on pace)',
-  offline_screen_minutes: 'Screen offline (minutes)',
-  billable_scans:         'Billable scans',
-  plays:                  'Plays',
-  delivery_pct:           'Delivery %',
-};
-
-const COMPARATOR_LABELS = { gt: 'is above', gte: 'is at or above', lt: 'is below', lte: 'is at or below' };
+const METRICS = ['cost_per_scan', 'pacing_ratio', 'offline_screen_minutes', 'billable_scans', 'plays', 'delivery_pct'];
+const COMPARATORS = ['gt', 'gte', 'lt', 'lte'];
 
 // Sensible starting rules, offered as one-click adds rather than silently
 // created — a rule that can pause a campaign should never appear by surprise.
 const SUGGESTED = [
-  { name: 'Screen dark during my flight', metric: 'offline_screen_minutes', comparator: 'gt', threshold: 120, action: 'notify' },
-  { name: 'Pacing behind schedule',       metric: 'pacing_ratio',           comparator: 'lt', threshold: 0.6, action: 'notify' },
-  { name: 'Cost per scan too high',       metric: 'cost_per_scan',          comparator: 'gt', threshold: 5,   action: 'notify' },
+  { key: 'dark', metric: 'offline_screen_minutes', comparator: 'gt', threshold: 120, action: 'notify' },
+  { key: 'pacing', metric: 'pacing_ratio',           comparator: 'lt', threshold: 0.6, action: 'notify' },
+  { key: 'cps', metric: 'cost_per_scan',          comparator: 'gt', threshold: 5,   action: 'notify' },
 ];
 
 const EMPTY_DRAFT = { name: '', metric: 'cost_per_scan', comparator: 'gt', threshold: '', action: 'notify' };
@@ -34,6 +27,9 @@ const EMPTY_DRAFT = { name: '', metric: 'cost_per_scan', comparator: 'gt', thres
 export function AutomationRulesView({ user, ownerSide = 'advertiser', setNav }) {
   const toast = useToast();
   const { isMobile } = useBreakpoint();
+  const { t, tx, tOr, formatDateTime, formatNumber } = useT();
+  const metricLabel = m => tOr(`rules.metric.${m}`, m);
+  const comparatorLabel = c => tOr(`rules.comparator.${c}`, c);
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -64,7 +60,7 @@ export function AutomationRulesView({ user, ownerSide = 'advertiser', setNav }) 
   const addRule = async (rule) => {
     const threshold = Number(rule.threshold);
     if (!rule.name.trim() || rule.threshold === '' || !Number.isFinite(threshold)) {
-      toast.error('Give the rule a name and a numeric threshold.');
+      toast.error(t('rules.needNameThreshold'));
       return;
     }
     const { error } = await supabase.from('automation_rules').insert({
@@ -76,8 +72,8 @@ export function AutomationRulesView({ user, ownerSide = 'advertiser', setNav }) 
       threshold,
       action: rule.action,
     });
-    if (error) { toast.error(`Could not save rule: ${error.message}`); return; }
-    toast.success('Rule added');
+    if (error) { toast.error(t('rules.saveFailed', { error: error.message })); return; }
+    toast.success(t('rules.added'));
     setDraft(EMPTY_DRAFT);
     load();
   };
@@ -91,13 +87,13 @@ export function AutomationRulesView({ user, ownerSide = 'advertiser', setNav }) 
   const remove = async (rule) => {
     const { error } = await supabase.from('automation_rules').delete().eq('id', rule.id);
     if (error) { toast.error(error.message); return; }
-    toast.success('Rule removed');
+    toast.success(t('rules.removed'));
     load();
   };
 
   return (
     <div>
-      <PageHeader title="Alerts & Rules" subtitle="Get told when something is wrong — or have AdGrid act on it for you" />
+      <PageHeader title={t('rules.title')} subtitle={t('rules.subtitle')} />
 
       {ownerSide === 'operator' && setNav && (
         <div style={{
@@ -106,34 +102,33 @@ export function AutomationRulesView({ user, ownerSide = 'advertiser', setNav }) 
           borderRadius: 8, fontFamily: F.sans,
         }}>
           <div style={{ fontSize: T.sm, color: C.textSub, lineHeight: 1.5 }}>
-            These are budget, pacing, and delivery alerts. Auto-approving <strong>campaigns</strong> for
-            review is a separate setting.
+            {tx('rules.opNote', { b: chunk => <strong>{chunk}</strong> })}
           </div>
           <Btn variant="outline" size="sm" onClick={() => setNav('op-settings')} style={{ padding: '6px 14px', borderRadius: 6, fontWeight: 600 }}>
-            Open Settings → Review →
+            {t('rules.openSettings')}
           </Btn>
         </div>
       )}
 
       {!loading && loadError && (
         <Card style={{ padding: 20, marginBottom: 20 }}>
-          <div style={{ fontSize: T.base, color: C.redText, fontFamily: F.sans }}>Couldn't load your rules — check your connection and try again.</div>
+          <div style={{ fontSize: T.base, color: C.redText, fontFamily: F.sans }}>{t('rules.loadError')}</div>
         </Card>
       )}
 
       {!loading && !loadError && rules.length === 0 && (
         <Card style={{ padding: 20, marginBottom: 20 }}>
-          <div style={{ ...TX.title, marginBottom: 4 }}>Suggested rules</div>
+          <div style={{ ...TX.title, marginBottom: 4 }}>{t('rules.suggestedTitle')}</div>
           <div style={{ ...TX.helperMuted, marginBottom: 14 }}>
-            Add any of these in one click. You can change or remove them later.
+            {t('rules.suggestedSub')}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {SUGGESTED.map(s => (
-              <div key={s.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            {SUGGESTED.map(s => ({ ...s, name: t(`rules.suggested.${s.key}`) })).map(s => (
+              <div key={s.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                 <span style={TX.bodySub}>
-                  {s.name} — notify when {METRIC_LABELS[s.metric]} {COMPARATOR_LABELS[s.comparator]} {s.threshold}
+                  {t('rules.suggestedLine', { name: s.name, metric: metricLabel(s.metric), comparator: comparatorLabel(s.comparator), threshold: formatNumber(s.threshold) })}
                 </span>
-                <Btn size="sm" variant="secondary" onClick={() => addRule(s)}>Add</Btn>
+                <Btn size="sm" variant="secondary" onClick={() => addRule(s)}>{t('rules.add')}</Btn>
               </div>
             ))}
           </div>
@@ -141,25 +136,25 @@ export function AutomationRulesView({ user, ownerSide = 'advertiser', setNav }) 
       )}
 
       <Card style={{ padding: 20, marginBottom: 20 }}>
-        <div style={{ ...TX.title, marginBottom: 14 }}>New rule</div>
+        <div style={{ ...TX.title, marginBottom: 14 }}>{t('rules.newRule')}</div>
         <div style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr 1fr 0.8fr 1fr auto',
           gap: 10, alignItems: 'end',
         }}>
-          <Inp label="Name" value={draft.name} onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} />
-          <SelInput label="When" value={draft.metric} onChange={e => setDraft(d => ({ ...d, metric: e.target.value }))}>
-            {Object.entries(METRIC_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          <Inp label={t('rules.name')} value={draft.name} onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} />
+          <SelInput label={t('rules.when')} value={draft.metric} onChange={e => setDraft(d => ({ ...d, metric: e.target.value }))}>
+            {METRICS.map(v => <option key={v} value={v}>{metricLabel(v)}</option>)}
           </SelInput>
-          <SelInput label="Condition" value={draft.comparator} onChange={e => setDraft(d => ({ ...d, comparator: e.target.value }))}>
-            {Object.entries(COMPARATOR_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          <SelInput label={t('rules.condition')} value={draft.comparator} onChange={e => setDraft(d => ({ ...d, comparator: e.target.value }))}>
+            {COMPARATORS.map(v => <option key={v} value={v}>{comparatorLabel(v)}</option>)}
           </SelInput>
-          <Inp label="Value" type="number" value={draft.threshold} onChange={e => setDraft(d => ({ ...d, threshold: e.target.value }))} />
-          <SelInput label="Then" value={draft.action} onChange={e => setDraft(d => ({ ...d, action: e.target.value }))}>
-            <option value="notify">Notify me</option>
-            <option value="pause_campaign">Pause the campaign</option>
+          <Inp label={t('rules.value')} type="number" value={draft.threshold} onChange={e => setDraft(d => ({ ...d, threshold: e.target.value }))} />
+          <SelInput label={t('rules.then')} value={draft.action} onChange={e => setDraft(d => ({ ...d, action: e.target.value }))}>
+            <option value="notify">{t('rules.notify')}</option>
+            <option value="pause_campaign">{t('rules.pause')}</option>
           </SelInput>
-          <Btn onClick={() => addRule(draft)}>Add rule</Btn>
+          <Btn onClick={() => addRule(draft)}>{t('rules.addRule')}</Btn>
         </div>
       </Card>
 
@@ -169,14 +164,14 @@ export function AutomationRulesView({ user, ownerSide = 'advertiser', setNav }) 
             <div>
               <div style={{ fontSize: T.base, fontWeight: 600, color: r.enabled ? C.text : C.textMuted, fontFamily: F.sans }}>{r.name}</div>
               <div style={{ ...TX.caption, marginTop: 2 }}>
-                {METRIC_LABELS[r.metric] ?? r.metric} {COMPARATOR_LABELS[r.comparator] ?? r.comparator} {r.threshold}
-                {' · '}{r.action === 'pause_campaign' ? 'pauses the campaign' : 'notifies you'}
-                {r.last_fired_at && ` · last fired ${new Date(r.last_fired_at).toLocaleString()}`}
+                {metricLabel(r.metric)} {comparatorLabel(r.comparator)} {formatNumber(r.threshold)}
+                {' · '}{r.action === 'pause_campaign' ? t('rules.pauses') : t('rules.notifies')}
+                {r.last_fired_at && t('rules.lastFired', { date: formatDateTime(r.last_fired_at) })}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <Btn size="sm" variant="secondary" onClick={() => toggle(r)}>{r.enabled ? 'Disable' : 'Enable'}</Btn>
-              <Btn size="sm" variant="ghost" onClick={() => remove(r)}>Remove</Btn>
+              <Btn size="sm" variant="secondary" onClick={() => toggle(r)}>{r.enabled ? t('rules.disable') : t('rules.enable')}</Btn>
+              <Btn size="sm" variant="ghost" onClick={() => remove(r)}>{t('common.remove')}</Btn>
             </div>
           </Card>
         ))}

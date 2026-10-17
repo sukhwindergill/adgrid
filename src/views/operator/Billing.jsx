@@ -22,6 +22,8 @@ import { Tabs } from '../../components/primitives/Tabs.jsx';
 import { SkeletonRow, SkeletonTable } from '../../components/primitives/Skeleton.jsx';
 import { useOperatorBilling } from '../../hooks/useOperatorBilling.js';
 import { IconDollar, IconClock, IconWarning, IconCard, IconBank } from '../../components/icons.jsx';
+import { useT } from '../../i18n/useT.js';
+import { t as tr } from '../../i18n/core.js';
 
 // The Charges tab used to reimplement a charge list from `bookings` (gross
 // budget only, platform fee computed client-side). get-stripe-charges reads
@@ -118,6 +120,8 @@ function useTaxSummary(year, enabled) {
 export function Billing() {
   const toast = useToast();
   const { profile } = useAuth();
+  const { t, tx, formatCurrency, formatMoney, formatDate } = useT();
+  const money = n => formatCurrency(n, { minimumFractionDigits: 0 });
   const [tab, setTab]         = useState('overview');
   const [payingOut, setPaying] = useState(false);
   const { data, loading, error, refresh } = useOperatorBilling();
@@ -166,8 +170,8 @@ export function Billing() {
     });
     const json = await res.json();
     setPaying(false);
-    if (!res.ok) { toast.error(`Payout failed: ${json.error}`); return; }
-    toast.success(`Payout initiated — arrives ${json.arrival_date}`);
+    if (!res.ok) { toast.error(t('op.billing.payoutFailed', { error: json.error })); return; }
+    toast.success(t('op.billing.payoutStarted', { date: formatDate(json.arrival_date) }));
     refresh();
   };
 
@@ -179,12 +183,12 @@ export function Billing() {
   const retryTransfer = async (transfer) => {
     const booking = transfer.bookings;
     if (!booking?.start_date || !booking?.end_date) {
-      toast.error("Can't retry — this booking's dates are missing.");
+      toast.error(t('op.billing.noDates'));
       return;
     }
     setRetryingId(transfer.id);
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { toast.error('Session expired. Please log in again.'); setRetryingId(null); return; }
+    if (!session) { toast.error(t('op.billing.sessionExpired')); setRetryingId(null); return; }
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/trigger-payout`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
@@ -192,9 +196,9 @@ export function Billing() {
     });
     const json = await res.json().catch(() => ({}));
     setRetryingId(null);
-    if (!res.ok && !json.ok) { toast.error(json.error ?? 'Retry failed — check your Connect status in Settings.'); return; }
-    if (json.failures?.length > 0) { toast.error(json.failures[0].error ?? 'Retry failed again.'); return; }
-    toast.success('Payout retried successfully.');
+    if (!res.ok && !json.ok) { toast.error(json.error ?? t('op.billing.retryFailed')); return; }
+    if (json.failures?.length > 0) { toast.error(json.failures[0].error ?? t('op.billing.retryFailedAgain')); return; }
+    toast.success(t('op.billing.retried'));
     refreshFailedTransfers();
     refresh();
   };
@@ -216,13 +220,13 @@ export function Billing() {
 
   return (
     <div>
-      <PageHeader title="Billing & Payouts" subtitle="Stripe charges, owner revenue share, and payout management"
-        actions={<a href="https://dashboard.stripe.com" target="_blank" rel="noreferrer"><Btn variant="secondary" size="sm">Stripe Dashboard ↗</Btn></a>} />
+      <PageHeader title={t('op.billing.title')} subtitle={t('op.billing.subtitle')}
+        actions={<a href="https://dashboard.stripe.com" target="_blank" rel="noreferrer"><Btn variant="secondary" size="sm">{t('op.billing.stripeDashboard')}</Btn></a>} />
 
       {failedTransfersError && (
         <div style={{ display: 'flex', gap: 8, padding: '12px 16px', marginBottom: 20, background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8, fontSize: T.base, color: C.redText, fontFamily: F.sans }}>
           <span style={{ flexShrink: 0 }}><IconWarning size={16} /></span>
-          <span>Couldn't check for failed payouts — check your connection and try again.</span>
+          <span>{t('op.billing.failedCheck')}</span>
         </div>
       )}
 
@@ -231,19 +235,16 @@ export function Billing() {
           <div style={{ display: 'flex', gap: 8, lineHeight: 1.6, marginBottom: 10 }}>
             <span style={{ flexShrink: 0 }}><IconWarning size={16} /></span>
             <span>
-            <strong>{failedTransfers.length} payout transfer{failedTransfers.length !== 1 ? 's' : ''} failed</strong> —
-            {' '}totalling ${failedTransfers.reduce((a, t) => a + Number(t.amount), 0).toLocaleString()}.
-            This usually means Stripe needs more information from your connected account.
-            Fix your Connect status in Settings, then retry below.
+            {tx('op.billing.failedBanner', { b: chunk => <strong>{chunk}</strong>, count: failedTransfers.length, amount: money(failedTransfers.reduce((a, tr) => a + Number(tr.amount), 0)) })}
             </span>
           </div>
           {failedTransfers.map(t => (
             <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '8px 0 8px 24px', borderTop: `1px solid ${C.redBorder}` }}>
               <span style={TX.body}>
-                {t.bookings?.advertiser_name ?? t.booking_id} — ${Number(t.amount).toLocaleString()} {t.currency?.toUpperCase()}
+                {t.bookings?.advertiser_name ?? t.booking_id} — {formatMoney(Number(t.amount), t.currency)}
               </span>
               <Btn variant="danger" size="sm" disabled={retryingId === t.id} onClick={() => retryTransfer(t)}>
-                {retryingId === t.id ? 'Retrying…' : 'Retry'}
+                {retryingId === t.id ? tr('op.billing.retrying') : tr('op.billing.retry')}
               </Btn>
             </div>
           ))}
@@ -251,25 +252,25 @@ export function Billing() {
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
-        <KPI label="Total Ad Spend"   value={`$${totalCharged.toLocaleString()}`}  sub="charged campaigns" trend={chargedTrend} trendLabel="vs prior 30 days" icon={<IconDollar size={16} />} />
-        <KPI label="Platform Net"     value={`$${platformNet.toLocaleString()}`}   sub={`${100 - ownerPct}% platform share`}  color={C.blue} icon={<IconDollar size={16} />} />
-        <KPI label="Available Balance" value={balance ? `$${availableOut.toLocaleString()}` : '—'} sub={connectStatus === 'active' ? 'ready to pay out' : 'connect Stripe'} color={C.green} icon="✓" />
-        <KPI label="Pending Balance"  value={balance ? `$${pendingIn.toLocaleString()}` : '—'} sub="in transit" color={C.amber} icon={<IconClock size={16} />} />
+        <KPI label={t('op.billing.kpiSpend')} value={money(totalCharged)} sub={t('op.billing.kpiSpendSub')} trend={chargedTrend} trendLabel={t('dash.vsPrior')} icon={<IconDollar size={16} />} />
+        <KPI label={t('op.billing.kpiNet')} value={money(platformNet)} sub={t('op.billing.platformShare', { pct: 100 - ownerPct })}  color={C.blue} icon={<IconDollar size={16} />} />
+        <KPI label={t('op.billing.kpiAvailable')} value={balance ? money(availableOut) : '—'} sub={connectStatus === 'active' ? t('op.billing.readyToPay') : t('op.billing.connectStripe')} color={C.green} icon="✓" />
+        <KPI label={t('op.billing.kpiPending')} value={balance ? money(pendingIn) : '—'} sub={t('op.billing.inTransit')} color={C.amber} icon={<IconClock size={16} />} />
       </div>
 
-      <Tabs tabs={[{ id: 'overview', label: 'Overview' }, { id: 'charges', label: 'Charges' }, { id: 'payouts', label: 'Payouts' }, { id: 'tax', label: 'Tax Summary' }]} active={tab} onChange={setTab} />
+      <Tabs tabs={[{ id: 'overview', label: t('op.billing.tabOverview') }, { id: 'charges', label: t('op.billing.tabCharges') }, { id: 'payouts', label: t('op.billing.tabPayouts') }, { id: 'tax', label: t('op.billing.tabTax') }]} active={tab} onChange={setTab} />
 
       {tab === 'overview' && (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
           <Card>
-            <div style={{ ...TX.title, marginBottom: 14 }}>Revenue Split</div>
+            <div style={{ ...TX.title, marginBottom: 14 }}>{t('op.billing.split')}</div>
             <div style={{ height: 8, borderRadius: 4, overflow: 'hidden', display: 'flex', marginBottom: 14 }}>
               <div style={{ width: `${ownerPct}%`, background: C.green }} />
               <div style={{ flex: 1, background: C.blue }} />
             </div>
             {[
-              [`Screen Owners (${ownerPct}%)`, `$${ownerShare.toLocaleString()}`, C.green],
-              [`Platform (${100 - ownerPct}%)`, `$${platformNet.toLocaleString()}`, C.blue],
+              [t('op.billing.owners', { pct: ownerPct }), money(ownerShare), C.green],
+              [t('op.billing.platform', { pct: 100 - ownerPct }), money(platformNet), C.blue],
             ].map(([l, v, c]) => (
               <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: `1px solid ${C.border}`, fontFamily: F.sans }}>
                 <span style={{ fontSize: T.base, color: C.textMid }}>{l}</span>
@@ -278,28 +279,27 @@ export function Billing() {
             ))}
           </Card>
           <Card>
-            <div style={{ ...TX.title, marginBottom: 14 }}>Stripe Connect Balance</div>
+            <div style={{ ...TX.title, marginBottom: 14 }}>{t('op.billing.connectBalance')}</div>
             {connectStatus !== 'active' ? (
               <div style={{ ...TX.bodySub, lineHeight: 1.7 }}>
-                Connect your bank account via Stripe to receive payouts.
-                Go to <strong>Screens</strong> → <strong>Connect Stripe</strong> to get started.
+                {tx('op.billing.connectFirst', { b: chunk => <strong>{chunk}</strong> })}
               </div>
             ) : (
               <>
                 {upcomingPayout ? (
                   <div style={{ ...TX.body, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', marginBottom: 14, background: C.amberSoft, borderRadius: 8 }}>
                     <span style={{ flexShrink: 0, color: C.amberText }}><IconClock size={14} /></span>
-                    <span>Next payout — <strong>${Number(upcomingPayout.amount).toLocaleString()}</strong> arriving <strong>{upcomingPayout.arrival_date}</strong></span>
+                    <span>{tx('op.billing.nextPayout', { b: chunk => <strong>{chunk}</strong>, amount: money(Number(upcomingPayout.amount)), date: formatDate(upcomingPayout.arrival_date) })}</span>
                   </div>
                 ) : (
                   <div style={{ ...TX.bodySub, padding: '10px 12px', marginBottom: 14, background: C.surfaceAlt, borderRadius: 8, lineHeight: 1.5 }}>
                     {lastPayout
-                      ? <>No payout scheduled — payouts are on-demand. Last one landed <strong>{daysSinceLast}d ago</strong> (${Number(lastPayout.amount).toLocaleString()} on {lastPayout.arrival_date}).</>
-                      : <>No payout scheduled — payouts are on-demand. Click below whenever you want available funds sent to your bank.</>}
+                      ? <>{tx('op.billing.noScheduledLast', { b: chunk => <strong>{chunk}</strong>, days: daysSinceLast, amount: money(Number(lastPayout.amount)), date: formatDate(lastPayout.arrival_date) })}</>
+                      : <>{t('op.billing.noScheduled')}</>}
                   </div>
                 )}
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 16 }}>
-                  {[['Available', `$${availableOut.toLocaleString()}`, C.green], ['Pending', `$${pendingIn.toLocaleString()}`, C.amber]].map(([l, v, c]) => (
+                  {[[t('op.billing.available'), money(availableOut), C.green], [t('op.billing.pending'), money(pendingIn), C.amber]].map(([l, v, c]) => (
                     <div key={l} style={{ padding: 14, background: C.surfaceAlt, borderRadius: 8 }}>
                       <div style={{ ...TX.caption, marginBottom: 4 }}>{l}</div>
                       <div style={{ fontSize: T.xxl, fontWeight: 700, color: c, fontFamily: F.mono }}>{v}</div>
@@ -307,7 +307,7 @@ export function Billing() {
                   ))}
                 </div>
                 <Btn variant="success" size="sm" onClick={doPayoutAll} disabled={payingOut || availableOut <= 0}>
-                  {payingOut ? 'Initiating…' : `Pay Out $${availableOut.toLocaleString()} to Bank`}
+                  {payingOut ? t('op.billing.initiating') : t('op.billing.payOut', { amount: money(availableOut) })}
                 </Btn>
               </>
             )}
@@ -319,16 +319,16 @@ export function Billing() {
         stripeChargesLoading ? (
           <SkeletonTable rows={5} cols={5} />
         ) : stripeCharges.length === 0 ? (
-          <EmptyState icon={<IconCard size={28} />} title="No charges yet" description="Charges appear here when campaigns are approved and paid" />
+          <EmptyState icon={<IconCard size={28} />} title={t('op.billing.noCharges')} description={t('op.billing.noChargesSub')} />
         ) : (
           <Table
             columns={[
-              { key: 'id',          label: 'Payment ID',   render: v => <span style={TX.mono}>{String(v).slice(0, 20)}…</span> },
-              { key: 'description', label: 'Description',  render: v => v || '—' },
-              { key: 'created',     label: 'Date',          render: v => <span style={{ fontFamily: F.mono, fontSize: T.xs }}>{new Date(v).toLocaleDateString()}</span> },
-              { key: 'amount',      label: 'Gross',         render: v => <span style={{ fontWeight: 600, fontFamily: F.mono }}>${Number(v).toLocaleString()}</span> },
-              { key: 'fee',         label: 'Platform Fee',  render: v => <span style={{ color: C.blueText, fontFamily: F.mono }}>${Number(v).toLocaleString()}</span> },
-              { key: 'status',      label: 'Status',        render: v => <Badge status={v} /> },
+              { key: 'id',          label: t('op.billing.paymentId'),   render: v => <span style={TX.mono}>{String(v).slice(0, 20)}…</span> },
+              { key: 'description', label: t('op.billing.description'),  render: v => v || '—' },
+              { key: 'created',     label: t('op.billing.date'), render: v => <span style={{ fontFamily: F.mono, fontSize: T.xs }}>{formatDate(v)}</span> },
+              { key: 'amount',      label: t('op.billing.gross'), render: v => <span style={{ fontWeight: 600, fontFamily: F.mono }}>{money(Number(v))}</span> },
+              { key: 'fee',         label: t('op.billing.platformFee'), render: v => <span style={{ color: C.blueText, fontFamily: F.mono }}>{money(Number(v))}</span> },
+              { key: 'status',      label: t('op.billing.status'), render: v => <Badge status={v} /> },
             ]}
             rows={stripeCharges} />
         )
@@ -336,16 +336,16 @@ export function Billing() {
 
       {tab === 'payouts' && (
         connectStatus !== 'active' ? (
-          <EmptyState icon={<IconBank size={28} />} title="Bank account not connected" description="Connect your Stripe account to enable payouts" />
+          <EmptyState icon={<IconBank size={28} />} title={t('op.billing.notConnected')} description={t('op.billing.notConnectedSub')} />
         ) : payouts.length === 0 ? (
-          <EmptyState icon={<IconClock size={28} />} title="No payouts yet" description="Your first payout will appear here once initiated" />
+          <EmptyState icon={<IconClock size={28} />} title={t('op.billing.noPayouts')} description={t('op.billing.noPayoutsSub')} />
         ) : (
           <Table
             columns={[
-              { key: 'id',           label: 'Payout ID',    render: v => <span style={TX.mono}>{v}</span> },
-              { key: 'amount',       label: 'Amount',       render: v => <span style={{ fontWeight: 600, color: C.greenText, fontFamily: F.mono }}>${Number(v).toLocaleString()}</span> },
-              { key: 'status',       label: 'Status',       render: v => <Badge status={v} /> },
-              { key: 'arrival_date', label: 'Arrival Date', render: v => <span style={{ fontFamily: F.mono, fontSize: T.xs }}>{v}</span> },
+              { key: 'id',           label: t('op.billing.payoutId'),    render: v => <span style={TX.mono}>{v}</span> },
+              { key: 'amount',       label: t('op.billing.amount'), render: v => <span style={{ fontWeight: 600, color: C.greenText, fontFamily: F.mono }}>{money(Number(v))}</span> },
+              { key: 'status',       label: t('op.billing.status'), render: v => <Badge status={v} /> },
+              { key: 'arrival_date', label: t('op.billing.arrival'), render: v => <span style={{ fontFamily: F.mono, fontSize: T.xs }}>{formatDate(v)}</span> },
             ]}
             rows={payouts} />
         )
@@ -367,30 +367,30 @@ export function Billing() {
               variant="secondary" size="sm"
               disabled={taxLoading || taxSummary.total === 0}
               onClick={() => downloadCsv(`adgrid-tax-summary-${taxYear}.csv`, TAX_SUMMARY_CSV_COLUMNS, taxSummaryCsvRows(taxSummary))}
-            >↓ Download CSV</Btn>
+            >{t('op.billing.downloadCsv')}</Btn>
           </div>
 
           {taxLoading ? (
             <SkeletonTable rows={5} cols={2} />
           ) : taxError ? (
             <EmptyState role="alert" style={{ color: C.redText, fontFamily: F.sans, fontSize: T.base }}>
-              Couldn't load {taxYear}'s payouts — check your connection and try again.
+              {t('op.billing.taxError', { year: String(taxYear) })}
             </EmptyState>
           ) : taxSummary.total === 0 ? (
-            <EmptyState icon={<IconBank size={28} />} title={`No paid payouts in ${taxYear}`}
-              description="Only payouts that have actually landed in your bank count toward this total." />
+            <EmptyState icon={<IconBank size={28} />} title={t('op.billing.noPaidPayouts', { year: String(taxYear) })}
+              description={t('op.billing.noPaidPayoutsSub')} />
           ) : (
             <>
               <div style={{ marginBottom: 16, padding: 16, background: C.surfaceAlt, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={TX.bodySub}>Total received in {taxYear}</span>
-                <span style={{ fontSize: T.xxl, fontWeight: 700, color: C.text, fontFamily: F.mono }}>${taxSummary.total.toLocaleString()} {taxSummary.currency.toUpperCase()}</span>
+                <span style={TX.bodySub}>{t('op.billing.totalReceived', { year: String(taxYear) })}</span>
+                <span style={{ fontSize: T.xxl, fontWeight: 700, color: C.text, fontFamily: F.mono }}>{money(taxSummary.total)} {taxSummary.currency.toUpperCase()}</span>
               </div>
               <Table
                 columns={[
-                  { key: 'month', label: 'Month' },
-                  { key: 'amount', label: 'Amount', render: v => <span style={{ fontFamily: F.mono, fontWeight: v > 0 ? 600 : 400, color: v > 0 ? C.text : C.textMuted }}>${Number(v).toLocaleString()}</span> },
+                  { key: 'month', label: t('op.billing.month') },
+                  { key: 'amount', label: 'Amount', render: v => <span style={{ fontFamily: F.mono, fontWeight: v > 0 ? 600 : 400, color: v > 0 ? C.text : C.textMuted }}>{money(Number(v))}</span> },
                 ]}
-                rows={taxSummary.byMonth} />
+                rows={taxSummary.byMonth.map((m, i) => ({ ...m, month: formatDate(new Date(2000, i, 1), { month: 'long' }) }))} />
             </>
           )}
         </div>

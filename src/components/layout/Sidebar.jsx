@@ -9,6 +9,7 @@ import { ICONS } from './navIcons.jsx';
 import { Btn } from '../primitives/Btn.jsx';
 import { Hover } from '../primitives/Hover.jsx';
 import { CountBadge } from '../primitives/CountBadge.jsx';
+import { useT } from '../../i18n/useT.js';
 
 const MODE_ACTIVE_BG = `linear-gradient(135deg, ${alpha(C.purple, 0.25)}, ${alpha(C.purpleVivid, 0.15)})`;
 const NAV_ACTIVE_BG = `linear-gradient(135deg, ${alpha(C.purple, 0.12)}, ${alpha(C.purpleVivid, 0.08)})`;
@@ -19,9 +20,10 @@ const legalLink = { color: C.textMuted, textDecoration: 'none' };
 // ─── ModeSwitcher ─────────────────────────────────────────────────────────────
 
 export function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
+  const { t } = useT();
   const modes = [
-    { id: 'operator',   label: 'Operator' },
-    { id: 'advertiser', label: 'Advertiser' },
+    { id: 'operator',   label: t('shell.operator') },
+    { id: 'advertiser', label: t('shell.advertiser') },
   ];
 
   if (collapsed) {
@@ -32,7 +34,7 @@ export function ModeSwitcher({ activeMode, onSwitch, collapsed }) {
             variant="unstyled"
             key={m.id}
             title={m.label}
-            aria-label={`Switch to ${m.label} mode`}
+            aria-label={t('shell.switchMode', { mode: m.label })}
             aria-pressed={activeMode === m.id}
             onClick={() => onSwitch(m.id)}
             style={{
@@ -154,6 +156,7 @@ function NavItem({ item, active, collapsed, pendingCount, onClick }) {
 
 export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pendingCount = 0 }) {
   const navigate = useNavigate();
+  const { t } = useT();
   const setActive = id => navigate('/app/' + id);
   const { isMobile, width: viewportWidth } = useBreakpoint();
   const isPhone = viewportWidth < 768;
@@ -252,7 +255,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
         <ModeSwitcher activeMode={activeMode} onSwitch={onModeSwitch} collapsed={collapsed} />
 
         {groups.map((g, gi) => (
-          <div key={g.group ?? 'top'} role="group" aria-label={g.group ?? 'Home'}>
+          <div key={g.group ?? 'top'} role="group" aria-label={g.group ?? t('nav.home')}>
             {gi > 0 && (collapsed
               ? <div style={{ height: 1, background: C.border, margin: '10px 4px' }} />
               : <div style={{
@@ -312,7 +315,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: F.sans, fontSize: T.sm, fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {user?.name || 'User'}
+                {user?.name || t('shell.user')}
               </div>
               <div style={{ ...TX.caption, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user?.email}
@@ -320,7 +323,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
             </div>
             <Btn
               variant="unstyled"
-              title="Sign out"
+              title={t('shell.signOut')}
               onClick={onSignOut}
               hoverStyle={SIGN_OUT_HOVER}
               style={{
@@ -334,14 +337,14 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
                 flexShrink: 0,
               }}
             >
-              Sign out
+              {t('shell.signOut')}
             </Btn>
           </div>
         ) : (
           <Btn
             variant="unstyled"
-            title="Sign out"
-            aria-label="Sign out"
+            title={t('shell.signOut')}
+            aria-label={t('shell.signOut')}
             onClick={onSignOut}
             hoverStyle={SIGN_OUT_HOVER}
             style={{
@@ -365,16 +368,16 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
             display: 'flex', gap: 10, padding: '2px 12px 4px',
             fontSize: T.xs, fontFamily: F.sans, color: C.textMuted,
           }}>
-            <Hover as="a" href="/terms" target="_blank" rel="noopener noreferrer" style={legalLink} hoverStyle={{ color: C.purple }}>Terms</Hover>
-            <Hover as="a" href="/privacy" target="_blank" rel="noopener noreferrer" style={legalLink} hoverStyle={{ color: C.purple }}>Privacy</Hover>
+            <Hover as="a" href="/terms" target="_blank" rel="noopener noreferrer" style={legalLink} hoverStyle={{ color: C.purple }}>{t('shell.terms')}</Hover>
+            <Hover as="a" href="/privacy" target="_blank" rel="noopener noreferrer" style={legalLink} hoverStyle={{ color: C.purple }}>{t('shell.privacy')}</Hover>
           </div>
         )}
 
         {/* Collapse toggle — hidden on mobile, where the sidebar is always icon-rail */}
         {!isMobile && <Btn
           variant="unstyled"
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={collapsed ? t('shell.expandSidebar') : t('shell.collapseSidebar')}
+          aria-label={collapsed ? t('shell.expandSidebar') : t('shell.collapseSidebar')}
           onClick={toggle}
           hoverStyle={{ background: NAV_HOVER_BG }}
           style={{
@@ -390,7 +393,7 @@ export function Sidebar({ active, activeMode, onModeSwitch, user, onSignOut, pen
           }}
         >
           {!collapsed && (
-            <span style={TX.caption}>Collapse</span>
+            <span style={TX.caption}>{t('shell.collapse')}</span>
           )}
           {collapsed ? ICONS.chevronRight : ICONS.chevronLeft}
         </Btn>}

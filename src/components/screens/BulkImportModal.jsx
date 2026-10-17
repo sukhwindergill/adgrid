@@ -8,6 +8,7 @@ import { downloadCsv } from '../../lib/csv.js';
 import { geocodeAddress } from '../../lib/geocodeAddress.js';
 import { parseScreenCsv, validateImportRow, buildScreenInsertPayload, IMPORT_CSV_COLUMNS } from '../../lib/screenCsvImport.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useT } from '../../i18n/useT.js';
 
 function downloadTemplate() {
   downloadCsv('screens-import-template.csv', IMPORT_CSV_COLUMNS.map(c => ({ key: c, label: c })), []);
@@ -17,6 +18,7 @@ function downloadTemplate() {
 // screen-import-design.md). Parse -> validate -> (geocode rows missing
 // lat/lng) -> confirm -> one batched insert.
 export function BulkImportModal({ onClose, onImported }) {
+  const { t } = useT();
   const { user } = useAuth();
   const [phase, setPhase] = useState('pick'); // pick | checking | ready | importing | done
   const [fileError, setFileError] = useState(null);
@@ -52,7 +54,7 @@ export function BulkImportModal({ onClose, onImported }) {
       const query = `${r.row.location}, ${r.row.city}, ${r.row.state}`;
       const coords = await geocodeAddress(query, token).catch(() => null);
       if (!coords) {
-        return { row: r.row, errors: [`couldn't locate this address ("${query}") -- add lat/lng manually or fix the address`], geocoding: false };
+        return { row: r.row, errors: [t('scr.bulk.geocodeMiss', { query })], geocoding: false };
       }
       const nextRow = { ...r.row, lat: String(coords.lat), lng: String(coords.lng) };
       const { errors } = validateImportRow(nextRow, r.row._rowNum - 2);
@@ -81,43 +83,43 @@ export function BulkImportModal({ onClose, onImported }) {
   }
 
   return (
-    <Modal title="Bulk Import Screens" onClose={onClose} maxWidth={640}>
+    <Modal title={t('scr.bulk.title')} onClose={onClose} maxWidth={640}>
 
         {phase === 'pick' && (
           <div>
             <div style={{ ...TX.bodySub, marginBottom: 16 }}>
-              Upload a CSV of your screens to register them all at once. Each row needs the same info as registering one screen manually.
+              {t('scr.bulk.intro')}
             </div>
-            <Btn variant="ghost" size="sm" onClick={downloadTemplate} style={{ marginBottom: 16 }}>↓ Download template</Btn>
+            <Btn variant="ghost" size="sm" onClick={downloadTemplate} style={{ marginBottom: 16 }}>{t('scr.bulk.template')}</Btn>
             <input type="file" accept=".csv" onChange={handleFile} />
             {fileError && <div style={{ ...TX.error, marginTop: 12 }}>{fileError}</div>}
           </div>
         )}
 
         {phase === 'checking' && (
-          <div style={TX.bodySub}>Checking your file…</div>
+          <div style={TX.bodySub}>{t('scr.bulk.checking')}</div>
         )}
 
         {(phase === 'ready' || phase === 'importing') && (
           <div>
             <div style={{ ...TX.bodySub, marginBottom: 12 }}>
-              {validCount} of {results.length} row{results.length !== 1 ? 's' : ''} ready to import.
+              {t('scr.bulk.ready', { valid: validCount, count: results.length })}
             </div>
             {importError && <div style={{ ...TX.error, marginBottom: 12 }}>{importError}</div>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20, maxHeight: 300, overflowY: 'auto' }}>
               {results.map(r => (
                 <div key={r.row._rowNum} style={{ padding: '8px 10px', borderRadius: 8, background: r.errors.length > 0 ? C.redSoft : C.surfaceAlt, fontSize: T.sm, fontFamily: F.sans }}>
-                  <span style={{ fontWeight: 600 }}>Row {r.row._rowNum}: {r.row.name || '(no name)'}</span>
+                  <span style={{ fontWeight: 600 }}>{t('scr.bulk.row', { n: r.row._rowNum, name: r.row.name || t('scr.bulk.noName') })}</span>
                   {r.errors.length > 0 ? (
                     <span style={{ color: C.redText }}> — {r.errors.join('; ')}</span>
                   ) : (
-                    <span style={{ color: C.greenText }}> — valid</span>
+                    <span style={{ color: C.greenText }}>{t('scr.bulk.valid')}</span>
                   )}
                 </div>
               ))}
             </div>
             <Btn onClick={handleImport} disabled={validCount === 0 || phase === 'importing'}>
-              {phase === 'importing' ? 'Importing…' : `Import ${validCount} valid row${validCount !== 1 ? 's' : ''}`}
+              {phase === 'importing' ? t('scr.bulk.importing') : t('scr.bulk.import', { count: validCount })}
             </Btn>
           </div>
         )}
@@ -125,9 +127,9 @@ export function BulkImportModal({ onClose, onImported }) {
         {phase === 'done' && (
           <div>
             <div style={{ ...TX.body, marginBottom: 12 }}>
-              {imported.length} screen{imported.length !== 1 ? 's' : ''} imported successfully.
+              {t('scr.bulk.imported', { count: imported.length })}
             </div>
-            <Btn onClick={onClose}>Done</Btn>
+            <Btn onClick={onClose}>{t('scr.bulk.done')}</Btn>
           </div>
         )}
     </Modal>

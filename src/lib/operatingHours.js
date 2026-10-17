@@ -1,3 +1,4 @@
+import { t } from '../i18n/core.js';
 // screens.operating_hours_* gate ad serving in display-feed (see
 // isWithinOperatingHours in supabase/functions/_shared/dayparting.ts). The DB
 // default is 07:00-22:00, and until OperatingHoursFields existed the web app had
@@ -33,7 +34,7 @@ export function hoursUpdates(hours) {
 // (end before start) is valid -- it wraps past midnight.
 export function hoursError(hours) {
   if (hours.allDay) return null;
-  if (!hhmm(hours.start) || !hhmm(hours.end)) return 'Enter an opening and closing time.';
-  if (hours.start === hours.end) return 'Opening and closing times are the same — tick "Open 24 hours" instead.';
+  if (!hhmm(hours.start) || !hhmm(hours.end)) return t('scr.hours.missing');
+  if (hours.start === hours.end) return t('scr.hours.same');
   return null;
 }

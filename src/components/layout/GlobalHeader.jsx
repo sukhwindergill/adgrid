@@ -6,8 +6,10 @@ import { AccountSwitcher } from './AccountSwitcher.jsx';
 import { Btn } from '../primitives/Btn.jsx';
 import { MenuPanel, MenuItem, MenuBackdrop } from '../primitives/Menu.jsx';
 import { SwitchTrack } from '../primitives/Switch.jsx';
+import { useT } from '../../i18n/useT.js';
 
 export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMode, onOpenSearch }) {
+  const { t, locale, setLocale } = useT();
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
   const [menuOpen, setMenuOpen] = useState(false);
   const initials = (user?.name || user?.email || 'U').slice(0, 2).toUpperCase();
@@ -30,7 +32,7 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
         <Btn
           variant="unstyled"
           onClick={onOpenSearch}
-          aria-label="Search"
+          aria-label={t('shell.search')}
           aria-keyshortcuts={isMac ? 'Meta+K' : 'Control+K'}
           style={{
             marginRight: 'auto', display: 'flex', alignItems: 'center', gap: 8,
@@ -40,7 +42,7 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
           }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-          <span>Search</span>
+          <span>{t('shell.search')}</span>
           <kbd style={{ fontFamily: F.sans, fontSize: T.xs, padding: '1px 5px', borderRadius: 4, border: `1px solid ${C.border}`, background: C.surface }}>{isMac ? '⌘K' : 'Ctrl K'}</kbd>
         </Btn>
       )}
@@ -51,7 +53,7 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
       <div style={{ position: 'relative' }}>
         <Btn
           variant="unstyled"
-          aria-label="Account menu"
+          aria-label={t('shell.accountMenu')}
           aria-haspopup="menu"
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen(o => !o)}
@@ -79,7 +81,7 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
               {/* User info */}
               <div style={{ padding: '10px 16px', borderBottom: `1px solid ${C.border}` }}>
                 <div style={TX.strong}>
-                  {user?.name || 'User'}
+                  {user?.name || t('shell.user')}
                 </div>
                 <div style={{ ...TX.caption, marginTop: 2 }}>
                   {user?.email}
@@ -96,14 +98,24 @@ export function GlobalHeader({ user, onSignOut, demoMode = false, onToggleDemoMo
                   onClick={() => onToggleDemoMode()}
                   style={{ justifyContent: 'space-between', borderBottom: `1px solid ${C.border}` }}
                 >
-                  <span>Demo mode</span>
+                  <span>{t('shell.demoMode')}</span>
                   <SwitchTrack on={demoMode} size="sm" />
                 </MenuItem>
               )}
 
+              {/* Language: names the other language, in that language. */}
+              <MenuItem
+                role="menuitem"
+                lang={locale === 'fr-CA' ? 'en' : 'fr'}
+                onClick={() => { setLocale(locale === 'fr-CA' ? 'en' : 'fr-CA'); setMenuOpen(false); }}
+                style={{ borderBottom: `1px solid ${C.border}` }}
+              >
+                {t('common.language.other')}
+              </MenuItem>
+
               {/* Sign out */}
               <MenuItem role="menuitem" tone="danger" onClick={() => { onSignOut(); setMenuOpen(false); }}>
-                Sign out
+                {t('shell.signOut')}
               </MenuItem>
             </MenuPanel>
           </>
