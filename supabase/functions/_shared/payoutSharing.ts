@@ -35,3 +35,32 @@ export function countServingScreensByCampaign(rows: { campaign_id: string }[]): 
   }
   return counts;
 }
+
+// ── Per-screen payouts (see 20261017024043_per_screen_payouts.sql) ─────────
+// The budget is split across N screens frozen at charge time. Everything is
+// rounded DOWN to the cent, so payouts + advertiser credits can never total
+// more than what was charged, however many screens settle late.
+
+export interface ScreenRow {
+  status: string;
+  is_control?: boolean | null;
+}
+
+/** N: non-control screens that are approved/auto_approved or still pending review. */
+export function frozenScreenCount(rows: ScreenRow[]): number {
+  return rows.filter((r) =>
+    !r.is_control && (r.status === "approved" || r.status === "auto_approved" || r.status === "pending")
+  ).length;
+}
+
+/** One screen's operator payout in cents: budget * revenueShare / N, rounded down. */
+export function screenPayoutCents(budget: number, revenueShare: number, frozenCount: number): number {
+  if (frozenCount <= 0 || budget <= 0 || revenueShare <= 0) return 0;
+  return Math.floor((budget * revenueShare * 100) / frozenCount);
+}
+
+/** What a screen that never serves hands back to the advertiser, in major units, rounded down. */
+export function unservedScreenCredit(budget: number, frozenCount: number): number {
+  if (frozenCount <= 0 || budget <= 0) return 0;
+  return Math.floor((budget * 100) / frozenCount) / 100;
+}

@@ -121,6 +121,11 @@ Deno.serve(async (req: Request) => {
         .gte("start_date", periodStart)
         .lte("end_date", periodEnd)
         .eq("payment_status", "paid")
+        // Campaigns charged under per-screen payouts (payout_screen_count set)
+        // settle each screen from the screen_payouts ledger inside
+        // charge-campaign. Re-deriving a split here from the current approved
+        // count could pay more than the budget share.
+        .is("payout_screen_count", null)
     : { data: [] };
 
   // S17 fix: this function is documented as a backfill safety net for

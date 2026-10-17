@@ -55,6 +55,38 @@ async function reverseOperatorTransfers(bookingId: string, budget: number, refun
     .eq("booking_id", bookingId)
     .not("status", "eq", "failed");
 
+  // Screens settled after the charge (per-screen payouts) are transferred
+  // individually and tracked in screen_payouts, not operator_transfers.
+  const { data: latePayouts } = await supabase
+    .from("screen_payouts")
+    .select("booking_id, screen_id, amount, reversed_amount, stripe_transfer_id")
+    .eq("booking_id", bookingId)
+    .eq("late", true)
+    .eq("status", "transferred");
+  for (const lp of (latePayouts ?? []) as {
+    screen_id: string; amount: number; reversed_amount: number | null; stripe_transfer_id: string | null;
+  }[]) {
+    if (!lp.stripe_transfer_id) continue;
+    const { delta, newReversedAmount } = computeReversalDelta({
+      transferAmount: lp.amount,
+      alreadyReversed: lp.reversed_amount ?? 0,
+      refundRatio,
+    });
+    if (delta <= 0) continue;
+    try {
+      await stripe.transfers.createReversal(lp.stripe_transfer_id, {
+        amount: Math.round(delta * 100),
+        metadata: { booking_id: bookingId, screen_id: lp.screen_id, reason: "refund_or_dispute" },
+      }, { idempotencyKey: `reverse-screen:${bookingId}:${lp.screen_id}:${newReversedAmount}` });
+      await supabase.from("screen_payouts")
+        .update({ reversed_amount: newReversedAmount })
+        .eq("booking_id", bookingId)
+        .eq("screen_id", lp.screen_id);
+    } catch (e) {
+      console.error(`[stripe-webhook] late payout reversal failed for ${bookingId}/${lp.screen_id}:`, e instanceof Error ? e.message : e);
+    }
+  }
+
   if (!transfers || transfers.length === 0) return;
 
   for (const t of transfers as {
