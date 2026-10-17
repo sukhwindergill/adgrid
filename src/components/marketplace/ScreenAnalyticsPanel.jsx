@@ -4,6 +4,7 @@ import { TX } from '../../design/text.js';
 import { Card } from '../primitives/Card.jsx';
 import { supabase } from '../../lib/supabase.js';
 import { fetchScreenDemographics } from '../../lib/marketplace.js';
+import { useT } from '../../i18n/useT.js';
 
 function summarizeTraffic(events) {
   const byDay = {};
@@ -16,11 +17,10 @@ function summarizeTraffic(events) {
   return { avgDaily, sampleDays: days.length };
 }
 
-const INCOME_LABELS = {
-  under_40k: 'Under $40k', '40k_75k': '$40k–$75k', '75k_120k': '$75k–$120k', '120k_plus': '$120k+',
-};
+const INCOME_BANDS = ['under_40k', '40k_75k', '75k_120k', '120k_plus'];
 
 export function ScreenAnalyticsPanel({ screenId }) {
+  const { t } = useT();
   const [traffic, setTraffic] = useState(null);
   const [trafficError, setTrafficError] = useState(false);
   const [demo, setDemo] = useState(null);
@@ -44,16 +44,16 @@ export function ScreenAnalyticsPanel({ screenId }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <Card data-testid="traffic-section" style={{ padding: 16 }}>
         <div style={{ ...TX.strong, marginBottom: 8 }}>
-          Traffic — platform-verified
+          {t('widgets.analytics.traffic')}
         </div>
         {trafficError ? (
-          <div style={TX.bodyMuted}>Traffic data unavailable right now.</div>
+          <div style={TX.bodyMuted}>{t('widgets.analytics.trafficError')}</div>
         ) : traffic ? (
           <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.textMid }}>
-            ~{traffic.avgDaily} scans/day average, based on {traffic.sampleDays} days of measured data
+            {t('widgets.analytics.trafficBody', { avg: traffic.avgDaily, days: traffic.sampleDays })}
           </div>
         ) : (
-          <div style={TX.bodyMuted}>Loading…</div>
+          <div style={TX.bodyMuted}>{t('common.loading')}</div>
         )}
       </Card>
 
@@ -62,20 +62,20 @@ export function ScreenAnalyticsPanel({ screenId }) {
         style={{ background: C.surfaceAlt, border: `1px dashed ${C.borderDark}`, borderRadius: 12, padding: 16 }}
       >
         <div style={{ fontFamily: F.sans, fontWeight: 600, fontSize: T.base, color: C.textMid, marginBottom: 8 }}>
-          Area estimate — not board-verified
+          {t('widgets.analytics.area')}
         </div>
         {demo === null ? (
-          <div style={TX.bodyMuted}>Loading…</div>
+          <div style={TX.bodyMuted}>{t('common.loading')}</div>
         ) : demo.available ? (
           <div style={{ fontFamily: F.sans, fontSize: T.base, color: C.textMid }}>
-            Median age ~{demo.medianAge ?? '—'}, household income {INCOME_LABELS[demo.incomeBand] ?? '—'}
+            {t('widgets.analytics.demo', { age: demo.medianAge ?? '—', income: INCOME_BANDS.includes(demo.incomeBand) ? t(`widgets.analytics.income.${demo.incomeBand}`) : '—' })}
             <div style={{ fontSize: T.xs, color: C.textMuted, marginTop: 4 }}>
-              Based on public census data for this area, not measured foot traffic.
+              {t('widgets.analytics.census')}
             </div>
           </div>
         ) : (
           <div style={TX.bodyMuted}>
-            Demographic data not available for this location.
+            {t('widgets.analytics.noDemo')}
           </div>
         )}
       </div>

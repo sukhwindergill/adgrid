@@ -1,5 +1,6 @@
 import { C, F, T } from '../../design/tokens.js';
 import { Dot } from './Dot.jsx';
+import { hasKey, t } from '../../i18n/core.js';
 
 export const Badge = ({ status, children }) => {
   const m = {
@@ -23,7 +24,7 @@ export const Badge = ({ status, children }) => {
       fontFamily: F.sans, background: s.bg, color: s.c, border: `1px solid ${s.b}`,
     }}>
       <Dot status={status} />
-      {children || (status === 'pending_review' ? 'Pending Review' : status === 'partially_approved' ? 'Partially Approved' : status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown')}
+      {children || (!status ? t('ui.status.unknown') : hasKey(`ui.status.${status}`, 'en') ? t(`ui.status.${status}`) : status.charAt(0).toUpperCase() + status.slice(1))}
     </span>
   );
 };

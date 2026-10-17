@@ -1,14 +1,7 @@
 import { C, F, T } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { compareToBenchmark } from '../../lib/benchmark.js';
-
-const POSITION_LABEL = {
-  top_quartile:    'top quartile',
-  above_median:    'above median',
-  at_median:       'at median',
-  below_median:    'below median',
-  bottom_quartile: 'bottom quartile',
-};
+import { useT } from '../../i18n/useT.js';
 
 const POSITION_COLOR = {
   top_quartile:    C.green,
@@ -22,6 +15,7 @@ const POSITION_COLOR = {
 // plainly when the network has too little data to compare against. It never
 // shows a percentile it cannot stand behind.
 export function BenchmarkRow({ label, value, stats, format = v => String(v) }) {
+  const { t } = useT();
   const result = compareToBenchmark(value, stats);
 
   if (!result.available && result.reason === 'no_value') return null;
@@ -29,7 +23,7 @@ export function BenchmarkRow({ label, value, stats, format = v => String(v) }) {
   if (!result.available) {
     return (
       <div style={{ ...TX.caption, marginTop: 4 }}>
-        Not enough comparable campaigns yet to benchmark {label.toLowerCase()}.
+        {t('cards.benchmark.notEnough', { label: label.toLowerCase() })}
       </div>
     );
   }
@@ -37,9 +31,9 @@ export function BenchmarkRow({ label, value, stats, format = v => String(v) }) {
   return (
     <div style={{ ...TX.caption, marginTop: 4 }}>
       <span style={{ color: POSITION_COLOR[result.position], fontWeight: 500 }}>
-        {POSITION_LABEL[result.position]}
+        {t(`cards.benchmark.position.${result.position}`)}
       </span>
-      {' · '}network median {format(result.median)}
+      {t('cards.benchmark.median', { value: format(result.median) })}
       {result.pctVsMedian !== null && ` (${result.pctVsMedian >= 0 ? '+' : ''}${result.pctVsMedian}%)`}
     </div>
   );

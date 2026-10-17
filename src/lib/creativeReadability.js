@@ -1,3 +1,4 @@
+import { t } from '../i18n/core.js';
 // Pure readability scoring for platform-controlled creative text (headline,
 // CTA) against the campaign's own play duration and CreativePreview's
 // per-template rendering rules. No DOM, no network, no OCR -- an uploaded
@@ -118,7 +119,7 @@ export function checkReadability({
     score -= Math.min(50, Math.round((overBy / readableWords) * 50));
     issues.push({
       type: 'read_time',
-      message: `${totalWords} words — a ${durationSeconds}s play gives time to read about ${readableWords}.`,
+      message: t('cards.readability.readTime', { words: String(totalWords), seconds: String(durationSeconds), readable: String(readableWords) }),
     });
   }
 
@@ -127,7 +128,7 @@ export function checkReadability({
     score -= 25;
     issues.push({
       type: 'truncation',
-      message: `Headline is ${headlineWords} words — likely truncates past ${LINE_CLAMP[template]} lines at this length.`,
+      message: t('cards.readability.truncation', { words: String(headlineWords), lines: String(LINE_CLAMP[template]) }),
     });
   }
 
@@ -153,7 +154,7 @@ export function checkReadability({
         score -= 25;
         issues.push({
           type: 'contrast_headline',
-          message: `Headline color has weak contrast against its panel background (${ratio.toFixed(1)}:1, needs ${CONTRAST_MIN_RATIO}:1).`,
+          message: t('cards.readability.contrastHeadline', { ratio: ratio.toFixed(1), min: String(CONTRAST_MIN_RATIO) }),
         });
       }
     }
@@ -163,7 +164,7 @@ export function checkReadability({
         score -= 25;
         issues.push({
           type: 'contrast',
-          message: `CTA color has weak contrast against its panel background (${ratio.toFixed(1)}:1, needs ${CONTRAST_MIN_RATIO}:1).`,
+          message: t('cards.readability.contrastCtaPanel', { ratio: ratio.toFixed(1), min: String(CONTRAST_MIN_RATIO) }),
         });
       }
     }
@@ -178,7 +179,7 @@ export function checkReadability({
       score -= 25;
       issues.push({
         type: 'contrast',
-        message: `CTA color has weak contrast against the background (${ratio.toFixed(1)}:1, needs ${CONTRAST_MIN_RATIO}:1).`,
+        message: t('cards.readability.contrastCta', { ratio: ratio.toFixed(1), min: String(CONTRAST_MIN_RATIO) }),
       });
     }
   }

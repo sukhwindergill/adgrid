@@ -8,6 +8,8 @@ import {
 import { T, C, F } from '../design/tokens.js';
 import { Btn } from './primitives/Btn.jsx';
 import { MenuPanel } from './primitives/Menu.jsx';
+import { useT } from "../i18n/useT.js";
+import { timeAgo } from "../lib/timeAgo.js";
 
 const TYPE_ICONS = {
   campaign_approved: IconTarget,
@@ -32,18 +34,10 @@ const TYPE_ICONS = {
   marketplace_booking_expiring: IconClock,
 };
 
-function timeAgo(dateStr) {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
 
 export default function NotificationBell() {
   const { user } = useAuth();
+  const { t } = useT();
   const [notifications, setNotifications] = useState([]);
   const [loadError, setLoadError] = useState(false);
   const [open, setOpen] = useState(false);
@@ -114,7 +108,7 @@ export default function NotificationBell() {
       <Btn
         variant="unstyled"
         onClick={() => setOpen((o) => !o)}
-        aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
+        aria-label={unread > 0 ? t('shell.notifications.labelUnread', { count: unread }) : t('shell.notifications.label')}
         aria-haspopup="true"
         aria-expanded={open}
         style={{
@@ -143,21 +137,21 @@ export default function NotificationBell() {
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "12px 16px", borderBottom: `1px solid ${C.border}`,
           }}>
-            <span style={{ fontSize: T.base, fontWeight: 600, color: C.text }}>Notifications</span>
+            <span style={{ fontSize: T.base, fontWeight: 600, color: C.text }}>{t('shell.notifications.title')}</span>
             {unread > 0 && (
               <Btn variant="link" size="xs" onClick={markAllRead} style={{ fontSize: T.xs, color: C.blueText, fontWeight: 400 }}>
-                Mark all read
+                {t('shell.notifications.markAllRead')}
               </Btn>
             )}
           </div>
 
           {loadError ? (
             <div style={{ padding: "24px 16px", textAlign: "center", fontSize: T.base, color: C.redText }}>
-              Couldn't load notifications
+              {t('shell.notifications.loadError')}
             </div>
           ) : notifications.length === 0 ? (
             <div style={{ padding: "24px 16px", textAlign: "center", fontSize: T.base, color: C.textMuted }}>
-              No notifications yet
+              {t('shell.notifications.empty')}
             </div>
           ) : notifications.map((n) => (
             <div

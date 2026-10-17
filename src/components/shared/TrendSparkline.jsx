@@ -1,11 +1,14 @@
 import { C, F, T } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
+import { useT } from '../../i18n/useT.js';
 
 // A single-series 30-day trend line — area fill, faint horizontal grid,
 // emphasized endpoint. One series needs no legend; the card title above it
 // names the metric. Deliberately not a library chart: this is the only
 // sparkline in the app, and the SVG is small enough to own directly.
-export function TrendSparkline({ data, color = C.purple, formatValue = v => v.toLocaleString(), height = 64 }) {
+export function TrendSparkline({ data, color = C.purple, formatValue: formatValueProp, height = 64 }) {
+  const { t, formatNumber } = useT();
+  const formatValue = formatValueProp ?? (v => formatNumber(v));
   const width = 100; // viewBox units; scales to container via CSS width:100%
   const values = data.map(p => p.value);
   const max = Math.max(...values, 1);
@@ -24,7 +27,7 @@ export function TrendSparkline({ data, color = C.purple, formatValue = v => v.to
   return (
     <div>
       <svg viewBox={`0 0 ${width} ${height}`} width="100%" height={height} preserveAspectRatio="none" role="img"
-        aria-label={`Trend over the last ${data.length} days, ending at ${formatValue(values[values.length - 1] ?? 0)}`}>
+        aria-label={t('widgets.sparkline', { days: data.length, value: formatValue(values[values.length - 1] ?? 0) })}>
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity="0.22" />

@@ -3,8 +3,10 @@ import { C, F, T } from '../../design/tokens.js';
 import { Btn } from '../primitives/Btn.jsx';
 import { fetchOrCreateThread, fetchThreadMessages, sendThreadMessage } from '../../lib/marketplace.js';
 import { useToast } from '../primitives/Toast.jsx';
+import { useT } from '../../i18n/useT.js';
 
 export function MarketplaceThread({ listingId, operatorId }) {
+  const { t } = useT();
   const [thread, setThread] = useState(null);
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
@@ -27,7 +29,7 @@ export function MarketplaceThread({ listingId, operatorId }) {
       setDraft('');
     } catch (error) {
       console.error('Failed to send message:', error);
-      toast.error('Failed to send message. Please try again.');
+      toast.error(t('widgets.thread.sendFailed'));
     } finally {
       setSending(false);
     }
@@ -49,14 +51,14 @@ export function MarketplaceThread({ listingId, operatorId }) {
         <input
           value={draft}
           onChange={e => setDraft(e.target.value)}
-          placeholder="Ask a question about this listing"
+          placeholder={t('widgets.thread.placeholder')}
           style={{
             flex: 1, fontFamily: F.sans, fontSize: T.base, padding: '8px 12px',
             border: `1px solid ${C.border}`, borderRadius: 8,
           }}
         />
         <Btn variant="primary" size="sm" onClick={handleSend} disabled={sending || !draft.trim()}>
-          Send
+          {t('widgets.thread.send')}
         </Btn>
       </div>
     </div>

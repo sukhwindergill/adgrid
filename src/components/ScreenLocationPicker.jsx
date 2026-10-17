@@ -4,6 +4,7 @@ import { TX } from '../design/text.js';
 import { geocodeAddress } from '../lib/geocodeAddress.js';
 import { Btn } from './primitives/Btn.jsx';
 import { Inp } from './primitives/Inp.jsx';
+import { useT } from '../i18n/useT.js';
 
 const toolBtn = { padding: '8px 12px', color: C.textSub };
 
@@ -13,6 +14,7 @@ const DEFAULT_CENTER = [43.6532, -79.3832]; // Toronto — same fallback as Crea
 // dynamic-import pattern used by CreateCampaign's ScreenMap (no react-leaflet
 // component tree — this app loads Leaflet imperatively and drives it via refs).
 export function ScreenLocationPicker({ value, onChange }) {
+  const { t } = useT();
   const mapRef = useRef(null);
   const leafletRef = useRef(null);
   const markerRef = useRef(null);
@@ -106,17 +108,17 @@ export function ScreenLocationPicker({ value, onChange }) {
     const token = import.meta.env.VITE_MAPBOX_TOKEN;
     const result = await geocodeAddress(query, token);
     setSearching(false);
-    if (!result) { setErr('No match found — try a more specific address.'); return; }
+    if (!result) { setErr(t('scr.location.noMatch')); return; }
     placeAt(result.lat, result.lng);
   };
 
   const useMyLocation = () => {
-    if (!navigator.geolocation) { setErr('Geolocation is not available in this browser.'); return; }
+    if (!navigator.geolocation) { setErr(t('scr.location.noGeo')); return; }
     setLocating(true);
     setErr(null);
     navigator.geolocation.getCurrentPosition(
       (pos) => { setLocating(false); placeAt(pos.coords.latitude, pos.coords.longitude, 16); },
-      () => { setLocating(false); setErr('Could not get your location — check browser permissions.'); },
+      () => { setLocating(false); setErr(t('scr.location.geoFailed')); },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
@@ -129,16 +131,16 @@ export function ScreenLocationPicker({ value, onChange }) {
           value={query}
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), search())}
-          placeholder="Search an address…"
-          aria-label="Search an address"
+          placeholder={t('scr.location.placeholder')}
+          aria-label={t('scr.location.label')}
           wrapperStyle={{ flex: 1 }}
           style={{ padding: '8px 10px', fontSize: T.sm }}
         />
         <Btn variant="secondary" size="sm" type="button" onClick={search} disabled={searching} style={toolBtn}>
-          {searching ? 'Searching…' : 'Search'}
+          {searching ? t('scr.location.searching') : t('scr.location.search')}
         </Btn>
         <Btn variant="secondary" size="sm" type="button" onClick={useMyLocation} disabled={locating} style={toolBtn}>
-          {locating ? 'Locating…' : '📍 Use my location'}
+          {locating ? t('scr.location.locating') : t('scr.location.useMine')}
         </Btn>
       </div>
 
@@ -146,8 +148,8 @@ export function ScreenLocationPicker({ value, onChange }) {
 
       <div style={{ ...TX.caption, marginTop: 6 }}>
         {value
-          ? `Pinned at ${value.lat.toFixed(5)}, ${value.lng.toFixed(5)} — click the map or drag the pin to adjust.`
-          : 'Click the map to drop a pin, search an address, or use your current location.'}
+          ? t('scr.location.pinned', { lat: value.lat.toFixed(5), lng: value.lng.toFixed(5) })
+          : t('scr.location.hint')}
       </div>
       {err && <div style={{ fontSize: T.xs, color: C.redText, fontFamily: F.sans, marginTop: 4 }}>{err}</div>}
     </div>

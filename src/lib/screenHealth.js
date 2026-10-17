@@ -1,4 +1,5 @@
 import { C } from '../design/tokens.js';
+import { t } from '../i18n/core.js';
 
 // screen-health-cron writes health_status online/idle/offline; prefer it, then
 // fall back to last_seen freshness. ('degraded' kept for back-compat.)
@@ -7,18 +8,18 @@ import { C } from '../design/tokens.js';
 // approved (status='live') but currently offline.
 export function healthSignal(screen) {
   if (screen.health_status === 'offline') {
-    return { dot: C.red, label: 'Offline', pulse: false };
+    return { state: 'offline', dot: C.red, label: t('health.offline'), pulse: false };
   }
   if (screen.health_status === 'idle' || screen.health_status === 'degraded') {
-    return { dot: C.amber, label: 'Stale', pulse: false };
+    return { state: 'stale', dot: C.amber, label: t('health.stale'), pulse: false };
   }
   if (!screen.last_seen) {
-    return { dot: C.red, label: 'Offline', pulse: false };
+    return { state: 'offline', dot: C.red, label: t('health.offline'), pulse: false };
   }
   const minsAgo = (Date.now() - new Date(screen.last_seen).getTime()) / 60000;
-  if (minsAgo <= 5)  return { dot: C.green,  label: 'Live',    pulse: true  };
-  if (minsAgo <= 60) return { dot: C.amber,  label: 'Stale',   pulse: false };
-  return                    { dot: C.red,    label: 'Offline',  pulse: false };
+  if (minsAgo <= 5)  return { state: 'live', dot: C.green,  label: t('health.live'),    pulse: true  };
+  if (minsAgo <= 60) return { state: 'stale', dot: C.amber,  label: t('health.stale'),   pulse: false };
+  return                    { state: 'offline', dot: C.red,    label: t('health.offline'),  pulse: false };
 }
 
 // S19: deliberately separate from healthSignal() above — the CV agent
@@ -26,8 +27,8 @@ export function healthSignal(screen) {
 // display itself, and must never be able to make a dark screen read "Live".
 // Informational only; nothing computes screen online/offline status from this.
 export function cvAgentSignal(screen) {
-  if (!screen.cv_last_seen) return { connected: false, label: 'never connected' };
+  if (!screen.cv_last_seen) return { connected: false, label: t('health.cvNever') };
   const minsAgo = (Date.now() - new Date(screen.cv_last_seen).getTime()) / 60000;
-  const label = minsAgo < 1 ? 'last check-in just now' : `last check-in ${Math.round(minsAgo)}m ago`;
+  const label = minsAgo < 1 ? t('health.cvJustNow') : t('health.cvAgo', { mins: String(Math.round(minsAgo)) });
   return { connected: minsAgo <= 5, label };
 }

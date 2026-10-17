@@ -3,13 +3,14 @@ import { C, F, T } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { Card } from './Card.jsx';
 import { Btn } from './Btn.jsx';
+import { t } from '../../i18n/core.js';
 
 const ConfirmContext = createContext(null);
 
 export function ConfirmProvider({ children }) {
   const [state, setState] = useState(null);
 
-  const confirm = useCallback(({ title, message, confirmLabel = 'Confirm', danger = false }) => {
+  const confirm = useCallback(({ title, message, confirmLabel = t('ui.confirm'), danger = false }) => {
     return new Promise((resolve) => {
       setState({ title, message, confirmLabel, danger, resolve });
     });
@@ -57,7 +58,7 @@ export function ConfirmProvider({ children }) {
               {state.message}
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <Btn variant="ghost" onClick={() => handleResponse(false)}>Cancel</Btn>
+              <Btn variant="ghost" onClick={() => handleResponse(false)}>{t('common.cancel')}</Btn>
               <Btn variant={state.danger ? 'dangerSolid' : 'primary'} onClick={() => handleResponse(true)}>
                 {state.confirmLabel}
               </Btn>

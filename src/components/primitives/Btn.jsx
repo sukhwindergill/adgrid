@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { C, F, T, BRAND, SH, alpha } from '../../design/tokens.js';
 import { Spinner } from './Spinner.jsx';
+import { t } from '../../i18n/core.js';
 
 const SIZES = {
   xs: { padding: '4px 8px', fontSize: T.sm },
@@ -105,7 +106,7 @@ export const Btn = ({
         <span
           data-testid="btn-spinner"
           role="status"
-          aria-label="Loading"
+          aria-label={t('ui.loading')}
           style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <Spinner />

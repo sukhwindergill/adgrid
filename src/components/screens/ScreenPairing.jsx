@@ -6,6 +6,7 @@ import { CopyButton } from '../primitives/CopyButton.jsx';
 import { callPairing, isValidPairingCode, normalizePairingCode, PAIRING_CODE_LENGTH } from '../../lib/screenPairing.js';
 import { T, C, F, alpha } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
+import { rich, useT } from '../../i18n/useT.js';
 
 // Shared by the onboarding wizard's Setup step (ScreenOnboard.jsx) and the
 // screen detail page's Setup Guide tab (ScreenDetail.jsx).
@@ -16,6 +17,7 @@ import { TX } from '../../design/text.js';
 // still offered, folded away, for setups that can't run /pair.
 
 export function CopyBox({ label, value }) {
+  const { t } = useT();
   return (
     <div style={{ marginBottom: 16 }}>
       {label && (
@@ -31,13 +33,14 @@ export function CopyBox({ label, value }) {
         }}>
           {value}
         </div>
-        <CopyButton value={value} copiedLabel="✓ Copied" style={{ flexShrink: 0, minWidth: 64 }} />
+        <CopyButton value={value} copiedLabel={t('scr.pairing.copied')} style={{ flexShrink: 0, minWidth: 64 }} />
       </div>
     </div>
   );
 }
 
 function CodeBox({ label, value }) {
+  const { t } = useT();
   return (
     <div style={{ marginBottom: 16 }}>
       {label && (
@@ -53,7 +56,7 @@ function CodeBox({ label, value }) {
         }}>{value}</pre>
         <CopyButton
           value={value}
-          label="Copy"
+          label={t('ui.copy')}
           copiedLabel="✓"
           variant="ghost"
           style={{
@@ -71,6 +74,7 @@ const kbd = { background: C.surfaceAlt, padding: '1px 6px', borderRadius: 3, fon
 const steps = { fontSize: T.base, color: C.textSub, fontFamily: F.sans, lineHeight: 1.8, paddingLeft: 20, margin: '0 0 16px' };
 
 export function PairingCodeEntry({ screen, onPaired }) {
+  const { t, tx } = useT();
   const [code, setCode] = useState('');
   const [state, setState] = useState('idle'); // 'idle' | 'submitting' | 'paired'
   const [err, setErr] = useState(null);
@@ -84,7 +88,7 @@ export function PairingCodeEntry({ screen, onPaired }) {
     setState('submitting');
     setErr(null);
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setErr('Your session expired. Sign in again.'); setState('idle'); return; }
+    if (!session) { setErr(t('scr.pairing.sessionExpired')); setState('idle'); return; }
     const r = await callPairing(
       { action: 'claim', code: normalized, screen_id: screen.id },
       { functionsUrl: SUPABASE_FUNCTIONS_URL, accessToken: session.access_token },
@@ -96,9 +100,9 @@ export function PairingCodeEntry({ screen, onPaired }) {
     }
     setState('idle');
     setErr(
-      r.status === 429 ? 'Too many attempts. Wait a few minutes and try again.'
-      : r.status === 0 ? "Couldn't reach AdGrid. Check your connection and try again."
-      : r.data.error ?? 'Pairing failed. Try again.',
+      r.status === 429 ? t('scr.pairing.tooMany')
+      : r.status === 0 ? t('scr.pairing.unreachable')
+      : r.data.error ?? t('scr.pairing.failed'),
     );
   }
 
@@ -108,12 +112,11 @@ export function PairingCodeEntry({ screen, onPaired }) {
         padding: '14px 16px', borderRadius: 10, background: C.greenSoft, border: `1px solid ${C.greenBorder}`,
         fontSize: T.base, color: C.text, fontFamily: F.sans, lineHeight: 1.6,
       }}>
-        <strong style={{ color: C.greenText }}>Paired.</strong> {screen.name} will switch from the code to your ads
-        within a few seconds. If it doesn't, check the screen is still on the pairing page.
+        {tx('scr.pairing.paired', { b: chunk => <strong style={{ color: C.greenText }}>{chunk}</strong>, name: screen.name })}
         <div>
           <Btn variant="unstyled" type="button" onClick={() => { setCode(''); setState('idle'); }} style={{
             marginTop: 6, fontSize: T.sm, color: C.textMuted, fontFamily: F.sans, textDecoration: 'underline',
-          }}>Pair another display to this screen</Btn>
+          }}>{t('scr.pairing.pairAnother')}</Btn>
         </div>
       </div>
     );
@@ -122,7 +125,7 @@ export function PairingCodeEntry({ screen, onPaired }) {
   return (
     <form onSubmit={submit}>
       <label htmlFor={`pair-code-${screen.id}`} style={{ ...TX.strong, display: 'block', marginBottom: 8 }}>
-        Enter pairing code
+        {t('scr.pairing.enterCode')}
       </label>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <input
@@ -145,7 +148,7 @@ export function PairingCodeEntry({ screen, onPaired }) {
         />
         {/* Btn renders a plain <button>, which submits the form by default. */}
         <Btn disabled={!valid || state === 'submitting'} style={{ flex: '0 0 auto' }}>
-          {state === 'submitting' ? 'Pairing…' : 'Pair screen'}
+          {state === 'submitting' ? t('scr.pairing.pairing') : t('scr.pairing.pair')}
         </Btn>
       </div>
       {err && <div role="alert" style={{ ...TX.error, marginTop: 6 }}>{err}</div>}
@@ -157,6 +160,7 @@ export function PairingCodeEntry({ screen, onPaired }) {
 // same way: the screen shows a code, the operator types it into
 // PairingCodeEntry.
 export function HardwareInstructions({ hardware, screen, onPaired }) {
+  const { t, tList } = useT();
   const origin = window.location.origin;
   const pairUrl = `${origin}/pair`;
   const host = window.location.host;
@@ -188,50 +192,45 @@ Exec=chromium ${kioskFlags} ${pairUrl}
 X-GNOME-Autostart-enabled=true
 EOF`;
 
+  const richVars = {
+    b: chunk => <strong>{chunk}</strong>,
+    code: chunk => <code style={kbd}>{chunk}</code>,
+    kbd: chunk => <kbd style={kbd}>{chunk}</kbd>,
+    pairUrl: <code style={kbd}>{host}/pair</code>,
+  };
+
   let howToOpen;
   if (hardware === 'Raspberry Pi 5') {
     howToOpen = (
       <>
-        <ol style={steps}>
-          <li>On the Pi (Raspberry Pi OS Bookworm, desktop version), open <strong>Terminal</strong>.</li>
-          <li>Paste the commands below and press Enter. The Pi reboots straight into the pairing page.</li>
-          <li>Type the code it shows into the box above.</li>
+<ol style={steps}>
+          {tList('scr.pairing.pi').map((s, i) => <li key={i}>{rich(s, richVars)}</li>)}
         </ol>
-        <CodeBox label="Paste into the Pi's terminal" value={piSetup} />
+        <CodeBox label={t('scr.pairing.piBox')} value={piSetup} />
         <div style={{ ...TX.helperMuted, lineHeight: 1.6, marginBottom: 16 }}>
-          Older Bookworm installs that still use Wayfire: switch to labwc first with{' '}
-          <code style={kbd}>sudo raspi-config</code> → Advanced Options → Wayland → labwc, then run the commands.
+          {rich(t('scr.pairing.piWayfire'), richVars)}
         </div>
       </>
     );
   } else if (hardware === 'Mini PC') {
     howToOpen = (
       <>
-        <ol style={steps}>
-          <li>Install Chromium (Ubuntu: <code style={kbd}>sudo snap install chromium</code>, Debian: <code style={kbd}>sudo apt install chromium</code>). Google Chrome works too — use <code style={kbd}>google-chrome</code> in the command below.</li>
-          <li>Turn off screen blanking and sleep in your desktop's <strong>Settings → Power</strong>.</li>
-          <li>Paste the commands below into a terminal so the display opens on every login, then log out and back in (or reboot).</li>
-          <li>Type the code it shows into the box above.</li>
+<ol style={steps}>
+          {tList('scr.pairing.miniPc').map((s, i) => <li key={i}>{rich(s, richVars)}</li>)}
         </ol>
-        <CodeBox label="Open the pairing page on login" value={miniPcSetup} />
+        <CodeBox label={t('scr.pairing.miniPcBox')} value={miniPcSetup} />
       </>
     );
   } else if (hardware === 'Android TV') {
     howToOpen = (
-      <ol style={steps}>
-        <li>Install <strong>Fully Kiosk Browser</strong> from the Google Play Store on the TV.</li>
-        <li>Open it, go to Settings → Web Content → Start URL, and enter <code style={kbd}>{host}/pair</code>.</li>
-        <li>Enable Settings → Other → Kiosk Mode and "Start on boot" so it opens on every power-up.</li>
-        <li>Type the code it shows into the box above.</li>
+<ol style={steps}>
+        {tList('scr.pairing.androidTv').map((s, i) => <li key={i}>{rich(s, richVars)}</li>)}
       </ol>
     );
   } else {
     howToOpen = (
-      <ol style={steps}>
-        <li>On the screen, open its web browser (Chrome, Edge or the TV's built-in browser).</li>
-        <li>Go to <code style={kbd}>{host}/pair</code>. A 6-character code appears.</li>
-        <li>Type the code into the box above.</li>
-        <li>Make the browser fullscreen (<kbd style={kbd}>F11</kbd> on a computer). Ads start automatically when campaigns run.</li>
+<ol style={steps}>
+        {tList('scr.pairing.browser').map((s, i) => <li key={i}>{rich(s, richVars)}</li>)}
       </ol>
     );
   }
@@ -240,8 +239,10 @@ EOF`;
     <div>
       <div style={{ background: C.surfaceAlt, borderRadius: 10, padding: '16px 18px', marginBottom: 20 }}>
         <div style={{ ...TX.bodySub, lineHeight: 1.6, marginBottom: 14 }}>
-          On the screen, open <strong style={{ color: C.text, fontFamily: F.mono }}>{host}/pair</strong>. It shows a
-          short code — type it here to connect the screen to <strong style={{ color: C.text }}>{screen.name}</strong>.
+          {rich(t('scr.pairing.intro', { screen: screen.name }), {
+            pairHost: <strong style={{ color: C.text, fontFamily: F.mono }}>{host}/pair</strong>,
+            name: chunk => <strong style={{ color: C.text }}>{chunk}</strong>,
+          })}
         </div>
         <PairingCodeEntry screen={screen} onPaired={onPaired} />
       </div>
@@ -250,16 +251,15 @@ EOF`;
 
       <details style={{ ...TX.bodySub, borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
         <summary style={{ cursor: 'pointer', color: C.textMid, fontWeight: 500 }}>
-          Advanced: use the full player URL instead
+          {t('scr.pairing.advanced')}
         </summary>
         <div style={{ marginTop: 12, lineHeight: 1.6 }}>
           <p style={{ margin: '0 0 12px' }}>
-            For provisioning tools or devices that can't run the pairing page, point the browser straight
-            at this URL — no code needed. It contains your screen token, so treat it like a password.
+            {t('scr.pairing.advancedBody')}
           </p>
           {screen.screen_token
-            ? <CopyBox label="Player URL" value={playerUrl} />
-            : <div style={{ color: C.textMuted }}>Loading…</div>}
+            ? <CopyBox label={t('scr.pairing.playerUrl')} value={playerUrl} />
+            : <div style={{ color: C.textMuted }}>{t('common.loading')}</div>}
         </div>
       </details>
     </div>

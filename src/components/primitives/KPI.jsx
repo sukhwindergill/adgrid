@@ -1,11 +1,12 @@
 import { C, F, T, readable } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { Card } from './Card.jsx';
+import { t } from '../../i18n/core.js';
 
 // `trend` is a whole-number percent from lib/periodDelta.js, or null when
 // there is no baseline to compare against. Null renders nothing — never a
 // placeholder number.
-export const KPI = ({ label, value, sub, color = C.text, trend = null, trendLabel = 'vs prior period', icon }) => (
+export const KPI = ({ label, value, sub, color = C.text, trend = null, trendLabel = t('ui.vsPrior'), icon }) => (
   <Card style={{ padding: 20 }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
       <span style={{ ...TX.helper, fontWeight: 500 }}>{label}</span>

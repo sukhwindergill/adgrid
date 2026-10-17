@@ -1,53 +1,68 @@
+import { t } from '../../i18n/core.js';
+
 // Navigation for each side of the marketplace, grouped by job rather than
 // listed flat. One source for the sidebar, the phone tab bar and the
 // command palette, so the three never drift apart.
 
-export const OP_NAV = [
-  { group: null, items: [
-    { id: 'overview', label: 'Dashboard', icon: 'overview' },
-  ] },
-  { group: 'Inventory', items: [
-    { id: 'screens', label: 'Screens', icon: 'screens' },
-    { id: 'display', label: 'Display Manager', icon: 'display' },
-    { id: 'marketplace-listings', label: 'Marketplace', icon: 'marketplace' },
-  ] },
-  { group: 'Campaigns', items: [
-    { id: 'campaigns', label: 'Campaigns', icon: 'campaigns' },
-    { id: 'approval', label: 'Approval Queue', icon: 'approval', badge: true },
-    { id: 'advertisers', label: 'Advertisers', icon: 'advertisers' },
-  ] },
-  { group: 'Performance', items: [
-    { id: 'analytics', label: 'Analytics', icon: 'analytics' },
-    { id: 'revenue', label: 'Revenue', icon: 'revenue' },
-    { id: 'audience', label: 'Audience & Scans', icon: 'audience' },
-    { id: 'signals', label: 'Live Signals', icon: 'signals' },
-    { id: 'rules', label: 'Alerts & Rules', icon: 'rules' },
-  ] },
-  { group: 'Account', items: [
-    { id: 'integrations', label: 'Integrations', icon: 'integrations' },
-    { id: 'op-settings', label: 'Settings', icon: 'settings' },
-  ] },
-];
+// Labels are getters over the locale catalog (nav.item.<id>, nav.group.<key>),
+// read at render time so a language switch relabels everything.
+function localize(groups) {
+  return groups.map(g => ({
+    ...g,
+    get group() { return g.groupKey ? t(`nav.group.${g.groupKey}`) : null; },
+    items: g.items.map(item => ({
+      ...item,
+      get label() { return t(`nav.item.${item.id}`); },
+    })),
+  }));
+}
 
-export const ADV_NAV = [
-  { group: null, items: [
-    { id: 'adv-overview', label: 'Dashboard', icon: 'overview' },
+export const OP_NAV = localize([
+  { groupKey: null, items: [
+    { id: 'overview', icon: 'overview' },
   ] },
-  { group: 'Campaigns', items: [
-    { id: 'adv-campaigns', label: 'Campaigns', icon: 'campaigns' },
-    { id: 'adv-marketplace', label: 'Marketplace', icon: 'marketplace' },
+  { groupKey: 'inventory', items: [
+    { id: 'screens', icon: 'screens' },
+    { id: 'display', icon: 'display' },
+    { id: 'marketplace-listings', icon: 'marketplace' },
   ] },
-  { group: 'Performance', items: [
-    { id: 'adv-analytics', label: 'Analytics', icon: 'analytics' },
-    { id: 'adv-audience', label: 'Scans & Data', icon: 'scans' },
-    { id: 'adv-rules', label: 'Alerts & Rules', icon: 'rules' },
+  { groupKey: 'campaigns', items: [
+    { id: 'campaigns', icon: 'campaigns' },
+    { id: 'approval', icon: 'approval', badge: true },
+    { id: 'advertisers', icon: 'advertisers' },
   ] },
-  { group: 'Account', items: [
-    { id: 'adv-billing', label: 'Billing', icon: 'billing' },
-    { id: 'adv-integrations', label: 'Integrations', icon: 'integrations' },
-    { id: 'adv-settings', label: 'Settings', icon: 'settings' },
+  { groupKey: 'performance', items: [
+    { id: 'analytics', icon: 'analytics' },
+    { id: 'revenue', icon: 'revenue' },
+    { id: 'audience', icon: 'audience' },
+    { id: 'signals', icon: 'signals' },
+    { id: 'rules', icon: 'rules' },
   ] },
-];
+  { groupKey: 'account', items: [
+    { id: 'integrations', icon: 'integrations' },
+    { id: 'op-settings', icon: 'settings' },
+  ] },
+]);
+
+export const ADV_NAV = localize([
+  { groupKey: null, items: [
+    { id: 'adv-overview', icon: 'overview' },
+  ] },
+  { groupKey: 'campaigns', items: [
+    { id: 'adv-campaigns', icon: 'campaigns' },
+    { id: 'adv-marketplace', icon: 'marketplace' },
+  ] },
+  { groupKey: 'performance', items: [
+    { id: 'adv-analytics', icon: 'analytics' },
+    { id: 'adv-audience', icon: 'scans' },
+    { id: 'adv-rules', icon: 'rules' },
+  ] },
+  { groupKey: 'account', items: [
+    { id: 'adv-billing', icon: 'billing' },
+    { id: 'adv-integrations', icon: 'integrations' },
+    { id: 'adv-settings', icon: 'settings' },
+  ] },
+]);
 
 // The four destinations on the phone tab bar; everything else is under More.
 export const OP_TABS = ['overview', 'screens', 'campaigns', 'approval'];

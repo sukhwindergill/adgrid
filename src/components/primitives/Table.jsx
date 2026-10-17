@@ -1,7 +1,8 @@
 import { C, F, T } from '../../design/tokens.js';
 import { Hover } from './Hover.jsx';
+import { t } from '../../i18n/core.js';
 
-export const Table = ({ columns, rows, empty = 'No data', emptyTitle, emptyDescription, onRowClick }) => (
+export const Table = ({ columns, rows, empty = t('ui.noData'), emptyTitle, emptyDescription, onRowClick }) => (
   <div style={{ border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden' }}>
     <div style={{ overflowX: 'auto' }}>
     <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: F.sans }}>

@@ -2,9 +2,10 @@ import { useId } from 'react';
 import { C, F, T, SH } from '../../design/tokens.js';
 import { TX } from '../../design/text.js';
 import { Btn } from './Btn.jsx';
+import { t } from '../../i18n/core.js';
 
 // The × used to dismiss modals, drawers and panels.
-export function CloseButton({ onClick, label = 'Close', style }) {
+export function CloseButton({ onClick, label = t('ui.close'), style }) {
   return (
     <Btn
       variant="unstyled"

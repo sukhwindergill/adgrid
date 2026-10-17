@@ -6,6 +6,7 @@ import { CornerMarker } from './CornerMarker.jsx';
 import { ErrorBanner } from '../primitives/ErrorBanner.jsx';
 import { Btn } from '../primitives/Btn.jsx';
 import { Modal } from '../primitives/Modal.jsx';
+import { useT } from '../../i18n/useT.js';
 
 // Small controls laid over a photo thumbnail.
 const photoOverlayBtn = { position: 'absolute', background: alpha(C.black, 0.6), color: C.white };
@@ -15,6 +16,7 @@ const photoOverlayBtn = { position: 'absolute', background: alpha(C.black, 0.6),
 // (ScreenOnboard) and the operator's screen detail page (ScreenDetail) --
 // previously this logic was copy-pasted between the two.
 export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: initialFrames, onChange }) {
+  const { t } = useT();
   const [photos, setPhotos] = useState(initialPhotos || []);
   const [frames, setFrames] = useState(initialFrames || []);
   const [uploading, setUploading] = useState(false);
@@ -71,7 +73,7 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
       return;
     }
     if (failedUploads > 0) {
-      setError(`${failedUploads} of ${toUpload.length} photo${toUpload.length === 1 ? '' : 's'} failed to upload.`);
+      setError(t('scr.photos.failed', { failed: failedUploads, count: toUpload.length }));
     } else {
       setError(null);
     }
@@ -115,10 +117,10 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
   return (
     <div>
       <div style={{ ...TX.title, marginBottom: 4 }}>
-        Add photos of your screen
+        {t('scr.photos.title')}
       </div>
       <div style={{ ...TX.helper, marginBottom: 12 }}>
-        Advertisers use these to verify placement before booking, and can preview their ad on any photo with marked corners. Up to 4 photos.
+        {t('scr.photos.hint')}
       </div>
 
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
@@ -127,8 +129,8 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
           {photos.map((url, i) => (
             <div key={url} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden' }}>
-              <img src={url} alt={`Screen photo ${i + 1}`} style={{ width: '100%', height: 100, objectFit: 'cover', display: 'block' }} />
-              <Btn variant="unstyled" aria-label={`Remove photo ${i + 1}`} onClick={() => removePhoto(url)} style={{
+              <img src={url} alt={t('scr.photos.alt', { n: i + 1 })} style={{ width: '100%', height: 100, objectFit: 'cover', display: 'block' }} />
+              <Btn variant="unstyled" aria-label={t('scr.photos.remove', { n: i + 1 })} onClick={() => removePhoto(url)} style={{
                 ...photoOverlayBtn, top: 4, right: 4, borderRadius: '50%',
                 width: 22, height: 22, fontSize: T.md,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
@@ -136,10 +138,10 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
               <Btn
                 variant="unstyled"
                 onClick={() => setMarkingUrl(url)}
-                title={frameFor(url) ? 'Edit corners' : 'Mark corners'}
+                title={frameFor(url) ? t('scr.photos.editCorners') : t('scr.photos.markCorners')}
                 style={{ ...photoOverlayBtn, bottom: 4, left: 4, borderRadius: 6, fontSize: T.xs, fontFamily: F.sans, padding: '3px 7px' }}
               >
-                {frameFor(url) ? '✓ Corners' : '✏ Mark corners'}
+                {frameFor(url) ? t('scr.photos.cornersDone') : t('scr.photos.cornersMark')}
               </Btn>
             </div>
           ))}
@@ -156,12 +158,12 @@ export function ScreenPhotoManager({ screenId, photos: initialPhotos, frames: in
           <input type="file" accept="image/*" multiple style={{ display: 'none' }}
             disabled={uploading}
             onChange={e => handleFiles(e.target.files)} />
-          {uploading ? 'Uploading…' : '+ Add photos'}
+          {uploading ? t('common.uploading') : t('scr.photos.add')}
         </label>
       )}
 
       {markingUrl && (
-        <Modal title="Mark the screen's corners" onClose={() => setMarkingUrl(null)} maxWidth={520} padding={24} headerStyle={{ marginBottom: 16 }}>
+        <Modal title={t('scr.photos.modalTitle')} onClose={() => setMarkingUrl(null)} maxWidth={520} padding={24} headerStyle={{ marginBottom: 16 }}>
           <CornerMarker
             photoUrl={markingUrl}
             initialCorners={frameFor(markingUrl)?.corners ?? null}

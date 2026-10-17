@@ -14,10 +14,12 @@ import { Btn } from '../primitives/Btn.jsx';
 import { Modal } from '../primitives/Modal.jsx';
 import { SelInput } from '../primitives/SelInput.jsx';
 import { TextArea } from '../primitives/Inp.jsx';
+import { useT } from '../../i18n/useT.js';
 
 const actionBtn = { padding: '9px 22px' };
 
 export function FileDisputeModal({ bookingId, advertiserId, onClose, onFiled }) {
+  const { t, tOr } = useT();
   const [reasonCode, setReasonCode] = useState(DISPUTE_REASONS[0].value);
   const [reasonText, setReasonText] = useState('');
   const [saving, setSaving] = useState(false);
@@ -25,7 +27,7 @@ export function FileDisputeModal({ bookingId, advertiserId, onClose, onFiled }) 
   const [success, setSuccess] = useState(false);
 
   async function submit() {
-    if (!isValidDisputeReason(reasonCode)) { setError('Choose a reason.'); return; }
+    if (!isValidDisputeReason(reasonCode)) { setError(t('widgets.dispute.chooseReason')); return; }
     setSaving(true);
     setError(null);
 
@@ -42,40 +44,40 @@ export function FileDisputeModal({ bookingId, advertiserId, onClose, onFiled }) 
   }
 
   return (
-    <Modal onBackdropClick={onClose} label="Report a Problem" maxWidth={420} padding="32px 28px" zIndex={300}
+    <Modal onBackdropClick={onClose} label={t('widgets.dispute.title')} maxWidth={420} padding="32px 28px" zIndex={300}
       panelStyle={{ borderRadius: 20, border: `1px solid ${C.border}` }}>
         <h3 style={{ fontSize: T.lg, fontWeight: 700, color: C.text, fontFamily: F.display, margin: '0 0 20px' }}>
-          Report a Problem
+          {t('widgets.dispute.title')}
         </h3>
 
         {success ? (
           <>
             <p style={{ fontSize: T.md, color: C.greenText, fontFamily: F.sans, margin: '0 0 20px' }}>
-              ✓ We've received your report and will follow up by email.
+              {t('widgets.dispute.received')}
             </p>
             <Btn onClick={() => { onClose(); onFiled?.(); }} style={actionBtn}>
-              Done
+              {t('widgets.dispute.done')}
             </Btn>
           </>
         ) : (
           <>
             <SelInput
-              label="What happened?"
+              label={t('widgets.dispute.what')}
               value={reasonCode}
               onChange={e => setReasonCode(e.target.value)}
               wrapperStyle={{ marginBottom: 16 }}
               style={{ width: '100%' }}
             >
-              {DISPUTE_REASONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+              {DISPUTE_REASONS.map(r => <option key={r.value} value={r.value}>{tOr(`widgets.dispute.reason.${r.value}`, r.label)}</option>)}
             </SelInput>
 
             <TextArea
-              label="Details (optional)"
+              label={t('widgets.dispute.details')}
               value={reasonText}
               onChange={e => setReasonText(e.target.value)}
               maxLength={2000}
               rows={4}
-              placeholder="Anything that helps us look into it — dates, what you expected to see, etc."
+              placeholder={t('widgets.dispute.detailsPlaceholder')}
               wrapperStyle={{ marginBottom: 20 }}
             />
 
@@ -85,10 +87,10 @@ export function FileDisputeModal({ bookingId, advertiserId, onClose, onFiled }) 
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <Btn variant="secondary" onClick={onClose} style={{ padding: '9px 18px', color: C.textSub }}>
-                Cancel
+                {t('common.cancel')}
               </Btn>
               <Btn onClick={submit} disabled={saving} style={actionBtn}>
-                {saving ? 'Submitting…' : 'Submit Report'}
+                {saving ? t('common.submitting') : t('widgets.dispute.submit')}
               </Btn>
             </div>
           </>

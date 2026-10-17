@@ -9,6 +9,7 @@ import { Inp } from '../primitives/Inp.jsx';
 import { SelInput } from '../primitives/SelInput.jsx';
 import { OperatingHoursFields } from './OperatingHoursFields.jsx';
 import { hoursFormFromScreen, hoursUpdates, hoursError } from '../../lib/operatingHours.js';
+import { useT } from '../../i18n/useT.js';
 
 const FORMAT_OPTIONS = ['jpg', 'png', 'gif', 'webp', 'mp4', 'webm', 'mov'];
 
@@ -28,6 +29,7 @@ function FormatChips({ value, onChange }) {
 }
 
 export function EditScreenModal({ screen, onClose, onSaved }) {
+  const { t } = useT();
   const [form, setForm] = useState({
     name:                     screen.name || '',
     location:                 screen.location || '',
@@ -83,48 +85,48 @@ export function EditScreenModal({ screen, onClose, onSaved }) {
   };
 
   return (
-    <Modal title="Edit Screen" onClose={onClose}>
+    <Modal title={t('scr.edit.title')} onClose={onClose}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
-          <Inp label="Screen Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-          <Inp label="Location / Address" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} />
-          <SelInput label="City" value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))}>
+          <Inp label={t('scr.edit.name')} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+          <Inp label={t('scr.edit.location')} value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} />
+          <SelInput label={t('scr.edit.city')} value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))}>
             {['Toronto', 'London', 'Manchester', 'Birmingham', 'Vancouver', 'Edinburgh'].map(c => <option key={c}>{c}</option>)}
           </SelInput>
-          <Inp label="Display Size" placeholder="e.g. 55 inch 4K" value={form.display_size} onChange={e => setForm(f => ({ ...f, display_size: e.target.value }))} />
+          <Inp label={t('scr.edit.displaySize')} placeholder={t('scr.edit.displaySizePlaceholder')} value={form.display_size} onChange={e => setForm(f => ({ ...f, display_size: e.target.value }))} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Inp label="Latitude" type="number" step="any" value={form.lat} onChange={e => setForm(f => ({ ...f, lat: e.target.value }))} />
-            <Inp label="Longitude" type="number" step="any" value={form.lon} onChange={e => setForm(f => ({ ...f, lon: e.target.value }))} />
+            <Inp label={t('scr.edit.latitude')} type="number" step="any" value={form.lat} onChange={e => setForm(f => ({ ...f, lat: e.target.value }))} />
+            <Inp label={t('scr.edit.longitude')} type="number" step="any" value={form.lon} onChange={e => setForm(f => ({ ...f, lon: e.target.value }))} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Inp label="Monthly Footfall (thousands)" type="number" value={form.monthly_traffic_estimate} onChange={e => setForm(f => ({ ...f, monthly_traffic_estimate: e.target.value }))} />
-            <Inp label="CPM Floor ($)" type="number" step="0.50" value={form.cpm_floor} onChange={e => setForm(f => ({ ...f, cpm_floor: e.target.value }))} />
+            <Inp label={t('scr.edit.footfall')} type="number" value={form.monthly_traffic_estimate} onChange={e => setForm(f => ({ ...f, monthly_traffic_estimate: e.target.value }))} />
+            <Inp label={t('scr.edit.cpmFloor')} type="number" step="0.50" value={form.cpm_floor} onChange={e => setForm(f => ({ ...f, cpm_floor: e.target.value }))} />
           </div>
           <OperatingHoursFields value={hours} onChange={setHours} />
           <div style={{ marginTop: 4 }}>
             <div style={{ ...TX.label, marginBottom: 4 }}>
-              Creative spec <span style={{ color: C.textMuted, fontWeight: 400 }}>(optional)</span>
+              {t('scr.edit.spec')} <span style={{ color: C.textMuted, fontWeight: 400 }}>{t('common.optional')}</span>
             </div>
             <div style={{ ...TX.caption, marginBottom: 10, lineHeight: 1.5 }}>
-              Lets advertisers know before they upload whether their creative fits your screen.
+              {t('scr.edit.specHint')}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-              <Inp label="Resolution width (px)" type="number" min="1" placeholder="e.g. 1080"
+              <Inp label={t('scr.edit.resW')} type="number" min="1" placeholder={t('scr.edit.eg1080')}
                 value={form.resolution_w} onChange={e => setForm(f => ({ ...f, resolution_w: e.target.value }))} />
-              <Inp label="Resolution height (px)" type="number" min="1" placeholder="e.g. 1920"
+              <Inp label={t('scr.edit.resH')} type="number" min="1" placeholder={t('scr.edit.eg1920')}
                 value={form.resolution_h} onChange={e => setForm(f => ({ ...f, resolution_h: e.target.value }))} />
             </div>
             <div style={{ marginBottom: 12 }}>
-              <div style={{ ...TX.helper, marginBottom: 6 }}>Accepted file formats</div>
+              <div style={{ ...TX.helper, marginBottom: 6 }}>{t('scr.edit.formats')}</div>
               <FormatChips value={form.accepted_formats} onChange={v => setForm(f => ({ ...f, accepted_formats: v }))} />
             </div>
-            <Inp label="Max file size (MB)" type="number" min="1" placeholder="e.g. 20"
+            <Inp label={t('scr.edit.maxMb')} type="number" min="1" placeholder={t('scr.edit.eg20')}
               value={form.max_file_mb} onChange={e => setForm(f => ({ ...f, max_file_mb: e.target.value }))} />
           </div>
         </div>
         {err && <div style={{ ...TX.error, marginBottom: 12 }}>{err}</div>}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
-          <Btn onClick={save} disabled={!form.name || saving}>{saving ? 'Saving…' : 'Save Changes'}</Btn>
+          <Btn variant="secondary" onClick={onClose}>{t('common.cancel')}</Btn>
+          <Btn onClick={save} disabled={!form.name || saving}>{saving ? t('common.saving') : t('scr.edit.saveChanges')}</Btn>
         </div>
     </Modal>
   );

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { C, F, T, SH } from '../../design/tokens.js';
 import { Btn } from './Btn.jsx';
+import { t } from '../../i18n/core.js';
 
 const ToastContext = createContext(null);
 
@@ -69,6 +70,6 @@ export function useToast() {
     // Shows a success toast with an "Undo" action that stays up longer than
     // a normal toast. onUndo is called once, on click, then the toast
     // dismisses immediately -- it does not also wait out the timeout.
-    undo: (msg, onUndo, label = 'Undo') => ctx.show(msg, 'success', { label, onClick: onUndo }),
+    undo: (msg, onUndo, label = t('ui.undo')) => ctx.show(msg, 'success', { label, onClick: onUndo }),
   };
 }

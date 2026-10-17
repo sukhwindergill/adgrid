@@ -6,7 +6,8 @@ import { Btn } from '../primitives/Btn.jsx';
 import { Inp } from '../primitives/Inp.jsx';
 import { SelInput } from '../primitives/SelInput.jsx';
 import { useToast } from '../primitives/Toast.jsx';
-import { MAX_RECIPIENTS, nextRunAt, parseRecipients, describeSchedule } from '../../lib/reportSchedule.js';
+import { MAX_RECIPIENTS, nextRunAt, parseRecipients } from '../../lib/reportSchedule.js';
+import { useT } from '../../i18n/useT.js';
 
 // Recurring report emails (report_schedules, sent by report-schedule-cron).
 // Lists this campaign's schedules plus the owner's all-campaigns ones, since
@@ -24,6 +25,7 @@ function fetchSchedules(userId, audience, campaignId) {
 
 export function ScheduledReportsSection({ campaignId, userId, audience }) {
   const toast = useToast();
+  const { t, formatDate } = useT();
   const [schedules, setSchedules] = useState([]);
   const [loadError, setLoadError] = useState(false);
   const [frequency, setFrequency] = useState('weekly');
@@ -65,7 +67,7 @@ export function ScheduledReportsSection({ campaignId, userId, audience }) {
     });
     setSaving(false);
     if (insertError) { toast.error(insertError.message); return; }
-    toast.success('Report scheduled');
+    toast.success(t('widgets.reports.scheduled'));
     setRecipients('');
     load();
   };
@@ -73,41 +75,40 @@ export function ScheduledReportsSection({ campaignId, userId, audience }) {
   const remove = async (id) => {
     const { error } = await supabase.from('report_schedules').delete().eq('id', id);
     if (error) { toast.error(error.message); return; }
-    toast.success('Schedule removed');
+    toast.success(t('widgets.reports.removed'));
     load();
   };
 
   return (
     <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 20, paddingTop: 18 }}>
-      <div style={{ fontSize: T.md, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>Scheduled reports</div>
+      <div style={{ fontSize: T.md, fontWeight: 700, color: C.text, fontFamily: F.sans, marginBottom: 4 }}>{t('widgets.reports.title')}</div>
       <div style={{ ...TX.helperMuted, marginBottom: 14 }}>
-        Email a KPI summary, a report link and a CSV of daily delivery to up to {MAX_RECIPIENTS} people.
-        Weekly reports cover the previous seven days; monthly reports cover the previous calendar month.
+        {t('widgets.reports.body', { max: MAX_RECIPIENTS })}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-        <SelInput label="Frequency" aria-label="Frequency" value={frequency} onChange={e => setFrequency(e.target.value)}>
-          <option value="weekly">Weekly (Mondays)</option>
-          <option value="monthly">Monthly (1st)</option>
+        <SelInput label={t('widgets.reports.frequency')} aria-label={t('widgets.reports.frequency')} value={frequency} onChange={e => setFrequency(e.target.value)}>
+          <option value="weekly">{t('widgets.reports.weekly')}</option>
+          <option value="monthly">{t('widgets.reports.monthly')}</option>
         </SelInput>
-        <SelInput label="Covers" aria-label="Covers" value={scope} onChange={e => setScope(e.target.value)}>
-          <option value="campaign">This campaign</option>
-          <option value="all">{audience === 'operator' ? 'All campaigns on my screens' : 'All my campaigns'}</option>
+        <SelInput label={t('widgets.reports.covers')} aria-label={t('widgets.reports.covers')} value={scope} onChange={e => setScope(e.target.value)}>
+          <option value="campaign">{t('widgets.reports.thisCampaign')}</option>
+          <option value="all">{audience === 'operator' ? t('widgets.reports.allOnMyScreens') : t('widgets.reports.allMine')}</option>
         </SelInput>
       </div>
       <Inp
-        label="Recipients"
-        placeholder="name@agency.com, client@brand.ca"
+        label={t('widgets.reports.recipients')}
+        placeholder={t('widgets.reports.recipientsPlaceholder')}
         value={recipients}
         onChange={e => { setRecipients(e.target.value); setFormError(null); }}
-        hint={`Separate addresses with commas. Up to ${MAX_RECIPIENTS}.`}
+        hint={t('widgets.reports.recipientsHint', { max: MAX_RECIPIENTS })}
         error={formError}
       />
-      <Btn onClick={create} disabled={saving} style={{ marginTop: 10 }}>{saving ? 'Scheduling…' : 'Schedule report'}</Btn>
+      <Btn onClick={create} disabled={saving} style={{ marginTop: 10 }}>{saving ? t('widgets.reports.scheduling') : t('widgets.reports.schedule')}</Btn>
 
       {loadError && (
         <div style={{ ...TX.error, marginTop: 12 }}>
-          Couldn't load scheduled reports — check your connection and try again.
+          {t('widgets.reports.loadError')}
         </div>
       )}
 
@@ -116,20 +117,20 @@ export function ScheduledReportsSection({ campaignId, userId, audience }) {
           <div key={s.id} style={{ borderTop: `1px solid ${C.border}`, paddingTop: 10, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={TX.strong}>
-                {describeSchedule(s.frequency)} · {s.scope === 'all' ? 'all campaigns' : 'this campaign'}
+                {s.frequency === 'weekly' ? t('widgets.reports.everyMonday') : t('widgets.reports.monthlyFirst')} · {s.scope === 'all' ? t('widgets.reports.scopeAll') : t('widgets.reports.scopeCampaign')}
               </div>
               <div style={{ ...TX.mono, wordBreak: 'break-all', margin: '2px 0' }}>
                 {(s.recipients ?? []).join(', ')}
               </div>
               <div style={TX.caption}>
-                Next {new Date(s.next_run_at).toLocaleDateString()}
-                {s.last_sent_at ? ` · last sent ${new Date(s.last_sent_at).toLocaleDateString()}` : ''}
+                {t('widgets.reports.next', { date: formatDate(s.next_run_at) })}
+                {s.last_sent_at ? t('widgets.reports.lastSent', { date: formatDate(s.last_sent_at) }) : ''}
               </div>
               {s.last_error && (
-                <div style={{ fontSize: T.xs, color: C.redText, fontFamily: F.sans, marginTop: 2 }}>Last send failed — it will try again next period.</div>
+                <div style={{ fontSize: T.xs, color: C.redText, fontFamily: F.sans, marginTop: 2 }}>{t('widgets.reports.lastFailed')}</div>
               )}
             </div>
-            <Btn size="sm" variant="ghost" onClick={() => remove(s.id)}>Remove</Btn>
+            <Btn size="sm" variant="ghost" onClick={() => remove(s.id)}>{t('common.remove')}</Btn>
           </div>
         ))}
       </div>

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { C, F, T, alpha } from '../../design/tokens.js';
+import { t } from '../../i18n/core.js';
 
 // Sits on the dark public-page header, hence white at varying strength.
 const nav = { fontFamily: F.sans, fontSize: T.base, marginBottom: 24 };
@@ -12,7 +13,7 @@ const current = { color: alpha(C.white, 0.85) };
 // worst); every earlier item must have a `to`.
 export function Breadcrumbs({ items }) {
   return (
-    <nav aria-label="Breadcrumb" style={nav}>
+    <nav aria-label={t('ui.breadcrumb')} style={nav}>
       {items.map((item, i) => {
         const isLast = i === items.length - 1;
         return (
